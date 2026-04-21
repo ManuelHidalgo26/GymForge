@@ -3,10 +3,12 @@
              xmlns:vmDash="using:GymForge.Desktop.ViewModels.Dashboard"
              xmlns:vmMembers="using:GymForge.Desktop.ViewModels.Members"
              xmlns:vmCheckin="using:GymForge.Desktop.ViewModels.Checkin"
+             xmlns:vmCharges="using:GymForge.Desktop.ViewModels.Charges"
              xmlns:vmShared="using:GymForge.Desktop.ViewModels.Shared"
              xmlns:vDash="using:GymForge.Desktop.Views.Dashboard"
              xmlns:vMembers="using:GymForge.Desktop.Views.Members"
              xmlns:vCheckin="using:GymForge.Desktop.Views.Checkin"
+             xmlns:vCharges="using:GymForge.Desktop.Views.Charges"
              xmlns:vShared="using:GymForge.Desktop.Views.Shared"
              x:Class="GymForge.Desktop.App"
              RequestedThemeVariant="Default">
@@ -18,6 +20,7 @@
         <StyleInclude Source="avares://GymForge.Desktop/Assets/Styles/AppStyles.axaml" />
     </Application.Styles>
 
+    <!-- ContentControl router: maps ViewModel type → View automatically -->
     <Application.DataTemplates>
         <DataTemplate DataType="vmDash:DashboardViewModel">
             <vDash:DashboardView />
@@ -25,8 +28,20 @@
         <DataTemplate DataType="vmMembers:MembersListViewModel">
             <vMembers:MembersListView />
         </DataTemplate>
+        <DataTemplate DataType="vmMembers:MemberDetailViewModel">
+            <vMembers:MemberDetailView />
+        </DataTemplate>
+        <DataTemplate DataType="vmMembers:CreateMemberViewModel">
+            <vMembers:CreateMemberView />
+        </DataTemplate>
         <DataTemplate DataType="vmCheckin:CheckInKioskViewModel">
             <vCheckin:CheckInKioskView />
+        </DataTemplate>
+        <DataTemplate DataType="vmCharges:ChargesViewModel">
+            <vCharges:ChargesView />
+        </DataTemplate>
+        <DataTemplate DataType="vmCharges:PaymentModalViewModel">
+            <vCharges:PaymentModalView />
         </DataTemplate>
         <DataTemplate DataType="vmShared:PlaceholderViewModel">
             <vShared:PlaceholderView />

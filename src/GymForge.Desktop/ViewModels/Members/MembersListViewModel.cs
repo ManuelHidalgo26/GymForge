@@ -25,16 +25,30 @@ public partial class MembersListViewModel : ObservableObject
     public const int PageSize = 50;
     public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
 
+    // Sprint 1: company/site from seed defaults — Sprint 2 resolves from active session
+    private static readonly Guid DefaultCompanyId = new("11111111-0000-0000-0000-000000000001");
+    private static readonly Guid DefaultSiteId    = new("22222222-0000-0000-0000-000000000001");
+
+    /// <summary>Fired when the user opens a member's detail card.</summary>
+    public event Action<MemberDto>? OpenDetailRequested;
+
+    /// <summary>Fired when the user clicks "Nuevo socio".</summary>
+    public event Action? CreateMemberRequested;
+
     public MembersListViewModel(IMediator mediator)
     {
-        _mediator = mediator;
+        _mediator  = mediator;
+        _companyId = DefaultCompanyId;
+        _siteId    = DefaultSiteId;
     }
 
     public void Initialize(Guid companyId, Guid siteId)
     {
         _companyId = companyId;
-        _siteId = siteId;
+        _siteId    = siteId;
     }
+
+    // ── Load ─────────────────────────────────────────────────────────────────
 
     [RelayCommand]
     public async Task LoadAsync(CancellationToken ct = default)
@@ -63,6 +77,20 @@ public partial class MembersListViewModel : ObservableObject
         }
     }
 
+    // ── Detail navigation ─────────────────────────────────────────────────────
+
+    [RelayCommand]
+    private void OpenDetail(MemberDto? member)
+    {
+        if (member is null) return;
+        OpenDetailRequested?.Invoke(member);
+    }
+
+    [RelayCommand]
+    private void CreateMember() => CreateMemberRequested?.Invoke();
+
+    // ── Pagination & search ───────────────────────────────────────────────────
+
     [RelayCommand]
     private async Task SearchAsync()
     {
@@ -73,29 +101,21 @@ public partial class MembersListViewModel : ObservableObject
     [RelayCommand]
     private async Task NextPageAsync()
     {
-        if (CurrentPage < TotalPages)
-        {
-            CurrentPage++;
-            await LoadAsync();
-        }
+        if (CurrentPage < TotalPages) { CurrentPage++; await LoadAsync(); }
     }
 
     [RelayCommand]
     private async Task PreviousPageAsync()
     {
-        if (CurrentPage > 1)
-        {
-            CurrentPage--;
-            await LoadAsync();
-        }
+        if (CurrentPage > 1) { CurrentPage--; await LoadAsync(); }
     }
 
     [RelayCommand]
     private void ClearSearch()
     {
-        SearchText = string.Empty;
+        SearchText   = string.Empty;
         StatusFilter = null;
-        CurrentPage = 1;
+        CurrentPage  = 1;
         _ = LoadAsync();
     }
 

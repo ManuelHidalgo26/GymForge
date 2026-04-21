@@ -1,0 +1,171 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:fa="using:FluentAvalonia.UI.Controls"
+             xmlns:vm="using:GymForge.Desktop.ViewModels.Charges"
+             x:Class="GymForge.Desktop.Views.Charges.ChargesView"
+             x:DataType="vm:ChargesViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- ── Toolbar ────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0" Padding="16,12"
+                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                BorderThickness="0,0,0,1">
+            <DockPanel>
+
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="Cobros" FontSize="18" FontWeight="SemiBold"
+                               VerticalAlignment="Center" />
+                    <Border CornerRadius="12" Padding="8,2"
+                            Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+                        <TextBlock Text="{Binding Charges.Count}"
+                                   FontSize="12" VerticalAlignment="Center" />
+                    </Border>
+                </StackPanel>
+
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+                    <!-- Filter -->
+                    <ComboBox ItemsSource="{Binding StatusFilters}"
+                              SelectedItem="{Binding StatusFilter}"
+                              Width="140">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="vm:ChargeStatusFilter">
+                                <TextBlock Text="{Binding}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <!-- Registrar cobro manual -->
+                    <Button Command="{Binding OpenPaymentModalCommand}"
+                            Classes="NavButton"
+                            IsEnabled="{Binding SelectedCharge, Converter={x:Static ObjectConverters.IsNotNull}}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <fa:SymbolIcon Symbol="Accept" FontSize="16" />
+                            <TextBlock Text="Registrar pago" />
+                        </StackPanel>
+                    </Button>
+
+                    <Button Command="{Binding LoadCommand}" Classes="NavButton">
+                        <fa:SymbolIcon Symbol="Refresh" FontSize="16" />
+                    </Button>
+                </StackPanel>
+
+            </DockPanel>
+        </Border>
+
+        <!-- ── DataGrid ───────────────────────────────────────────────────── -->
+        <DataGrid Grid.Row="1"
+                  ItemsSource="{Binding Charges}"
+                  SelectedItem="{Binding SelectedCharge}"
+                  CanUserSortColumns="True"
+                  IsReadOnly="True"
+                  AutoGenerateColumns="False">
+
+            <DataGrid.Columns>
+
+                <!-- Vencimiento -->
+                <DataGridTextColumn Header="Vencimiento"
+                                    Binding="{Binding Dto.DueDate}"
+                                    Width="110" />
+
+                <!-- Concepto -->
+                <DataGridTextColumn Header="Concepto"
+                                    Binding="{Binding ConceptLabel}"
+                                    Width="*" />
+
+                <!-- Descripción -->
+                <DataGridTextColumn Header="Descripción"
+                                    Binding="{Binding Dto.Description}"
+                                    Width="2*" />
+
+                <!-- Total -->
+                <DataGridTextColumn Header="Total"
+                                    Binding="{Binding Dto.TotalAmount, StringFormat={}{0:C}}"
+                                    Width="110" />
+
+                <!-- Pagado -->
+                <DataGridTextColumn Header="Pagado"
+                                    Binding="{Binding Dto.AmountPaid, StringFormat={}{0:C}}"
+                                    Width="110" />
+
+                <!-- Saldo -->
+                <DataGridTextColumn Header="Saldo"
+                                    Binding="{Binding Dto.AmountOutstanding, StringFormat={}{0:C}}"
+                                    Width="110" />
+
+                <!-- Estado (badge) -->
+                <DataGridTemplateColumn Header="Estado" Width="110">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="vm:ChargeRowVm">
+                            <Border CornerRadius="10" Padding="8,2" Margin="4,0"
+                                    HorizontalAlignment="Left">
+                                <Border.Background>
+                                    <SolidColorBrush Color="{Binding StatusColor}" Opacity="0.15" />
+                                </Border.Background>
+                                <TextBlock Text="{Binding StatusLabel}"
+                                           FontSize="11" FontWeight="SemiBold">
+                                    <TextBlock.Foreground>
+                                        <SolidColorBrush Color="{Binding StatusColor}" />
+                                    </TextBlock.Foreground>
+                                </TextBlock>
+                            </Border>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- Acciones -->
+                <DataGridTemplateColumn Header="" Width="60" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="vm:ChargeRowVm">
+                            <Button Classes="IconButton"
+                                    ToolTip.Tip="Registrar pago"
+                                    CommandParameter="{Binding}"
+                                    Command="{Binding $parent[UserControl].((vm:ChargesViewModel)DataContext).OpenPaymentModalCommand}">
+                                <fa:SymbolIcon Symbol="Accept" FontSize="16" />
+                            </Button>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- ── Footer: total saldo ────────────────────────────────────────── -->
+        <Border Grid.Row="2" Padding="16,10"
+                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                BorderThickness="0,1,0,0">
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Right"
+                           FontSize="14" FontWeight="SemiBold">
+                    <Run Text="Saldo total: " Opacity="0.7" />
+                    <Run Text="{Binding TotalOutstanding, StringFormat={}{0:C}}"
+                         Foreground="#C62828" />
+                </TextBlock>
+
+                <fa:ProgressRing IsVisible="{Binding IsLoading}"
+                                 Width="20" Height="20"
+                                 DockPanel.Dock="Left" />
+            </DockPanel>
+        </Border>
+
+        <!-- ── Payment modal overlay ──────────────────────────────────────── -->
+        <Grid Grid.Row="0" Grid.RowSpan="3"
+              IsVisible="{Binding IsPaymentModalOpen}"
+              Background="#80000000"
+              ZIndex="100">
+            <Border MaxWidth="440"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    CornerRadius="12"
+                    Padding="24"
+                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                    BoxShadow="0 8 32 0 #44000000">
+                <ContentControl Content="{Binding PaymentModal}" />
+            </Border>
+        </Grid>
+
+    </Grid>
+
+</UserControl>

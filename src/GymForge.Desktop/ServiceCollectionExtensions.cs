@@ -1,5 +1,6 @@
 using GymForge.Application;
 using GymForge.Application.UseCases.Access;
+using GymForge.Desktop.ViewModels.Charges;
 using GymForge.Desktop.ViewModels.Checkin;
 using GymForge.Desktop.ViewModels.Dashboard;
 using GymForge.Desktop.ViewModels.Members;
@@ -14,14 +15,15 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddGymForgeDesktop(this IServiceCollection services)
     {
-        // Database path in local app data
+        // Database: %LOCALAPPDATA%\GymForge\gymforge.db
         var dbDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "GymForge");
         Directory.CreateDirectory(dbDir);
-        var connectionString = $"Data Source={Path.Combine(dbDir, "gymforge.db")};Mode=ReadWriteCreate;Cache=Shared";
+        var connectionString =
+            $"Data Source={Path.Combine(dbDir, "gymforge.db")};Mode=ReadWriteCreate;Cache=Shared";
 
-        // Application + Infrastructure layers
+        // Application + Infrastructure
         services.AddApplication();
         services.AddInfrastructure(connectionString);
 
@@ -29,20 +31,28 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<GatekeeperConfig>();
         services.AddScoped<ValidateSwipeUseCase>();
 
-        // Shell ViewModel — singleton, owns the navigation router cache
-        // Receives IServiceProvider to resolve child VMs lazily
+        // ── Shell ─────────────────────────────────────────────────────────────
+        // Singleton: owns the navigation router + VM cache
         services.AddSingleton<MainWindowViewModel>(sp => new MainWindowViewModel(sp));
 
-        // Feature ViewModels
-        // Dashboard: singleton (cached by router, no stateful reset needed)
+        // ── Dashboard ─────────────────────────────────────────────────────────
         services.AddSingleton<DashboardViewModel>();
 
-        // Members: singleton (preserves search/scroll state across navigations)
+        // ── Members ───────────────────────────────────────────────────────────
+        // Singleton: preserves list scroll/search state across navigations
         services.AddSingleton<MembersListViewModel>();
+        // Transient: each open of the detail/create form is a fresh instance
+        services.AddTransient<MemberDetailViewModel>();
         services.AddTransient<CreateMemberViewModel>();
 
-        // CheckIn: transient — router always requests a fresh instance to reset state
+        // ── Check-in Kiosk ────────────────────────────────────────────────────
+        // Transient: always resets state when navigated to
         services.AddTransient<CheckInKioskViewModel>();
+
+        // ── Charges ───────────────────────────────────────────────────────────
+        // Transient: the router caches the site-wide instance via _vmCache;
+        // MemberDetailViewModel also gets a fresh one (per-member filter).
+        services.AddTransient<ChargesViewModel>();
 
         return services;
     }

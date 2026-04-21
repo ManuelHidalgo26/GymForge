@@ -26,6 +26,7 @@
         <KeyBinding Gesture="F5" Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:NavSection.Cash}" />
         <KeyBinding Gesture="Ctrl+K" Command="{Binding OpenCommandPaletteCommand}" />
         <KeyBinding Gesture="Escape" Command="{Binding CloseCommandPaletteCommand}" />
+        <KeyBinding Gesture="Alt+Left" Command="{Binding GoBackCommand}" />
     </Window.KeyBindings>
 
     <Grid ColumnDefinitions="Auto,*">
@@ -205,6 +206,16 @@
                     BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
                     BorderThickness="0,0,0,1">
                 <DockPanel>
+                    <!-- Back button (visible when navigated to a detail view) -->
+                    <Button DockPanel.Dock="Left"
+                            Command="{Binding GoBackCommand}"
+                            IsVisible="{Binding CanGoBack}"
+                            Classes="NavButton"
+                            Margin="0,0,4,0"
+                            ToolTip.Tip="Volver (Alt+←)">
+                        <fa:SymbolIcon Symbol="Back" FontSize="18" />
+                    </Button>
+
                     <!-- Global search Ctrl+K -->
                     <Button DockPanel.Dock="Left"
                             Command="{Binding OpenCommandPaletteCommand}"

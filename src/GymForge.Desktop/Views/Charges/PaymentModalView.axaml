@@ -1,0 +1,92 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:fa="using:FluentAvalonia.UI.Controls"
+             xmlns:vm="using:GymForge.Desktop.ViewModels.Charges"
+             x:Class="GymForge.Desktop.Views.Charges.PaymentModalView"
+             x:DataType="vm:PaymentModalViewModel">
+
+    <StackPanel Spacing="16">
+
+        <!-- Header -->
+        <TextBlock Text="Registrar pago"
+                   FontSize="18" FontWeight="SemiBold" />
+
+        <!-- Cobro seleccionado (si aplica) -->
+        <Border IsVisible="{Binding TargetCharge, Converter={x:Static ObjectConverters.IsNotNull}}"
+                CornerRadius="8" Padding="12"
+                Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+            <StackPanel Spacing="4">
+                <TextBlock Text="{Binding TargetCharge.Description}"
+                           FontWeight="SemiBold" FontSize="13" />
+                <TextBlock FontSize="12" Opacity="0.7">
+                    <Run Text="Saldo: " />
+                    <Run Text="{Binding TargetCharge.AmountOutstanding, StringFormat={}{0:C}}" />
+                </TextBlock>
+            </StackPanel>
+        </Border>
+
+        <!-- Monto -->
+        <StackPanel Spacing="4">
+            <TextBlock Text="Monto a cobrar *" FontSize="12" Opacity="0.7" />
+            <NumericUpDown Value="{Binding Amount}"
+                           FormatString="C2"
+                           Minimum="0.01"
+                           Increment="100"
+                           Width="200"
+                           HorizontalAlignment="Left" />
+        </StackPanel>
+
+        <!-- Método de pago -->
+        <StackPanel Spacing="4">
+            <TextBlock Text="Método de pago *" FontSize="12" Opacity="0.7" />
+            <ComboBox ItemsSource="{Binding Methods}"
+                      SelectedItem="{Binding Method}"
+                      Width="200"
+                      HorizontalAlignment="Left" />
+        </StackPanel>
+
+        <!-- Datos de tarjeta (sólo si aplica) -->
+        <StackPanel IsVisible="{Binding IsCardRequired}" Spacing="8">
+            <StackPanel Spacing="4">
+                <TextBlock Text="Últimos 4 dígitos *" FontSize="12" Opacity="0.7" />
+                <TextBox Text="{Binding CardLast4}"
+                         MaxLength="4"
+                         Watermark="0000"
+                         Width="100"
+                         HorizontalAlignment="Left" />
+            </StackPanel>
+            <StackPanel Spacing="4">
+                <TextBlock Text="Marca de tarjeta" FontSize="12" Opacity="0.7" />
+                <TextBox Text="{Binding CardBrand}"
+                         Watermark="Visa / Mastercard / Amex"
+                         Width="200"
+                         HorizontalAlignment="Left" />
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Error -->
+        <fa:InfoBar IsOpen="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                    Severity="Error"
+                    Title="Error"
+                    Message="{Binding ErrorMessage}"
+                    IsClosable="False" />
+
+        <!-- Actions -->
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button Content="Cancelar"
+                    Command="{Binding CancelCommand}"
+                    Classes="NavButton" />
+            <Button Command="{Binding ConfirmCommand}"
+                    Classes="NavButton"
+                    IsDefault="True">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <fa:ProgressRing IsVisible="{Binding IsSaving}"
+                                     Width="16" Height="16" />
+                    <TextBlock Text="Confirmar pago" />
+                </StackPanel>
+            </Button>
+        </StackPanel>
+
+    </StackPanel>
+
+</UserControl>

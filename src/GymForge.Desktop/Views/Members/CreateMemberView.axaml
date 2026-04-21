@@ -1,0 +1,225 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:fa="using:FluentAvalonia.UI.Controls"
+             xmlns:vm="using:GymForge.Desktop.ViewModels.Members"
+             x:Class="GymForge.Desktop.Views.Members.CreateMemberView"
+             x:DataType="vm:CreateMemberViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock.FieldLabel">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Opacity" Value="0.65" />
+            <Setter Property="Margin" Value="0,0,0,4" />
+        </Style>
+        <Style Selector="TextBox, ComboBox, DatePicker">
+            <Setter Property="Height" Value="36" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- ── Header ────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0" Padding="20,14"
+                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                BorderThickness="0,0,0,1">
+            <DockPanel>
+                <Button DockPanel.Dock="Left"
+                        Command="{Binding CancelCommand}"
+                        Classes="NavButton" Margin="0,0,12,0">
+                    <fa:SymbolIcon Symbol="Back" FontSize="20" />
+                </Button>
+                <TextBlock Text="Nuevo socio" FontSize="18" FontWeight="SemiBold"
+                           VerticalAlignment="Center" />
+            </DockPanel>
+        </Border>
+
+        <!-- ── Form (2 columnas) ──────────────────────────────────────────── -->
+        <ScrollViewer Grid.Row="1">
+            <Grid ColumnDefinitions="*,Auto" Margin="24,20" ColumnSpacing="32">
+
+                <!-- Columna izquierda: datos personales -->
+                <StackPanel Grid.Column="0" Spacing="0">
+
+                    <TextBlock Text="Datos personales"
+                               FontSize="15" FontWeight="SemiBold"
+                               Margin="0,0,0,16" />
+
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                          ColumnSpacing="16">
+
+                        <!-- Nombre -->
+                        <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,14">
+                            <TextBlock Classes="FieldLabel" Text="Nombre *" />
+                            <TextBox Text="{Binding FirstName}"
+                                     Watermark="Ej: Juan" />
+                        </StackPanel>
+
+                        <!-- Apellido -->
+                        <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,14">
+                            <TextBlock Classes="FieldLabel" Text="Apellido *" />
+                            <TextBox Text="{Binding LastName}"
+                                     Watermark="Ej: Pérez" />
+                        </StackPanel>
+
+                        <!-- Tipo documento -->
+                        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,14">
+                            <TextBlock Classes="FieldLabel" Text="Tipo documento *" />
+                            <ComboBox ItemsSource="{Binding DocumentTypes}"
+                                      SelectedItem="{Binding DocumentType}" />
+                        </StackPanel>
+
+                        <!-- N° documento -->
+                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,0,0,14">
+                            <TextBlock Classes="FieldLabel" Text="Número documento *" />
+                            <TextBox Text="{Binding DocumentNumber}"
+                                     Watermark="Ej: 32123456" />
+                        </StackPanel>
+
+                        <!-- Email -->
+                        <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,0,14">
+                            <TextBlock Classes="FieldLabel" Text="Email" />
+                            <TextBox Text="{Binding Email}"
+                                     Watermark="socio@email.com" />
+                        </StackPanel>
+
+                        <!-- Celular -->
+                        <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,0,0,14">
+                            <TextBlock Classes="FieldLabel" Text="Celular" />
+                            <TextBox Text="{Binding Mobile}"
+                                     Watermark="+54 9 11 1234-5678" />
+                        </StackPanel>
+
+                        <!-- Fecha de nacimiento -->
+                        <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,0,0,14">
+                            <TextBlock Classes="FieldLabel" Text="Fecha de nacimiento" />
+                            <DatePicker />
+                        </StackPanel>
+
+                        <!-- Género -->
+                        <StackPanel Grid.Row="3" Grid.Column="1" Margin="0,0,0,14">
+                            <TextBlock Classes="FieldLabel" Text="Género" />
+                            <ComboBox ItemsSource="{Binding Genders}"
+                                      SelectedItem="{Binding Gender}" />
+                        </StackPanel>
+
+                        <!-- Origen -->
+                        <StackPanel Grid.Row="4" Grid.Column="0" Margin="0,0,0,14">
+                            <TextBlock Classes="FieldLabel" Text="Cómo nos conoció" />
+                            <ComboBox ItemsSource="{Binding Sources}"
+                                      SelectedItem="{Binding Source}" />
+                        </StackPanel>
+
+                        <!-- Consentimiento -->
+                        <StackPanel Grid.Row="4" Grid.Column="1" Margin="0,0,0,14"
+                                    VerticalAlignment="Center" Spacing="6">
+                            <CheckBox IsChecked="{Binding MarketingConsent}"
+                                      Content="Acepta comunicaciones" FontSize="13" />
+                        </StackPanel>
+
+                    </Grid>
+
+                    <!-- Error -->
+                    <fa:InfoBar
+                        IsOpen="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                        Severity="Error"
+                        Title="Error de validación"
+                        Message="{Binding ErrorMessage}"
+                        IsClosable="False"
+                        Margin="0,8,0,0" />
+
+                </StackPanel>
+
+                <!-- Columna derecha: foto + huella -->
+                <StackPanel Grid.Column="1" Width="200" Spacing="16" VerticalAlignment="Top">
+
+                    <TextBlock Text="Foto y biometría"
+                               FontSize="15" FontWeight="SemiBold" />
+
+                    <!-- Foto -->
+                    <StackPanel Spacing="8" HorizontalAlignment="Center">
+                        <Border Width="140" Height="160" CornerRadius="8"
+                                Background="{DynamicResource SubtleFillColorSecondaryBrush}"
+                                ClipToBounds="True">
+                            <Grid>
+                                <fa:SymbolIcon Symbol="Contact"
+                                               FontSize="64" Opacity="0.25"
+                                               IsVisible="{Binding PhotoUrl,
+                                                   Converter={x:Static ObjectConverters.IsNull}}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center" />
+                                <!-- Imagen: Sprint 2 -->
+                            </Grid>
+                        </Border>
+                        <Button Command="{Binding CapturePhotoCommand}"
+                                Classes="NavButton"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <fa:SymbolIcon Symbol="Camera" FontSize="15" />
+                                <TextBlock Text="Capturar foto" FontSize="12" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Huella -->
+                    <StackPanel Spacing="8" HorizontalAlignment="Center">
+                        <Border Width="100" Height="100" CornerRadius="50"
+                                Background="{DynamicResource SubtleFillColorSecondaryBrush}"
+                                HorizontalAlignment="Center">
+                            <fa:SymbolIcon Symbol="Fingerprint" FontSize="48" Opacity="0.3"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" />
+                        </Border>
+                        <fa:InfoBadge
+                            IsVisible="{Binding HasFingerprint}"
+                            Value="✓"
+                            HorizontalAlignment="Center" />
+                        <Button Command="{Binding EnrollFingerprintCommand}"
+                                Classes="NavButton"
+                                HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Center">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <fa:SymbolIcon Symbol="Add" FontSize="15" />
+                                <TextBlock Text="Enrolar huella" FontSize="12" />
+                            </StackPanel>
+                        </Button>
+                        <TextBlock Text="(disponible en Sprint 2)"
+                                   FontSize="10" Opacity="0.4"
+                                   HorizontalAlignment="Center" />
+                    </StackPanel>
+
+                </StackPanel>
+
+            </Grid>
+        </ScrollViewer>
+
+        <!-- ── Footer: Cancelar / Guardar ───────────────────────────────── -->
+        <Border Grid.Row="2" Padding="24,12"
+                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                BorderThickness="0,1,0,0">
+            <StackPanel Orientation="Horizontal" Spacing="10"
+                        HorizontalAlignment="Right">
+                <Button Content="Cancelar"
+                        Command="{Binding CancelCommand}"
+                        Classes="NavButton"
+                        Width="110" />
+                <Button Command="{Binding SaveCommand}"
+                        Classes="NavButton"
+                        Width="160"
+                        IsDefault="True">
+                    <StackPanel Orientation="Horizontal" Spacing="8"
+                                HorizontalAlignment="Center">
+                        <fa:ProgressRing IsVisible="{Binding IsSaving}"
+                                         Width="16" Height="16" />
+                        <TextBlock Text="Guardar socio" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Border>
+
+    </Grid>
+
+</UserControl>

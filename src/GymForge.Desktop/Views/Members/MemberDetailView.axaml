@@ -1,0 +1,320 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:fa="using:FluentAvalonia.UI.Controls"
+             xmlns:vm="using:GymForge.Desktop.ViewModels.Members"
+             xmlns:vmCharges="using:GymForge.Desktop.ViewModels.Charges"
+             xmlns:vCharges="using:GymForge.Desktop.Views.Charges"
+             x:Class="GymForge.Desktop.Views.Members.MemberDetailView"
+             x:DataType="vm:MemberDetailViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="Button.TabButton">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Padding" Value="16,10" />
+            <Setter Property="CornerRadius" Value="0" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="BorderThickness" Value="0,0,0,2" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+        </Style>
+        <Style Selector="Button.TabButton.active">
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColor}" />
+            <Setter Property="Foreground" Value="{DynamicResource SystemAccentColor}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+    </UserControl.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <!-- ── Header: avatar + datos básicos + back ────────────────────── -->
+        <Border Grid.Row="0" Padding="20,16"
+                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                BorderThickness="0,0,0,1">
+            <DockPanel>
+
+                <!-- Back button -->
+                <Button DockPanel.Dock="Left"
+                        Command="{Binding GoBackCommand}"
+                        Classes="NavButton" Margin="0,0,12,0"
+                        ToolTip.Tip="Volver a la lista">
+                    <fa:SymbolIcon Symbol="Back" FontSize="20" />
+                </Button>
+
+                <!-- Avatar -->
+                <Border DockPanel.Dock="Left"
+                        Width="56" Height="56" CornerRadius="28"
+                        Background="{DynamicResource SystemAccentColor}"
+                        Margin="0,0,14,0">
+                    <TextBlock FontSize="20" FontWeight="Bold" Foreground="White"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Text="{Binding Member.FirstName[0]}" />
+                </Border>
+
+                <!-- Name + meta -->
+                <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Spacing="2">
+                    <TextBlock FontSize="18" FontWeight="Bold"
+                               Text="{Binding Member.FullName}" />
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock FontSize="12" Opacity="0.6">
+                            <Run Text="{Binding Member.DocumentType}" />
+                            <Run Text=" " />
+                            <Run Text="{Binding Member.DocumentNumber}" />
+                        </TextBlock>
+                        <TextBlock FontSize="12" Opacity="0.6"
+                                   IsVisible="{Binding Member.Email, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                   Text="{Binding Member.Email}" />
+                        <TextBlock FontSize="12" Opacity="0.6"
+                                   IsVisible="{Binding Member.Mobile, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                   Text="{Binding Member.Mobile}" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Status badge -->
+                <Border DockPanel.Dock="Right" CornerRadius="12" Padding="10,4"
+                        VerticalAlignment="Center" Margin="0,0,8,0">
+                    <Border.Background>
+                        <SolidColorBrush Color="{Binding Member.Status,
+                            Converter={StaticResource StatusColorConverter}}"
+                            Opacity="0.15" />
+                    </Border.Background>
+                    <TextBlock Text="{Binding Member.Status}"
+                               FontSize="12" FontWeight="SemiBold"
+                               Foreground="{Binding Member.Status,
+                                   Converter={StaticResource StatusColorConverter}}" />
+                </Border>
+
+            </DockPanel>
+        </Border>
+
+        <!-- ── Tab bar ───────────────────────────────────────────────────── -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                BorderThickness="0,0,0,1">
+            <StackPanel Orientation="Horizontal">
+
+                <Button Content="Datos" Classes="TabButton"
+                        Command="{Binding SwitchTabCommand}"
+                        CommandParameter="{x:Static vm:MemberDetailTab.Data}"
+                        Classes.active="{Binding ActiveTab,
+                            Converter={StaticResource NavSectionActiveConverter},
+                            ConverterParameter=Data}" />
+
+                <Button Content="Membresías" Classes="TabButton"
+                        Command="{Binding SwitchTabCommand}"
+                        CommandParameter="{x:Static vm:MemberDetailTab.Memberships}"
+                        Classes.active="{Binding ActiveTab,
+                            Converter={StaticResource NavSectionActiveConverter},
+                            ConverterParameter=Memberships}" />
+
+                <Button Content="Cobros" Classes="TabButton"
+                        Command="{Binding SwitchTabCommand}"
+                        CommandParameter="{x:Static vm:MemberDetailTab.Charges}"
+                        Classes.active="{Binding ActiveTab,
+                            Converter={StaticResource NavSectionActiveConverter},
+                            ConverterParameter=Charges}" />
+
+                <Button Content="Accesos" Classes="TabButton"
+                        Command="{Binding SwitchTabCommand}"
+                        CommandParameter="{x:Static vm:MemberDetailTab.Access}"
+                        Classes.active="{Binding ActiveTab,
+                            Converter={StaticResource NavSectionActiveConverter},
+                            ConverterParameter=Access}" />
+
+                <Button Content="Rutinas" Classes="TabButton"
+                        Command="{Binding SwitchTabCommand}"
+                        CommandParameter="{x:Static vm:MemberDetailTab.Routines}"
+                        Classes.active="{Binding ActiveTab,
+                            Converter={StaticResource NavSectionActiveConverter},
+                            ConverterParameter=Routines}" />
+
+            </StackPanel>
+        </Border>
+
+        <!-- ── Tab content ────────────────────────────────────────────────── -->
+        <Grid Grid.Row="2">
+
+            <!-- TAB: Datos personales -->
+            <ScrollViewer IsVisible="{Binding ActiveTab,
+                Converter={x:Static ObjectConverters.Equal},
+                ConverterParameter={x:Static vm:MemberDetailTab.Data}}">
+                <StackPanel Margin="24,20" Spacing="20" MaxWidth="700">
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" >
+                        <Grid.Styles>
+                            <Style Selector="StackPanel.Field">
+                                <Setter Property="Spacing" Value="4" />
+                                <Setter Property="Margin" Value="0,0,16,16" />
+                            </Style>
+                            <Style Selector="TextBlock.Label">
+                                <Setter Property="FontSize" Value="11" />
+                                <Setter Property="Opacity" Value="0.6" />
+                            </Style>
+                            <Style Selector="TextBlock.Value">
+                                <Setter Property="FontSize" Value="14" />
+                            </Style>
+                        </Grid.Styles>
+
+                        <StackPanel Grid.Row="0" Grid.Column="0" Classes="Field">
+                            <TextBlock Classes="Label" Text="Nombre" />
+                            <TextBlock Classes="Value" Text="{Binding Member.FirstName}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="1" Classes="Field">
+                            <TextBlock Classes="Label" Text="Apellido" />
+                            <TextBlock Classes="Value" Text="{Binding Member.LastName}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.Column="0" Classes="Field">
+                            <TextBlock Classes="Label" Text="Tipo documento" />
+                            <TextBlock Classes="Value" Text="{Binding Member.DocumentType}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="1" Classes="Field">
+                            <TextBlock Classes="Label" Text="Número documento" />
+                            <TextBlock Classes="Value" Text="{Binding Member.DocumentNumber}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="2" Grid.Column="0" Classes="Field">
+                            <TextBlock Classes="Label" Text="Email" />
+                            <TextBlock Classes="Value"
+                                       Text="{Binding Member.Email, TargetNullValue='—'}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="2" Grid.Column="1" Classes="Field">
+                            <TextBlock Classes="Label" Text="Celular" />
+                            <TextBlock Classes="Value"
+                                       Text="{Binding Member.Mobile, TargetNullValue='—'}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="3" Grid.Column="0" Classes="Field">
+                            <TextBlock Classes="Label" Text="Fecha de nacimiento" />
+                            <TextBlock Classes="Value"
+                                       Text="{Binding Member.BirthDate, TargetNullValue='—'}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="3" Grid.Column="1" Classes="Field">
+                            <TextBlock Classes="Label" Text="Edad" />
+                            <TextBlock Classes="Value"
+                                       Text="{Binding Member.Age, TargetNullValue='—'}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="4" Grid.Column="0" Classes="Field">
+                            <TextBlock Classes="Label" Text="Socio desde" />
+                            <TextBlock Classes="Value"
+                                       Text="{Binding Member.JoinDate, TargetNullValue='—'}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="4" Grid.Column="1" Classes="Field">
+                            <TextBlock Classes="Label" Text="Huella digital" />
+                            <TextBlock Classes="Value"
+                                       Text="{Binding Member.HasFingerprint,
+                                           StringFormat={}{0:Registrada|No registrada}}" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- TAB: Membresías -->
+            <Grid IsVisible="{Binding ActiveTab,
+                Converter={x:Static ObjectConverters.Equal},
+                ConverterParameter={x:Static vm:MemberDetailTab.Memberships}}"
+                  RowDefinitions="*,Auto">
+
+                <DataGrid Grid.Row="0"
+                          ItemsSource="{Binding Memberships}"
+                          IsReadOnly="True"
+                          AutoGenerateColumns="False">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Tipo"
+                                            Binding="{Binding MembershipTypeName}" Width="*" />
+                        <DataGridTextColumn Header="Inicio"
+                                            Binding="{Binding StartDate}" Width="100" />
+                        <DataGridTextColumn Header="Fin"
+                                            Binding="{Binding EndDate, TargetNullValue='Abierta'}" Width="100" />
+                        <DataGridTextColumn Header="Estado"
+                                            Binding="{Binding Status}" Width="110" />
+                        <DataGridTextColumn Header="Visitas"
+                                            Binding="{Binding VisitsRemaining, TargetNullValue='∞'}" Width="80" />
+                        <DataGridTemplateColumn Header="Acciones" Width="140">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <Button Classes="IconButton"
+                                                ToolTip.Tip="Congelar"
+                                                CommandParameter="{Binding}"
+                                                Command="{Binding $parent[UserControl].((vm:MemberDetailViewModel)DataContext).FreezeMembershipCommand}">
+                                            <fa:SymbolIcon Symbol="Pause" FontSize="14" />
+                                        </Button>
+                                        <Button Classes="IconButton"
+                                                ToolTip.Tip="Cancelar"
+                                                CommandParameter="{Binding}"
+                                                Command="{Binding $parent[UserControl].((vm:MemberDetailViewModel)DataContext).CancelMembershipCommand}">
+                                            <fa:SymbolIcon Symbol="Delete" FontSize="14" />
+                                        </Button>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <Border Grid.Row="1" Padding="16,8"
+                        Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+                    <TextBlock FontSize="12" Opacity="0.6"
+                               Text="{Binding Memberships.Count, StringFormat={}{0} membresía(s)}" />
+                </Border>
+            </Grid>
+
+            <!-- TAB: Cobros — delega a ChargesView -->
+            <vCharges:ChargesView
+                IsVisible="{Binding ActiveTab,
+                    Converter={x:Static ObjectConverters.Equal},
+                    ConverterParameter={x:Static vm:MemberDetailTab.Charges}}"
+                DataContext="{Binding ChargesVm}" />
+
+            <!-- TAB: Accesos -->
+            <DataGrid
+                IsVisible="{Binding ActiveTab,
+                    Converter={x:Static ObjectConverters.Equal},
+                    ConverterParameter={x:Static vm:MemberDetailTab.Access}}"
+                ItemsSource="{Binding AccessLogs}"
+                IsReadOnly="True"
+                AutoGenerateColumns="False">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Fecha/Hora"
+                                        Binding="{Binding SwipedAt, StringFormat={}{0:dd/MM/yyyy HH:mm}}"
+                                        Width="160" />
+                    <DataGridTemplateColumn Header="Resultado" Width="120">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Result}"
+                                           Foreground="{Binding Color}"
+                                           FontWeight="SemiBold"
+                                           VerticalAlignment="Center"
+                                           Margin="8,0" />
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Motivo denegación"
+                                        Binding="{Binding DenialReason, TargetNullValue='—'}"
+                                        Width="*" />
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <!-- TAB: Rutinas -->
+            <Grid IsVisible="{Binding ActiveTab,
+                Converter={x:Static ObjectConverters.Equal},
+                ConverterParameter={x:Static vm:MemberDetailTab.Routines}}"
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center">
+                <StackPanel Spacing="12" HorizontalAlignment="Center">
+                    <fa:SymbolIcon Symbol="Globe" FontSize="48" Opacity="0.25"
+                                   HorizontalAlignment="Center" />
+                    <TextBlock Text="Módulo Rutinas" FontSize="16" FontWeight="SemiBold"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="Asignación de rutinas disponible en Sprint 3"
+                               FontSize="13" Opacity="0.55" HorizontalAlignment="Center" />
+                </StackPanel>
+            </Grid>
+
+        </Grid>
+
+    </Grid>
+
+</UserControl>

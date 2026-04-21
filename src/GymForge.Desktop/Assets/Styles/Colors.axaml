@@ -6,9 +6,24 @@
     <conv:SidebarWidthConverter x:Key="SidebarWidthConverter" />
     <conv:CollapsedIconConverter x:Key="CollapsedIconConverter" />
     <conv:StatusColorConverter x:Key="StatusColorConverter" />
+    <conv:NavSectionActiveConverter x:Key="NavSectionActiveConverter" />
 
-    <!-- Sidebar & Topbar colors (Light) -->
-    <SolidColorBrush x:Key="SidebarBackground" Color="#F7F7F8" />
-    <SolidColorBrush x:Key="TopbarBackground" Color="#FFFFFF" />
+    <!-- ── Light Theme ─────────────────────────────────────────────────── -->
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+            <SolidColorBrush x:Key="SidebarBackground" Color="#F7F7F8" />
+            <SolidColorBrush x:Key="TopbarBackground" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="ContentBackground" Color="#F0F0F2" />
+            <SolidColorBrush x:Key="CardBackgroundFillColorDefaultBrush" Color="#FFFFFF" />
+        </ResourceDictionary>
+
+        <!-- ── Dark Theme ──────────────────────────────────────────────── -->
+        <ResourceDictionary x:Key="Dark">
+            <SolidColorBrush x:Key="SidebarBackground" Color="#1C1C1E" />
+            <SolidColorBrush x:Key="TopbarBackground" Color="#242426" />
+            <SolidColorBrush x:Key="ContentBackground" Color="#2C2C2E" />
+            <SolidColorBrush x:Key="CardBackgroundFillColorDefaultBrush" Color="#3A3A3C" />
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
 
 </ResourceDictionary>

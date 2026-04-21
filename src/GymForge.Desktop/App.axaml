@@ -1,6 +1,13 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:fa="using:FluentAvalonia.UI.Controls"
+             xmlns:vmDash="using:GymForge.Desktop.ViewModels.Dashboard"
+             xmlns:vmMembers="using:GymForge.Desktop.ViewModels.Members"
+             xmlns:vmCheckin="using:GymForge.Desktop.ViewModels.Checkin"
+             xmlns:vmShared="using:GymForge.Desktop.ViewModels.Shared"
+             xmlns:vDash="using:GymForge.Desktop.Views.Dashboard"
+             xmlns:vMembers="using:GymForge.Desktop.Views.Members"
+             xmlns:vCheckin="using:GymForge.Desktop.Views.Checkin"
+             xmlns:vShared="using:GymForge.Desktop.Views.Shared"
              x:Class="GymForge.Desktop.App"
              RequestedThemeVariant="Default">
 
@@ -10,6 +17,21 @@
         <StyleInclude Source="avares://Avalonia.Fonts.Inter/Fonts.axaml" />
         <StyleInclude Source="avares://GymForge.Desktop/Assets/Styles/AppStyles.axaml" />
     </Application.Styles>
+
+    <Application.DataTemplates>
+        <DataTemplate DataType="vmDash:DashboardViewModel">
+            <vDash:DashboardView />
+        </DataTemplate>
+        <DataTemplate DataType="vmMembers:MembersListViewModel">
+            <vMembers:MembersListView />
+        </DataTemplate>
+        <DataTemplate DataType="vmCheckin:CheckInKioskViewModel">
+            <vCheckin:CheckInKioskView />
+        </DataTemplate>
+        <DataTemplate DataType="vmShared:PlaceholderViewModel">
+            <vShared:PlaceholderView />
+        </DataTemplate>
+    </Application.DataTemplates>
 
     <Application.Resources>
         <ResourceDictionary>

@@ -4,6 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:fa="using:FluentAvalonia.UI.Controls"
         xmlns:vm="using:GymForge.Desktop.Views.Shell"
+        xmlns:conv="using:GymForge.Desktop.Converters"
         mc:Ignorable="d"
         x:Class="GymForge.Desktop.Views.Shell.MainWindow"
         x:DataType="vm:MainWindowViewModel"
@@ -14,8 +15,12 @@
         ExtendClientAreaToDecorationsHint="True"
         ExtendClientAreaChromeHints="NoChrome">
 
+    <Window.Resources>
+        <conv:NavSectionActiveConverter x:Key="NavSectionActiveConverter" />
+    </Window.Resources>
+
     <Window.KeyBindings>
-        <KeyBinding Gesture="F1" Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:NavSection.Members}" />
+        <KeyBinding Gesture="F1" Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:NavSection.Dashboard}" />
         <KeyBinding Gesture="F3" Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:NavSection.Members}" />
         <KeyBinding Gesture="F4" Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:NavSection.Access}" />
         <KeyBinding Gesture="F5" Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:NavSection.Cash}" />
@@ -24,19 +29,22 @@
     </Window.KeyBindings>
 
     <Grid ColumnDefinitions="Auto,*">
-        <!-- Sidebar -->
+
+        <!-- ═══ SIDEBAR ═══════════════════════════════════════════════════════ -->
         <Border Grid.Column="0"
                 Width="{Binding IsSidebarCollapsed, Converter={StaticResource SidebarWidthConverter}}"
                 Background="{DynamicResource SidebarBackground}"
                 BoxShadow="2 0 8 0 #22000000">
             <DockPanel>
+
                 <!-- Logo + Gym Name -->
                 <Border DockPanel.Dock="Top" Padding="12,16">
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <Border Width="36" Height="36" CornerRadius="8"
                                 Background="{DynamicResource SystemAccentColor}">
                             <TextBlock Text="GF" FontWeight="Bold" FontSize="14"
-                                       Foreground="White" HorizontalAlignment="Center"
+                                       Foreground="White"
+                                       HorizontalAlignment="Center"
                                        VerticalAlignment="Center" />
                         </Border>
                         <StackPanel IsVisible="{Binding !IsSidebarCollapsed}">
@@ -49,93 +57,148 @@
                 <!-- Nav Items -->
                 <ScrollViewer DockPanel.Dock="Top" VerticalScrollBarVisibility="Auto">
                     <StackPanel Spacing="2" Margin="8,0">
+
                         <Button Command="{Binding NavigateCommand}"
                                 CommandParameter="{x:Static vm:NavSection.Dashboard}"
-                                Classes="NavButton">
+                                Classes="NavButton"
+                                Classes.active="{Binding CurrentSection,
+                                    Converter={StaticResource NavSectionActiveConverter},
+                                    ConverterParameter=Dashboard}">
                             <StackPanel Orientation="Horizontal" Spacing="12">
                                 <fa:SymbolIcon Symbol="Home" FontSize="18" />
                                 <TextBlock Text="Dashboard" IsVisible="{Binding !IsSidebarCollapsed}" />
                             </StackPanel>
                         </Button>
+
                         <Button Command="{Binding NavigateCommand}"
                                 CommandParameter="{x:Static vm:NavSection.Members}"
-                                Classes="NavButton">
+                                Classes="NavButton"
+                                Classes.active="{Binding CurrentSection,
+                                    Converter={StaticResource NavSectionActiveConverter},
+                                    ConverterParameter=Members}">
                             <StackPanel Orientation="Horizontal" Spacing="12">
                                 <fa:SymbolIcon Symbol="People" FontSize="18" />
                                 <TextBlock Text="Socios" IsVisible="{Binding !IsSidebarCollapsed}" />
                             </StackPanel>
                         </Button>
+
                         <Button Command="{Binding NavigateCommand}"
                                 CommandParameter="{x:Static vm:NavSection.Access}"
-                                Classes="NavButton">
+                                Classes="NavButton"
+                                Classes.active="{Binding CurrentSection,
+                                    Converter={StaticResource NavSectionActiveConverter},
+                                    ConverterParameter=Access}">
                             <StackPanel Orientation="Horizontal" Spacing="12">
                                 <fa:SymbolIcon Symbol="Key" FontSize="18" />
                                 <TextBlock Text="Accesos" IsVisible="{Binding !IsSidebarCollapsed}" />
                             </StackPanel>
                         </Button>
+
                         <Button Command="{Binding NavigateCommand}"
                                 CommandParameter="{x:Static vm:NavSection.Cash}"
-                                Classes="NavButton">
+                                Classes="NavButton"
+                                Classes.active="{Binding CurrentSection,
+                                    Converter={StaticResource NavSectionActiveConverter},
+                                    ConverterParameter=Cash}">
                             <StackPanel Orientation="Horizontal" Spacing="12">
                                 <fa:SymbolIcon Symbol="Money" FontSize="18" />
                                 <TextBlock Text="Caja" IsVisible="{Binding !IsSidebarCollapsed}" />
                             </StackPanel>
                         </Button>
+
                         <Button Command="{Binding NavigateCommand}"
                                 CommandParameter="{x:Static vm:NavSection.Classes}"
-                                Classes="NavButton">
+                                Classes="NavButton"
+                                Classes.active="{Binding CurrentSection,
+                                    Converter={StaticResource NavSectionActiveConverter},
+                                    ConverterParameter=Classes}">
                             <StackPanel Orientation="Horizontal" Spacing="12">
                                 <fa:SymbolIcon Symbol="Calendar" FontSize="18" />
                                 <TextBlock Text="Clases" IsVisible="{Binding !IsSidebarCollapsed}" />
                             </StackPanel>
                         </Button>
+
                         <Button Command="{Binding NavigateCommand}"
                                 CommandParameter="{x:Static vm:NavSection.Routines}"
-                                Classes="NavButton">
+                                Classes="NavButton"
+                                Classes.active="{Binding CurrentSection,
+                                    Converter={StaticResource NavSectionActiveConverter},
+                                    ConverterParameter=Routines}">
                             <StackPanel Orientation="Horizontal" Spacing="12">
                                 <fa:SymbolIcon Symbol="Globe" FontSize="18" />
                                 <TextBlock Text="Rutinas" IsVisible="{Binding !IsSidebarCollapsed}" />
                             </StackPanel>
                         </Button>
+
                         <Button Command="{Binding NavigateCommand}"
                                 CommandParameter="{x:Static vm:NavSection.Products}"
-                                Classes="NavButton">
+                                Classes="NavButton"
+                                Classes.active="{Binding CurrentSection,
+                                    Converter={StaticResource NavSectionActiveConverter},
+                                    ConverterParameter=Products}">
                             <StackPanel Orientation="Horizontal" Spacing="12">
                                 <fa:SymbolIcon Symbol="Tag" FontSize="18" />
                                 <TextBlock Text="Productos" IsVisible="{Binding !IsSidebarCollapsed}" />
                             </StackPanel>
                         </Button>
+
                         <Button Command="{Binding NavigateCommand}"
                                 CommandParameter="{x:Static vm:NavSection.Reports}"
-                                Classes="NavButton">
+                                Classes="NavButton"
+                                Classes.active="{Binding CurrentSection,
+                                    Converter={StaticResource NavSectionActiveConverter},
+                                    ConverterParameter=Reports}">
                             <StackPanel Orientation="Horizontal" Spacing="12">
                                 <fa:SymbolIcon Symbol="Document" FontSize="18" />
                                 <TextBlock Text="Reportes" IsVisible="{Binding !IsSidebarCollapsed}" />
                             </StackPanel>
                         </Button>
+
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- Bottom: Settings + Collapse toggle -->
-                <StackPanel DockPanel.Dock="Bottom" Margin="8,8">
+                <!-- Bottom: Settings + theme toggle + collapse -->
+                <StackPanel DockPanel.Dock="Bottom" Margin="8,8" Spacing="2">
+
                     <Button Command="{Binding NavigateCommand}"
                             CommandParameter="{x:Static vm:NavSection.Settings}"
-                            Classes="NavButton">
+                            Classes="NavButton"
+                            Classes.active="{Binding CurrentSection,
+                                Converter={StaticResource NavSectionActiveConverter},
+                                ConverterParameter=Settings}">
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <fa:SymbolIcon Symbol="Settings" FontSize="18" />
                             <TextBlock Text="Configuración" IsVisible="{Binding !IsSidebarCollapsed}" />
                         </StackPanel>
                     </Button>
+
+                    <!-- Theme toggle (only visible when expanded) -->
+                    <Button Command="{Binding ToggleThemeCommand}"
+                            Classes="NavButton"
+                            IsVisible="{Binding !IsSidebarCollapsed}"
+                            ToolTip.Tip="Cambiar tema claro/oscuro">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <fa:SymbolIcon Symbol="DarkTheme" FontSize="18" />
+                            <TextBlock Text="{Binding IsDarkTheme, StringFormat={}{0:Oscuro|Claro}}"
+                                       IsVisible="{Binding !IsSidebarCollapsed}" />
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Collapse toggle -->
                     <Button Command="{Binding ToggleSidebarCommand}" Classes="NavButton">
                         <fa:SymbolIcon FontSize="18"
-                            Symbol="{Binding IsSidebarCollapsed, Converter={StaticResource CollapsedIconConverter}}" />
+                            Symbol="{Binding IsSidebarCollapsed,
+                                Converter={StaticResource CollapsedIconConverter}}" />
                     </Button>
+
                 </StackPanel>
+
             </DockPanel>
         </Border>
 
-        <!-- Main content area -->
+        <!-- ═══ MAIN CONTENT ═══════════════════════════════════════════════════ -->
         <Grid Grid.Column="1" RowDefinitions="48,*">
+
             <!-- Topbar -->
             <Border Grid.Row="0" Padding="16,0"
                     Background="{DynamicResource TopbarBackground}"
@@ -143,7 +206,8 @@
                     BorderThickness="0,0,0,1">
                 <DockPanel>
                     <!-- Global search Ctrl+K -->
-                    <Button DockPanel.Dock="Left" Command="{Binding OpenCommandPaletteCommand}"
+                    <Button DockPanel.Dock="Left"
+                            Command="{Binding OpenCommandPaletteCommand}"
                             Classes="SearchButton">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <fa:SymbolIcon Symbol="Find" FontSize="16" Opacity="0.5" />
@@ -159,14 +223,19 @@
                         <Border Width="32" Height="32" CornerRadius="16"
                                 Background="{DynamicResource SystemAccentColor}">
                             <TextBlock Text="A" FontWeight="Bold" Foreground="White"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" />
                         </Border>
                     </StackPanel>
                 </DockPanel>
             </Border>
 
-            <!-- Content (router placeholder) -->
-            <ContentControl Grid.Row="1" Name="ContentArea" />
+            <!-- Content router — DataTemplates in App.axaml resolve the correct View -->
+            <ContentControl Grid.Row="1"
+                            Name="ContentArea"
+                            Content="{Binding CurrentViewModel}" />
+
         </Grid>
+
     </Grid>
 </Window>

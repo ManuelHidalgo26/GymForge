@@ -1,7 +1,7 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
-    <!-- Navigation buttons -->
+    <!-- ── Navigation buttons ── -->
     <Style Selector="Button.NavButton">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
@@ -19,19 +19,38 @@
         <Setter Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}" />
     </Style>
 
-    <!-- Icon-only buttons -->
+    <!-- Active nav button — filled accent tint -->
+    <Style Selector="Button.NavButton.active /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SystemAccentColorLight3}" />
+    </Style>
+    <Style Selector="Button.NavButton.active">
+        <Setter Property="Foreground" Value="{DynamicResource SystemAccentColor}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <!-- ── Icon-only buttons ── -->
     <Style Selector="Button.IconButton">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Padding" Value="8" />
         <Setter Property="CornerRadius" Value="6" />
     </Style>
+    <Style Selector="Button.IconButton:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+    </Style>
 
-    <!-- Search button -->
+    <!-- ── Search / command palette button ── -->
     <Style Selector="Button.SearchButton">
         <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
         <Setter Property="Padding" Value="12,6" />
         <Setter Property="CornerRadius" Value="8" />
         <Setter Property="MinWidth" Value="260" />
+    </Style>
+
+    <!-- ── DataGrid ── -->
+    <Style Selector="DataGrid">
+        <Setter Property="RowHeight" Value="38" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="GridLinesVisibility" Value="Horizontal" />
     </Style>
 
 </Styles>

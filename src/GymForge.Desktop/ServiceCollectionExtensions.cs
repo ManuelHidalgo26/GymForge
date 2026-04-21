@@ -1,6 +1,7 @@
 using GymForge.Application;
 using GymForge.Application.UseCases.Access;
 using GymForge.Desktop.ViewModels.Checkin;
+using GymForge.Desktop.ViewModels.Dashboard;
 using GymForge.Desktop.ViewModels.Members;
 using GymForge.Desktop.Views.Shell;
 using GymForge.Infrastructure;
@@ -28,12 +29,19 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<GatekeeperConfig>();
         services.AddScoped<ValidateSwipeUseCase>();
 
-        // Shell ViewModels (singleton — live for app lifetime)
-        services.AddSingleton<MainWindowViewModel>();
+        // Shell ViewModel — singleton, owns the navigation router cache
+        // Receives IServiceProvider to resolve child VMs lazily
+        services.AddSingleton<MainWindowViewModel>(sp => new MainWindowViewModel(sp));
 
-        // Feature ViewModels (transient — new instance per navigation)
-        services.AddTransient<MembersListViewModel>();
+        // Feature ViewModels
+        // Dashboard: singleton (cached by router, no stateful reset needed)
+        services.AddSingleton<DashboardViewModel>();
+
+        // Members: singleton (preserves search/scroll state across navigations)
+        services.AddSingleton<MembersListViewModel>();
         services.AddTransient<CreateMemberViewModel>();
+
+        // CheckIn: transient — router always requests a fresh instance to reset state
         services.AddTransient<CheckInKioskViewModel>();
 
         return services;

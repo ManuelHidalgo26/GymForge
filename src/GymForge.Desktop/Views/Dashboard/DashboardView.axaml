@@ -1,0 +1,125 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:fa="using:FluentAvalonia.UI.Controls"
+             xmlns:vm="using:GymForge.Desktop.ViewModels.Dashboard"
+             x:Class="GymForge.Desktop.Views.Dashboard.DashboardView"
+             x:DataType="vm:DashboardViewModel">
+
+    <UserControl.Styles>
+        <Style Selector="Border.KpiCard">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Padding" Value="20,16" />
+            <Setter Property="BoxShadow" Value="0 1 4 0 #14000000" />
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer>
+        <StackPanel Margin="28,24" Spacing="24">
+
+            <!-- Header -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Dashboard" FontSize="22" FontWeight="SemiBold" />
+                <TextBlock Text="Resumen del día" FontSize="13" Opacity="0.6" />
+            </StackPanel>
+
+            <!-- KPI row -->
+            <Grid ColumnDefinitions="*,*,*,*" HorizontalAlignment="Stretch">
+                <Grid.Styles>
+                    <Style Selector="Grid > Border">
+                        <Setter Property="Margin" Value="0,0,12,0" />
+                    </Style>
+                    <Style Selector="Grid > Border:nth-last-child(1)">
+                        <Setter Property="Margin" Value="0" />
+                    </Style>
+                </Grid.Styles>
+
+                <!-- Total Socios Activos -->
+                <Border Grid.Column="0" Classes="KpiCard">
+                    <StackPanel Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <fa:SymbolIcon Symbol="People" FontSize="20"
+                                           Foreground="{DynamicResource SystemAccentColor}" />
+                            <TextBlock Text="Socios activos" FontSize="13" Opacity="0.7" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding TotalActiveMembers}"
+                                   FontSize="32" FontWeight="Bold" />
+                        <TextBlock Text="Membresías vigentes" FontSize="11" Opacity="0.5" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Check-ins hoy -->
+                <Border Grid.Column="1" Classes="KpiCard">
+                    <StackPanel Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <fa:SymbolIcon Symbol="Key" FontSize="20"
+                                           Foreground="{DynamicResource SystemAccentColorLight1}" />
+                            <TextBlock Text="Check-ins hoy" FontSize="13" Opacity="0.7" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding CheckInsToday}"
+                                   FontSize="32" FontWeight="Bold" />
+                        <TextBlock Text="Accesos del día" FontSize="11" Opacity="0.5" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Socios en mora -->
+                <Border Grid.Column="2" Classes="KpiCard">
+                    <StackPanel Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <fa:SymbolIcon Symbol="Alert" FontSize="20"
+                                           Foreground="#E85F00" />
+                            <TextBlock Text="En mora" FontSize="13" Opacity="0.7" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding OverdueMembers}"
+                                   FontSize="32" FontWeight="Bold" />
+                        <TextBlock Text="Requieren cobro" FontSize="11" Opacity="0.5" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Recaudación del mes -->
+                <Border Grid.Column="3" Classes="KpiCard" Margin="0">
+                    <StackPanel Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <fa:SymbolIcon Symbol="Money" FontSize="20"
+                                           Foreground="#2E7D32" />
+                            <TextBlock Text="Recaudación" FontSize="13" Opacity="0.7" />
+                        </StackPanel>
+                        <TextBlock FontSize="32" FontWeight="Bold">
+                            <Run Text="$" /><Run Text="{Binding RevenueThisMonth, StringFormat={}{0:N0}}" />
+                        </TextBlock>
+                        <TextBlock Text="Este mes" FontSize="11" Opacity="0.5" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Quick actions -->
+            <Border Classes="KpiCard">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Acciones rápidas" FontSize="14" FontWeight="SemiBold" />
+                    <WrapPanel Orientation="Horizontal" ItemWidth="160">
+                        <Button Classes="NavButton" Margin="0,0,8,8" Padding="12,10">
+                            <StackPanel Spacing="6">
+                                <fa:SymbolIcon Symbol="Add" FontSize="22" />
+                                <TextBlock Text="Nuevo socio" FontSize="12" />
+                            </StackPanel>
+                        </Button>
+                        <Button Classes="NavButton" Margin="0,0,8,8" Padding="12,10">
+                            <StackPanel Spacing="6">
+                                <fa:SymbolIcon Symbol="Key" FontSize="22" />
+                                <TextBlock Text="Check-in manual" FontSize="12" />
+                            </StackPanel>
+                        </Button>
+                        <Button Classes="NavButton" Margin="0,0,8,8" Padding="12,10">
+                            <StackPanel Spacing="6">
+                                <fa:SymbolIcon Symbol="Money" FontSize="22" />
+                                <TextBlock Text="Registrar cobro" FontSize="12" />
+                            </StackPanel>
+                        </Button>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>

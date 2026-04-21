@@ -1,0 +1,73 @@
+## .NET / C#
+bin/
+obj/
+*.user
+*.suo
+.vs/
+_ReSharper*/
+*.DotSettings.user
+*.ncb
+*.sdf
+TestResults/
+*.coverage
+*.coveragexml
+
+## SQLite
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+!seed/*.sql
+
+## Logs
+logs/
+*.log
+*.slog
+
+## Published output
+publish/
+dist/
+installer/
+
+## NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+!**/packages/repositories.config
+
+## User secrets & env
+appsettings.Development.json
+appsettings.Local.json
+secrets.json
+.env
+.env.*
+!.env.example
+
+## Avalonia designer
+*.g.cs
+*.g.i.cs
+
+## OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## Rider
+.idea/
+
+## Velopack release artifacts
+releases/
+RELEASES
+
+## Build artifacts
+*.msi
+*.msix
+*.appx
+setup*.exe
+
+## Backup files
+*.bak
+*.tmp
+~*

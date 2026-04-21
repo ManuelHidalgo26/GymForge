@@ -1,0 +1,172 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:fa="using:FluentAvalonia.UI.Controls"
+        xmlns:vm="using:GymForge.Desktop.Views.Shell"
+        mc:Ignorable="d"
+        x:Class="GymForge.Desktop.Views.Shell.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="{Binding GymName}"
+        Width="1440" Height="900"
+        MinWidth="1024" MinHeight="600"
+        WindowStartupLocation="CenterScreen"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome">
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="F1" Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:NavSection.Members}" />
+        <KeyBinding Gesture="F3" Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:NavSection.Members}" />
+        <KeyBinding Gesture="F4" Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:NavSection.Access}" />
+        <KeyBinding Gesture="F5" Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:NavSection.Cash}" />
+        <KeyBinding Gesture="Ctrl+K" Command="{Binding OpenCommandPaletteCommand}" />
+        <KeyBinding Gesture="Escape" Command="{Binding CloseCommandPaletteCommand}" />
+    </Window.KeyBindings>
+
+    <Grid ColumnDefinitions="Auto,*">
+        <!-- Sidebar -->
+        <Border Grid.Column="0"
+                Width="{Binding IsSidebarCollapsed, Converter={StaticResource SidebarWidthConverter}}"
+                Background="{DynamicResource SidebarBackground}"
+                BoxShadow="2 0 8 0 #22000000">
+            <DockPanel>
+                <!-- Logo + Gym Name -->
+                <Border DockPanel.Dock="Top" Padding="12,16">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Border Width="36" Height="36" CornerRadius="8"
+                                Background="{DynamicResource SystemAccentColor}">
+                            <TextBlock Text="GF" FontWeight="Bold" FontSize="14"
+                                       Foreground="White" HorizontalAlignment="Center"
+                                       VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel IsVisible="{Binding !IsSidebarCollapsed}">
+                            <TextBlock Text="{Binding GymName}" FontWeight="SemiBold" FontSize="14" />
+                            <TextBlock Text="{Binding CurrentSiteName}" FontSize="11" Opacity="0.6" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Nav Items -->
+                <ScrollViewer DockPanel.Dock="Top" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="2" Margin="8,0">
+                        <Button Command="{Binding NavigateCommand}"
+                                CommandParameter="{x:Static vm:NavSection.Dashboard}"
+                                Classes="NavButton">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <fa:SymbolIcon Symbol="Home" FontSize="18" />
+                                <TextBlock Text="Dashboard" IsVisible="{Binding !IsSidebarCollapsed}" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding NavigateCommand}"
+                                CommandParameter="{x:Static vm:NavSection.Members}"
+                                Classes="NavButton">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <fa:SymbolIcon Symbol="People" FontSize="18" />
+                                <TextBlock Text="Socios" IsVisible="{Binding !IsSidebarCollapsed}" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding NavigateCommand}"
+                                CommandParameter="{x:Static vm:NavSection.Access}"
+                                Classes="NavButton">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <fa:SymbolIcon Symbol="Key" FontSize="18" />
+                                <TextBlock Text="Accesos" IsVisible="{Binding !IsSidebarCollapsed}" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding NavigateCommand}"
+                                CommandParameter="{x:Static vm:NavSection.Cash}"
+                                Classes="NavButton">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <fa:SymbolIcon Symbol="Money" FontSize="18" />
+                                <TextBlock Text="Caja" IsVisible="{Binding !IsSidebarCollapsed}" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding NavigateCommand}"
+                                CommandParameter="{x:Static vm:NavSection.Classes}"
+                                Classes="NavButton">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <fa:SymbolIcon Symbol="Calendar" FontSize="18" />
+                                <TextBlock Text="Clases" IsVisible="{Binding !IsSidebarCollapsed}" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding NavigateCommand}"
+                                CommandParameter="{x:Static vm:NavSection.Routines}"
+                                Classes="NavButton">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <fa:SymbolIcon Symbol="Globe" FontSize="18" />
+                                <TextBlock Text="Rutinas" IsVisible="{Binding !IsSidebarCollapsed}" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding NavigateCommand}"
+                                CommandParameter="{x:Static vm:NavSection.Products}"
+                                Classes="NavButton">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <fa:SymbolIcon Symbol="Tag" FontSize="18" />
+                                <TextBlock Text="Productos" IsVisible="{Binding !IsSidebarCollapsed}" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding NavigateCommand}"
+                                CommandParameter="{x:Static vm:NavSection.Reports}"
+                                Classes="NavButton">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <fa:SymbolIcon Symbol="Document" FontSize="18" />
+                                <TextBlock Text="Reportes" IsVisible="{Binding !IsSidebarCollapsed}" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Bottom: Settings + Collapse toggle -->
+                <StackPanel DockPanel.Dock="Bottom" Margin="8,8">
+                    <Button Command="{Binding NavigateCommand}"
+                            CommandParameter="{x:Static vm:NavSection.Settings}"
+                            Classes="NavButton">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <fa:SymbolIcon Symbol="Settings" FontSize="18" />
+                            <TextBlock Text="Configuración" IsVisible="{Binding !IsSidebarCollapsed}" />
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding ToggleSidebarCommand}" Classes="NavButton">
+                        <fa:SymbolIcon FontSize="18"
+                            Symbol="{Binding IsSidebarCollapsed, Converter={StaticResource CollapsedIconConverter}}" />
+                    </Button>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- Main content area -->
+        <Grid Grid.Column="1" RowDefinitions="48,*">
+            <!-- Topbar -->
+            <Border Grid.Row="0" Padding="16,0"
+                    Background="{DynamicResource TopbarBackground}"
+                    BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                    BorderThickness="0,0,0,1">
+                <DockPanel>
+                    <!-- Global search Ctrl+K -->
+                    <Button DockPanel.Dock="Left" Command="{Binding OpenCommandPaletteCommand}"
+                            Classes="SearchButton">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <fa:SymbolIcon Symbol="Find" FontSize="16" Opacity="0.5" />
+                            <TextBlock Text="Buscar... (Ctrl+K)" Opacity="0.5" FontSize="13" />
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Right side: notifications + staff avatar -->
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+                        <Button Classes="IconButton">
+                            <fa:SymbolIcon Symbol="Alert" FontSize="18" />
+                        </Button>
+                        <Border Width="32" Height="32" CornerRadius="16"
+                                Background="{DynamicResource SystemAccentColor}">
+                            <TextBlock Text="A" FontWeight="Bold" Foreground="White"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </StackPanel>
+                </DockPanel>
+            </Border>
+
+            <!-- Content (router placeholder) -->
+            <ContentControl Grid.Row="1" Name="ContentArea" />
+        </Grid>
+    </Grid>
+</Window>

@@ -1,0 +1,151 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GymForge.Desktop.ViewModels.Members"
+             xmlns:fa="using:FluentAvalonia.UI.Controls"
+             xmlns:domain="using:GymForge.Domain.Enums"
+             x:Class="GymForge.Desktop.Views.Members.MembersListView"
+             x:DataType="vm:MembersListViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- Toolbar -->
+        <Border Grid.Row="0" Padding="16,12" Background="{DynamicResource TopbarBackground}"
+                BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
+                BorderThickness="0,0,0,1">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <!-- Search box -->
+                    <TextBox Width="320" Watermark="Buscar socio (nombre, DNI, email)..."
+                             Text="{Binding SearchText}"
+                             KeyDown="SearchBox_KeyDown">
+                        <TextBox.InnerLeftContent>
+                            <fa:SymbolIcon Symbol="Find" FontSize="14" Margin="8,0,4,0" Opacity="0.5" />
+                        </TextBox.InnerLeftContent>
+                    </TextBox>
+
+                    <!-- Status filter -->
+                    <ComboBox Width="160" SelectedItem="{Binding StatusFilter}"
+                              PlaceholderText="Todos los estados">
+                        <ComboBoxItem Content="Activos"   Tag="{x:Static domain:MemberStatus.Active}" />
+                        <ComboBoxItem Content="Vencidos"  Tag="{x:Static domain:MemberStatus.Expired}" />
+                        <ComboBoxItem Content="Morosos"   Tag="{x:Static domain:MemberStatus.Overdue}" />
+                        <ComboBoxItem Content="Congelados" Tag="{x:Static domain:MemberStatus.Frozen}" />
+                        <ComboBoxItem Content="Cancelados" Tag="{x:Static domain:MemberStatus.Cancelled}" />
+                    </ComboBox>
+
+                    <Button Content="Limpiar" Command="{Binding ClearSearchCommand}"
+                            Classes="subtle" />
+                </StackPanel>
+
+                <!-- Action buttons -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <Button Command="{Binding LoadCommand}" Classes="subtle" ToolTip.Tip="Actualizar (F5)">
+                        <fa:SymbolIcon Symbol="Refresh" FontSize="16" />
+                    </Button>
+                    <Button Classes="accent" Name="NewMemberButton">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <fa:SymbolIcon Symbol="Add" FontSize="16" />
+                            <TextBlock Text="Nuevo Socio (F3)" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Data Grid -->
+        <DataGrid Grid.Row="1"
+                  ItemsSource="{Binding Members}"
+                  SelectedItem="{Binding SelectedMember}"
+                  IsReadOnly="True"
+                  GridLinesVisibility="Horizontal"
+                  RowHeight="38"
+                  CanUserSortColumns="True"
+                  CanUserReorderColumns="True"
+                  AutoGenerateColumns="False">
+
+            <DataGrid.Columns>
+                <!-- Photo -->
+                <DataGridTemplateColumn Header="" Width="44" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Border Width="28" Height="28" CornerRadius="14"
+                                    Background="{DynamicResource SystemAccentColorLight1}" Margin="6,0">
+                                <TextBlock Text="{Binding FirstName[0]}"
+                                           Foreground="White" FontWeight="SemiBold" FontSize="12"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTextColumn Header="Apellido" Binding="{Binding LastName}" Width="160" />
+                <DataGridTextColumn Header="Nombre"   Binding="{Binding FirstName}" Width="140" />
+                <DataGridTextColumn Header="DNI/Doc"  Binding="{Binding DocumentNumber}" Width="110" />
+                <DataGridTextColumn Header="Email"    Binding="{Binding Email}" Width="200" />
+                <DataGridTextColumn Header="Teléfono" Binding="{Binding Mobile}" Width="120" />
+
+                <!-- Status badge -->
+                <DataGridTemplateColumn Header="Estado" Width="110" SortMemberPath="Status">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Border CornerRadius="4" Padding="6,2" Margin="4,6"
+                                    Background="{Binding Status, Converter={StaticResource StatusColorConverter}}">
+                                <TextBlock Text="{Binding Status}"
+                                           FontSize="11" FontWeight="Medium"
+                                           Foreground="White" />
+                            </Border>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <DataGridTextColumn Header="Ingreso"  Binding="{Binding JoinDate}" Width="100" />
+                <DataGridTextColumn Header="Edad"     Binding="{Binding Age}" Width="60" />
+
+                <!-- Actions -->
+                <DataGridTemplateColumn Header="" Width="80" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="4" Margin="4,0">
+                                <Button Classes="IconButton" ToolTip.Tip="Ver ficha (F8)">
+                                    <fa:SymbolIcon Symbol="OpenPane" FontSize="14" />
+                                </Button>
+                                <Button Classes="IconButton" ToolTip.Tip="Cobrar cuota (F2)">
+                                    <fa:SymbolIcon Symbol="Money" FontSize="14" />
+                                </Button>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Footer / Pagination -->
+        <Border Grid.Row="2" Padding="16,8"
+                Background="{DynamicResource SubtleFillColorSecondaryBrush}"
+                BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
+                BorderThickness="0,1,0,0">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock VerticalAlignment="Center" FontSize="12" Opacity="0.7">
+                    <Run Text="{Binding TotalCount, StringFormat='{}{0} socios'}" />
+                </TextBlock>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <Button Command="{Binding PreviousPageCommand}"
+                            IsEnabled="{Binding CurrentPage, Converter={x:Static BoolConverters.IsNotNull}}">
+                        <fa:SymbolIcon Symbol="ChevronLeft" FontSize="14" />
+                    </Button>
+                    <TextBlock VerticalAlignment="Center" FontSize="12">
+                        <Run Text="Pág. " />
+                        <Run Text="{Binding CurrentPage}" FontWeight="SemiBold" />
+                        <Run Text=" / " />
+                        <Run Text="{Binding TotalPages}" />
+                    </TextBlock>
+                    <Button Command="{Binding NextPageCommand}">
+                        <fa:SymbolIcon Symbol="ChevronRight" FontSize="14" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+    </Grid>
+</UserControl>

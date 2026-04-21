@@ -84,25 +84,31 @@ dotnet ef database update --project src/GymForge.Infrastructure --startup-projec
 - Hardware interfaces + sidecars stub (FiscalBroker, BioBroker, AccessBroker)
 - Avalonia Desktop: MainWindow (sidebar + topbar), MembersListView, CheckInKioskView
 - ViewModels: MainWindowViewModel, MembersListViewModel, CreateMemberViewModel, CheckInKioskViewModel
-- Converters: SidebarWidthConverter, CollapsedIconConverter, StatusColorConverter
+- Converters: SidebarWidthConverter, CollapsedIconConverter, StatusColorConverter, NavSectionActiveConverter
 - GymForge.Api: Minimal API con endpoints /members, /memberships, /access/swipe
 - Tests: GatekeeperTests (6 casos), MembershipStateMachineTests (8 casos), MemberRepositoryIntegrationTests (4 casos)
+- Router de navegación: ContentControl + DataTemplates, Stack historial, Alt+← para volver
+- Dark/Light theme toggle: OS auto-detect via PlatformSettings + toggle manual
+- NavButton.active CSS class via NavSectionActiveConverter
+- DashboardView: 4 KPIs (socios activos, check-ins, mora, recaudación)
+- PlaceholderView: panel "próximamente" para secciones sin implementar
+- ChargesView: DataGrid cobros + badge de estado + total saldo
+- PaymentModalViewModel: monto libre / cobro específico, N:M allocation via ProcessPaymentCommand
+- MemberDetailView: 5 tabs (Datos / Membresías / Cobros / Accesos / Rutinas)
+- CreateMemberView: formulario 2 columnas, foto + huella mock (Sprint 2: hardware real)
 
-### 🔲 Pendiente Sprint 1
-- [ ] Módulo Cobros UI (listado charges + modal de pago)
-- [ ] Ficha de socio con tabs (datos, membresías, cobros, accesos, rutinas)
-- [ ] Formulario alta socio — webcam + huella mock (Sprint 2 hardware real)
-- [ ] Atajos de teclado globales en MainWindow
-- [ ] Router de navegación Desktop (conectar sidebar a vistas)
-- [ ] Dark/Light theme toggle automático
+### ✅ Sprint 1 — COMPLETADO
 
-### 🔲 Sprint 2
-- [ ] Caja: apertura/cierre/arqueo
+### 🔲 Sprint 2 — próximo
+- [ ] Caja: apertura/cierre/arqueo, CashMovement
 - [ ] POS: venta productos, scanner HID
 - [ ] Facturación AFIP WSFE (SOAP) — FiscalBroker completo
-- [ ] WhatsApp via Twilio/Wassenger
+- [ ] WhatsApp via Twilio/Wassenger (notificaciones cobros)
 - [ ] Dunning automático (job nocturno 5 etapas)
-- [ ] Webcam + biometría ZKTeco real
+- [ ] Webcam (foto socio) + biometría ZKTeco real (BioBroker /enroll)
+- [ ] Regenerar migración EF con dotnet ef (ModelSnapshot completo)
+- [ ] Multi-sede: selector de site en topbar
+- [ ] Sesión de cajero: login staff + ShiftId resuelto
 
 ---
 

@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  build-test:
+    # windows-latest es obligatorio: Desktop y los sidecars de Hardware
+    # targetean net9.0-windows y no compilan en Linux.
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        run: dotnet restore GymForge.sln
+
+      - name: Build
+        run: dotnet build GymForge.sln -c Release --no-restore
+
+      # Los tests usan SQLite in-memory, no requieren Docker.
+      - name: Test
+        run: dotnet test GymForge.sln -c Release --no-build --verbosity normal

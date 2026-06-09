@@ -1,0 +1,63 @@
+using FluentAssertions;
+using GymForge.Application.Interfaces;
+using GymForge.Application.UseCases.Members;
+using GymForge.Domain.Entities;
+using GymForge.Domain.Enums;
+using NSubstitute;
+
+namespace GymForge.Application.Tests.Handlers;
+
+public class CreateMemberCommandTests
+{
+    private readonly IMemberRepository _repo = Substitute.For<IMemberRepository>();
+
+    private static CreateMemberCommand ValidCommand() => new(
+        CompanyId: Guid.NewGuid(),
+        SiteId: Guid.NewGuid(),
+        FirstName: "Ana",
+        LastName: "García",
+        DocumentType: DocumentType.DNI,
+        DocumentNumber: "30123456",
+        Gender: Gender.Female,
+        Email: "ana@test.com",
+        Mobile: "+5491123456789",
+        BirthDate: new DateOnly(1990, 5, 20));
+
+    [Fact]
+    public async Task Handle_PersistsMemberAndReturnsDto()
+    {
+        var cmd = ValidCommand();
+        var handler = new CreateMemberCommandHandler(_repo);
+
+        var dto = await handler.Handle(cmd, CancellationToken.None);
+
+        dto.FullName.Should().Be("Ana García");
+        dto.DocumentNumber.Should().Be("30123456");
+        dto.Email.Should().Be("ana@test.com");
+
+        await _repo.Received(1).AddAsync(
+            Arg.Is<Member>(m => m.DocumentNumber == "30123456" && m.CompanyId == cmd.CompanyId),
+            Arg.Any<CancellationToken>());
+        await _repo.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public void Validator_EmptyFirstName_Fails()
+    {
+        var cmd = ValidCommand() with { FirstName = "" };
+        new CreateMemberCommandValidator().Validate(cmd).IsValid.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Validator_InvalidEmail_Fails()
+    {
+        var cmd = ValidCommand() with { Email = "no-es-un-email" };
+        new CreateMemberCommandValidator().Validate(cmd).IsValid.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Validator_ValidCommand_Passes()
+    {
+        new CreateMemberCommandValidator().Validate(ValidCommand()).IsValid.Should().BeTrue();
+    }
+}

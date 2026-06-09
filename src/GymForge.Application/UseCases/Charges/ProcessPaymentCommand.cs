@@ -60,7 +60,7 @@ public class ProcessPaymentCommandValidator : AbstractValidator<ProcessPaymentCo
     {
         RuleFor(x => x.Amount).GreaterThan(0).WithMessage("El monto debe ser positivo.");
         RuleFor(x => x.CardLast4)
-            .Length(4).When(x => x.Method is PaymentMethod.CreditCard or PaymentMethod.DebitCard)
+            .NotEmpty().Length(4).When(x => x.Method is PaymentMethod.CreditCard or PaymentMethod.DebitCard)
             .WithMessage("Se requieren los últimos 4 dígitos de la tarjeta.");
     }
 }

@@ -126,4 +126,36 @@ public class MemberRepositoryIntegrationTests : IAsyncLifetime
         activos.Should().HaveCount(5);
         prospectos.Should().HaveCount(3);
     }
+
+    [Fact]
+    public async Task Queries_IsolateByTenant()
+    {
+        // Socio en el tenant sembrado, con un tag de credencial.
+        var m1 = Member.Create(_companyId, _site.Id, "Tenant", "Uno",
+            DocumentType.DNI, "40000001", Gender.Male);
+        m1.EnrollTag("SHARED-TAG");
+        await _repo.AddAsync(m1);
+
+        // Segundo tenant que reusa exactamente el mismo tag.
+        var otherCompany = Company.Create("Otra Empresa", "30-99999999-7");
+        await _db.Companies.AddAsync(otherCompany);
+        var otherSite = Site.Create(otherCompany.Id, "Otra Sede", "Calle 2");
+        await _db.Sites.AddAsync(otherSite);
+        var m2 = Member.Create(otherCompany.Id, otherSite.Id, "Tenant", "Dos",
+            DocumentType.DNI, "40000002", Gender.Male);
+        m2.EnrollTag("SHARED-TAG");
+        await _db.Members.AddAsync(m2);
+        await _db.SaveChangesAsync();
+
+        // Cada tenant resuelve su propio socio aunque el tag colisione.
+        var fromTenant1 = await _repo.FindByTagSerialAsync("SHARED-TAG", _companyId);
+        var fromTenant2 = await _repo.FindByTagSerialAsync("SHARED-TAG", otherCompany.Id);
+
+        fromTenant1!.LastName.Should().Be("Uno");
+        fromTenant2!.LastName.Should().Be("Dos");
+
+        // El listado del tenant 1 nunca incluye socios de otro tenant.
+        var page = await _repo.GetPagedAsync(_companyId, _site.Id, 1, 50);
+        page.Should().OnlyContain(m => m.CompanyId == _companyId);
+    }
 }

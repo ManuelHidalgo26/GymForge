@@ -170,7 +170,7 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void ToggleTheme()
     {
-        if (Application.Current is not { } app) return;
+        if (Avalonia.Application.Current is not { } app) return;
         var goingDark = app.RequestedThemeVariant != ThemeVariant.Dark;
         app.RequestedThemeVariant = goingDark ? ThemeVariant.Dark : ThemeVariant.Light;
         IsDarkTheme = goingDark;

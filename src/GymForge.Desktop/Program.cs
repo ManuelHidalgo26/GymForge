@@ -1,7 +1,7 @@
 using Avalonia;
+using Avalonia.Fonts.Inter;
 using GymForge.Desktop;
-using GymForge.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
+using GymForge.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
@@ -18,12 +18,8 @@ try
     services.AddGymForgeDesktop();
     App.Services = services.BuildServiceProvider();
 
-    // Ensure DB is created and migrated on startup
-    using (var scope = App.Services.CreateScope())
-    {
-        var db = scope.ServiceProvider.GetRequiredService<GymForgeDbContext>();
-        db.Database.Migrate();
-    }
+    // Migrate + seed on startup
+    await App.Services.InitialiseDatabaseAsync();
 
     BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
 }
@@ -39,5 +35,5 @@ finally
 static AppBuilder BuildAvaloniaApp() =>
     AppBuilder.Configure<App>()
         .UsePlatformDetect()
-        .UseInterFont()
+        .WithInterFont()
         .LogToTrace();

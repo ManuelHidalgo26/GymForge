@@ -23,7 +23,8 @@ public static class ServiceCollectionExtensions
         var connectionString =
             $"Data Source={Path.Combine(dbDir, "gymforge.db")};Mode=ReadWriteCreate;Cache=Shared";
 
-        // Application + Infrastructure
+        // Logging + Application + Infrastructure
+        services.AddLogging();
         services.AddApplication();
         services.AddInfrastructure(connectionString);
 

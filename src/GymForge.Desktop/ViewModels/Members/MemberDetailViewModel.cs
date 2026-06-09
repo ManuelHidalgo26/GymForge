@@ -93,11 +93,11 @@ public partial class MemberDetailViewModel : ObservableObject
 
     // ── Membresías ────────────────────────────────────────────────────────────
 
-    private async Task LoadMembershipsAsync(CancellationToken ct)
+    private async Task LoadMembershipsAsync(CancellationToken ct = default)
     {
         var list = await _membershipRepo.GetByMemberAsync(Member.Id, ct);
         Memberships = new ObservableCollection<MembershipDto>(
-            list.OrderByDescending(m => m.StartDate));
+            list.OrderByDescending(m => m.StartDate).Select(MembershipDto.FromEntity));
     }
 
     [RelayCommand]

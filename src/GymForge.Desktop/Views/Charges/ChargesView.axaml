@@ -41,13 +41,13 @@
                             Classes="NavButton"
                             IsEnabled="{Binding SelectedCharge, Converter={x:Static ObjectConverters.IsNotNull}}">
                         <StackPanel Orientation="Horizontal" Spacing="6">
-                            <fa:SymbolIcon Symbol="Accept" FontSize="16" />
+                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Accept}" FontSize="16" />
                             <TextBlock Text="Registrar pago" />
                         </StackPanel>
                     </Button>
 
                     <Button Command="{Binding LoadCommand}" Classes="NavButton">
-                        <fa:SymbolIcon Symbol="Refresh" FontSize="16" />
+                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Refresh}" FontSize="16" />
                     </Button>
                 </StackPanel>
 
@@ -122,7 +122,7 @@
                                     ToolTip.Tip="Registrar pago"
                                     CommandParameter="{Binding}"
                                     Command="{Binding $parent[UserControl].((vm:ChargesViewModel)DataContext).OpenPaymentModalCommand}">
-                                <fa:SymbolIcon Symbol="Accept" FontSize="16" />
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Accept}" FontSize="16" />
                             </Button>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
@@ -139,7 +139,7 @@
             <DockPanel>
                 <TextBlock DockPanel.Dock="Right"
                            FontSize="14" FontWeight="SemiBold">
-                    <Run Text="Saldo total: " Opacity="0.7" />
+                    <Run Text="Saldo total: " />
                     <Run Text="{Binding TotalOutstanding, StringFormat={}{0:C}}"
                          Foreground="#C62828" />
                 </TextBlock>

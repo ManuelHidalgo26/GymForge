@@ -38,7 +38,7 @@
                 <Border Grid.Column="0" Classes="KpiCard">
                     <StackPanel Spacing="8">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <fa:SymbolIcon Symbol="People" FontSize="20"
+                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.People}" FontSize="20"
                                            Foreground="{DynamicResource SystemAccentColor}" />
                             <TextBlock Text="Socios activos" FontSize="13" Opacity="0.7" />
                         </StackPanel>
@@ -52,7 +52,7 @@
                 <Border Grid.Column="1" Classes="KpiCard">
                     <StackPanel Spacing="8">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <fa:SymbolIcon Symbol="Key" FontSize="20"
+                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Permissions}" FontSize="20"
                                            Foreground="{DynamicResource SystemAccentColorLight1}" />
                             <TextBlock Text="Check-ins hoy" FontSize="13" Opacity="0.7" />
                         </StackPanel>
@@ -66,7 +66,7 @@
                 <Border Grid.Column="2" Classes="KpiCard">
                     <StackPanel Spacing="8">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <fa:SymbolIcon Symbol="Alert" FontSize="20"
+                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Alert}" FontSize="20"
                                            Foreground="#E85F00" />
                             <TextBlock Text="En mora" FontSize="13" Opacity="0.7" />
                         </StackPanel>
@@ -80,7 +80,7 @@
                 <Border Grid.Column="3" Classes="KpiCard" Margin="0">
                     <StackPanel Spacing="8">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <fa:SymbolIcon Symbol="Money" FontSize="20"
+                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Tag}" FontSize="20"
                                            Foreground="#2E7D32" />
                             <TextBlock Text="Recaudación" FontSize="13" Opacity="0.7" />
                         </StackPanel>
@@ -99,19 +99,19 @@
                     <WrapPanel Orientation="Horizontal" ItemWidth="160">
                         <Button Classes="NavButton" Margin="0,0,8,8" Padding="12,10">
                             <StackPanel Spacing="6">
-                                <fa:SymbolIcon Symbol="Add" FontSize="22" />
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Add}" FontSize="22" />
                                 <TextBlock Text="Nuevo socio" FontSize="12" />
                             </StackPanel>
                         </Button>
                         <Button Classes="NavButton" Margin="0,0,8,8" Padding="12,10">
                             <StackPanel Spacing="6">
-                                <fa:SymbolIcon Symbol="Key" FontSize="22" />
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Permissions}" FontSize="22" />
                                 <TextBlock Text="Check-in manual" FontSize="12" />
                             </StackPanel>
                         </Button>
                         <Button Classes="NavButton" Margin="0,0,8,8" Padding="12,10">
                             <StackPanel Spacing="6">
-                                <fa:SymbolIcon Symbol="Money" FontSize="22" />
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Tag}" FontSize="22" />
                                 <TextBlock Text="Registrar cobro" FontSize="12" />
                             </StackPanel>
                         </Button>

@@ -28,7 +28,7 @@
                 <Button DockPanel.Dock="Left"
                         Command="{Binding CancelCommand}"
                         Classes="NavButton" Margin="0,0,12,0">
-                    <fa:SymbolIcon Symbol="Back" FontSize="20" />
+                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Back}" FontSize="20" />
                 </Button>
                 <TextBlock Text="Nuevo socio" FontSize="18" FontWeight="SemiBold"
                            VerticalAlignment="Center" />
@@ -143,7 +143,7 @@
                                 Background="{DynamicResource SubtleFillColorSecondaryBrush}"
                                 ClipToBounds="True">
                             <Grid>
-                                <fa:SymbolIcon Symbol="Contact"
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Contact}"
                                                FontSize="64" Opacity="0.25"
                                                IsVisible="{Binding PhotoUrl,
                                                    Converter={x:Static ObjectConverters.IsNull}}"
@@ -157,7 +157,7 @@
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Center">
                             <StackPanel Orientation="Horizontal" Spacing="6">
-                                <fa:SymbolIcon Symbol="Camera" FontSize="15" />
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Camera}" FontSize="15" />
                                 <TextBlock Text="Capturar foto" FontSize="12" />
                             </StackPanel>
                         </Button>
@@ -168,20 +168,19 @@
                         <Border Width="100" Height="100" CornerRadius="50"
                                 Background="{DynamicResource SubtleFillColorSecondaryBrush}"
                                 HorizontalAlignment="Center">
-                            <fa:SymbolIcon Symbol="Fingerprint" FontSize="48" Opacity="0.3"
+                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.TouchPointer}" FontSize="48" Opacity="0.3"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center" />
                         </Border>
                         <fa:InfoBadge
                             IsVisible="{Binding HasFingerprint}"
-                            Value="✓"
                             HorizontalAlignment="Center" />
                         <Button Command="{Binding EnrollFingerprintCommand}"
                                 Classes="NavButton"
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Center">
                             <StackPanel Orientation="Horizontal" Spacing="6">
-                                <fa:SymbolIcon Symbol="Add" FontSize="15" />
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Add}" FontSize="15" />
                                 <TextBlock Text="Enrolar huella" FontSize="12" />
                             </StackPanel>
                         </Button>

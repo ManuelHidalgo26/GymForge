@@ -1,15 +1,16 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Platform;
 using Avalonia.Styling;
 using GymForge.Desktop.Views.Shell;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GymForge.Desktop;
 
-public class App : Application
+public class App : Avalonia.Application
 {
-    public static IServiceProvider Services { get; private set; } = null!;
+    public static IServiceProvider Services { get; internal set; } = null!;
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
@@ -43,7 +44,7 @@ public class App : Application
         // Determine effective theme: explicit override > OS preference
         bool isDark = RequestedThemeVariant == ThemeVariant.Dark ||
                       (RequestedThemeVariant == ThemeVariant.Default &&
-                       PlatformSettings?.GetColorValues().ThemeVariant == PlatformColorThemeVariant.Dark);
+                       PlatformSettings?.GetColorValues().ThemeVariant == PlatformThemeVariant.Dark);
         vm.IsDarkTheme = isDark;
     }
 }

@@ -36,13 +36,18 @@ public class GatekeeperTests
         return m;
     }
 
-    private static Membership MakeActiveMembership(Guid memberId)
+    private static Membership MakeActiveMembership(Guid memberId, DateOnly? start = null, DateOnly? end = null)
     {
         var ms = Membership.Create(
             Guid.NewGuid(), Guid.NewGuid(), memberId, Guid.NewGuid(),
-            DateOnly.FromDateTime(DateTime.Today),
-            DateOnly.FromDateTime(DateTime.Today.AddMonths(1)));
+            start ?? DateOnly.FromDateTime(DateTime.Today),
+            end ?? DateOnly.FromDateTime(DateTime.Today.AddMonths(1)));
         ms.Activate();
+
+        // El Gatekeeper desreferencia MembershipType (pasos 4 y 5). En producción viene
+        // cargado por el repositorio (Include); acá lo adjuntamos a la navegación de solo-lectura.
+        var type = MembershipType.Create(Guid.NewGuid(), "Full Access", MembershipBasis.OpenEnded, 30_000m);
+        typeof(Membership).GetProperty(nameof(Membership.MembershipType))!.SetValue(ms, type);
         return ms;
     }
 
@@ -205,12 +210,10 @@ public class GatekeeperTests
 
         var member = MakeActiveMember();
 
-        // Membership expired yesterday
-        var ms = Membership.Create(
-            Guid.NewGuid(), Guid.NewGuid(), member.Id, Guid.NewGuid(),
-            DateOnly.FromDateTime(DateTime.Today.AddMonths(-2)),
-            DateOnly.FromDateTime(DateTime.Today.AddDays(-1)));
-        ms.Activate();
+        // Membresía vencida ayer, relativo al reloj mockeado (no a DateTime.Today real)
+        var ms = MakeActiveMembership(member.Id,
+            start: DateOnly.FromDateTime(now).AddMonths(-2),
+            end: DateOnly.FromDateTime(now).AddDays(-1));
 
         _memberRepo.FindByTagSerialAsync(Arg.Any<string>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
             .Returns(member);

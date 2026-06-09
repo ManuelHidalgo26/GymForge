@@ -15,6 +15,8 @@ public class MemberRepositoryIntegrationTests : IAsyncLifetime
 {
     private GymForgeDbContext _db = null!;
     private MemberRepository _repo = null!;
+    private Guid _companyId;
+    private Site _site = null!;
 
     public async Task InitializeAsync()
     {
@@ -26,6 +28,17 @@ public class MemberRepositoryIntegrationTests : IAsyncLifetime
         await _db.Database.OpenConnectionAsync();
         await _db.Database.EnsureCreatedAsync();
         _repo = new MemberRepository(_db);
+
+        // Tenant raíz: Company + Site. Member.SiteId → Site y Site.CompanyId → Company son FK
+        // obligatorias, así que el padre debe existir antes de insertar cualquier Member.
+        var company = Company.Create("Test Gym", "30-12345678-9");
+        await _db.Companies.AddAsync(company);
+        var site = Site.Create(company.Id, "Test Site", "Av. Test 123");
+        await _db.Sites.AddAsync(site);
+        await _db.SaveChangesAsync();
+
+        _companyId = company.Id;
+        _site = site;
     }
 
     public async Task DisposeAsync()
@@ -37,15 +50,7 @@ public class MemberRepositoryIntegrationTests : IAsyncLifetime
     [Fact]
     public async Task AddAndRetrieveMember_RoundTrip()
     {
-        var companyId = Guid.NewGuid();
-        var siteId = Guid.NewGuid();
-
-        // Need a Site first (FK)
-        var site = Site.Create(companyId, "Test Site", "Av. Test 123");
-        await _db.Sites.AddAsync(site);
-        await _db.SaveChangesAsync();
-
-        var member = Member.Create(companyId, site.Id, "Ana", "García",
+        var member = Member.Create(_companyId, _site.Id, "Ana", "García",
             DocumentType.DNI, "30123456", Gender.Female);
         member.UpdateContact("ana@test.com", "+5491123456789");
 
@@ -63,21 +68,16 @@ public class MemberRepositoryIntegrationTests : IAsyncLifetime
     [Fact]
     public async Task FindByTagSerial_ReturnsCorrectMember()
     {
-        var companyId = Guid.NewGuid();
-        var site = Site.Create(companyId, "Site", "Addr");
-        await _db.Sites.AddAsync(site);
-        await _db.SaveChangesAsync();
-
-        var m1 = Member.Create(companyId, site.Id, "Carlos", "López", DocumentType.DNI, "22111222", Gender.Male);
+        var m1 = Member.Create(_companyId, _site.Id, "Carlos", "López", DocumentType.DNI, "22111222", Gender.Male);
         m1.EnrollTag("CARD-ABC123");
-        var m2 = Member.Create(companyId, site.Id, "María", "Torres", DocumentType.DNI, "33222333", Gender.Female);
+        var m2 = Member.Create(_companyId, _site.Id, "María", "Torres", DocumentType.DNI, "33222333", Gender.Female);
         m2.EnrollTag("CARD-XYZ999");
 
         await _repo.AddAsync(m1);
         await _repo.AddAsync(m2);
         await _repo.SaveChangesAsync();
 
-        var found = await _repo.FindByTagSerialAsync("CARD-ABC123", companyId);
+        var found = await _repo.FindByTagSerialAsync("CARD-ABC123", _companyId);
 
         found.Should().NotBeNull();
         found!.FirstName.Should().Be("Carlos");
@@ -86,22 +86,17 @@ public class MemberRepositoryIntegrationTests : IAsyncLifetime
     [Fact]
     public async Task SearchMembers_ByLastName_ReturnsMatches()
     {
-        var companyId = Guid.NewGuid();
-        var site = Site.Create(companyId, "Site", "Addr");
-        await _db.Sites.AddAsync(site);
-        await _db.SaveChangesAsync();
-
         var members = new[]
         {
-            Member.Create(companyId, site.Id, "Pedro", "Ramírez", DocumentType.DNI, "11000001", Gender.Male),
-            Member.Create(companyId, site.Id, "Laura", "Ramírez", DocumentType.DNI, "11000002", Gender.Female),
-            Member.Create(companyId, site.Id, "Jorge", "Fernández", DocumentType.DNI, "11000003", Gender.Male),
+            Member.Create(_companyId, _site.Id, "Pedro", "Ramírez", DocumentType.DNI, "11000001", Gender.Male),
+            Member.Create(_companyId, _site.Id, "Laura", "Ramírez", DocumentType.DNI, "11000002", Gender.Female),
+            Member.Create(_companyId, _site.Id, "Jorge", "Fernández", DocumentType.DNI, "11000003", Gender.Male),
         };
 
         foreach (var m in members) await _repo.AddAsync(m);
         await _repo.SaveChangesAsync();
 
-        var results = await _repo.SearchAsync("Ramírez", companyId, site.Id);
+        var results = await _repo.SearchAsync("Ramírez", _companyId, _site.Id);
 
         results.Should().HaveCount(2);
         results.Should().OnlyContain(m => m.LastName == "Ramírez");
@@ -110,28 +105,23 @@ public class MemberRepositoryIntegrationTests : IAsyncLifetime
     [Fact]
     public async Task GetPaged_WithStatusFilter_ReturnsCorrectSubset()
     {
-        var companyId = Guid.NewGuid();
-        var site = Site.Create(companyId, "Site", "Addr");
-        await _db.Sites.AddAsync(site);
-        await _db.SaveChangesAsync();
-
         for (int i = 0; i < 5; i++)
         {
-            var m = Member.Create(companyId, site.Id, $"Activo{i}", "Test",
+            var m = Member.Create(_companyId, _site.Id, $"Activo{i}", "Test",
                 DocumentType.DNI, $"200000{i:D2}", Gender.Male);
             m.Activate(DateOnly.FromDateTime(DateTime.Today));
             await _repo.AddAsync(m);
         }
         for (int i = 0; i < 3; i++)
         {
-            var m = Member.Create(companyId, site.Id, $"Prospect{i}", "Test",
+            var m = Member.Create(_companyId, _site.Id, $"Prospect{i}", "Test",
                 DocumentType.DNI, $"300000{i:D2}", Gender.Female);
             await _repo.AddAsync(m);
         }
         await _repo.SaveChangesAsync();
 
-        var activos = await _repo.GetPagedAsync(companyId, site.Id, 1, 50, MemberStatus.Active);
-        var prospectos = await _repo.GetPagedAsync(companyId, site.Id, 1, 50, MemberStatus.Prospect);
+        var activos = await _repo.GetPagedAsync(_companyId, _site.Id, 1, 50, MemberStatus.Active);
+        var prospectos = await _repo.GetPagedAsync(_companyId, _site.Id, 1, 50, MemberStatus.Prospect);
 
         activos.Should().HaveCount(5);
         prospectos.Should().HaveCount(3);

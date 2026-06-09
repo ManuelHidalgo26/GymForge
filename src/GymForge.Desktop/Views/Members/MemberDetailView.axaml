@@ -37,7 +37,7 @@
                         Command="{Binding GoBackCommand}"
                         Classes="NavButton" Margin="0,0,12,0"
                         ToolTip.Tip="Volver a la lista">
-                    <fa:SymbolIcon Symbol="Back" FontSize="20" />
+                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Back}" FontSize="20" />
                 </Button>
 
                 <!-- Avatar -->
@@ -239,13 +239,13 @@
                                                 ToolTip.Tip="Congelar"
                                                 CommandParameter="{Binding}"
                                                 Command="{Binding $parent[UserControl].((vm:MemberDetailViewModel)DataContext).FreezeMembershipCommand}">
-                                            <fa:SymbolIcon Symbol="Pause" FontSize="14" />
+                                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Pause}" FontSize="14" />
                                         </Button>
                                         <Button Classes="IconButton"
                                                 ToolTip.Tip="Cancelar"
                                                 CommandParameter="{Binding}"
                                                 Command="{Binding $parent[UserControl].((vm:MemberDetailViewModel)DataContext).CancelMembershipCommand}">
-                                            <fa:SymbolIcon Symbol="Delete" FontSize="14" />
+                                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Delete}" FontSize="14" />
                                         </Button>
                                     </StackPanel>
                                 </DataTemplate>
@@ -262,11 +262,11 @@
             </Grid>
 
             <!-- TAB: Cobros — delega a ChargesView -->
-            <vCharges:ChargesView
+            <ContentControl
                 IsVisible="{Binding ActiveTab,
                     Converter={x:Static ObjectConverters.Equal},
                     ConverterParameter={x:Static vm:MemberDetailTab.Charges}}"
-                DataContext="{Binding ChargesVm}" />
+                Content="{Binding ChargesVm}" />
 
             <!-- TAB: Accesos -->
             <DataGrid
@@ -304,7 +304,7 @@
                   HorizontalAlignment="Center"
                   VerticalAlignment="Center">
                 <StackPanel Spacing="12" HorizontalAlignment="Center">
-                    <fa:SymbolIcon Symbol="Globe" FontSize="48" Opacity="0.25"
+                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Globe}" FontSize="48" Opacity="0.25"
                                    HorizontalAlignment="Center" />
                     <TextBlock Text="Módulo Rutinas" FontSize="16" FontWeight="SemiBold"
                                HorizontalAlignment="Center" />

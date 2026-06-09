@@ -1,5 +1,6 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:sty="using:FluentAvalonia.Styling"
              xmlns:vmDash="using:GymForge.Desktop.ViewModels.Dashboard"
              xmlns:vmMembers="using:GymForge.Desktop.ViewModels.Members"
              xmlns:vmCheckin="using:GymForge.Desktop.ViewModels.Checkin"
@@ -15,8 +16,7 @@
 
     <Application.Styles>
         <FluentTheme />
-        <StyleInclude Source="avares://FluentAvalonia/Styling/StylesV2/FluentAvaloniaStyles.axaml" />
-        <StyleInclude Source="avares://Avalonia.Fonts.Inter/Fonts.axaml" />
+        <sty:FluentAvaloniaTheme />
         <StyleInclude Source="avares://GymForge.Desktop/Assets/Styles/AppStyles.axaml" />
     </Application.Styles>
 

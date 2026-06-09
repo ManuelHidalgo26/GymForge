@@ -66,7 +66,7 @@
                                     Converter={StaticResource NavSectionActiveConverter},
                                     ConverterParameter=Dashboard}">
                             <StackPanel Orientation="Horizontal" Spacing="12">
-                                <fa:SymbolIcon Symbol="Home" FontSize="18" />
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Home}" FontSize="18" />
                                 <TextBlock Text="Dashboard" IsVisible="{Binding !IsSidebarCollapsed}" />
                             </StackPanel>
                         </Button>
@@ -78,7 +78,7 @@
                                     Converter={StaticResource NavSectionActiveConverter},
                                     ConverterParameter=Members}">
                             <StackPanel Orientation="Horizontal" Spacing="12">
-                                <fa:SymbolIcon Symbol="People" FontSize="18" />
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.People}" FontSize="18" />
                                 <TextBlock Text="Socios" IsVisible="{Binding !IsSidebarCollapsed}" />
                             </StackPanel>
                         </Button>
@@ -90,7 +90,7 @@
                                     Converter={StaticResource NavSectionActiveConverter},
                                     ConverterParameter=Access}">
                             <StackPanel Orientation="Horizontal" Spacing="12">
-                                <fa:SymbolIcon Symbol="Key" FontSize="18" />
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Permissions}" FontSize="18" />
                                 <TextBlock Text="Accesos" IsVisible="{Binding !IsSidebarCollapsed}" />
                             </StackPanel>
                         </Button>
@@ -102,7 +102,7 @@
                                     Converter={StaticResource NavSectionActiveConverter},
                                     ConverterParameter=Cash}">
                             <StackPanel Orientation="Horizontal" Spacing="12">
-                                <fa:SymbolIcon Symbol="Money" FontSize="18" />
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Tag}" FontSize="18" />
                                 <TextBlock Text="Caja" IsVisible="{Binding !IsSidebarCollapsed}" />
                             </StackPanel>
                         </Button>
@@ -114,7 +114,7 @@
                                     Converter={StaticResource NavSectionActiveConverter},
                                     ConverterParameter=Classes}">
                             <StackPanel Orientation="Horizontal" Spacing="12">
-                                <fa:SymbolIcon Symbol="Calendar" FontSize="18" />
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Calendar}" FontSize="18" />
                                 <TextBlock Text="Clases" IsVisible="{Binding !IsSidebarCollapsed}" />
                             </StackPanel>
                         </Button>
@@ -126,7 +126,7 @@
                                     Converter={StaticResource NavSectionActiveConverter},
                                     ConverterParameter=Routines}">
                             <StackPanel Orientation="Horizontal" Spacing="12">
-                                <fa:SymbolIcon Symbol="Globe" FontSize="18" />
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Globe}" FontSize="18" />
                                 <TextBlock Text="Rutinas" IsVisible="{Binding !IsSidebarCollapsed}" />
                             </StackPanel>
                         </Button>
@@ -138,7 +138,7 @@
                                     Converter={StaticResource NavSectionActiveConverter},
                                     ConverterParameter=Products}">
                             <StackPanel Orientation="Horizontal" Spacing="12">
-                                <fa:SymbolIcon Symbol="Tag" FontSize="18" />
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Tag}" FontSize="18" />
                                 <TextBlock Text="Productos" IsVisible="{Binding !IsSidebarCollapsed}" />
                             </StackPanel>
                         </Button>
@@ -150,7 +150,7 @@
                                     Converter={StaticResource NavSectionActiveConverter},
                                     ConverterParameter=Reports}">
                             <StackPanel Orientation="Horizontal" Spacing="12">
-                                <fa:SymbolIcon Symbol="Document" FontSize="18" />
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Document}" FontSize="18" />
                                 <TextBlock Text="Reportes" IsVisible="{Binding !IsSidebarCollapsed}" />
                             </StackPanel>
                         </Button>
@@ -168,7 +168,7 @@
                                 Converter={StaticResource NavSectionActiveConverter},
                                 ConverterParameter=Settings}">
                         <StackPanel Orientation="Horizontal" Spacing="12">
-                            <fa:SymbolIcon Symbol="Settings" FontSize="18" />
+                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Settings}" FontSize="18" />
                             <TextBlock Text="Configuración" IsVisible="{Binding !IsSidebarCollapsed}" />
                         </StackPanel>
                     </Button>
@@ -179,7 +179,7 @@
                             IsVisible="{Binding !IsSidebarCollapsed}"
                             ToolTip.Tip="Cambiar tema claro/oscuro">
                         <StackPanel Orientation="Horizontal" Spacing="12">
-                            <fa:SymbolIcon Symbol="DarkTheme" FontSize="18" />
+                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.DarkTheme}" FontSize="18" />
                             <TextBlock Text="{Binding IsDarkTheme, StringFormat={}{0:Oscuro|Claro}}"
                                        IsVisible="{Binding !IsSidebarCollapsed}" />
                         </StackPanel>
@@ -213,7 +213,7 @@
                             Classes="NavButton"
                             Margin="0,0,4,0"
                             ToolTip.Tip="Volver (Alt+←)">
-                        <fa:SymbolIcon Symbol="Back" FontSize="18" />
+                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Back}" FontSize="18" />
                     </Button>
 
                     <!-- Global search Ctrl+K -->
@@ -221,7 +221,7 @@
                             Command="{Binding OpenCommandPaletteCommand}"
                             Classes="SearchButton">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <fa:SymbolIcon Symbol="Find" FontSize="16" Opacity="0.5" />
+                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Find}" FontSize="16" Opacity="0.5" />
                             <TextBlock Text="Buscar... (Ctrl+K)" Opacity="0.5" FontSize="13" />
                         </StackPanel>
                     </Button>
@@ -229,7 +229,7 @@
                     <!-- Right side: notifications + staff avatar -->
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
                         <Button Classes="IconButton">
-                            <fa:SymbolIcon Symbol="Alert" FontSize="18" />
+                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Alert}" FontSize="18" />
                         </Button>
                         <Border Width="32" Height="32" CornerRadius="16"
                                 Background="{DynamicResource SystemAccentColor}">

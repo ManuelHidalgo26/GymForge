@@ -16,7 +16,7 @@ public static class InfrastructureServiceExtensions
     {
         services.AddDbContext<GymForgeDbContext>(opts =>
             opts.UseSqlite(connectionString,
-                sql => sql.MigrationsAssembly(typeof(GymForgeDbContext).Assembly.FullName)));
+                sql => sql.MigrationsAssembly(typeof(GymForgeDbContext).Assembly.GetName().Name)));
 
         services.AddScoped<IMemberRepository, MemberRepository>();
         services.AddScoped<IMembershipRepository, MembershipRepository>();
@@ -38,7 +38,8 @@ public static class InfrastructureServiceExtensions
         var db = scope.ServiceProvider.GetRequiredService<GymForgeDbContext>();
         var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
 
-        await db.Database.MigrateAsync();
+        // Sprint 2: reemplazar con MigrateAsync() cuando la migración EF sea regenerada con dotnet ef
+        await db.Database.EnsureCreatedAsync();
         await seeder.SeedAsync();
     }
 }

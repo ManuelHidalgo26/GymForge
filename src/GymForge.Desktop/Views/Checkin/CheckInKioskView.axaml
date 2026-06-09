@@ -11,22 +11,15 @@
 
         <!-- Center card -->
         <Border Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center"
-                Width="420" CornerRadius="20" Padding="40">
-
-            <Border.Background>
-                <SolidColorBrush Color="#1E1E22" />
-            </Border.Background>
-            <Border.BoxShadow>
-                <BoxShadows>
-                    <BoxShadow OffsetX="0" OffsetY="8" Blur="40" Color="#88000000" />
-                </BoxShadows>
-            </Border.BoxShadow>
+                Width="420" CornerRadius="20" Padding="40"
+                Background="#1E1E22"
+                BoxShadow="0 8 40 0 #88000000">
 
             <StackPanel Spacing="24" HorizontalAlignment="Center">
 
                 <!-- IDLE state -->
                 <StackPanel IsVisible="{Binding IsIdle}" Spacing="20" HorizontalAlignment="Center">
-                    <fa:SymbolIcon Symbol="Fingerprint" FontSize="80" Opacity="0.3" Foreground="White" />
+                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.TouchPointer}" FontSize="80" Opacity="0.3" Foreground="White" />
                     <TextBlock Text="Acercá tu tarjeta o ingresá tu DNI"
                                FontSize="18" Foreground="#AAAAAA"
                                TextAlignment="Center" TextWrapping="Wrap" />
@@ -68,7 +61,7 @@
                             <Image Source="{Binding MemberPhotoUrl}"
                                    IsVisible="{Binding MemberPhotoUrl, Converter={x:Static ObjectConverters.IsNotNull}}"
                                    Stretch="UniformToFill" />
-                            <fa:SymbolIcon Symbol="Person" FontSize="80" Opacity="0.4" Foreground="White"
+                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Contact}" FontSize="80" Opacity="0.4" Foreground="White"
                                            IsVisible="{Binding MemberPhotoUrl, Converter={x:Static ObjectConverters.IsNull}}" />
                         </Panel>
                     </Border>
@@ -82,7 +75,7 @@
                     <Border CornerRadius="12" Padding="20,10" HorizontalAlignment="Center"
                             Background="#22C55E">
                         <StackPanel Orientation="Horizontal" Spacing="10">
-                            <fa:SymbolIcon Symbol="Checkmark" FontSize="28" Foreground="White" />
+                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Checkmark}" FontSize="28" Foreground="White" />
                             <TextBlock Text="ACCESO PERMITIDO" FontSize="22" FontWeight="Bold"
                                        Foreground="White" VerticalAlignment="Center" />
                         </StackPanel>
@@ -113,7 +106,7 @@
                 <StackPanel IsVisible="{Binding IsDenied}" Spacing="16" HorizontalAlignment="Center">
                     <Border Width="100" Height="100" CornerRadius="50" HorizontalAlignment="Center"
                             Background="#EF4444">
-                        <fa:SymbolIcon Symbol="Dismiss" FontSize="56" Foreground="White"
+                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Dismiss}" FontSize="56" Foreground="White"
                                        HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
 
@@ -143,7 +136,7 @@
                 <Button Grid.Column="1" Classes="subtle" Command="{Binding ResetCommand}"
                         Foreground="#555">
                     <StackPanel Orientation="Horizontal" Spacing="6">
-                        <fa:SymbolIcon Symbol="Refresh" FontSize="14" />
+                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Refresh}" FontSize="14" />
                         <TextBlock Text="Reiniciar" FontSize="12" />
                     </StackPanel>
                 </Button>

@@ -105,16 +105,21 @@ dotnet ef database update --project src/GymForge.Infrastructure --startup-projec
 - [x] Migración EF real con `dotnet ef` (carpeta `Migrations/`) + arranque con `MigrateAsync()`
 - [x] Tests de handlers (CreateMember, ProcessPayment) + aislamiento multi-tenant — 29/29 verdes
 
-### 🔲 Sprint 2 — próximo
-- [ ] Caja: apertura/cierre/arqueo, CashMovement
+### 🔄 Sprint 2 — en curso
+- [x] Caja: apertura/cierre/arqueo + CashMovement (handlers + UI CashView)
+- [x] Sesión de cajero: login por PIN (PBKDF2) + ShiftId en SessionContext
+- [x] Multi-sede: selector de sede en topbar + SessionContext (tenant real)
 - [ ] POS: venta productos, scanner HID
 - [ ] Facturación AFIP WSFE (SOAP) — FiscalBroker completo
 - [ ] WhatsApp via Twilio/Wassenger (notificaciones cobros)
 - [ ] Dunning automático (job nocturno 5 etapas)
 - [ ] Webcam (foto socio) + biometría ZKTeco real (BioBroker /enroll)
-- [ ] Multi-sede: selector de site en topbar
-- [ ] Sesión de cajero: login staff + ShiftId resuelto
 - [ ] UI restante del mockup: Planes, Clases, Rutinas, Reportes, Config
+
+> Nota: el login de cajero usa el PIN del admin sembrado (1234). Si tu
+> `%LOCALAPPDATA%\GymForge\gymforge.db` viene de una versión anterior, el
+> arranque la adopta (baseline) pero conserva el PIN viejo; borrala para
+> regenerarla con el hash real y las 2 sedes de ejemplo.
 
 ---
 

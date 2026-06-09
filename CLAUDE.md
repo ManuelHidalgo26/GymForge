@@ -99,6 +99,12 @@ dotnet ef database update --project src/GymForge.Infrastructure --startup-projec
 
 ### ✅ Sprint 1 — COMPLETADO
 
+### ✅ Fundamentos (post-Sprint 1)
+- [x] Build verde: tests compilan (`<Using Include="Xunit"/>`) y sidecars con `Serilog.Sinks.Console`
+- [x] CI en GitHub Actions (`.github/workflows/ci.yml`): build + test en windows-latest
+- [x] Migración EF real con `dotnet ef` (carpeta `Migrations/`) + arranque con `MigrateAsync()`
+- [x] Tests de handlers (CreateMember, ProcessPayment) + aislamiento multi-tenant — 29/29 verdes
+
 ### 🔲 Sprint 2 — próximo
 - [ ] Caja: apertura/cierre/arqueo, CashMovement
 - [ ] POS: venta productos, scanner HID
@@ -106,9 +112,9 @@ dotnet ef database update --project src/GymForge.Infrastructure --startup-projec
 - [ ] WhatsApp via Twilio/Wassenger (notificaciones cobros)
 - [ ] Dunning automático (job nocturno 5 etapas)
 - [ ] Webcam (foto socio) + biometría ZKTeco real (BioBroker /enroll)
-- [ ] Regenerar migración EF con dotnet ef (ModelSnapshot completo)
 - [ ] Multi-sede: selector de site en topbar
 - [ ] Sesión de cajero: login staff + ShiftId resuelto
+- [ ] UI restante del mockup: Planes, Clases, Rutinas, Reportes, Config
 
 ---
 

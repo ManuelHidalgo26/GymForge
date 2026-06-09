@@ -3,6 +3,8 @@ using Avalonia.Styling;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GymForge.Application.DTOs;
+using GymForge.Desktop.Services;
+using GymForge.Desktop.ViewModels.Cash;
 using GymForge.Desktop.ViewModels.Charges;
 using GymForge.Desktop.ViewModels.Checkin;
 using GymForge.Desktop.ViewModels.Dashboard;
@@ -28,6 +30,9 @@ public enum NavSection
 public partial class MainWindowViewModel : ObservableObject
 {
     private readonly IServiceProvider _sp;
+    private readonly SessionContext _session;
+
+    public SessionContext Session => _session;
 
     // Singleton cache per top-level section
     private readonly Dictionary<NavSection, object> _vmCache = new();
@@ -38,12 +43,31 @@ public partial class MainWindowViewModel : ObservableObject
     public MainWindowViewModel(IServiceProvider sp)
     {
         _sp = sp;
+        _session = sp.GetRequiredService<SessionContext>();
+        GymName = _session.GymName;
+        CurrentSiteName = _session.CurrentSite?.Name ?? "—";
+        _session.PropertyChanged += OnSessionChanged;
+
         Navigate(NavSection.Dashboard);
 
         // Wire MembersListViewModel events
         var membersList = _sp.GetRequiredService<MembersListViewModel>();
         membersList.OpenDetailRequested  += OpenMemberDetail;
         membersList.CreateMemberRequested += OpenCreateMember;
+    }
+
+    private void OnSessionChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(SessionContext.GymName))
+            GymName = _session.GymName;
+
+        if (e.PropertyName == nameof(SessionContext.CurrentSite))
+        {
+            CurrentSiteName = _session.CurrentSite?.Name ?? "—";
+            // Cambiar de sede invalida las vistas cacheadas (datos por sede).
+            _vmCache.Clear();
+            Navigate(CurrentSection);
+        }
     }
 
     [ObservableProperty]
@@ -90,8 +114,8 @@ public partial class MainWindowViewModel : ObservableObject
             // CheckIn resets on every navigation (clears countdown/state)
             NavSection.Access    => _sp.GetRequiredService<CheckInKioskViewModel>(),
 
-            // Cobros: vista de charges filtrada por site (no por member)
-            NavSection.Cash      => Cached(section, () => _sp.GetRequiredService<ChargesViewModel>()),
+            // Caja registradora: turno, movimientos y arqueo
+            NavSection.Cash      => Cached(section, () => _sp.GetRequiredService<CashViewModel>()),
 
             NavSection.Classes   => Cached(section, () => new PlaceholderViewModel(
                                         "Módulo Clases", "Horarios, turnos y reservas — Sprint 2.", "Calendar")),

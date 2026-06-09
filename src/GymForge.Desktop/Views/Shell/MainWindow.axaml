@@ -4,6 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:fa="using:FluentAvalonia.UI.Controls"
         xmlns:vm="using:GymForge.Desktop.Views.Shell"
+        xmlns:svc="using:GymForge.Desktop.Services"
         xmlns:conv="using:GymForge.Desktop.Converters"
         mc:Ignorable="d"
         x:Class="GymForge.Desktop.Views.Shell.MainWindow"
@@ -226,8 +227,27 @@
                         </StackPanel>
                     </Button>
 
-                    <!-- Right side: notifications + staff avatar -->
+                    <!-- Site selector -->
+                    <ComboBox DockPanel.Dock="Left" Margin="12,0,0,0" MinWidth="170"
+                              VerticalAlignment="Center"
+                              ItemsSource="{Binding Session.Sites}"
+                              SelectedItem="{Binding Session.CurrentSite}"
+                              ToolTip.Tip="Sede activa">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="svc:SiteOption">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Home}" FontSize="14" />
+                                    <TextBlock Text="{Binding Name}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+
+                    <!-- Right side: cashier + notifications + staff avatar -->
                     <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="{Binding Session.CashierName}"
+                                   VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold"
+                                   IsVisible="{Binding Session.IsSignedIn}" />
                         <Button Classes="IconButton">
                             <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Alert}" FontSize="18" />
                         </Button>

@@ -1,9 +1,11 @@
 using GymForge.Application;
 using GymForge.Application.UseCases.Access;
+using GymForge.Desktop.ViewModels.Cash;
 using GymForge.Desktop.ViewModels.Charges;
 using GymForge.Desktop.ViewModels.Checkin;
 using GymForge.Desktop.ViewModels.Dashboard;
 using GymForge.Desktop.ViewModels.Members;
+using GymForge.Desktop.Services;
 using GymForge.Desktop.Views.Shell;
 using GymForge.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,6 +34,10 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<GatekeeperConfig>();
         services.AddScoped<ValidateSwipeUseCase>();
 
+        // ── Session ───────────────────────────────────────────────────────────
+        // Singleton: tenant + sede activa + cajero + turno de caja en curso
+        services.AddSingleton<SessionContext>();
+
         // ── Shell ─────────────────────────────────────────────────────────────
         // Singleton: owns the navigation router + VM cache
         services.AddSingleton<MainWindowViewModel>(sp => new MainWindowViewModel(sp));
@@ -54,6 +60,9 @@ public static class ServiceCollectionExtensions
         // Transient: the router caches the site-wide instance via _vmCache;
         // MemberDetailViewModel also gets a fresh one (per-member filter).
         services.AddTransient<ChargesViewModel>();
+
+        // ── Cash register ─────────────────────────────────────────────────────
+        services.AddTransient<CashViewModel>();
 
         return services;
     }

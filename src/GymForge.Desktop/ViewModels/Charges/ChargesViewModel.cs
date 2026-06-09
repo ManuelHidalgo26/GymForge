@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GymForge.Application.DTOs;
 using GymForge.Application.Interfaces;
+using GymForge.Desktop.Services;
 using GymForge.Domain.Enums;
 using MediatR;
 using System.Collections.ObjectModel;
@@ -17,12 +18,10 @@ public partial class ChargesViewModel : ObservableObject
 {
     private readonly IChargeRepository _chargeRepo;
     private readonly IMediator _mediator;
+    private readonly SessionContext _session;
 
     // Injected at construction; null = mostrar todos los cobros del site
     private Guid? _filterMemberId;
-
-    private static readonly Guid DefaultCompanyId = new("11111111-0000-0000-0000-000000000001");
-    private static readonly Guid DefaultSiteId    = new("22222222-0000-0000-0000-000000000001");
 
     [ObservableProperty] private ObservableCollection<ChargeRowVm> _charges = [];
     [ObservableProperty] private ChargeRowVm? _selectedCharge;
@@ -35,10 +34,11 @@ public partial class ChargesViewModel : ObservableObject
     public IReadOnlyList<ChargeStatusFilter> StatusFilters { get; } =
         Enum.GetValues<ChargeStatusFilter>().ToList();
 
-    public ChargesViewModel(IChargeRepository chargeRepo, IMediator mediator)
+    public ChargesViewModel(IChargeRepository chargeRepo, IMediator mediator, SessionContext session)
     {
         _chargeRepo = chargeRepo;
         _mediator   = mediator;
+        _session    = session;
     }
 
     /// <summary>Limita la vista a los cobros de un socio concreto.</summary>
@@ -57,15 +57,15 @@ public partial class ChargesViewModel : ObservableObject
             if (_filterMemberId.HasValue)
             {
                 raw = StatusFilter == ChargeStatusFilter.Overdue
-                    ? (await _chargeRepo.GetOverdueAsync(DefaultCompanyId, DateOnly.FromDateTime(DateTime.Today), ct))
+                    ? (await _chargeRepo.GetOverdueAsync(_session.CompanyId, DateOnly.FromDateTime(DateTime.Today), ct))
                         .Where(c => c.MemberId == _filterMemberId).ToList()
                     : await _chargeRepo.GetPendingAsync(_filterMemberId.Value, ct);
             }
             else
             {
                 raw = StatusFilter == ChargeStatusFilter.Overdue
-                    ? await _chargeRepo.GetOverdueAsync(DefaultCompanyId, DateOnly.FromDateTime(DateTime.Today), ct)
-                    : await _chargeRepo.GetOverdueAsync(DefaultCompanyId, DateOnly.MaxValue, ct);
+                    ? await _chargeRepo.GetOverdueAsync(_session.CompanyId, DateOnly.FromDateTime(DateTime.Today), ct)
+                    : await _chargeRepo.GetOverdueAsync(_session.CompanyId, DateOnly.MaxValue, ct);
             }
 
             Charges = new ObservableCollection<ChargeRowVm>(
@@ -85,7 +85,7 @@ public partial class ChargesViewModel : ObservableObject
     [RelayCommand]
     private void OpenPaymentModal(ChargeRowVm? row = null)
     {
-        var modal = new PaymentModalViewModel(_mediator, DefaultCompanyId, DefaultSiteId);
+        var modal = new PaymentModalViewModel(_mediator, _session.CompanyId, _session.SiteId);
 
         if (row is not null)
             modal.PreSelectCharge(row.Dto);

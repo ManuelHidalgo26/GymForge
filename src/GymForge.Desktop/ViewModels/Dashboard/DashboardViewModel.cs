@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GymForge.Application.Interfaces;
+using GymForge.Desktop.Services;
 using GymForge.Domain.Enums;
 
 namespace GymForge.Desktop.ViewModels.Dashboard;
@@ -8,6 +9,7 @@ namespace GymForge.Desktop.ViewModels.Dashboard;
 public partial class DashboardViewModel : ObservableObject
 {
     private readonly IMemberRepository _members;
+    private readonly SessionContext _session;
 
     [ObservableProperty] private int _totalActiveMembers;
     [ObservableProperty] private int _checkInsToday;
@@ -15,13 +17,10 @@ public partial class DashboardViewModel : ObservableObject
     [ObservableProperty] private decimal _revenueThisMonth;
     [ObservableProperty] private bool _isLoading;
 
-    // Sprint 1: company/site resolved from settings — stub with well-known seed GUID
-    private static readonly Guid DefaultCompanyId = new("11111111-0000-0000-0000-000000000001");
-    private static readonly Guid DefaultSiteId    = new("22222222-0000-0000-0000-000000000001");
-
-    public DashboardViewModel(IMemberRepository members)
+    public DashboardViewModel(IMemberRepository members, SessionContext session)
     {
         _members = members;
+        _session = session;
     }
 
     [RelayCommand]
@@ -30,11 +29,11 @@ public partial class DashboardViewModel : ObservableObject
         IsLoading = true;
         try
         {
-            // Sprint 1: real active count from DB; other KPIs wired in Sprint 2
+            // KPIs reales de la sede activa; check-ins/recaudación se cablean más adelante.
             TotalActiveMembers = await _members.CountAsync(
-                DefaultCompanyId, DefaultSiteId, MemberStatus.Active);
+                _session.CompanyId, _session.SiteId, MemberStatus.Active);
             OverdueMembers = await _members.CountAsync(
-                DefaultCompanyId, DefaultSiteId, MemberStatus.Overdue);
+                _session.CompanyId, _session.SiteId, MemberStatus.Overdue);
             CheckInsToday    = 0;   // AccessLog aggregation — Sprint 2
             RevenueThisMonth = 0m;  // Payment aggregation — Sprint 2
         }

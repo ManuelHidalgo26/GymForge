@@ -24,6 +24,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IAccessLogRepository, AccessLogRepository>();
         services.AddScoped<IStaffRepository, StaffRepository>();
         services.AddScoped<IShiftRepository, ShiftRepository>();
+        services.AddScoped<ISiteRepository, SiteRepository>();
 
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<IPinHasher, Pbkdf2PinHasher>();

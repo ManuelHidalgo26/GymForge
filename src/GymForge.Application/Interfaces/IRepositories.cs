@@ -43,6 +43,12 @@ public interface IStaffRepository
     Task<IReadOnlyList<Staff>> GetActiveByCompanyAsync(Guid companyId, CancellationToken ct = default);
 }
 
+public interface ISiteRepository
+{
+    Task<IReadOnlyList<Company>> GetCompaniesAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<Site>> GetByCompanyAsync(Guid companyId, CancellationToken ct = default);
+}
+
 public interface IShiftRepository
 {
     Task<Shift?> GetByIdAsync(Guid id, CancellationToken ct = default);

@@ -7,6 +7,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    // EF Core loguea cada comando SQL en Information: lo bajamos a Warning.
+    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", Serilog.Events.LogEventLevel.Warning)
     .WriteTo.Console()
     .WriteTo.File("logs/gymforge-.log", rollingInterval: RollingInterval.Day)
     .CreateLogger();
@@ -21,9 +24,11 @@ try
 
     // Migrate + seed on startup
     await App.Services.InitialiseDatabaseAsync();
+    Log.Information("Database migrated and seeded");
 
     // Resolver tenant + sedes reales (reemplaza los GUID hardcodeados)
     await App.Services.GetRequiredService<SessionContext>().InitializeAsync();
+    Log.Information("Session initialised — UI starting");
 
     BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
 }

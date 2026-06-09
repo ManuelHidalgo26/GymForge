@@ -9,6 +9,7 @@ using GymForge.Desktop.Services;
 using GymForge.Desktop.Views.Shell;
 using GymForge.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 using System.IO;
 
 namespace GymForge.Desktop;
@@ -26,7 +27,8 @@ public static class ServiceCollectionExtensions
             $"Data Source={Path.Combine(dbDir, "gymforge.db")};Mode=ReadWriteCreate;Cache=Shared";
 
         // Logging + Application + Infrastructure
-        services.AddLogging();
+        // Conecta Microsoft.Extensions.Logging al Serilog estático (seeder, repos, etc.)
+        services.AddLogging(builder => builder.AddSerilog(dispose: false));
         services.AddApplication();
         services.AddInfrastructure(connectionString);
 

@@ -38,8 +38,7 @@ public static class InfrastructureServiceExtensions
         var db = scope.ServiceProvider.GetRequiredService<GymForgeDbContext>();
         var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
 
-        // Sprint 2: reemplazar con MigrateAsync() cuando la migración EF sea regenerada con dotnet ef
-        await db.Database.EnsureCreatedAsync();
+        await db.Database.MigrateAsync();
         await seeder.SeedAsync();
     }
 }

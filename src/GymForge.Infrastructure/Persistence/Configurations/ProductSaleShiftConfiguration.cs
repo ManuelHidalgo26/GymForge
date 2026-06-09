@@ -93,6 +93,9 @@ public class ShiftConfiguration : IEntityTypeConfiguration<Shift>
         builder.Property(s => s.Notes).HasMaxLength(1000);
 
         builder.Ignore(s => s.Difference);
+        builder.Ignore(s => s.CashIn);
+        builder.Ignore(s => s.CashOut);
+        builder.Ignore(s => s.ExpectedCash);
 
         builder.HasMany(s => s.Movements)
             .WithOne(m => m.Shift)

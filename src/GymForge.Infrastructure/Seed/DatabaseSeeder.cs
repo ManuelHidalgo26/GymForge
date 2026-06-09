@@ -1,3 +1,4 @@
+using GymForge.Application.Interfaces;
 using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
 using GymForge.Infrastructure.Persistence;
@@ -10,11 +11,13 @@ public class DatabaseSeeder
 {
     private readonly GymForgeDbContext _db;
     private readonly ILogger<DatabaseSeeder> _logger;
+    private readonly IPinHasher _pinHasher;
 
-    public DatabaseSeeder(GymForgeDbContext db, ILogger<DatabaseSeeder> logger)
+    public DatabaseSeeder(GymForgeDbContext db, ILogger<DatabaseSeeder> logger, IPinHasher pinHasher)
     {
         _db = db;
         _logger = logger;
+        _pinHasher = pinHasher;
     }
 
     public async Task SeedAsync(CancellationToken ct = default)
@@ -44,15 +47,16 @@ public class DatabaseSeeder
         await _db.Companies.AddAsync(company, ct);
 
         var site = Site.Create(company.Id, "Sede Central", "Av. Corrientes 1234, CABA");
-        await _db.Sites.AddAsync(site, ct);
+        var siteNorte = Site.Create(company.Id, "Sede Norte", "Av. Cabildo 2500, CABA");
+        await _db.Sites.AddRangeAsync([site, siteNorte], ct);
 
-        // Admin staff — PIN: 1234 (PBKDF2 hash placeholder for seed)
+        // Admin staff — PIN: 1234 (hash PBKDF2 real, verificable en el login)
         var admin = Staff.Create(
             company.Id,
             "Admin",
             "GymForge",
             StaffRole.Admin,
-            "$2b$12$SEED_PIN_HASH_PLACEHOLDER");
+            _pinHasher.Hash("1234"));
         await _db.Staff.AddAsync(admin, ct);
 
         // Membership types

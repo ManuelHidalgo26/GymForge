@@ -21,6 +21,17 @@ public class Shift : BaseEntity
 
     public ICollection<CashMovement> Movements { get; private set; } = [];
 
+    // Cálculos de arqueo (requieren Movements cargados; ignorados en el mapeo EF).
+    public decimal CashIn => Movements
+        .Where(m => m.Type is CashMovementType.Income or CashMovementType.Deposit)
+        .Sum(m => m.Amount);
+
+    public decimal CashOut => Movements
+        .Where(m => m.Type is CashMovementType.Expense or CashMovementType.Withdrawal)
+        .Sum(m => m.Amount);
+
+    public decimal ExpectedCash => OpeningCash + CashIn - CashOut;
+
     private Shift() { }
 
     public static Shift Open(Guid companyId, Guid siteId, Guid cashierId, decimal openingCash, Guid? registerId = null) =>

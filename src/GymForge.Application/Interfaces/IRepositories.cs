@@ -37,6 +37,21 @@ public interface IChargeRepository : IRepository<Charge>
     Task<IReadOnlyList<Charge>> GetOverdueAsync(Guid companyId, DateOnly asOf, CancellationToken ct = default);
 }
 
+public interface IStaffRepository
+{
+    Task<Staff?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<IReadOnlyList<Staff>> GetActiveByCompanyAsync(Guid companyId, CancellationToken ct = default);
+}
+
+public interface IShiftRepository
+{
+    Task<Shift?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<Shift?> GetOpenForSiteAsync(Guid siteId, CancellationToken ct = default);
+    Task AddAsync(Shift shift, CancellationToken ct = default);
+    void Update(Shift shift);
+    Task<int> SaveChangesAsync(CancellationToken ct = default);
+}
+
 public interface IAccessLogRepository
 {
     Task AppendAsync(AccessLog log, CancellationToken ct = default);

@@ -22,8 +22,11 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IMembershipRepository, MembershipRepository>();
         services.AddScoped<IChargeRepository, ChargeRepository>();
         services.AddScoped<IAccessLogRepository, AccessLogRepository>();
+        services.AddScoped<IStaffRepository, StaffRepository>();
+        services.AddScoped<IShiftRepository, ShiftRepository>();
 
         services.AddSingleton<IClock, SystemClock>();
+        services.AddSingleton<IPinHasher, Pbkdf2PinHasher>();
         services.AddScoped<IEventBus, InProcessEventBus>();
 
         services.AddScoped<DatabaseSeeder>();

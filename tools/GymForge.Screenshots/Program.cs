@@ -90,6 +90,15 @@ Capture("06-caja-venta-modal", new CashView { DataContext = cashVm }, 1180, 900,
 var emptyMembersVm = new MembersListViewModel(mediator2, session) { SearchText = "zzz-sin-resultados" };
 Capture("07-socios-vacio", new MembersListView { DataContext = emptyMembersVm }, 1180, 720, outDir);
 
+// Shell completo: sidebar + topbar + dashboard (la ventana real de la app)
+var shell = new GymForge.Desktop.Views.Shell.MainWindow
+{
+    DataContext = sp.GetRequiredService<GymForge.Desktop.Views.Shell.MainWindowViewModel>(),
+    Width = 1366,
+    Height = 800,
+};
+CaptureWindow("00-shell", shell, outDir);
+
 Console.WriteLine($"OK -> {outDir}");
 return;
 
@@ -120,6 +129,11 @@ static void Capture(string name, Control view, int width, int height, string out
         SystemDecorations = SystemDecorations.None,
         Content = view,
     };
+    CaptureWindow(name, window, outDir);
+}
+
+static void CaptureWindow(string name, Window window, string outDir)
+{
     window.Show();
 
     // Forzar layout + render headless, dando tiempo a las cargas async de las

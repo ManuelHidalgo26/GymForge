@@ -12,9 +12,7 @@
         Title="{Binding GymName}"
         Width="1440" Height="900"
         MinWidth="1024" MinHeight="600"
-        WindowStartupLocation="CenterScreen"
-        ExtendClientAreaToDecorationsHint="True"
-        ExtendClientAreaChromeHints="NoChrome">
+        WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
         <conv:NavSectionActiveConverter x:Key="NavSectionActiveConverter" />
@@ -181,7 +179,7 @@
                             ToolTip.Tip="Cambiar tema claro/oscuro">
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <fa:SymbolIcon Symbol="{x:Static fa:Symbol.DarkTheme}" FontSize="18" />
-                            <TextBlock Text="{Binding IsDarkTheme, StringFormat={}{0:Oscuro|Claro}}"
+                            <TextBlock Text="Cambiar tema"
                                        IsVisible="{Binding !IsSidebarCollapsed}" />
                         </StackPanel>
                     </Button>
@@ -243,16 +241,15 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
 
-                    <!-- Right side: cashier + notifications + staff avatar -->
-                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+                    <!-- Right side: cashier + staff avatar -->
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8"
+                                HorizontalAlignment="Right">
                         <TextBlock Text="{Binding Session.CashierName}"
                                    VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold"
                                    IsVisible="{Binding Session.IsSignedIn}" />
-                        <Button Classes="IconButton">
-                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Alert}" FontSize="18" />
-                        </Button>
                         <Border Width="32" Height="32" CornerRadius="16"
-                                Background="{DynamicResource SystemAccentColor}">
+                                Background="{DynamicResource SystemAccentColor}"
+                                ToolTip.Tip="{Binding Session.CashierName}">
                             <TextBlock Text="A" FontWeight="Bold" Foreground="White"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center" />

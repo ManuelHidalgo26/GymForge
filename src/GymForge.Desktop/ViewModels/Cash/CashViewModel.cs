@@ -39,6 +39,7 @@ public partial class CashViewModel : ObservableObject
     public bool HasOpenShift => CurrentShift is { Status: ShiftStatus.Open };
     public bool IsShiftClosed => CurrentShift is { Status: ShiftStatus.Closed };
     public bool CanOpenShift => _session.IsSignedIn && !HasOpenShift;
+    public bool HasNoMovements => CurrentShift is { Movements.Count: 0 };
 
     public CashViewModel(
         IMediator mediator, IShiftRepository shiftRepo, IMemberRepository memberRepo, SessionContext session)
@@ -81,6 +82,7 @@ public partial class CashViewModel : ObservableObject
         OnPropertyChanged(nameof(HasOpenShift));
         OnPropertyChanged(nameof(IsShiftClosed));
         OnPropertyChanged(nameof(CanOpenShift));
+        OnPropertyChanged(nameof(HasNoMovements));
     }
 
     [RelayCommand]

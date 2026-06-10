@@ -34,6 +34,13 @@ public partial class ChargesViewModel : ObservableObject
     public IReadOnlyList<ChargeStatusFilter> StatusFilters { get; } =
         Enum.GetValues<ChargeStatusFilter>().ToList();
 
+    /// <summary>Estado vacío: sin cobros y sin carga en curso.</summary>
+    public bool IsEmpty => !IsLoading && Charges.Count == 0;
+
+    partial void OnChargesChanged(System.Collections.ObjectModel.ObservableCollection<ChargeRowVm> value) =>
+        OnPropertyChanged(nameof(IsEmpty));
+    partial void OnIsLoadingChanged(bool value) => OnPropertyChanged(nameof(IsEmpty));
+
     public ChargesViewModel(IChargeRepository chargeRepo, IMediator mediator, SessionContext session)
     {
         _chargeRepo = chargeRepo;

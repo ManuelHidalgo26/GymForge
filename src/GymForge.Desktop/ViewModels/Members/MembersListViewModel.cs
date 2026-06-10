@@ -20,12 +20,26 @@ public partial class MembersListViewModel : ObservableObject
     [ObservableProperty] private MemberDto? _selectedMember;
     [ObservableProperty] private string _searchText = string.Empty;
     [ObservableProperty] private bool _isLoading;
-    [ObservableProperty] private int _totalCount;
-    [ObservableProperty] private int _currentPage = 1;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(NextPageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(PreviousPageCommand))]
+    private int _totalCount;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(NextPageCommand))]
+    [NotifyCanExecuteChangedFor(nameof(PreviousPageCommand))]
+    private int _currentPage = 1;
+
     [ObservableProperty] private MemberStatus? _statusFilter;
 
     public const int PageSize = 50;
-    public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
+    public int TotalPages => Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
+    public bool CanGoNext => CurrentPage < TotalPages;
+    public bool CanGoPrevious => CurrentPage > 1;
+
+    /// <summary>Estado vacío: sin resultados y sin carga en curso.</summary>
+    public bool IsEmpty => !IsLoading && Members.Count == 0;
 
     /// <summary>Fired when the user opens a member's detail card.</summary>
     public event Action<MemberDto>? OpenDetailRequested;
@@ -89,16 +103,18 @@ public partial class MembersListViewModel : ObservableObject
         await LoadAsync();
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanGoNext))]
     private async Task NextPageAsync()
     {
-        if (CurrentPage < TotalPages) { CurrentPage++; await LoadAsync(); }
+        CurrentPage++;
+        await LoadAsync();
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanGoPrevious))]
     private async Task PreviousPageAsync()
     {
-        if (CurrentPage > 1) { CurrentPage--; await LoadAsync(); }
+        CurrentPage--;
+        await LoadAsync();
     }
 
     [RelayCommand]
@@ -109,6 +125,10 @@ public partial class MembersListViewModel : ObservableObject
         CurrentPage  = 1;
         _ = LoadAsync();
     }
+
+    partial void OnMembersChanged(ObservableCollection<MemberDto> value) => OnPropertyChanged(nameof(IsEmpty));
+    partial void OnIsLoadingChanged(bool value) => OnPropertyChanged(nameof(IsEmpty));
+    partial void OnTotalCountChanged(int value) => OnPropertyChanged(nameof(TotalPages));
 
     partial void OnSearchTextChanged(string value)
     {

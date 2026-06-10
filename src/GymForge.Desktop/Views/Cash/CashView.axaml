@@ -144,6 +144,10 @@
                         <StackPanel Spacing="12">
                             <TextBlock Text="Movimientos" FontSize="15" FontWeight="SemiBold" />
 
+                            <TextBlock Text="Sin movimientos en este turno todavía."
+                                       FontSize="12" Opacity="0.5"
+                                       IsVisible="{Binding HasNoMovements}" />
+
                             <ItemsControl ItemsSource="{Binding CurrentShift.Movements}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="dto:CashMovementDto">

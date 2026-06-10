@@ -51,6 +51,11 @@ GymForge.Sync            → motor de sync cloud (Sprint 2)
 ## Comandos frecuentes
 
 ```powershell
+# Correr la app de escritorio (la real; el mockup/ es solo diseño)
+.\scripts\run.ps1
+# Correr desde cero (borra la DB local y re-siembra; PIN admin: 1234)
+.\scripts\run.ps1 -Reset
+
 # Build completo + tests
 .\scripts\build.ps1
 

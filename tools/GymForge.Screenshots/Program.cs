@@ -86,6 +86,10 @@ Capture("05-caja-operando", new CashView { DataContext = cashVm }, 1180, 900, ou
 Pump(cashVm.OpenSaleModalCommand.ExecuteAsync(null));
 Capture("06-caja-venta-modal", new CashView { DataContext = cashVm }, 1180, 900, outDir);
 
+// Estado vacío de la lista de socios (búsqueda sin coincidencias)
+var emptyMembersVm = new MembersListViewModel(mediator2, session) { SearchText = "zzz-sin-resultados" };
+Capture("07-socios-vacio", new MembersListView { DataContext = emptyMembersVm }, 1180, 720, outDir);
+
 Console.WriteLine($"OK -> {outDir}");
 return;
 
@@ -118,8 +122,13 @@ static void Capture(string name, Control view, int width, int height, string out
     };
     window.Show();
 
-    // Forzar layout + render headless.
-    Dispatcher.UIThread.RunJobs();
+    // Forzar layout + render headless, dando tiempo a las cargas async de las
+    // vistas que auto-cargan en OnDataContextChanged.
+    for (int i = 0; i < 10; i++)
+    {
+        Dispatcher.UIThread.RunJobs();
+        Thread.Sleep(20);
+    }
     AvaloniaHeadlessPlatform.ForceRenderTimerTick();
     Dispatcher.UIThread.RunJobs();
 

@@ -1,6 +1,7 @@
 using System.Globalization;
 using Avalonia.Data.Converters;
 using GymForge.Desktop.ViewModels.Cash;
+using GymForge.Desktop.ViewModels.Charges;
 using GymForge.Domain.Enums;
 
 namespace GymForge.Desktop.Converters;
@@ -68,6 +69,11 @@ public class EnumDisplayConverter : IValueConverter
         // Concepto de cobro
         [SaleConcept.Membership] = "Membresía",
         [SaleConcept.Product] = "Producto",
+
+        // Filtro de cobros
+        [ChargeStatusFilter.Pending] = "Pendientes",
+        [ChargeStatusFilter.Overdue] = "Vencidos",
+        [ChargeStatusFilter.All] = "Todos",
     };
 
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>

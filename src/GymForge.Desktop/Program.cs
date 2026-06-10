@@ -13,12 +13,19 @@ var culture = new CultureInfo("es-AR");
 CultureInfo.DefaultThreadCurrentCulture = culture;
 CultureInfo.DefaultThreadCurrentUICulture = culture;
 
+// Logs en %LOCALAPPDATA%\GymForge\logs: el exe publicado puede estar en una
+// carpeta sin permisos de escritura (Descargas, Program Files).
+var logDir = Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+    "GymForge", "logs");
+Directory.CreateDirectory(logDir);
+
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     // EF Core loguea cada comando SQL en Information: lo bajamos a Warning.
     .MinimumLevel.Override("Microsoft.EntityFrameworkCore", Serilog.Events.LogEventLevel.Warning)
     .WriteTo.Console()
-    .WriteTo.File("logs/gymforge-.log", rollingInterval: RollingInterval.Day)
+    .WriteTo.File(Path.Combine(logDir, "gymforge-.log"), rollingInterval: RollingInterval.Day)
     .CreateLogger();
 
 try

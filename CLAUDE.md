@@ -124,6 +124,15 @@ dotnet ef database update --project src/GymForge.Infrastructure --startup-projec
 - [ ] Webcam (foto socio) + biometría ZKTeco real (BioBroker /enroll)
 - [ ] UI restante del mockup: Planes, Clases, Rutinas, Reportes, Config
 
+### 🔲 Distribución y licencias (Sprint 3)
+- [x] Ejecutable único autocontenido (`scripts/publish.ps1` → `dist/GymForge.Desktop.exe`)
+- [ ] Ícono de la app (.ico) + metadata del exe (versión, empresa)
+- [ ] Distribución: GitHub Releases primero; landing de descarga después
+- [ ] Licenciamiento: clave de licencia por gimnasio + validación online con
+      período de gracia offline (la app es offline-first); tier gratis limitado
+      (p.ej. 1 sede / 50 socios) y tiers pagos. Cobro vía Mercado Pago.
+- [ ] Firma de código (certificado) para evitar el aviso de SmartScreen
+
 > Nota: el login de cajero usa el PIN del admin sembrado (1234). Si tu
 > `%LOCALAPPDATA%\GymForge\gymforge.db` viene de una versión anterior, el
 > arranque la adopta (baseline) pero conserva el PIN viejo; borrala para

@@ -99,7 +99,7 @@
                 <DataGridTextColumn Header="Email"
                                     Binding="{Binding Email}" Width="*" />
                 <DataGridTextColumn Header="Teléfono"
-                                    Binding="{Binding Mobile}" Width="130" />
+                                    Binding="{Binding Mobile}" Width="155" />
 
                 <!-- Status badge -->
                 <DataGridTemplateColumn Header="Estado" Width="110"
@@ -130,7 +130,7 @@
                 <DataGridTextColumn Header="Ingreso"
                                     Binding="{Binding JoinDate}" Width="100" />
                 <DataGridTextColumn Header="Edad"
-                                    Binding="{Binding Age}" Width="60" />
+                                    Binding="{Binding Age}" Width="75" />
 
                 <!-- Row actions -->
                 <DataGridTemplateColumn Header="" Width="80" IsReadOnly="True">
@@ -140,7 +140,7 @@
                                 <Button Classes="IconButton" ToolTip.Tip="Ver ficha"
                                         CommandParameter="{Binding}"
                                         Command="{Binding $parent[UserControl].((vm:MembersListViewModel)DataContext).OpenDetailCommand}">
-                                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.OpenPane}" FontSize="14" />
+                                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.ChevronRight}" FontSize="16" />
                                 </Button>
                             </StackPanel>
                         </DataTemplate>

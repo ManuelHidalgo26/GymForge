@@ -3,7 +3,9 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Threading;
 using GymForge.Application.Interfaces;
+using GymForge.Application.UseCases.Catalog;
 using GymForge.Application.UseCases.Members;
+using GymForge.Application.UseCases.Sales;
 using GymForge.Desktop;
 using GymForge.Desktop.Services;
 using GymForge.Desktop.ViewModels.Cash;
@@ -100,9 +102,22 @@ static async Task SeedSampleMembersAsync(IServiceProvider sp, SessionContext ses
         ("Diego", "Ramírez", "34555666", Gender.Male, "diego.r@mail.com"),
     };
 
+    var ids = new List<Guid>();
     foreach (var s in samples)
-        await mediator.Send(new CreateMemberCommand(
+    {
+        var dto = await mediator.Send(new CreateMemberCommand(
             session.CompanyId, session.SiteId, s.First, s.Last,
             DocumentType.DNI, s.Doc, s.G, s.Mail, "+54 9 11 5555-0000",
             new DateOnly(1995, 6, 15)));
+        ids.Add(dto.Id);
+    }
+
+    // Vender una membresía a los primeros 3 → quedan activos + generan recaudación.
+    var plans = await mediator.Send(new GetMembershipTypesQuery(session.CompanyId));
+    var plan = plans.FirstOrDefault(p => p.Price > 0);
+    if (plan is not null)
+        foreach (var memberId in ids.Take(3))
+            await mediator.Send(new SellMembershipCommand(
+                session.CompanyId, session.SiteId, session.EffectiveCashierId, null,
+                memberId, plan.Id, PaymentMethod.Cash));
 }

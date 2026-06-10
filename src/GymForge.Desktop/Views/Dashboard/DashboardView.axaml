@@ -12,6 +12,19 @@
             <Setter Property="Padding" Value="20,16" />
             <Setter Property="BoxShadow" Value="0 1 4 0 #14000000" />
         </Style>
+        <!-- Botón de acción rápida: alto/icono+texto verticales (NavButton fija Height=40 y corta el texto) -->
+        <Style Selector="Button.QuickAction">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderBrush" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="16,14" />
+            <Setter Property="Width" Value="150" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.QuickAction:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+        </Style>
     </UserControl.Styles>
 
     <ScrollViewer>
@@ -96,23 +109,26 @@
             <Border Classes="KpiCard">
                 <StackPanel Spacing="12">
                     <TextBlock Text="Acciones rápidas" FontSize="14" FontWeight="SemiBold" />
-                    <WrapPanel Orientation="Horizontal" ItemWidth="160">
-                        <Button Classes="NavButton" Margin="0,0,8,8" Padding="12,10">
-                            <StackPanel Spacing="6">
-                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Add}" FontSize="22" />
-                                <TextBlock Text="Nuevo socio" FontSize="12" />
+                    <WrapPanel Orientation="Horizontal">
+                        <Button Classes="QuickAction" Margin="0,0,10,0">
+                            <StackPanel Spacing="8" HorizontalAlignment="Center">
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Add}" FontSize="24"
+                                               HorizontalAlignment="Center" />
+                                <TextBlock Text="Nuevo socio" FontSize="12" HorizontalAlignment="Center" />
                             </StackPanel>
                         </Button>
-                        <Button Classes="NavButton" Margin="0,0,8,8" Padding="12,10">
-                            <StackPanel Spacing="6">
-                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Permissions}" FontSize="22" />
-                                <TextBlock Text="Check-in manual" FontSize="12" />
+                        <Button Classes="QuickAction" Margin="0,0,10,0">
+                            <StackPanel Spacing="8" HorizontalAlignment="Center">
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Permissions}" FontSize="24"
+                                               HorizontalAlignment="Center" />
+                                <TextBlock Text="Check-in manual" FontSize="12" HorizontalAlignment="Center" />
                             </StackPanel>
                         </Button>
-                        <Button Classes="NavButton" Margin="0,0,8,8" Padding="12,10">
-                            <StackPanel Spacing="6">
-                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Tag}" FontSize="22" />
-                                <TextBlock Text="Registrar cobro" FontSize="12" />
+                        <Button Classes="QuickAction">
+                            <StackPanel Spacing="8" HorizontalAlignment="Center">
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Tag}" FontSize="24"
+                                               HorizontalAlignment="Center" />
+                                <TextBlock Text="Registrar cobro" FontSize="12" HorizontalAlignment="Center" />
                             </StackPanel>
                         </Button>
                     </WrapPanel>

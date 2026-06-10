@@ -5,19 +5,19 @@ using System.Globalization;
 
 namespace GymForge.Desktop.Converters;
 
-/// <summary>Maps MemberStatus to a background color brush for status badges.</summary>
+/// <summary>Mapea MemberStatus a un Color para los badges de estado.</summary>
 public class StatusColorConverter : IValueConverter
 {
     public static readonly StatusColorConverter Instance = new();
 
-    private static readonly IBrush Active    = new SolidColorBrush(Color.Parse("#22C55E"));
-    private static readonly IBrush Overdue   = new SolidColorBrush(Color.Parse("#F59E0B"));
-    private static readonly IBrush Expired   = new SolidColorBrush(Color.Parse("#EF4444"));
-    private static readonly IBrush Frozen    = new SolidColorBrush(Color.Parse("#3B82F6"));
-    private static readonly IBrush Suspended = new SolidColorBrush(Color.Parse("#EF4444"));
-    private static readonly IBrush Cancelled = new SolidColorBrush(Color.Parse("#6B7280"));
-    private static readonly IBrush Prospect  = new SolidColorBrush(Color.Parse("#8B5CF6"));
-    private static readonly IBrush Default   = new SolidColorBrush(Color.Parse("#9CA3AF"));
+    private static readonly Color Active    = Color.Parse("#22C55E");
+    private static readonly Color Overdue   = Color.Parse("#F59E0B");
+    private static readonly Color Expired   = Color.Parse("#EF4444");
+    private static readonly Color Frozen    = Color.Parse("#3B82F6");
+    private static readonly Color Suspended = Color.Parse("#EF4444");
+    private static readonly Color Cancelled = Color.Parse("#6B7280");
+    private static readonly Color Prospect  = Color.Parse("#8B5CF6");
+    private static readonly Color Default   = Color.Parse("#9CA3AF");
 
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         value is MemberStatus status ? status switch

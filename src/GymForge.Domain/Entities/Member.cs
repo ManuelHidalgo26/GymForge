@@ -95,6 +95,15 @@ public class Member : BaseEntity
         UpdatedAt = DateTime.UtcNow;
     }
 
+    public void CompleteProfile(DateOnly? birthDate, MemberSource source, Guid? salesRepId, bool marketingConsent)
+    {
+        BirthDate = birthDate;
+        Source = source;
+        SalesRepId = salesRepId;
+        MarketingConsent = marketingConsent;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void UpdatePhoto(string photoUrl)
     {
         PhotoUrl = photoUrl;
@@ -116,7 +125,8 @@ public class Member : BaseEntity
     public void Activate(DateOnly joinDate)
     {
         Status = MemberStatus.Active;
-        JoinDate = joinDate;
+        // Se conserva la fecha de alta original si el socio ya había ingresado antes.
+        JoinDate ??= joinDate;
         UpdatedAt = DateTime.UtcNow;
         AddDomainEvent(new MemberActivatedEvent(Id, joinDate));
     }

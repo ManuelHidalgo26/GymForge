@@ -39,6 +39,7 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
     private readonly IMembershipTypeRepository _planRepo;
     private readonly IChargeRepository _chargeRepo;
     private readonly IMembershipRepository _membershipRepo;
+    private readonly IMemberRepository _memberRepo;
     private readonly IPaymentRepository _paymentRepo;
     private readonly ICashRegister _cashRegister;
 
@@ -46,12 +47,14 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
         IMembershipTypeRepository planRepo,
         IChargeRepository chargeRepo,
         IMembershipRepository membershipRepo,
+        IMemberRepository memberRepo,
         IPaymentRepository paymentRepo,
         ICashRegister cashRegister)
     {
         _planRepo = planRepo;
         _chargeRepo = chargeRepo;
         _membershipRepo = membershipRepo;
+        _memberRepo = memberRepo;
         _paymentRepo = paymentRepo;
         _cashRegister = cashRegister;
     }
@@ -60,6 +63,9 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
     {
         var plan = await _planRepo.GetByIdAsync(cmd.MembershipTypeId, ct)
             ?? throw new InvalidOperationException("El plan seleccionado no existe.");
+
+        var member = await _memberRepo.GetByIdAsync(cmd.MemberId, ct)
+            ?? throw new InvalidOperationException("El socio seleccionado no existe.");
 
         if (plan.Price <= 0)
             throw new InvalidOperationException("El plan seleccionado no tiene costo; no requiere cobro.");
@@ -82,6 +88,13 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
             cmd.CompanyId, cmd.SiteId, cmd.MemberId, plan.Id,
             today, CalculateEnd(today, plan), soldByStaffId: cmd.CashierId);
         membership.Activate();
+
+        // El socio pasa a Activo (deja de ser prospecto / vencido).
+        if (member.Status != MemberStatus.Active)
+        {
+            member.Activate(today);
+            _memberRepo.Update(member);
+        }
 
         await _chargeRepo.AddAsync(charge, ct);
         await _membershipRepo.AddAsync(membership, ct);

@@ -34,9 +34,14 @@ public class CreateMemberCommandTests
         dto.FullName.Should().Be("Ana García");
         dto.DocumentNumber.Should().Be("30123456");
         dto.Email.Should().Be("ana@test.com");
+        dto.BirthDate.Should().Be(new DateOnly(1990, 5, 20));
 
         await _repo.Received(1).AddAsync(
-            Arg.Is<Member>(m => m.DocumentNumber == "30123456" && m.CompanyId == cmd.CompanyId),
+            Arg.Is<Member>(m =>
+                m.DocumentNumber == "30123456" &&
+                m.CompanyId == cmd.CompanyId &&
+                m.BirthDate == new DateOnly(1990, 5, 20) &&
+                m.Source == MemberSource.WalkIn),
             Arg.Any<CancellationToken>());
         await _repo.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }

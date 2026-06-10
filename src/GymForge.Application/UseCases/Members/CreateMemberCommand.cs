@@ -55,6 +55,7 @@ public class CreateMemberCommandHandler : IRequestHandler<CreateMemberCommand, M
             cmd.Gender);
 
         member.UpdateContact(cmd.Email, cmd.Mobile);
+        member.CompleteProfile(cmd.BirthDate, cmd.Source, cmd.SalesRepId, cmd.MarketingConsent);
 
         await _repo.AddAsync(member, ct);
         await _repo.SaveChangesAsync(ct);

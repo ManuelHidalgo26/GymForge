@@ -3,6 +3,7 @@
              xmlns:fa="using:FluentAvalonia.UI.Controls"
              xmlns:vm="using:GymForge.Desktop.ViewModels.Cash"
              xmlns:dto="using:GymForge.Application.DTOs"
+             xmlns:enums="using:GymForge.Domain.Enums"
              x:Class="GymForge.Desktop.Views.Cash.RegisterSaleView"
              x:DataType="vm:RegisterSaleViewModel">
 
@@ -67,7 +68,13 @@
         <StackPanel Spacing="4">
             <TextBlock Text="Método de pago *" FontSize="12" Opacity="0.7" />
             <ComboBox ItemsSource="{Binding Methods}" SelectedItem="{Binding Method}"
-                      HorizontalAlignment="Stretch" />
+                      HorizontalAlignment="Stretch">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="enums:PaymentMethod">
+                        <TextBlock Text="{Binding Converter={StaticResource EnumEs}}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
         </StackPanel>
 
         <!-- Tarjeta -->

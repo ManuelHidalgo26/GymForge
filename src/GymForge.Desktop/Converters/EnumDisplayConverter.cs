@@ -1,0 +1,78 @@
+using System.Globalization;
+using Avalonia.Data.Converters;
+using GymForge.Desktop.ViewModels.Cash;
+using GymForge.Domain.Enums;
+
+namespace GymForge.Desktop.Converters;
+
+/// <summary>Muestra los enums del dominio en español. Fallback: el nombre del enum.</summary>
+public class EnumDisplayConverter : IValueConverter
+{
+    private static readonly Dictionary<object, string> Map = new()
+    {
+        // Métodos de pago
+        [PaymentMethod.Cash] = "Efectivo",
+        [PaymentMethod.CreditCard] = "Tarjeta de crédito",
+        [PaymentMethod.DebitCard] = "Tarjeta de débito",
+        [PaymentMethod.BankTransfer] = "Transferencia",
+        [PaymentMethod.DirectDebit] = "Débito automático",
+        [PaymentMethod.MercadoPago] = "Mercado Pago",
+        [PaymentMethod.Voucher] = "Voucher",
+        [PaymentMethod.AccountCredit] = "Saldo a favor",
+        [PaymentMethod.Cheque] = "Cheque",
+
+        // Movimientos de caja
+        [CashMovementType.Income] = "Ingreso",
+        [CashMovementType.Expense] = "Egreso",
+        [CashMovementType.Withdrawal] = "Retiro",
+        [CashMovementType.Deposit] = "Depósito",
+
+        // Documento / género
+        [DocumentType.DNI] = "DNI",
+        [DocumentType.PASS] = "Pasaporte",
+        [DocumentType.CUIL] = "CUIL",
+        [DocumentType.CE] = "Cédula",
+        [Gender.Male] = "Masculino",
+        [Gender.Female] = "Femenino",
+        [Gender.NonBinary] = "No binario",
+        [Gender.PreferNotToSay] = "Prefiere no decir",
+
+        // Estado de socio
+        [MemberStatus.Prospect] = "Prospecto",
+        [MemberStatus.Active] = "Activo",
+        [MemberStatus.Suspended] = "Suspendido",
+        [MemberStatus.Frozen] = "Congelado",
+        [MemberStatus.Overdue] = "En mora",
+        [MemberStatus.Expired] = "Vencido",
+        [MemberStatus.Cancelled] = "Cancelado",
+
+        // Estado de membresía
+        [MembershipStatus.Trial] = "Prueba",
+        [MembershipStatus.PendingActivation] = "Pendiente",
+        [MembershipStatus.Active] = "Activa",
+        [MembershipStatus.Frozen] = "Congelada",
+        [MembershipStatus.Overdue] = "En mora",
+        [MembershipStatus.Suspended] = "Suspendida",
+        [MembershipStatus.Expired] = "Vencida",
+        [MembershipStatus.Cancelled] = "Cancelada",
+
+        // Origen del socio
+        [MemberSource.WalkIn] = "Mostrador",
+        [MemberSource.Referral] = "Referido",
+        [MemberSource.SocialMedia] = "Redes sociales",
+        [MemberSource.GoogleAds] = "Google Ads",
+        [MemberSource.Website] = "Sitio web",
+        [MemberSource.Event] = "Evento",
+        [MemberSource.Other] = "Otro",
+
+        // Concepto de cobro
+        [SaleConcept.Membership] = "Membresía",
+        [SaleConcept.Product] = "Producto",
+    };
+
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value is not null && Map.TryGetValue(value, out var es) ? es : value?.ToString() ?? string.Empty;
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}

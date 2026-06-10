@@ -146,7 +146,7 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="dto:CashMovementDto">
                                         <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,4">
-                                            <TextBlock Grid.Column="0" Text="{Binding Type}" Width="90" Opacity="0.8" />
+                                            <TextBlock Grid.Column="0" Text="{Binding Type, Converter={StaticResource EnumEs}}" Width="90" Opacity="0.8" />
                                             <TextBlock Grid.Column="1" Text="{Binding Notes}" Opacity="0.6" TextTrimming="CharacterEllipsis" />
                                             <TextBlock Grid.Column="2" Text="{Binding Amount, StringFormat={}{0:C}}" FontWeight="SemiBold" />
                                         </Grid>

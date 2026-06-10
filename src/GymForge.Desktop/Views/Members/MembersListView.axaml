@@ -28,7 +28,8 @@
 
                     <!-- Status filter -->
                     <ComboBox Width="160"
-                              SelectedItem="{Binding StatusFilter}"
+                              SelectedValue="{Binding StatusFilter}"
+                              SelectedValueBinding="{ReflectionBinding Tag}"
                               PlaceholderText="Todos los estados">
                         <ComboBoxItem Content="Activos"    Tag="{x:Static domain:MemberStatus.Active}" />
                         <ComboBoxItem Content="Vencidos"   Tag="{x:Static domain:MemberStatus.Expired}" />
@@ -113,7 +114,7 @@
                                             Converter={StaticResource StatusColorConverter}}"
                                         Opacity="0.15" />
                                 </Border.Background>
-                                <TextBlock Text="{Binding Status}"
+                                <TextBlock Text="{Binding Status, Converter={StaticResource EnumEs}}"
                                            FontSize="11" FontWeight="SemiBold">
                                     <TextBlock.Foreground>
                                         <SolidColorBrush

@@ -13,6 +13,7 @@
              xmlns:vCharges="using:GymForge.Desktop.Views.Charges"
              xmlns:vCash="using:GymForge.Desktop.Views.Cash"
              xmlns:vShared="using:GymForge.Desktop.Views.Shared"
+             xmlns:conv="using:GymForge.Desktop.Converters"
              x:Class="GymForge.Desktop.App"
              RequestedThemeVariant="Default">
 
@@ -58,6 +59,8 @@
 
     <Application.Resources>
         <ResourceDictionary>
+            <conv:EnumDisplayConverter x:Key="EnumEs" />
+            <conv:DateOnlyOffsetConverter x:Key="DateOnlyOffset" />
             <ResourceDictionary.MergedDictionaries>
                 <ResourceInclude Source="avares://GymForge.Desktop/Assets/Styles/Colors.axaml" />
             </ResourceDictionary.MergedDictionaries>

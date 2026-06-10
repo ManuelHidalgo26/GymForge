@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:fa="using:FluentAvalonia.UI.Controls"
              xmlns:vm="using:GymForge.Desktop.ViewModels.Members"
+             xmlns:enums="using:GymForge.Domain.Enums"
              x:Class="GymForge.Desktop.Views.Members.CreateMemberView"
              x:DataType="vm:CreateMemberViewModel">
 
@@ -67,7 +68,14 @@
                         <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,0,14">
                             <TextBlock Classes="FieldLabel" Text="Tipo documento *" />
                             <ComboBox ItemsSource="{Binding DocumentTypes}"
-                                      SelectedItem="{Binding DocumentType}" />
+                                      SelectedItem="{Binding DocumentType}"
+                                      HorizontalAlignment="Stretch">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="enums:DocumentType">
+                                        <TextBlock Text="{Binding Converter={StaticResource EnumEs}}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
                         </StackPanel>
 
                         <!-- N° documento -->
@@ -94,21 +102,36 @@
                         <!-- Fecha de nacimiento -->
                         <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,0,0,14">
                             <TextBlock Classes="FieldLabel" Text="Fecha de nacimiento" />
-                            <DatePicker />
+                            <DatePicker SelectedDate="{Binding BirthDate, Converter={StaticResource DateOnlyOffset}}"
+                                        HorizontalAlignment="Stretch" />
                         </StackPanel>
 
                         <!-- Género -->
                         <StackPanel Grid.Row="3" Grid.Column="1" Margin="0,0,0,14">
                             <TextBlock Classes="FieldLabel" Text="Género" />
                             <ComboBox ItemsSource="{Binding Genders}"
-                                      SelectedItem="{Binding Gender}" />
+                                      SelectedItem="{Binding Gender}"
+                                      HorizontalAlignment="Stretch">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="enums:Gender">
+                                        <TextBlock Text="{Binding Converter={StaticResource EnumEs}}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
                         </StackPanel>
 
                         <!-- Origen -->
                         <StackPanel Grid.Row="4" Grid.Column="0" Margin="0,0,0,14">
                             <TextBlock Classes="FieldLabel" Text="Cómo nos conoció" />
                             <ComboBox ItemsSource="{Binding Sources}"
-                                      SelectedItem="{Binding Source}" />
+                                      SelectedItem="{Binding Source}"
+                                      HorizontalAlignment="Stretch">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="enums:MemberSource">
+                                        <TextBlock Text="{Binding Converter={StaticResource EnumEs}}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
                         </StackPanel>
 
                         <!-- Consentimiento -->

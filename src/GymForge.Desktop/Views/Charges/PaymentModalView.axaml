@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:fa="using:FluentAvalonia.UI.Controls"
              xmlns:vm="using:GymForge.Desktop.ViewModels.Charges"
+             xmlns:enums="using:GymForge.Domain.Enums"
              x:Class="GymForge.Desktop.Views.Charges.PaymentModalView"
              x:DataType="vm:PaymentModalViewModel">
 
@@ -42,7 +43,13 @@
             <ComboBox ItemsSource="{Binding Methods}"
                       SelectedItem="{Binding Method}"
                       Width="200"
-                      HorizontalAlignment="Left" />
+                      HorizontalAlignment="Left">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="enums:PaymentMethod">
+                        <TextBlock Text="{Binding Converter={StaticResource EnumEs}}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
         </StackPanel>
 
         <!-- Datos de tarjeta (sólo si aplica) -->

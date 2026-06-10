@@ -5,6 +5,13 @@ using GymForge.Desktop.Services;
 using GymForge.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
+using System.Globalization;
+
+// Moneda y fechas en formato AR ($35.000,00) sin depender de la config regional
+// de la máquina (en una Windows en-US mostraría US$).
+var culture = new CultureInfo("es-AR");
+CultureInfo.DefaultThreadCurrentCulture = culture;
+CultureInfo.DefaultThreadCurrentUICulture = culture;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()

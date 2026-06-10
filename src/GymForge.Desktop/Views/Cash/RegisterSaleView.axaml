@@ -1,0 +1,108 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:fa="using:FluentAvalonia.UI.Controls"
+             xmlns:vm="using:GymForge.Desktop.ViewModels.Cash"
+             xmlns:dto="using:GymForge.Application.DTOs"
+             x:Class="GymForge.Desktop.Views.Cash.RegisterSaleView"
+             x:DataType="vm:RegisterSaleViewModel">
+
+    <StackPanel Spacing="14" Width="380">
+
+        <TextBlock Text="Registrar cobro / venta" FontSize="18" FontWeight="SemiBold" />
+
+        <!-- Concepto -->
+        <StackPanel Orientation="Horizontal" Spacing="16">
+            <RadioButton GroupName="concepto" Content="Membresía" IsChecked="{Binding IsMembership}" />
+            <RadioButton GroupName="concepto" Content="Producto" IsChecked="{Binding IsProduct}" />
+        </StackPanel>
+
+        <!-- Socio -->
+        <StackPanel Spacing="4">
+            <TextBlock Text="Socio *" FontSize="12" Opacity="0.7" />
+            <AutoCompleteBox ItemsSource="{Binding Members}"
+                             SelectedItem="{Binding SelectedMember}"
+                             ValueMemberBinding="{Binding FullName}"
+                             FilterMode="Contains"
+                             Watermark="Buscar socio por nombre..." />
+        </StackPanel>
+
+        <!-- Plan (membresía) -->
+        <StackPanel Spacing="4" IsVisible="{Binding IsMembership}">
+            <TextBlock Text="Plan *" FontSize="12" Opacity="0.7" />
+            <ComboBox ItemsSource="{Binding Plans}" SelectedItem="{Binding SelectedPlan}"
+                      HorizontalAlignment="Stretch">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="dto:MembershipTypeDto">
+                        <TextBlock>
+                            <Run Text="{Binding Name}" />
+                            <Run Text=" — " />
+                            <Run Text="{Binding Price, StringFormat={}{0:C}}" />
+                        </TextBlock>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+        </StackPanel>
+
+        <!-- Producto + cantidad -->
+        <StackPanel Spacing="4" IsVisible="{Binding IsProduct}">
+            <TextBlock Text="Producto *" FontSize="12" Opacity="0.7" />
+            <ComboBox ItemsSource="{Binding Products}" SelectedItem="{Binding SelectedProduct}"
+                      HorizontalAlignment="Stretch">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate x:DataType="dto:ProductDto">
+                        <TextBlock>
+                            <Run Text="{Binding Name}" />
+                            <Run Text=" — " />
+                            <Run Text="{Binding SalePrice, StringFormat={}{0:C}}" />
+                        </TextBlock>
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+            <TextBlock Text="Cantidad" FontSize="12" Opacity="0.7" Margin="0,6,0,0" />
+            <NumericUpDown Value="{Binding Quantity}" Minimum="1" Increment="1"
+                           Width="140" HorizontalAlignment="Left" />
+        </StackPanel>
+
+        <!-- Método -->
+        <StackPanel Spacing="4">
+            <TextBlock Text="Método de pago *" FontSize="12" Opacity="0.7" />
+            <ComboBox ItemsSource="{Binding Methods}" SelectedItem="{Binding Method}"
+                      HorizontalAlignment="Stretch" />
+        </StackPanel>
+
+        <!-- Tarjeta -->
+        <StackPanel Spacing="4" IsVisible="{Binding IsCardRequired}">
+            <TextBlock Text="Últimos 4 dígitos *" FontSize="12" Opacity="0.7" />
+            <TextBox Text="{Binding CardLast4}" MaxLength="4" Watermark="0000"
+                     Width="100" HorizontalAlignment="Left" />
+        </StackPanel>
+
+        <!-- Total estimado -->
+        <Border CornerRadius="8" Padding="12,8" Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+            <DockPanel>
+                <TextBlock Text="Total" DockPanel.Dock="Left" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding EstimatedTotal, StringFormat={}{0:C}}"
+                           DockPanel.Dock="Right" HorizontalAlignment="Right"
+                           FontWeight="Bold" FontSize="16" />
+            </DockPanel>
+        </Border>
+
+        <!-- Error -->
+        <fa:InfoBar IsOpen="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                    Severity="Error" Title="Error" Message="{Binding ErrorMessage}" IsClosable="False" />
+
+        <!-- Acciones -->
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button Content="Cancelar" Command="{Binding CancelCommand}" Classes="NavButton" />
+            <Button Command="{Binding ConfirmCommand}" Classes="NavButton" IsDefault="True"
+                    Background="{DynamicResource SystemAccentColor}" Foreground="White">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <fa:ProgressRing IsVisible="{Binding IsSaving}" Width="16" Height="16" />
+                    <TextBlock Text="Confirmar" />
+                </StackPanel>
+            </Button>
+        </StackPanel>
+
+    </StackPanel>
+
+</UserControl>

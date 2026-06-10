@@ -68,6 +68,18 @@ public class DatabaseSeeder
 
         await _db.MembershipTypes.AddRangeAsync([mensual, trimestral, anual, visitas10, trial], ct);
 
-        _logger.LogInformation("Default company, site, staff and 5 membership types seeded");
+        // Productos de kiosco + stock en la sede central
+        var agua = Product.Create(company.Id, "AGUA-500", "Agua mineral 500ml", 1_500m, 800m);
+        var proteina = Product.Create(company.Id, "PROT-1KG", "Proteína Whey 1kg", 28_000m, 18_000m);
+        var barrita = Product.Create(company.Id, "BARRA-CHOCO", "Barrita proteica", 2_500m, 1_400m);
+        await _db.Products.AddRangeAsync([agua, proteina, barrita], ct);
+        await _db.StockBySite.AddRangeAsync(
+        [
+            StockBySite.Create(company.Id, agua.Id, site.Id, 100),
+            StockBySite.Create(company.Id, proteina.Id, site.Id, 20),
+            StockBySite.Create(company.Id, barrita.Id, site.Id, 50),
+        ], ct);
+
+        _logger.LogInformation("Default company, sites, staff, 5 membership types and 3 products seeded");
     }
 }

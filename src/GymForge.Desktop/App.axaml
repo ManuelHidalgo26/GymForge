@@ -45,6 +45,9 @@
         <DataTemplate DataType="vmCash:CashViewModel">
             <vCash:CashView />
         </DataTemplate>
+        <DataTemplate DataType="vmCash:RegisterSaleViewModel">
+            <vCash:RegisterSaleView />
+        </DataTemplate>
         <DataTemplate DataType="vmCharges:PaymentModalViewModel">
             <vCharges:PaymentModalView />
         </DataTemplate>

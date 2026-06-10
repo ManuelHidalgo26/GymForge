@@ -18,9 +18,13 @@ public partial class CashViewModel : ObservableObject
 {
     private readonly IMediator _mediator;
     private readonly IShiftRepository _shiftRepo;
+    private readonly IMemberRepository _memberRepo;
     private readonly SessionContext _session;
 
     public SessionContext Session => _session;
+
+    [ObservableProperty] private RegisterSaleViewModel? _saleModal;
+    [ObservableProperty] private bool _isSaleModalOpen;
 
     [ObservableProperty] private string _pin = string.Empty;
     [ObservableProperty] private decimal _openingCash;
@@ -36,10 +40,12 @@ public partial class CashViewModel : ObservableObject
     public bool IsShiftClosed => CurrentShift is { Status: ShiftStatus.Closed };
     public bool CanOpenShift => _session.IsSignedIn && !HasOpenShift;
 
-    public CashViewModel(IMediator mediator, IShiftRepository shiftRepo, SessionContext session)
+    public CashViewModel(
+        IMediator mediator, IShiftRepository shiftRepo, IMemberRepository memberRepo, SessionContext session)
     {
         _mediator = mediator;
         _shiftRepo = shiftRepo;
+        _memberRepo = memberRepo;
         _session = session;
 
         _session.PropertyChanged += (_, e) =>
@@ -47,6 +53,27 @@ public partial class CashViewModel : ObservableObject
             if (e.PropertyName is nameof(SessionContext.IsSignedIn) or nameof(SessionContext.CashierId))
                 OnPropertyChanged(nameof(CanOpenShift));
         };
+    }
+
+    [RelayCommand]
+    private async Task OpenSaleModalAsync()
+    {
+        var modal = new RegisterSaleViewModel(_mediator, _memberRepo, _session);
+        modal.Registered += async () =>
+        {
+            IsSaleModalOpen = false;
+            SaleModal = null;
+            await LoadAsync();   // refresca el turno: el movimiento de caja ya impactó
+        };
+        modal.Cancelled += () =>
+        {
+            IsSaleModalOpen = false;
+            SaleModal = null;
+        };
+
+        await modal.LoadAsync();
+        SaleModal = modal;
+        IsSaleModalOpen = true;
     }
 
     partial void OnCurrentShiftChanged(ShiftDto? value)

@@ -6,7 +6,7 @@
              x:Class="GymForge.Desktop.Views.Cash.CashView"
              x:DataType="vm:CashViewModel">
 
-    <Grid RowDefinitions="Auto,*">
+    <Grid RowDefinitions="Auto,*" Name="Root">
 
         <!-- ── Toolbar ────────────────────────────────────────────────────── -->
         <Border Grid.Row="0" Padding="16,12"
@@ -126,6 +126,16 @@
                         </Grid>
                     </Border>
 
+                    <!-- Registrar cobro / venta -->
+                    <Button Command="{Binding OpenSaleModalCommand}" Classes="NavButton"
+                            HorizontalAlignment="Left"
+                            Background="{DynamicResource SystemAccentColor}" Foreground="White">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Add}" FontSize="16" />
+                            <TextBlock Text="Registrar cobro / venta" />
+                        </StackPanel>
+                    </Button>
+
                     <!-- Movimientos -->
                     <Border CornerRadius="12" Padding="20"
                             Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
@@ -186,6 +196,18 @@
 
             </StackPanel>
         </ScrollViewer>
+
+        <!-- ── Modal: registrar cobro / venta ─────────────────────────────── -->
+        <Grid Grid.Row="0" Grid.RowSpan="2"
+              IsVisible="{Binding IsSaleModalOpen}"
+              Background="#80000000" ZIndex="100">
+            <Border MaxWidth="440" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    CornerRadius="12" Padding="24"
+                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                    BoxShadow="0 8 32 0 #44000000">
+                <ContentControl Content="{Binding SaleModal}" />
+            </Border>
+        </Grid>
 
     </Grid>
 

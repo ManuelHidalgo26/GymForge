@@ -67,8 +67,15 @@ public class AddCashMovementCommandHandler : IRequestHandler<AddCashMovementComm
         if (shift.Status != ShiftStatus.Open)
             throw new InvalidOperationException("La caja no está abierta.");
 
-        shift.Movements.Add(CashMovement.Create(shift.Id, cmd.Type, cmd.Category, cmd.Amount, notes: cmd.Notes));
-        _repo.Update(shift);
+        // Alta explícita en el contexto (Added); solo sumarlo a la colección del
+        // shift trackeado lo dejaría como Modified por el Id pre-asignado.
+        var movement = CashMovement.Create(shift.Id, cmd.Type, cmd.Category, cmd.Amount, notes: cmd.Notes);
+        await _repo.AddMovementAsync(movement, ct);
+
+        // Con EF real el fixup ya lo sumó a la colección; la guarda evita duplicarlo.
+        if (!shift.Movements.Contains(movement))
+            shift.Movements.Add(movement);
+
         await _repo.SaveChangesAsync(ct);
         return ShiftDto.FromEntity(shift);
     }
@@ -98,9 +105,9 @@ public class CloseShiftCommandHandler : IRequestHandler<CloseShiftCommand, Shift
             ?? throw new InvalidOperationException("La caja indicada no existe.");
 
         // El sistema espera ExpectedCash; la diferencia surge contra lo declarado.
+        // El shift viene trackeado: los cambios de estado se detectan sin Update().
         shift.BeginClose(cmd.DeclaredCash, shift.ExpectedCash);
         shift.ConfirmClose(cmd.Notes);
-        _repo.Update(shift);
         await _repo.SaveChangesAsync(ct);
         return ShiftDto.FromEntity(shift);
     }

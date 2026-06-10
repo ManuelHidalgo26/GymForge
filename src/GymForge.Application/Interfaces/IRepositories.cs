@@ -81,6 +81,12 @@ public interface IShiftRepository
     Task<Shift?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<Shift?> GetOpenForSiteAsync(Guid siteId, CancellationToken ct = default);
     Task AddAsync(Shift shift, CancellationToken ct = default);
+    /// <summary>
+    /// Registra el movimiento como entidad nueva en el contexto. Necesario porque
+    /// BaseEntity pre-asigna el Id: si el movimiento solo se agrega a la colección
+    /// del shift trackeado, EF lo presume existente (Modified) y el UPDATE falla.
+    /// </summary>
+    Task AddMovementAsync(CashMovement movement, CancellationToken ct = default);
     void Update(Shift shift);
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

@@ -24,6 +24,9 @@ public class ShiftRepository : IShiftRepository
     public async Task AddAsync(Shift shift, CancellationToken ct = default) =>
         await _db.Shifts.AddAsync(shift, ct);
 
+    public async Task AddMovementAsync(CashMovement movement, CancellationToken ct = default) =>
+        await _db.CashMovements.AddAsync(movement, ct);
+
     public void Update(Shift shift) => _db.Shifts.Update(shift);
 
     public async Task<int> SaveChangesAsync(CancellationToken ct = default) =>

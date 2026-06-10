@@ -19,7 +19,9 @@
                     <TextBlock Text="Caja" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
                 </StackPanel>
 
+                <!-- Último hijo del DockPanel: llena el resto, así que se alinea a la derecha -->
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="10"
+                            HorizontalAlignment="Right"
                             IsVisible="{Binding Session.IsSignedIn}">
                     <TextBlock VerticalAlignment="Center" FontSize="13">
                         <Run Text="Cajero: " Foreground="{DynamicResource TextFillColorSecondaryBrush}" />

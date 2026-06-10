@@ -23,7 +23,6 @@ public class CashRegisterTests
 
         shift.Movements.Should().ContainSingle();
         shift.CashIn.Should().Be(5_000m);
-        _shiftRepo.Received(1).Update(shift);
     }
 
     [Fact]
@@ -56,6 +55,5 @@ public class CashRegisterTests
             CashMovementCategory.Membership, 5_000m, null);
 
         shift.Movements.Should().BeEmpty();
-        _shiftRepo.DidNotReceive().Update(Arg.Any<Shift>());
     }
 }

@@ -3,9 +3,11 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Threading;
 using GymForge.Application.Interfaces;
+using GymForge.Application.UseCases.Cash;
 using GymForge.Application.UseCases.Catalog;
 using GymForge.Application.UseCases.Members;
 using GymForge.Application.UseCases.Sales;
+using GymForge.Application.UseCases.Staff;
 using GymForge.Desktop;
 using GymForge.Desktop.Services;
 using GymForge.Desktop.ViewModels.Cash;
@@ -63,8 +65,47 @@ Capture("02-socios-lista", new MembersListView { DataContext = membersVm }, 1180
 Capture("03-socio-alta", new CreateMemberView { DataContext = createVm }, 1180, 720, outDir);
 Capture("04-caja-login", new CashView { DataContext = cashVm }, 1180, 720, outDir);
 
+// ── 4. Estados ricos de caja: cajero logueado + turno abierto + movimientos ──
+// (después del setup de Avalonia, los await se bombean con WaitFor/RunJobs)
+var mediator2 = sp.GetRequiredService<IMediator>();
+var staff = WaitFor(mediator2.Send(new AuthenticateStaffCommand(session.CompanyId, "1234")))
+    ?? throw new InvalidOperationException("Login de cajero falló (PIN 1234).");
+session.SignIn(staff);
+
+var shift = WaitFor(mediator2.Send(new OpenShiftCommand(
+    session.CompanyId, session.SiteId, staff.Id, 5_000m)));
+WaitFor(mediator2.Send(new AddCashMovementCommand(
+    shift.Id, CashMovementType.Income, CashMovementCategory.Sale, 12_000m, "Venta proteína")));
+WaitFor(mediator2.Send(new AddCashMovementCommand(
+    shift.Id, CashMovementType.Expense, CashMovementCategory.PettyCash, 3_000m, "Artículos de limpieza")));
+session.SetOpenShift(shift.Id);
+
+Pump(cashVm.LoadCommand.ExecuteAsync(null));
+Capture("05-caja-operando", new CashView { DataContext = cashVm }, 1180, 900, outDir);
+
+Pump(cashVm.OpenSaleModalCommand.ExecuteAsync(null));
+Capture("06-caja-venta-modal", new CashView { DataContext = cashVm }, 1180, 900, outDir);
+
 Console.WriteLine($"OK -> {outDir}");
 return;
+
+// Bombea el dispatcher headless hasta que la tarea termine (los await posteriores
+// al setup de Avalonia postean continuaciones a la cola del UI thread).
+static T WaitFor<T>(Task<T> task)
+{
+    Pump(task);
+    return task.GetAwaiter().GetResult();
+}
+
+static void Pump(Task task)
+{
+    while (!task.IsCompleted)
+    {
+        Dispatcher.UIThread.RunJobs();
+        Thread.Sleep(5);
+    }
+    task.GetAwaiter().GetResult();
+}
 
 static void Capture(string name, Control view, int width, int height, string outDir)
 {

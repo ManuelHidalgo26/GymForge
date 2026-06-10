@@ -33,7 +33,11 @@ public class CashRegister : ICashRegister
         if (shift is not { Status: ShiftStatus.Open })
             return;
 
-        shift.Movements.Add(CashMovement.Create(id, CashMovementType.Income, category, amount, referenceId));
-        _shiftRepo.Update(shift);
+        // Alta explícita en el contexto (Added); ver IShiftRepository.AddMovementAsync.
+        // Con EF real el fixup ya lo suma a la colección; la guarda evita duplicarlo.
+        var movement = CashMovement.Create(id, CashMovementType.Income, category, amount, referenceId);
+        await _shiftRepo.AddMovementAsync(movement, ct);
+        if (!shift.Movements.Contains(movement))
+            shift.Movements.Add(movement);
     }
 }

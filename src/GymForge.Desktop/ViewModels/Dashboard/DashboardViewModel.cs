@@ -9,6 +9,7 @@ namespace GymForge.Desktop.ViewModels.Dashboard;
 public partial class DashboardViewModel : ObservableObject
 {
     private readonly IMemberRepository _members;
+    private readonly IPaymentRepository _payments;
     private readonly SessionContext _session;
 
     [ObservableProperty] private int _totalActiveMembers;
@@ -17,9 +18,10 @@ public partial class DashboardViewModel : ObservableObject
     [ObservableProperty] private decimal _revenueThisMonth;
     [ObservableProperty] private bool _isLoading;
 
-    public DashboardViewModel(IMemberRepository members, SessionContext session)
+    public DashboardViewModel(IMemberRepository members, IPaymentRepository payments, SessionContext session)
     {
         _members = members;
+        _payments = payments;
         _session = session;
     }
 
@@ -29,13 +31,17 @@ public partial class DashboardViewModel : ObservableObject
         IsLoading = true;
         try
         {
-            // KPIs reales de la sede activa; check-ins/recaudación se cablean más adelante.
             TotalActiveMembers = await _members.CountAsync(
                 _session.CompanyId, _session.SiteId, MemberStatus.Active);
             OverdueMembers = await _members.CountAsync(
                 _session.CompanyId, _session.SiteId, MemberStatus.Overdue);
-            CheckInsToday    = 0;   // AccessLog aggregation — Sprint 2
-            RevenueThisMonth = 0m;  // Payment aggregation — Sprint 2
+
+            // Recaudación del mes en curso (pagos persistidos). Se refresca al volver al Dashboard.
+            var monthStart = new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+            RevenueThisMonth = await _payments.SumReceivedAsync(
+                _session.CompanyId, _session.SiteId, monthStart, monthStart.AddMonths(1));
+
+            CheckInsToday = 0;   // AccessLog aggregation — pendiente
         }
         finally
         {

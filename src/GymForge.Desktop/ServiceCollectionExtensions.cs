@@ -16,15 +16,18 @@ namespace GymForge.Desktop;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddGymForgeDesktop(this IServiceCollection services)
+    public static IServiceCollection AddGymForgeDesktop(this IServiceCollection services, string? connectionString = null)
     {
-        // Database: %LOCALAPPDATA%\GymForge\gymforge.db
-        var dbDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "GymForge");
-        Directory.CreateDirectory(dbDir);
-        var connectionString =
-            $"Data Source={Path.Combine(dbDir, "gymforge.db")};Mode=ReadWriteCreate;Cache=Shared";
+        // Database: %LOCALAPPDATA%\GymForge\gymforge.db (o uno custom para herramientas)
+        if (connectionString is null)
+        {
+            var dbDir = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "GymForge");
+            Directory.CreateDirectory(dbDir);
+            connectionString =
+                $"Data Source={Path.Combine(dbDir, "gymforge.db")};Mode=ReadWriteCreate;Cache=Shared";
+        }
 
         // Logging + Application + Infrastructure
         // Conecta Microsoft.Extensions.Logging al Serilog estático (seeder, repos, etc.)

@@ -109,7 +109,10 @@ dotnet ef database update --project src/GymForge.Infrastructure --startup-projec
 - [x] Caja: apertura/cierre/arqueo + CashMovement (handlers + UI CashView)
 - [x] Sesión de cajero: login por PIN (PBKDF2) + ShiftId en SessionContext
 - [x] Multi-sede: selector de sede en topbar + SessionContext (tenant real)
-- [ ] POS: venta productos, scanner HID
+- [x] Cobro unificado: pago persiste + impacta caja (ICashRegister); modal de
+      cobro/venta (membresía → socio+plan / producto → socio+producto+stock);
+      recaudación del Dashboard desde pagos reales
+- [ ] POS: scanner HID, venta a no socio (Payment.MemberId nullable), recibo PDF
 - [ ] Facturación AFIP WSFE (SOAP) — FiscalBroker completo
 - [ ] WhatsApp via Twilio/Wassenger (notificaciones cobros)
 - [ ] Dunning automático (job nocturno 5 etapas)

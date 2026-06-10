@@ -85,7 +85,7 @@ public partial class ChargesViewModel : ObservableObject
     [RelayCommand]
     private void OpenPaymentModal(ChargeRowVm? row = null)
     {
-        var modal = new PaymentModalViewModel(_mediator, _session.CompanyId, _session.SiteId);
+        var modal = new PaymentModalViewModel(_mediator, _session);
 
         if (row is not null)
             modal.PreSelectCharge(row.Dto);

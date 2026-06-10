@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GymForge.Application.DTOs;
 using GymForge.Application.UseCases.Members;
+using GymForge.Desktop.Services;
 using GymForge.Domain.Enums;
 using MediatR;
 
@@ -10,8 +11,7 @@ namespace GymForge.Desktop.ViewModels.Members;
 public partial class CreateMemberViewModel : ObservableObject
 {
     private readonly IMediator _mediator;
-    private Guid _companyId;
-    private Guid _siteId;
+    private readonly SessionContext _session;
 
     // Form fields
     [ObservableProperty][NotifyCanExecuteChangedFor(nameof(SaveCommand))]
@@ -48,12 +48,10 @@ public partial class CreateMemberViewModel : ObservableObject
     public event Action<MemberDto>? MemberCreated;
     public event Action? Cancelled;
 
-    public CreateMemberViewModel(IMediator mediator) => _mediator = mediator;
-
-    public void Initialize(Guid companyId, Guid siteId)
+    public CreateMemberViewModel(IMediator mediator, SessionContext session)
     {
-        _companyId = companyId;
-        _siteId = siteId;
+        _mediator = mediator;
+        _session = session;
     }
 
     private bool CanSave => !IsSaving
@@ -69,7 +67,7 @@ public partial class CreateMemberViewModel : ObservableObject
         try
         {
             var dto = await _mediator.Send(new CreateMemberCommand(
-                _companyId, _siteId,
+                _session.CompanyId, _session.SiteId,
                 FirstName.Trim(), LastName.Trim(),
                 DocumentType, DocumentNumber.Trim(),
                 Gender, Email?.Trim(), Mobile?.Trim(),

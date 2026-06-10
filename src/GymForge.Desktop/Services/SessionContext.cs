@@ -20,6 +20,12 @@ public partial class SessionContext : ObservableObject
 
     public Guid CompanyId { get; private set; }
 
+    /// <summary>Staff por defecto (admin) para operaciones sin login explícito de caja.</summary>
+    public Guid DefaultStaffId { get; private set; }
+
+    /// <summary>Cajero efectivo: el logueado o, si no hay, el staff por defecto.</summary>
+    public Guid EffectiveCashierId => CashierId ?? DefaultStaffId;
+
     [ObservableProperty] private string _gymName = "GymForge";
 
     public IReadOnlyList<SiteOption> Sites { get; private set; } = [];
@@ -49,6 +55,7 @@ public partial class SessionContext : ObservableObject
     {
         using var scope = _scopeFactory.CreateScope();
         var sites = scope.ServiceProvider.GetRequiredService<ISiteRepository>();
+        var staffRepo = scope.ServiceProvider.GetRequiredService<IStaffRepository>();
 
         var companies = await sites.GetCompaniesAsync();
         var company = companies.FirstOrDefault();
@@ -60,6 +67,9 @@ public partial class SessionContext : ObservableObject
         var siteList = await sites.GetByCompanyAsync(company.Id);
         Sites = siteList.Select(s => new SiteOption(s.Id, s.Name)).ToList();
         CurrentSite = Sites.FirstOrDefault();
+
+        var staff = await staffRepo.GetActiveByCompanyAsync(company.Id);
+        DefaultStaffId = staff.FirstOrDefault()?.Id ?? Guid.Empty;
     }
 
     public void SignIn(StaffDto staff)

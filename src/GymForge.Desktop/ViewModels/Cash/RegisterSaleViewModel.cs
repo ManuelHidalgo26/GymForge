@@ -102,8 +102,7 @@ public partial class RegisterSaleViewModel : ObservableObject
         try
         {
             if (SelectedMember is null) { ErrorMessage = "Elegí un socio."; return; }
-            if (_session.CashierId is not { } cashierId) { ErrorMessage = "No hay cajero en sesión."; return; }
-
+            var cashierId = _session.EffectiveCashierId;
             var last4 = IsCardRequired ? CardLast4 : null;
 
             if (Concept == SaleConcept.Membership)

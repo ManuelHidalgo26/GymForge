@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GymForge.Application.DTOs;
 using GymForge.Application.UseCases.Charges;
+using GymForge.Desktop.Services;
 using GymForge.Domain.Enums;
 using MediatR;
 
@@ -14,12 +15,8 @@ namespace GymForge.Desktop.ViewModels.Charges;
 public partial class PaymentModalViewModel : ObservableObject
 {
     private readonly IMediator _mediator;
-    private readonly Guid _companyId;
-    private readonly Guid _siteId;
+    private readonly SessionContext _session;
     private Guid _memberId;
-
-    // Cajero por defecto — Sprint 2 resuelve desde la sesión activa
-    private static readonly Guid StubCashierId = new("33333333-0000-0000-0000-000000000001");
 
     [ObservableProperty] private ChargeDto? _targetCharge;
     [ObservableProperty][NotifyCanExecuteChangedFor(nameof(ConfirmCommand))]
@@ -39,11 +36,10 @@ public partial class PaymentModalViewModel : ObservableObject
     public event Action<PaymentDto>? PaymentRegistered;
     public event Action? Cancelled;
 
-    public PaymentModalViewModel(IMediator mediator, Guid companyId, Guid siteId)
+    public PaymentModalViewModel(IMediator mediator, SessionContext session)
     {
-        _mediator  = mediator;
-        _companyId = companyId;
-        _siteId    = siteId;
+        _mediator = mediator;
+        _session  = session;
     }
 
     public void PreSelectCharge(ChargeDto charge)
@@ -73,9 +69,9 @@ public partial class PaymentModalViewModel : ObservableObject
                 : null;
 
             var dto = await _mediator.Send(new ProcessPaymentCommand(
-                _companyId, _siteId, _memberId,
-                StubCashierId, Amount, Method,
-                ShiftId: null,
+                _session.CompanyId, _session.SiteId, _memberId,
+                _session.EffectiveCashierId, Amount, Method,
+                ShiftId: _session.OpenShiftId,
                 ChargeIds: chargeIds,
                 CardLast4: IsCardRequired ? CardLast4 : null,
                 CardBrand: IsCardRequired ? CardBrand : null), ct);

@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GymForge.Application.DTOs;
 using GymForge.Application.UseCases.Members;
+using GymForge.Desktop.Services;
 using GymForge.Domain.Enums;
 using MediatR;
 using System.Collections.ObjectModel;
@@ -11,8 +12,9 @@ namespace GymForge.Desktop.ViewModels.Members;
 public partial class MembersListViewModel : ObservableObject
 {
     private readonly IMediator _mediator;
-    private Guid _companyId;
-    private Guid _siteId;
+    private readonly SessionContext _session;
+    private Guid CompanyId => _session.CompanyId;
+    private Guid SiteId => _session.SiteId;
 
     [ObservableProperty] private ObservableCollection<MemberDto> _members = [];
     [ObservableProperty] private MemberDto? _selectedMember;
@@ -25,27 +27,16 @@ public partial class MembersListViewModel : ObservableObject
     public const int PageSize = 50;
     public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
 
-    // Sprint 1: company/site from seed defaults — Sprint 2 resolves from active session
-    private static readonly Guid DefaultCompanyId = new("11111111-0000-0000-0000-000000000001");
-    private static readonly Guid DefaultSiteId    = new("22222222-0000-0000-0000-000000000001");
-
     /// <summary>Fired when the user opens a member's detail card.</summary>
     public event Action<MemberDto>? OpenDetailRequested;
 
     /// <summary>Fired when the user clicks "Nuevo socio".</summary>
     public event Action? CreateMemberRequested;
 
-    public MembersListViewModel(IMediator mediator)
+    public MembersListViewModel(IMediator mediator, SessionContext session)
     {
-        _mediator  = mediator;
-        _companyId = DefaultCompanyId;
-        _siteId    = DefaultSiteId;
-    }
-
-    public void Initialize(Guid companyId, Guid siteId)
-    {
-        _companyId = companyId;
-        _siteId    = siteId;
+        _mediator = mediator;
+        _session  = session;
     }
 
     // ── Load ─────────────────────────────────────────────────────────────────
@@ -59,14 +50,14 @@ public partial class MembersListViewModel : ObservableObject
             if (!string.IsNullOrWhiteSpace(SearchText) && SearchText.Length >= 2)
             {
                 var results = await _mediator.Send(
-                    new SearchMembersQuery(SearchText, _companyId, _siteId, 100), ct);
+                    new SearchMembersQuery(SearchText, CompanyId, SiteId, 100), ct);
                 Members = new ObservableCollection<MemberDto>(results);
                 TotalCount = results.Count;
             }
             else
             {
                 var paged = await _mediator.Send(
-                    new GetMembersQuery(_companyId, _siteId, CurrentPage, PageSize, StatusFilter), ct);
+                    new GetMembersQuery(CompanyId, SiteId, CurrentPage, PageSize, StatusFilter), ct);
                 Members = new ObservableCollection<MemberDto>(paged.Items);
                 TotalCount = paged.TotalCount;
             }

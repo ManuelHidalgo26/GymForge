@@ -37,6 +37,33 @@ public interface IChargeRepository : IRepository<Charge>
     Task<IReadOnlyList<Charge>> GetOverdueAsync(Guid companyId, DateOnly asOf, CancellationToken ct = default);
 }
 
+public interface IPaymentRepository
+{
+    Task AddAsync(Payment payment, CancellationToken ct = default);
+    Task<decimal> SumReceivedAsync(Guid companyId, Guid siteId, DateTime from, DateTime to, CancellationToken ct = default);
+    Task<int> SaveChangesAsync(CancellationToken ct = default);
+}
+
+public interface IMembershipTypeRepository
+{
+    Task<MembershipType?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<IReadOnlyList<MembershipType>> GetByCompanyAsync(Guid companyId, CancellationToken ct = default);
+}
+
+public interface IProductRepository
+{
+    Task<Product?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task<IReadOnlyList<Product>> GetByCompanyAsync(Guid companyId, CancellationToken ct = default);
+    Task<StockBySite?> GetStockAsync(Guid productId, Guid siteId, CancellationToken ct = default);
+}
+
+public interface ISaleRepository
+{
+    Task AddAsync(Sale sale, CancellationToken ct = default);
+    void UpdateStock(StockBySite stock);
+    Task<int> SaveChangesAsync(CancellationToken ct = default);
+}
+
 public interface IStaffRepository
 {
     Task<Staff?> GetByIdAsync(Guid id, CancellationToken ct = default);

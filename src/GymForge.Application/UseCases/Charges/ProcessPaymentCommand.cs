@@ -1,6 +1,7 @@
 using FluentValidation;
 using GymForge.Application.DTOs;
 using GymForge.Application.Interfaces;
+using GymForge.Application.Services;
 using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
 using MediatR;
@@ -68,8 +69,16 @@ public class ProcessPaymentCommandValidator : AbstractValidator<ProcessPaymentCo
 public class ProcessPaymentCommandHandler : IRequestHandler<ProcessPaymentCommand, PaymentDto>
 {
     private readonly IChargeRepository _chargeRepo;
+    private readonly IPaymentRepository _paymentRepo;
+    private readonly ICashRegister _cashRegister;
 
-    public ProcessPaymentCommandHandler(IChargeRepository chargeRepo) => _chargeRepo = chargeRepo;
+    public ProcessPaymentCommandHandler(
+        IChargeRepository chargeRepo, IPaymentRepository paymentRepo, ICashRegister cashRegister)
+    {
+        _chargeRepo = chargeRepo;
+        _paymentRepo = paymentRepo;
+        _cashRegister = cashRegister;
+    }
 
     public async Task<PaymentDto> Handle(ProcessPaymentCommand cmd, CancellationToken ct)
     {
@@ -99,6 +108,11 @@ public class ProcessPaymentCommandHandler : IRequestHandler<ProcessPaymentComman
             _chargeRepo.Update(charge);
             remaining -= toAllocate;
         }
+
+        // Persistir el pago e impactar la caja (efectivo) en el turno abierto.
+        await _paymentRepo.AddAsync(payment, ct);
+        await _cashRegister.PostIfCashAsync(
+            cmd.Method, cmd.ShiftId, CashMovementCategory.Membership, cmd.Amount, payment.Id, ct);
 
         await _chargeRepo.SaveChangesAsync(ct);
         return PaymentDto.FromEntity(payment);

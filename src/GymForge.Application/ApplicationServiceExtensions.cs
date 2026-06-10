@@ -1,5 +1,6 @@
 using FluentValidation;
 using GymForge.Application.Behaviors;
+using GymForge.Application.Services;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
@@ -19,6 +20,7 @@ public static class ApplicationServiceExtensions
         });
 
         services.AddValidatorsFromAssembly(assembly);
+        services.AddScoped<ICashRegister, CashRegister>();
 
         return services;
     }

@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>GymForge — Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+:root{
+  --accent:#6366F1;--accent-hover:#4F46E5;
+  --accent-light:rgba(99,102,241,.1);--accent-light2:rgba(99,102,241,.22);
+  --topbar-bg:#FFFFFF;--content-bg:#F3F4F8;--card-bg:#FFFFFF;
+  --border:#E5E6EB;--text:#111118;--text-muted:#6B6C7E;
+  --green:#16A34A;--green-bg:#F0FDF4;
+  --red:#DC2626;--red-bg:#FEF2F2;
+  --amber:#D97706;--amber-bg:#FFFBEB;
+  --blue:#2563EB;--blue-bg:#EFF6FF;
+  --grey:#6B7280;--grey-bg:#F9FAFB;
+  /* Sidebar — always dark regardless of theme */
+  --sb-bg:#0F1117;--sb-border:rgba(255,255,255,.07);
+  --sb-text:rgba(255,255,255,.6);--sb-text-muted:rgba(255,255,255,.28);
+  --sb-hover:rgba(255,255,255,.055);
+  --sb-active-bg:rgba(99,102,241,.2);--sb-active-text:#A5B4FC;
+  --sidebar-w:240px;--topbar-h:52px;
+  --font:'Inter',system-ui,sans-serif;
+}
+[data-dark]{
+  --topbar-bg:#18181C;--content-bg:#111114;--card-bg:#1C1C22;
+  --border:#2E2E38;--text:#F2F2F7;--text-muted:#8E8EA0;
+  --accent-light:rgba(99,102,241,.15);--accent-light2:rgba(99,102,241,.28);
+  --green-bg:#052E16;--red-bg:#200707;--amber-bg:#1C0E00;
+  --blue-bg:#0C1F44;--grey-bg:#1C1C22;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);font-size:13px;background:var(--content-bg);
+     color:var(--text);display:flex;height:100vh;overflow:hidden;}
+
+/* ── SIDEBAR ── */
+#sidebar{
+  width:var(--sidebar-w);background:var(--sb-bg);
+  border-right:1px solid var(--sb-border);display:flex;flex-direction:column;
+  flex-shrink:0;transition:width .2s ease;overflow:hidden;
+}
+#sidebar.collapsed{--sidebar-w:64px;}
+.sidebar-logo{
+  padding:18px 14px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0;
+  border-bottom:1px solid var(--sb-border);margin-bottom:6px;
+}
+.logo-badge{
+  width:34px;height:34px;border-radius:9px;background:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  color:white;font-weight:700;font-size:13px;flex-shrink:0;
+  box-shadow:0 0 0 3px rgba(99,102,241,.25);
+}
+.logo-text .gym-name{font-weight:700;font-size:14px;white-space:nowrap;color:rgba(255,255,255,.92);}
+.logo-text .site-name{font-size:11px;color:rgba(255,255,255,.35);margin-top:1px;}
+#sidebar.collapsed .logo-text,#sidebar.collapsed .nav-label,
+#sidebar.collapsed .nav-section-label{display:none;}
+.nav-scroll{flex:1;overflow-y:auto;padding:4px 8px 8px;}
+.nav-section-label{
+  font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--sb-text-muted);padding:14px 12px 5px;white-space:nowrap;
+}
+.nav-btn{
+  display:flex;align-items:center;gap:11px;padding:8px 11px;
+  height:38px;width:100%;border:none;background:transparent;
+  border-radius:8px;cursor:pointer;color:var(--sb-text);
+  font-size:13px;font-weight:500;text-align:left;white-space:nowrap;overflow:hidden;
+  margin-bottom:1px;transition:background .12s,color .12s;font-family:var(--font);
+}
+.nav-btn:hover{background:var(--sb-hover);color:rgba(255,255,255,.88);}
+.nav-btn.active{background:var(--sb-active-bg);color:var(--sb-active-text);font-weight:600;}
+.nav-icon{width:20px;height:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.nav-icon svg{width:17px;height:17px;stroke-width:1.75;}
+.nav-label{font-size:13px;}
+.nav-bottom{padding:8px;border-top:1px solid var(--sb-border);flex-shrink:0;}
+/* Theme icon swap via CSS */
+.theme-sun{display:none;}
+[data-dark] .theme-moon{display:none;}
+[data-dark] .theme-sun{display:block;}
+
+/* ── SHELL ── */
+#shell{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+#topbar{
+  height:var(--topbar-h);background:var(--topbar-bg);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 16px;gap:8px;flex-shrink:0;
+}
+.search-btn{
+  background:var(--content-bg);border:1px solid var(--border);border-radius:9px;
+  padding:0 12px;display:flex;align-items:center;gap:8px;
+  color:var(--text-muted);min-width:280px;font-size:13px;
+  font-family:var(--font);height:34px;cursor:text;transition:border-color .15s;
+}
+.search-btn:focus-within{border-color:var(--accent);}
+.search-btn svg{width:14px;height:14px;flex-shrink:0;}
+.search-btn input{
+  border:none;background:transparent;outline:none;width:100%;
+  font-size:13px;color:var(--text);font-family:var(--font);cursor:text;
+}
+.search-btn input::placeholder{color:var(--text-muted);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:6px;}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--accent);
+        display:flex;align-items:center;justify-content:center;
+        color:white;font-weight:700;font-size:12px;cursor:pointer;}
+.icon-btn{width:34px;height:34px;border-radius:8px;border:none;
+           background:transparent;cursor:pointer;
+           display:flex;align-items:center;justify-content:center;
+           color:var(--text-muted);transition:background .12s,color .12s;}
+.icon-btn:hover{background:var(--accent-light);color:var(--accent);}
+.icon-btn svg{width:17px;height:17px;}
+.back-btn{display:none;}
+.back-btn.visible{display:flex;}
+#content{flex:1;overflow:auto;min-height:0;}
+
+/* ── CARD ── */
+.card{background:var(--card-bg);border-radius:12px;
+      box-shadow:0 1px 3px rgba(0,0,0,.05),0 4px 12px rgba(0,0,0,.03);
+      padding:20px;border:1px solid var(--border);}
+
+/* ── VIEWS ── */
+.view{display:none;height:100%;}
+.view.active{display:flex;flex-direction:column;height:100%;}
+
+/* ── DASHBOARD ── */
+#view-dashboard{overflow-y:auto;}
+.dash-scroll{padding:28px;display:flex;flex-direction:column;gap:22px;}
+.dash-header h1{font-size:22px;font-weight:700;letter-spacing:-.3px;}
+.dash-header p{color:var(--text-muted);font-size:13px;margin-top:4px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+.kpi-card{
+  background:var(--card-bg);border-radius:14px;padding:20px;
+  box-shadow:0 1px 3px rgba(0,0,0,.05),0 4px 16px rgba(0,0,0,.04);
+  border:1px solid var(--border);border-top:3px solid var(--kpi-accent,var(--accent));
+}
+.kpi-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;}
+.kpi-label{font-size:12px;font-weight:500;color:var(--text-muted);}
+.kpi-icon{
+  width:36px;height:36px;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.kpi-icon svg{width:17px;height:17px;}
+.kpi-value{font-size:30px;font-weight:700;letter-spacing:-.5px;margin-bottom:6px;}
+.kpi-trend{font-size:11px;display:flex;align-items:center;gap:4px;margin-top:2px;color:var(--text-muted);}
+.kpi-trend svg{width:12px;height:12px;}
+.kpi-trend.up{color:var(--green);}
+.kpi-trend.down{color:var(--red);}
+/* KPI color variants */
+.kpi-indigo{--kpi-accent:#6366F1;}
+.kpi-indigo .kpi-value{color:#6366F1;}
+.kpi-indigo .kpi-icon{background:rgba(99,102,241,.1);color:#6366F1;}
+.kpi-purple{--kpi-accent:#9333EA;}
+.kpi-purple .kpi-value{color:#9333EA;}
+.kpi-purple .kpi-icon{background:rgba(147,51,234,.1);color:#9333EA;}
+.kpi-red{--kpi-accent:#DC2626;}
+.kpi-red .kpi-value{color:#DC2626;}
+.kpi-red .kpi-icon{background:rgba(220,38,38,.1);color:#DC2626;}
+.kpi-green{--kpi-accent:#16A34A;}
+.kpi-green .kpi-value{color:#16A34A;}
+.kpi-green .kpi-icon{background:rgba(22,163,74,.1);color:#16A34A;}
+/* saldo oculto */
+.saldo-wrap{display:flex;align-items:center;gap:8px;}
+.saldo-val{transition:filter .2s;}
+.saldo-val.hidden{filter:blur(6px);user-select:none;}
+.cobro-saldo.hidden{filter:blur(6px);user-select:none;}
+.eye-btn{border:none;background:transparent;cursor:pointer;font-size:15px;
+         opacity:.5;padding:0;line-height:1;transition:opacity .15s;}
+.eye-btn:hover{opacity:1;}
+.quick-actions h3{font-size:14px;font-weight:600;margin-bottom:12px;}
+.quick-grid{display:flex;gap:8px;flex-wrap:wrap;}
+.quick-btn{
+  padding:9px 16px;border-radius:9px;border:1px solid var(--border);
+  background:var(--card-bg);cursor:pointer;color:var(--text);
+  font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;
+  font-family:var(--font);transition:all .15s;
+}
+.quick-btn:hover{background:var(--accent-light);color:var(--accent);border-color:rgba(99,102,241,.3);}
+.quick-btn svg{width:15px;height:15px;flex-shrink:0;}
+
+/* ── MEMBERS LIST ── */
+#view-members{flex-direction:column;}
+.toolbar{background:var(--card-bg);border-bottom:1px solid var(--border);
+          padding:10px 16px;display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.toolbar-right{margin-left:auto;display:flex;gap:8px;}
+.tb-search{
+  border:1px solid var(--border);border-radius:9px;padding:7px 12px;
+  font-size:13px;width:300px;background:var(--content-bg);color:var(--text);
+  font-family:var(--font);outline:none;transition:border-color .15s;
+}
+.tb-search:focus{border-color:var(--accent);}
+[data-dark] .tb-search{background:rgba(255,255,255,.05);}
+.tb-select{
+  border:1px solid var(--border);border-radius:9px;padding:7px 10px;
+  font-size:13px;background:var(--content-bg);color:var(--text);
+  font-family:var(--font);cursor:pointer;outline:none;
+}
+[data-dark] .tb-select{background:rgba(255,255,255,.05);}
+.btn{padding:7px 14px;border-radius:8px;border:1px solid var(--border);
+      font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);color:var(--text);
+      background:var(--card-bg);display:flex;align-items:center;gap:6px;
+      transition:all .15s;white-space:nowrap;}
+.btn:hover{background:var(--accent-light);color:var(--accent);border-color:rgba(99,102,241,.28);}
+.btn svg{width:14px;height:14px;}
+.btn-primary{background:var(--accent);color:white;border-color:var(--accent);
+              box-shadow:0 1px 4px rgba(99,102,241,.3);}
+.btn-primary:hover{background:var(--accent-hover);border-color:var(--accent-hover);
+                    color:white;box-shadow:0 2px 8px rgba(99,102,241,.4);}
+.btn-danger{background:transparent;color:var(--red);border-color:transparent;}
+.btn-danger:hover{background:var(--red-bg);border-color:rgba(220,38,38,.2);color:var(--red);}
+.data-table{flex:1;overflow:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead th{padding:10px 12px;text-align:left;font-weight:600;font-size:11px;
+          border-bottom:1px solid var(--border);position:sticky;top:0;
+          background:var(--card-bg);color:var(--text-muted);white-space:nowrap;
+          text-transform:uppercase;letter-spacing:.04em;}
+tbody tr{cursor:pointer;transition:background .1s;}
+tbody tr:hover{background:var(--accent-light);}
+tbody td{padding:0 12px;height:40px;border-bottom:1px solid var(--border);white-space:nowrap;}
+.av-cell{width:28px;height:28px;border-radius:50%;background:var(--accent);
+          display:flex;align-items:center;justify-content:center;
+          color:white;font-size:12px;font-weight:600;}
+.badge{display:inline-flex;align-items:center;padding:2px 9px;
+       border-radius:20px;font-size:11px;font-weight:600;}
+.badge-green{background:var(--green-bg);color:var(--green);}
+.badge-red{background:var(--red-bg);color:var(--red);}
+.badge-amber{background:var(--amber-bg);color:var(--amber);}
+.badge-blue{background:var(--blue-bg);color:var(--blue);}
+.badge-grey{background:var(--grey-bg);color:var(--grey);}
+.table-footer{padding:8px 16px;background:var(--card-bg);border-top:1px solid var(--border);
+               display:flex;align-items:center;justify-content:space-between;
+               font-size:12px;color:var(--text-muted);flex-shrink:0;}
+
+/* ── MEMBER DETAIL ── */
+#view-detail{flex-direction:column;}
+.detail-header{background:var(--card-bg);border-bottom:1px solid var(--border);
+                padding:16px 20px;display:flex;align-items:center;gap:14px;flex-shrink:0;}
+.detail-av{width:52px;height:52px;border-radius:50%;background:var(--accent);
+            display:flex;align-items:center;justify-content:center;
+            color:white;font-size:20px;font-weight:700;flex-shrink:0;}
+.detail-meta h2{font-size:18px;font-weight:700;letter-spacing:-.2px;}
+.detail-meta .meta-row{display:flex;gap:16px;margin-top:4px;font-size:12px;color:var(--text-muted);}
+.tab-bar{background:var(--card-bg);border-bottom:1px solid var(--border);
+          display:flex;flex-shrink:0;padding:0 4px;}
+.tab-btn{padding:10px 14px;border:none;background:transparent;cursor:pointer;
+          font-size:13px;font-weight:500;color:var(--text-muted);
+          border-bottom:2px solid transparent;margin-bottom:-1px;
+          font-family:var(--font);transition:all .15s;}
+.tab-btn:hover{color:var(--text);}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600;}
+.tab-content{flex:1;overflow:auto;}
+.tab-panel{display:none;padding:24px;}
+.tab-panel.active{display:block;}
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 24px;}
+.field{margin-bottom:18px;}
+.field-label{font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:4px;
+              text-transform:uppercase;letter-spacing:.04em;}
+.field-value{font-size:14px;font-weight:500;}
+.ms-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 120px;
+         gap:8px;align-items:center;padding:10px 0;
+         border-bottom:1px solid var(--border);font-size:13px;}
+.ms-header{font-weight:600;font-size:11px;color:var(--text-muted);
+            text-transform:uppercase;letter-spacing:.04em;}
+
+/* ── CHECK-IN KIOSK ── */
+#view-kiosk{background:#0A0A10;align-items:center;justify-content:center;}
+.kiosk-wrap{display:flex;flex-direction:column;align-items:center;
+             width:100%;max-width:480px;padding:20px;}
+.kiosk-title{color:rgba(255,255,255,.28);font-size:11px;letter-spacing:.2em;
+              text-transform:uppercase;margin-bottom:36px;font-weight:500;}
+.kiosk-av{width:140px;height:140px;border-radius:50%;background:#14141E;
+           display:flex;align-items:center;justify-content:center;font-size:56px;
+           margin-bottom:20px;border:2px solid rgba(255,255,255,.06);
+           box-shadow:0 0 60px rgba(99,102,241,.08);}
+.kiosk-name{color:white;font-size:28px;font-weight:700;margin-bottom:6px;
+             text-align:center;letter-spacing:-.3px;}
+.kiosk-sub{color:rgba(255,255,255,.4);font-size:14px;margin-bottom:24px;text-align:center;}
+.kiosk-badge{padding:8px 28px;border-radius:24px;font-size:15px;font-weight:700;
+              letter-spacing:.05em;text-transform:uppercase;margin-bottom:20px;}
+.kiosk-badge.granted{background:rgba(22,163,74,.12);color:#4ADE80;border:1px solid rgba(22,163,74,.3);}
+.kiosk-badge.denied{background:rgba(220,38,38,.12);color:#F87171;border:1px solid rgba(220,38,38,.3);}
+.kiosk-badge.idle{background:rgba(255,255,255,.04);color:rgba(255,255,255,.22);
+                   border:1px solid rgba(255,255,255,.08);}
+.kiosk-countdown{color:rgba(255,255,255,.28);font-size:12px;margin-top:4px;}
+.kiosk-debt{background:rgba(217,119,6,.1);border:1px solid rgba(217,119,6,.28);
+             border-radius:10px;padding:10px 20px;color:#FCD34D;font-size:13px;
+             margin-top:12px;text-align:center;}
+.kiosk-hint{color:rgba(255,255,255,.18);font-size:13px;margin-top:28px;
+             text-align:center;line-height:1.8;}
+.kiosk-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.12);
+            display:inline-block;margin:0 3px;animation:pulse 2s infinite;}
+.kiosk-dot:nth-child(2){animation-delay:.3s;}
+.kiosk-dot:nth-child(3){animation-delay:.6s;}
+@keyframes pulse{0%,100%{opacity:.12}50%{opacity:.55}}
+.dni-wrap{margin-top:28px;display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;}
+.dni-input{
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+  border-radius:12px;padding:12px 20px;font-size:20px;text-align:center;
+  color:white;outline:none;width:260px;font-family:var(--font);
+  letter-spacing:4px;caret-color:#A5B4FC;transition:border-color .15s,background .15s;
+}
+.dni-input:focus{border-color:rgba(165,180,252,.4);background:rgba(255,255,255,.08);}
+.dni-input::placeholder{color:rgba(255,255,255,.18);letter-spacing:2px;font-size:14px;}
+.dni-label{color:rgba(255,255,255,.24);font-size:11px;letter-spacing:.1em;font-weight:500;}
+.kiosk-demo-row{display:flex;gap:10px;margin-top:20px;}
+.kiosk-btn{padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,.1);
+            background:rgba(255,255,255,.04);color:rgba(255,255,255,.5);
+            cursor:pointer;font-size:12px;font-family:var(--font);
+            transition:all .15s;font-weight:500;}
+.kiosk-btn:hover{background:rgba(255,255,255,.08);color:rgba(255,255,255,.85);
+                  border-color:rgba(255,255,255,.2);}
+
+/* ── COBROS ── */
+#view-cobros{flex-direction:column;}
+.cobros-footer{padding:10px 16px;display:flex;justify-content:space-between;
+                align-items:center;background:var(--card-bg);
+                border-top:1px solid var(--border);font-size:13px;flex-shrink:0;}
+
+/* ── PLACEHOLDER ── */
+.placeholder-view{flex:1;display:flex;align-items:center;justify-content:center;}
+.placeholder-inner{text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px;}
+.placeholder-icon{font-size:56px;opacity:.14;}
+.placeholder-title{font-size:20px;font-weight:700;letter-spacing:-.2px;}
+.placeholder-sub{font-size:13px;color:var(--text-muted);max-width:340px;line-height:1.7;}
+.placeholder-pill{background:var(--accent-light);color:var(--accent);
+                   border-radius:20px;padding:4px 14px;font-size:12px;font-weight:600;
+                   display:inline-block;border:1px solid rgba(99,102,241,.2);}
+
+/* ── MODAL ── */
+.overlay{display:none;position:fixed;inset:0;
+          background:rgba(0,0,0,.48);backdrop-filter:blur(4px);
+          z-index:200;align-items:center;justify-content:center;}
+.overlay.open{display:flex;}
+.modal{background:var(--card-bg);border-radius:16px;padding:28px;width:440px;
+        box-shadow:0 24px 80px rgba(0,0,0,.28);border:1px solid var(--border);}
+.modal h3{font-size:17px;font-weight:700;margin-bottom:22px;letter-spacing:-.2px;}
+.form-field{margin-bottom:16px;}
+.form-label{font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:6px;
+             display:block;text-transform:uppercase;letter-spacing:.04em;}
+.form-input{width:100%;padding:9px 11px;border:1px solid var(--border);
+             border-radius:9px;font-size:13px;background:var(--content-bg);
+             color:var(--text);font-family:var(--font);outline:none;transition:border-color .15s;}
+.form-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-light);}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:24px;}
+.charge-info{background:var(--content-bg);border-radius:10px;padding:14px;
+              margin-bottom:20px;border:1px solid var(--border);}
+.charge-info .ci-desc{font-weight:600;margin-bottom:4px;}
+.charge-info .ci-sub{font-size:12px;color:var(--text-muted);}
+
+/* ── CREATE MEMBER ── */
+#view-create{flex-direction:column;}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(0,0,0,.12);border-radius:3px;}
+[data-dark] ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-badge">GF</div>
+    <div class="logo-text">
+      <div class="gym-name">Power Gym</div>
+      <div class="site-name">Sede Central</div>
+    </div>
+  </div>
+  <div class="nav-scroll">
+    <div class="nav-section-label">Principal</div>
+    <button class="nav-btn" data-view="dashboard" onclick="navigate('dashboard')">
+      <span class="nav-icon"><i data-lucide="layout-dashboard"></i></span>
+      <span class="nav-label">Dashboard</span>
+    </button>
+    <button class="nav-btn" data-view="members" onclick="navigate('members')">
+      <span class="nav-icon"><i data-lucide="users"></i></span>
+      <span class="nav-label">Socios</span>
+    </button>
+    <button class="nav-btn" data-view="kiosk" onclick="navigate('kiosk')">
+      <span class="nav-icon"><i data-lucide="scan-line"></i></span>
+      <span class="nav-label">Accesos</span>
+    </button>
+    <button class="nav-btn" data-view="cobros" onclick="navigate('cobros')">
+      <span class="nav-icon"><i data-lucide="landmark"></i></span>
+      <span class="nav-label">Caja</span>
+    </button>
+    <div class="nav-section-label">Gestión</div>
+    <button class="nav-btn" data-view="clases" onclick="navigate('clases')">
+      <span class="nav-icon"><i data-lucide="calendar-days"></i></span>
+      <span class="nav-label">Clases</span>
+    </button>
+    <button class="nav-btn" data-view="rutinas" onclick="navigate('rutinas')">
+      <span class="nav-icon"><i data-lucide="dumbbell"></i></span>
+      <span class="nav-label">Rutinas</span>
+    </button>
+    <button class="nav-btn" data-view="productos" onclick="navigate('productos')">
+      <span class="nav-icon"><i data-lucide="package"></i></span>
+      <span class="nav-label">Productos</span>
+    </button>
+    <button class="nav-btn" data-view="planes" onclick="navigate('planes')">
+      <span class="nav-icon"><i data-lucide="layers"></i></span>
+      <span class="nav-label">Planes</span>
+    </button>
+    <div class="nav-section-label">Análisis</div>
+    <button class="nav-btn" data-view="reportes" onclick="navigate('reportes')">
+      <span class="nav-icon"><i data-lucide="bar-chart-2"></i></span>
+      <span class="nav-label">Reportes</span>
+    </button>
+    <button class="nav-btn" data-view="campanas" onclick="navigate('campanas')">
+      <span class="nav-icon"><i data-lucide="megaphone"></i></span>
+      <span class="nav-label">Campañas</span>
+    </button>
+  </div>
+  <div class="nav-bottom">
+    <button class="nav-btn" data-view="config" onclick="navigate('config')">
+      <span class="nav-icon"><i data-lucide="settings"></i></span>
+      <span class="nav-label">Configuración</span>
+    </button>
+    <button class="nav-btn" id="theme-btn" onclick="toggleTheme()">
+      <span class="nav-icon">
+        <i data-lucide="moon" class="theme-moon"></i>
+        <i data-lucide="sun" class="theme-sun"></i>
+      </span>
+      <span class="nav-label">Tema oscuro</span>
+    </button>
+    <button class="nav-btn" onclick="toggleSidebar()">
+      <span class="nav-icon" id="collapse-icon" style="font-size:15px;line-height:1;">◀</span>
+    </button>
+  </div>
+</nav>
+
+<!-- SHELL -->
+<div id="shell">
+  <div id="topbar">
+    <button class="icon-btn back-btn" id="back-btn" onclick="goBack()" title="Volver (Alt+←)">
+      <i data-lucide="chevron-left"></i>
+    </button>
+    <div class="search-btn" onclick="this.querySelector('input').focus()">
+      <i data-lucide="search"></i>
+      <input id="global-search" type="text" placeholder="Buscar socio, cobro... (Ctrl+K)" autocomplete="off"
+             oninput="onGlobalSearch(this.value)" />
+    </div>
+    <div class="topbar-right">
+      <button class="icon-btn"><i data-lucide="bell"></i></button>
+      <div class="avatar">A</div>
+    </div>
+  </div>
+
+  <div id="content">
+
+    <!-- ═══ DASHBOARD ══════════════════════════════════════════════════════ -->
+    <div class="view" id="view-dashboard">
+      <div class="dash-scroll">
+        <div class="dash-header">
+          <h1>Dashboard</h1>
+          <p>Resumen del día — Martes 21 de abril de 2026</p>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card kpi-indigo">
+            <div class="kpi-top">
+              <div class="kpi-label">Socios activos</div>
+              <div class="kpi-icon"><i data-lucide="users"></i></div>
+            </div>
+            <div class="kpi-value">247</div>
+            <div class="kpi-trend up"><i data-lucide="trending-up"></i> +8 altas este mes</div>
+          </div>
+          <div class="kpi-card kpi-purple">
+            <div class="kpi-top">
+              <div class="kpi-label">Check-ins hoy</div>
+              <div class="kpi-icon"><i data-lucide="door-open"></i></div>
+            </div>
+            <div class="kpi-value">43</div>
+            <div class="kpi-trend up"><i data-lucide="trending-up"></i> vs 38 ayer</div>
+          </div>
+          <div class="kpi-card kpi-red">
+            <div class="kpi-top">
+              <div class="kpi-label">En mora</div>
+              <div class="kpi-icon"><i data-lucide="alert-triangle"></i></div>
+            </div>
+            <div class="kpi-value">18</div>
+            <div class="kpi-trend down"><i data-lucide="trending-down"></i> Requieren cobro</div>
+          </div>
+          <div class="kpi-card kpi-green">
+            <div class="kpi-top">
+              <div class="kpi-label">
+                Recaudación
+                <button class="eye-btn" id="eye-kpi" onclick="toggleSaldo('kpi-saldo','eye-kpi')" title="Mostrar/ocultar">👁️</button>
+              </div>
+              <div class="kpi-icon"><i data-lucide="banknote"></i></div>
+            </div>
+            <div class="kpi-value">
+              <div class="saldo-wrap">
+                <span class="saldo-val" id="kpi-saldo">$487.300</span>
+              </div>
+            </div>
+            <div class="kpi-trend up"><i data-lucide="trending-up"></i> Este mes</div>
+          </div>
+        </div>
+
+        <div class="card quick-actions">
+          <h3>Acciones rápidas</h3>
+          <div class="quick-grid">
+            <button class="quick-btn" onclick="navigate('members');setTimeout(()=>openCreateMember(),80)">
+              <i data-lucide="user-plus"></i> Nuevo socio
+            </button>
+            <button class="quick-btn" onclick="navigate('kiosk')">
+              <i data-lucide="scan-line"></i> Check-in manual
+            </button>
+            <button class="quick-btn" onclick="navigate('cobros');setTimeout(()=>openPaymentModal(),80)">
+              <i data-lucide="credit-card"></i> Registrar cobro
+            </button>
+            <button class="quick-btn" onclick="navigate('members')">
+              <i data-lucide="alert-triangle"></i> Ver morosos
+            </button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="font-size:14px;font-weight:600;margin-bottom:14px;">Últimos accesos</h3>
+          <table>
+            <thead><tr><th>Socio</th><th>Hora</th><th>Resultado</th><th>Puerta</th></tr></thead>
+            <tbody>
+              <tr><td>García, María</td><td>14:32</td><td><span class="badge badge-green">Concedido</span></td><td>Principal</td></tr>
+              <tr><td>López, Carlos</td><td>14:28</td><td><span class="badge badge-red">Sin membresía</span></td><td>Principal</td></tr>
+              <tr><td>Fernández, Ana</td><td>14:25</td><td><span class="badge badge-green">Concedido</span></td><td>Principal</td></tr>
+              <tr><td>Rodríguez, Luis</td><td>14:19</td><td><span class="badge badge-amber">Deuda $3.200</span></td><td>Principal</td></tr>
+              <tr><td>Martínez, Paula</td><td>14:12</td><td><span class="badge badge-green">Concedido</span></td><td>Principal</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ MEMBERS ════════════════════════════════════════════════════════ -->
+    <div class="view" id="view-members">
+      <div class="toolbar">
+        <input class="tb-search" id="member-search" type="text"
+               placeholder="Buscar por nombre, DNI o email..."
+               oninput="filterMembers(this.value)" autocomplete="off" />
+        <select class="tb-select" id="status-filter" onchange="filterMembers(document.getElementById('member-search').value)">
+          <option value="">Todos los estados</option>
+          <option value="Activo">Activos</option>
+          <option value="Vencido">Vencidos</option>
+          <option value="Moroso">Morosos</option>
+          <option value="Congelado">Congelados</option>
+          <option value="Cancelado">Cancelados</option>
+        </select>
+        <button class="btn" onclick="clearFilter()">✕ Limpiar</button>
+        <div class="toolbar-right">
+          <button class="btn" onclick="filterMembers('')" title="Actualizar">🔄</button>
+          <button class="btn btn-primary" onclick="openCreateMember()">
+            <i data-lucide="user-plus"></i> Nuevo socio
+          </button>
+        </div>
+      </div>
+      <div class="data-table" style="background:var(--card-bg);">
+        <table>
+          <thead><tr>
+            <th></th><th>Apellido</th><th>Nombre</th><th>DNI / Doc</th>
+            <th>Email</th><th>Teléfono</th><th>Estado</th><th>Ingreso</th><th>Edad</th><th></th>
+          </tr></thead>
+          <tbody id="members-tbody"></tbody>
+        </table>
+      </div>
+      <div class="table-footer">
+        <span id="members-count">247 socio(s)</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button class="btn">◀</button>
+          <span>Pág. <strong>1</strong> / 5</span>
+          <button class="btn">▶</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ MEMBER DETAIL ══════════════════════════════════════════════════ -->
+    <div class="view" id="view-detail">
+      <div class="detail-header">
+        <div class="detail-av" id="detail-avatar">M</div>
+        <div class="detail-meta">
+          <h2 id="detail-name">García, María Eugenia</h2>
+          <div class="meta-row">
+            <span id="detail-doc">DNI 28.456.123</span>
+            <span id="detail-email">maria.garcia@gmail.com</span>
+            <span id="detail-phone">+54 9 11 4567-8901</span>
+          </div>
+        </div>
+        <div style="margin-left:auto;">
+          <span class="badge badge-green" id="detail-status-badge">Activo</span>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('datos')">Datos</button>
+        <button class="tab-btn" onclick="switchTab('membresias')">Membresías</button>
+        <button class="tab-btn" onclick="switchTab('cobros-tab')">Cobros</button>
+        <button class="tab-btn" onclick="switchTab('accesos')">Accesos</button>
+        <button class="tab-btn" onclick="switchTab('rutinas-tab')">Rutinas</button>
+      </div>
+      <div class="tab-content">
+        <div class="tab-panel active" id="tab-datos">
+          <div class="field-grid">
+            <div class="field"><div class="field-label">Nombre</div><div class="field-value" id="d-fname">María Eugenia</div></div>
+            <div class="field"><div class="field-label">Apellido</div><div class="field-value" id="d-lname">García</div></div>
+            <div class="field"><div class="field-label">Tipo documento</div><div class="field-value">DNI</div></div>
+            <div class="field"><div class="field-label">Número documento</div><div class="field-value" id="d-doc">28.456.123</div></div>
+            <div class="field"><div class="field-label">Email</div><div class="field-value" id="d-email">maria.garcia@gmail.com</div></div>
+            <div class="field"><div class="field-label">Celular</div><div class="field-value" id="d-phone">+54 9 11 4567-8901</div></div>
+            <div class="field"><div class="field-label">Fecha de nacimiento</div><div class="field-value">15/03/1990</div></div>
+            <div class="field"><div class="field-label">Edad</div><div class="field-value" id="d-age">36 años</div></div>
+            <div class="field"><div class="field-label">Socio desde</div><div class="field-value">01/02/2024</div></div>
+            <div class="field"><div class="field-label">Huella digital</div><div class="field-value">✅ Registrada</div></div>
+            <div class="field"><div class="field-label">Plan actual</div><div class="field-value" id="d-plan">Mensual Full</div></div>
+            <div class="field"><div class="field-label">Último acceso</div><div class="field-value" id="d-lastvisit">21/04/2026</div></div>
+          </div>
+        </div>
+        <div class="tab-panel" id="tab-membresias">
+          <div class="ms-row ms-header"><span>Tipo</span><span>Inicio</span><span>Fin</span><span>Estado</span><span>Visitas</span><span>Acciones</span></div>
+          <div class="ms-row">
+            <span><strong>Plan Mensual Premium</strong></span>
+            <span>01/04/2026</span><span>30/04/2026</span>
+            <span><span class="badge badge-green">Activo</span></span>
+            <span>∞</span>
+            <span style="display:flex;gap:4px;">
+              <button class="btn" style="padding:4px 10px;font-size:12px;">⏸ Congelar</button>
+              <button class="btn" style="padding:4px 10px;font-size:12px;">✕</button>
+            </span>
+          </div>
+          <div class="ms-row" style="opacity:.55">
+            <span>Plan Mensual Básico</span><span>01/03/2026</span><span>31/03/2026</span>
+            <span><span class="badge badge-grey">Expirado</span></span><span>∞</span><span></span>
+          </div>
+          <div class="ms-row" style="opacity:.55">
+            <span>Plan Mensual Básico</span><span>01/02/2026</span><span>28/02/2026</span>
+            <span><span class="badge badge-grey">Expirado</span></span><span>∞</span><span></span>
+          </div>
+          <div style="padding:12px 0;font-size:12px;color:var(--text-muted)">3 membresía(s)</div>
+        </div>
+        <div class="tab-panel" id="tab-cobros-tab">
+          <table style="width:100%">
+            <thead><tr>
+              <th>Vencimiento</th><th>Concepto</th><th>Descripción</th>
+              <th>Total</th><th>Pagado</th>
+              <th>
+                <span style="display:flex;align-items:center;gap:4px;">
+                  Saldo
+                  <button class="eye-btn" id="eye-detail" onclick="toggleSaldo('saldo-detail-col','eye-detail')" title="Ocultar saldos">👁️</button>
+                </span>
+              </th>
+              <th>Estado</th><th></th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td>30/04/2026</td><td>Cuota</td><td>Plan Mensual Premium</td>
+                <td>$25.000</td><td>$0</td>
+                <td class="saldo-val" id="saldo-detail-col" style="color:var(--red);font-weight:600">$25.000</td>
+                <td><span class="badge badge-blue">Pendiente</span></td>
+                <td><button class="btn" style="padding:3px 10px;font-size:12px;" onclick="openPaymentModal('Plan Mensual Premium','25000')">💳 Cobrar</button></td>
+              </tr>
+              <tr>
+                <td>31/03/2026</td><td>Cuota</td><td>Plan Mensual Básico</td>
+                <td>$18.000</td><td>$18.000</td>
+                <td style="color:var(--green);font-weight:600">$0</td>
+                <td><span class="badge badge-green">Pagado</span></td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="cobros-footer" style="margin-top:8px;border-top:1px solid var(--border);padding-top:10px;">
+            <span>2 cobro(s)</span>
+            <span>Saldo total:
+              <button class="eye-btn" id="eye-detail2" onclick="toggleSaldo('saldo-detail2','eye-detail2')" title="Ocultar">👁️</button>
+              <strong class="saldo-val" id="saldo-detail2" style="color:var(--red)">$25.000</strong>
+            </span>
+          </div>
+        </div>
+        <div class="tab-panel" id="tab-accesos">
+          <table style="width:100%">
+            <thead><tr><th>Fecha / Hora</th><th>Resultado</th><th>Motivo denegación</th></tr></thead>
+            <tbody>
+              <tr><td>21/04/2026 14:32</td><td><span style="color:var(--green);font-weight:600">✓ Concedido</span></td><td>—</td></tr>
+              <tr><td>20/04/2026 09:15</td><td><span style="color:var(--green);font-weight:600">✓ Concedido</span></td><td>—</td></tr>
+              <tr><td>19/04/2026 11:40</td><td><span style="color:var(--green);font-weight:600">✓ Concedido</span></td><td>—</td></tr>
+              <tr><td>18/04/2026 08:55</td><td><span style="color:var(--amber);font-weight:600">⚠ Concedido c/deuda</span></td><td>—</td></tr>
+              <tr><td>17/04/2026 16:20</td><td><span style="color:var(--green);font-weight:600">✓ Concedido</span></td><td>—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="tab-panel" id="tab-rutinas-tab" style="display:flex;align-items:center;justify-content:center;min-height:220px;">
+          <div class="placeholder-inner">
+            <div class="placeholder-icon">🏋️</div>
+            <div class="placeholder-title">Módulo Rutinas</div>
+            <div class="placeholder-sub">Asignación de planes de entrenamiento por socio — disponible en Sprint 3</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CHECK-IN KIOSK ══════════════════════════════════════════════════ -->
+    <div class="view" id="view-kiosk">
+      <div class="kiosk-wrap" id="kiosk-idle">
+        <div class="kiosk-title">GymForge — Check-in</div>
+        <div class="kiosk-av">👤</div>
+        <div class="kiosk-badge idle">Esperando acceso</div>
+        <div class="kiosk-hint">
+          Acerque su tarjeta o coloque el dedo en el lector biométrico
+          <div style="margin-top:12px">
+            <span class="kiosk-dot"></span><span class="kiosk-dot"></span><span class="kiosk-dot"></span>
+          </div>
+        </div>
+        <div class="dni-wrap">
+          <div class="dni-label">— O INGRESE SU DNI —</div>
+          <input class="dni-input" id="dni-input" type="text" maxlength="10"
+                 placeholder="Ej: 28456123"
+                 oninput="this.value=this.value.replace(/\D/g,'')"
+                 onkeydown="if(event.key==='Enter')dniCheckIn(this.value)" />
+          <button class="kiosk-btn" onclick="dniCheckIn(document.getElementById('dni-input').value)"
+                  style="padding:10px 24px;font-size:14px;background:rgba(165,180,252,.08);
+                         color:#A5B4FC;border-color:rgba(165,180,252,.25);">
+            ↵ Confirmar ingreso
+          </button>
+        </div>
+        <div class="kiosk-demo-row">
+          <button class="kiosk-btn" onclick="kioskDemo('granted')">Demo: Acceso ✓</button>
+          <button class="kiosk-btn" onclick="kioskDemo('denied')">Demo: Denegado ✗</button>
+        </div>
+      </div>
+      <div class="kiosk-wrap" id="kiosk-granted" style="display:none">
+        <div class="kiosk-title">GymForge — Check-in</div>
+        <div class="kiosk-av">😊</div>
+        <div class="kiosk-name" id="kiosk-granted-name">¡Hola, María!</div>
+        <div class="kiosk-sub" id="kiosk-granted-plan">Plan Mensual Premium</div>
+        <div class="kiosk-badge granted">✓ ACCESO CONCEDIDO</div>
+        <div class="kiosk-countdown" id="kiosk-countdown">Cerrando en 3...</div>
+      </div>
+      <div class="kiosk-wrap" id="kiosk-denied" style="display:none">
+        <div class="kiosk-title">GymForge — Check-in</div>
+        <div class="kiosk-av">😟</div>
+        <div class="kiosk-name" id="kiosk-denied-name">Acceso denegado</div>
+        <div class="kiosk-sub" id="kiosk-denied-reason">Sin membresía activa</div>
+        <div class="kiosk-badge denied" id="kiosk-denied-badge">✗ ACCESO DENEGADO</div>
+        <div class="kiosk-debt" id="kiosk-denied-msg">Comuníquese con recepción para regularizar su situación</div>
+        <div class="kiosk-countdown" id="kiosk-countdown-denied">Cerrando en 3...</div>
+      </div>
+    </div>
+
+    <!-- ═══ COBROS ══════════════════════════════════════════════════════════ -->
+    <div class="view" id="view-cobros">
+      <div class="toolbar">
+        <span style="font-size:16px;font-weight:700;letter-spacing:-.2px;">Cobros</span>
+        <span class="badge badge-grey" style="margin-left:6px;">12</span>
+        <div class="toolbar-right">
+          <select class="tb-select"><option>Pendiente</option><option>Vencido</option><option>Todos</option></select>
+          <button class="btn btn-primary" onclick="openPaymentModal()">
+            <i data-lucide="check"></i> Registrar pago
+          </button>
+          <button class="btn">🔄</button>
+        </div>
+      </div>
+      <div class="data-table" style="background:var(--card-bg);">
+        <table>
+          <thead><tr>
+            <th>Vencimiento</th><th>Socio</th><th>Concepto</th><th>Descripción</th>
+            <th>Total</th><th>Pagado</th>
+            <th>
+              <span style="display:flex;align-items:center;gap:4px;">
+                Saldo
+                <button class="eye-btn" id="eye-cobros" onclick="toggleSaldoCobros()" title="Mostrar/ocultar saldos">👁️</button>
+              </span>
+            </th>
+            <th>Estado</th><th></th>
+          </tr></thead>
+          <tbody id="cobros-tbody">
+            <tr><td>30/04/2026</td><td>García, María</td><td>Cuota</td><td>Plan Premium</td><td>$25.000</td><td>$0</td><td class="cobro-saldo" style="color:var(--red);font-weight:600">$25.000</td><td><span class="badge badge-blue">Pendiente</span></td><td><button class="btn" style="padding:3px 10px;font-size:12px;" onclick="openPaymentModal('Plan Premium','25000')">💳</button></td></tr>
+            <tr><td>30/04/2026</td><td>López, Carlos</td><td>Cuota</td><td>Plan Básico</td><td>$18.000</td><td>$0</td><td class="cobro-saldo" style="color:var(--red);font-weight:600">$18.000</td><td><span class="badge badge-blue">Pendiente</span></td><td><button class="btn" style="padding:3px 10px;font-size:12px;" onclick="openPaymentModal('Plan Básico','18000')">💳</button></td></tr>
+            <tr><td>15/04/2026</td><td>Fernández, Ana</td><td>Cuota</td><td>Plan Semestral</td><td>$120.000</td><td>$60.000</td><td class="cobro-saldo" style="color:var(--amber);font-weight:600">$60.000</td><td><span class="badge badge-amber">Parcial</span></td><td><button class="btn" style="padding:3px 10px;font-size:12px;" onclick="openPaymentModal('Plan Semestral','60000')">💳</button></td></tr>
+            <tr><td>31/03/2026</td><td>Rodríguez, Luis</td><td>Cuota</td><td>Plan Mensual</td><td>$18.000</td><td>$0</td><td class="cobro-saldo" style="color:var(--red);font-weight:600">$18.000</td><td><span class="badge badge-red">Vencido</span></td><td><button class="btn" style="padding:3px 10px;font-size:12px;" onclick="openPaymentModal('Plan Mensual','18000')">💳</button></td></tr>
+            <tr><td>28/02/2026</td><td>Martínez, Paula</td><td>Mora</td><td>Recargo por mora</td><td>$2.000</td><td>$0</td><td class="cobro-saldo" style="color:var(--red);font-weight:600">$2.000</td><td><span class="badge badge-red">Vencido</span></td><td><button class="btn" style="padding:3px 10px;font-size:12px;" onclick="openPaymentModal('Recargo mora','2000')">💳</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="cobros-footer">
+        <span>12 cobro(s)</span>
+        <span style="display:flex;align-items:center;gap:8px;">
+          Saldo total:
+          <button class="eye-btn" id="eye-cobros-total" onclick="toggleSaldo('cobros-total','eye-cobros-total')" title="Mostrar/ocultar">👁️</button>
+          <strong class="saldo-val" id="cobros-total" style="color:var(--red);font-size:14px">$123.000</strong>
+        </span>
+      </div>
+    </div>
+
+    <!-- ═══ CLASES ══════════════════════════════════════════════════════════ -->
+    <div class="view" id="view-clases">
+      <div class="placeholder-view">
+        <div class="placeholder-inner">
+          <div class="placeholder-icon">📅</div>
+          <div class="placeholder-title">Módulo Clases</div>
+          <div class="placeholder-sub">Gestión de horarios de clases grupales, turnos y sistema de reservas por socio.</div>
+          <div class="placeholder-pill">Sprint 2 — próximamente</div>
+          <div style="margin-top:20px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+            <span class="badge badge-blue">Horarios semanales</span>
+            <span class="badge badge-blue">Reservas online</span>
+            <span class="badge badge-blue">Control de cupo</span>
+            <span class="badge badge-blue">Lista de espera</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ RUTINAS ══════════════════════════════════════════════════════════ -->
+    <div class="view" id="view-rutinas">
+      <div class="placeholder-view">
+        <div class="placeholder-inner">
+          <div class="placeholder-icon">🏋️</div>
+          <div class="placeholder-title">Módulo Rutinas</div>
+          <div class="placeholder-sub">Creación de planes de entrenamiento personalizados con días, ejercicios, series y repeticiones.</div>
+          <div class="placeholder-pill">Sprint 3 — próximamente</div>
+          <div style="margin-top:20px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+            <span class="badge badge-green">80+ ejercicios cargados</span>
+            <span class="badge badge-blue">Grupos musculares</span>
+            <span class="badge badge-blue">Planes por socio</span>
+            <span class="badge badge-blue">Registro de progreso</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PRODUCTOS ══════════════════════════════════════════════════════ -->
+    <div class="view" id="view-productos">
+      <div class="placeholder-view">
+        <div class="placeholder-inner">
+          <div class="placeholder-icon">📦</div>
+          <div class="placeholder-title">Módulo Productos & POS</div>
+          <div class="placeholder-sub">Punto de venta de productos (suplementos, ropa, accesorios), control de stock por sede y scanner HID.</div>
+          <div class="placeholder-pill">Sprint 3 — próximamente</div>
+          <div style="margin-top:20px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+            <span class="badge badge-blue">POS touch</span>
+            <span class="badge badge-blue">Scanner código barras</span>
+            <span class="badge badge-blue">Stock por sede</span>
+            <span class="badge badge-blue">Ticket fiscal</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ REPORTES ══════════════════════════════════════════════════════ -->
+    <div class="view" id="view-reportes">
+      <div class="placeholder-view">
+        <div class="placeholder-inner">
+          <div class="placeholder-icon">📊</div>
+          <div class="placeholder-title">Módulo Reportes</div>
+          <div class="placeholder-sub">Estadísticas de socios, recaudación mensual, tasa de retención, exportación a Excel y PDF con QuestPDF.</div>
+          <div class="placeholder-pill">Sprint 3 — próximamente</div>
+          <div style="margin-top:20px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+            <span class="badge badge-blue">Exportar Excel</span>
+            <span class="badge badge-blue">Exportar PDF</span>
+            <span class="badge badge-blue">Gráficos de retención</span>
+            <span class="badge badge-blue">Dunning automático</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CONFIGURACIÓN ═════════════════════════════════════════════════ -->
+    <div class="view" id="view-config">
+      <div style="padding:28px;overflow-y:auto;height:100%;">
+        <h2 style="font-size:20px;font-weight:700;margin-bottom:6px;letter-spacing:-.2px;">Configuración</h2>
+        <p style="color:var(--text-muted);margin-bottom:24px;font-size:13px;">Parámetros del sistema y preferencias del gimnasio</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;">
+          <div class="card">
+            <div style="font-size:22px;margin-bottom:8px;">🏢</div>
+            <div style="font-weight:600;margin-bottom:4px;">Datos del gimnasio</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Nombre, dirección, logo, CUIT</div>
+            <button class="btn" style="width:100%;justify-content:center;" onclick="openModal('modal-gym')">Editar</button>
+          </div>
+          <div class="card">
+            <div style="font-size:22px;margin-bottom:8px;">🏷️</div>
+            <div style="font-weight:600;margin-bottom:4px;">Planes y precios</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Tipos de membresía, montos, vigencias</div>
+            <button class="btn" style="width:100%;justify-content:center;" onclick="navigate('planes')">Administrar</button>
+          </div>
+          <div class="card">
+            <div style="font-size:22px;margin-bottom:8px;">🚪</div>
+            <div style="font-weight:600;margin-bottom:4px;">Control de acceso</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Puertas, anti-passback, horarios permitidos</div>
+            <button class="btn" style="width:100%;justify-content:center;" onclick="openModal('modal-access')">Configurar</button>
+          </div>
+          <div class="card">
+            <div style="font-size:22px;margin-bottom:8px;">👤</div>
+            <div style="font-weight:600;margin-bottom:4px;">Usuarios del sistema</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Staff, roles y permisos</div>
+            <button class="btn" style="width:100%;justify-content:center;" onclick="openModal('modal-users')">Gestionar</button>
+          </div>
+          <div class="card">
+            <div style="font-size:22px;margin-bottom:8px;">🖨️</div>
+            <div style="font-weight:600;margin-bottom:4px;">Impresora fiscal</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Hasar / Epson, puerto COM, AFIP WSFE</div>
+            <div class="placeholder-pill" style="font-size:11px;">Sprint 2</div>
+          </div>
+          <div class="card">
+            <div style="font-size:22px;margin-bottom:8px;">📱</div>
+            <div style="font-weight:600;margin-bottom:4px;">Notificaciones WhatsApp</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Twilio / Wassenger, templates de mensajes</div>
+            <div class="placeholder-pill" style="font-size:11px;">Sprint 2</div>
+          </div>
+          <div class="card">
+            <div style="font-size:22px;margin-bottom:8px;">☁️</div>
+            <div style="font-weight:600;margin-bottom:4px;">Sincronización cloud</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">PostgreSQL remoto, frecuencia de sync</div>
+            <div class="placeholder-pill" style="font-size:11px;">Sprint 2</div>
+          </div>
+          <div class="card">
+            <div style="font-size:22px;margin-bottom:8px;">🌙</div>
+            <div style="font-weight:600;margin-bottom:4px;">Apariencia</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">Tema claro/oscuro, idioma, zona horaria</div>
+            <button class="btn" onclick="toggleTheme()" style="width:100%;justify-content:center;">Cambiar tema</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CREATE MEMBER ═════════════════════════════════════════════════ -->
+    <div class="view" id="view-create">
+      <div class="toolbar" style="padding:14px 20px;">
+        <button class="btn" onclick="goBack()"><i data-lucide="chevron-left"></i> Volver</button>
+        <span style="font-size:17px;font-weight:700;margin-left:12px;letter-spacing:-.2px;">Nuevo socio</span>
+      </div>
+      <div style="overflow-y:auto;flex:1;padding:24px;">
+        <div style="display:grid;grid-template-columns:1fr 220px;gap:32px;max-width:860px;">
+          <div>
+            <div style="font-size:15px;font-weight:600;margin-bottom:16px;">Datos personales</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+              <div class="form-field"><label class="form-label">Nombre *</label><input class="form-input" placeholder="Ej: Juan" /></div>
+              <div class="form-field"><label class="form-label">Apellido *</label><input class="form-input" placeholder="Ej: Pérez" /></div>
+              <div class="form-field"><label class="form-label">Tipo documento *</label>
+                <select class="form-input"><option>DNI</option><option>CUIL</option><option>Pasaporte</option></select>
+              </div>
+              <div class="form-field"><label class="form-label">Número documento *</label><input class="form-input" placeholder="Ej: 32123456" /></div>
+              <div class="form-field"><label class="form-label">Email</label><input class="form-input" type="email" placeholder="socio@email.com" /></div>
+              <div class="form-field"><label class="form-label">Celular</label><input class="form-input" placeholder="+54 9 11 1234-5678" /></div>
+              <div class="form-field"><label class="form-label">Fecha de nacimiento</label><input class="form-input" type="date" /></div>
+              <div class="form-field"><label class="form-label">Género</label>
+                <select class="form-input"><option>Masculino</option><option>Femenino</option><option>No especifica</option></select>
+              </div>
+              <div class="form-field"><label class="form-label">Cómo nos conoció</label>
+                <select class="form-input"><option>Visita directa</option><option>Referido</option><option>Redes sociales</option><option>Publicidad</option></select>
+              </div>
+              <div class="form-field" style="display:flex;align-items:flex-end;padding-bottom:6px;">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+                  <input type="checkbox" /> Acepta comunicaciones de marketing
+                </label>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:15px;font-weight:600;margin-bottom:16px;">Foto y biometría</div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+              <div style="width:140px;height:160px;border-radius:12px;
+                          background:var(--content-bg);border:2px dashed var(--border);
+                          display:flex;align-items:center;justify-content:center;
+                          font-size:48px;opacity:.35;">👤</div>
+              <button class="btn" style="width:100%;justify-content:center;">📷 Capturar foto</button>
+              <div style="width:90px;height:90px;border-radius:50%;background:var(--content-bg);
+                          border:2px dashed var(--border);display:flex;align-items:center;
+                          justify-content:center;font-size:36px;opacity:.35;">👆</div>
+              <button class="btn" style="width:100%;justify-content:center;">➕ Enrolar huella</button>
+              <span style="font-size:10px;color:var(--text-muted);text-align:center;">(disponible en Sprint 2)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:14px 24px;background:var(--card-bg);border-top:1px solid var(--border);
+                  display:flex;justify-content:flex-end;gap:10px;flex-shrink:0;">
+        <button class="btn" onclick="goBack()">Cancelar</button>
+        <button class="btn btn-primary" onclick="goBack()">
+          <i data-lucide="save"></i> Guardar socio
+        </button>
+      </div>
+    </div>
+
+    <!-- ═══ PLANES ═══════════════════════════════════════════════════════════ -->
+    <div class="view" id="view-planes">
+      <div class="toolbar" style="padding:14px 20px;gap:12px;flex-wrap:wrap;">
+        <span style="font-size:17px;font-weight:700;letter-spacing:-.2px;">Planes de membresía</span>
+        <div style="flex:1"></div>
+        <button class="btn btn-primary" onclick="openModal('modal-nuevo-plan')">
+          <i data-lucide="plus"></i> Nuevo plan
+        </button>
+      </div>
+      <div style="overflow-y:auto;flex:1;">
+        <table style="width:100%">
+          <thead><tr>
+            <th>Nombre</th><th>Precio ARS</th><th>Duración (días)</th><th>Visitas máx.</th><th>Activo</th><th></th>
+          </tr></thead>
+          <tbody id="planes-tbody">
+            <tr>
+              <td><strong>Mensual Full</strong></td><td>$35.000</td><td>30</td><td>∞</td>
+              <td><span class="badge badge-green">Sí</span></td>
+              <td style="display:flex;gap:6px;">
+                <button class="btn" style="padding:3px 10px;font-size:12px;" onclick="editPlan(this)">✏️ Editar</button>
+                <button class="btn btn-danger" style="padding:3px 10px;font-size:12px;" onclick="deletePlan(this)">✕</button>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Mensual Mañana</strong></td><td>$22.000</td><td>30</td><td>∞</td>
+              <td><span class="badge badge-green">Sí</span></td>
+              <td style="display:flex;gap:6px;">
+                <button class="btn" style="padding:3px 10px;font-size:12px;" onclick="editPlan(this)">✏️ Editar</button>
+                <button class="btn btn-danger" style="padding:3px 10px;font-size:12px;" onclick="deletePlan(this)">✕</button>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Trimestral Full</strong></td><td>$90.000</td><td>90</td><td>∞</td>
+              <td><span class="badge badge-green">Sí</span></td>
+              <td style="display:flex;gap:6px;">
+                <button class="btn" style="padding:3px 10px;font-size:12px;" onclick="editPlan(this)">✏️ Editar</button>
+                <button class="btn btn-danger" style="padding:3px 10px;font-size:12px;" onclick="deletePlan(this)">✕</button>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Visitas x10</strong></td><td>$18.000</td><td>—</td><td>10</td>
+              <td><span class="badge badge-green">Sí</span></td>
+              <td style="display:flex;gap:6px;">
+                <button class="btn" style="padding:3px 10px;font-size:12px;" onclick="editPlan(this)">✏️ Editar</button>
+                <button class="btn btn-danger" style="padding:3px 10px;font-size:12px;" onclick="deletePlan(this)">✕</button>
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Plan Libre</strong></td><td>$50.000</td><td>30</td><td>∞</td>
+              <td><span class="badge badge-grey">No</span></td>
+              <td style="display:flex;gap:6px;">
+                <button class="btn" style="padding:3px 10px;font-size:12px;" onclick="editPlan(this)">✏️ Editar</button>
+                <button class="btn btn-danger" style="padding:3px 10px;font-size:12px;" onclick="deletePlan(this)">✕</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="cobros-footer">
+        <span id="planes-count">5 plan(es)</span>
+      </div>
+    </div>
+
+    <!-- ═══ CAMPAÑAS ══════════════════════════════════════════════════════════ -->
+    <div class="view" id="view-campanas">
+      <div style="padding:24px;overflow-y:auto;height:100%;">
+        <h2 style="font-size:20px;font-weight:700;margin-bottom:4px;letter-spacing:-.2px;">Campañas WhatsApp</h2>
+        <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">Identificá socios inactivos y enviá mensajes personalizados</p>
+        <div class="card" style="margin-bottom:20px;">
+          <div style="font-weight:600;margin-bottom:12px;">Filtrar socios inactivos</div>
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+            <div class="form-field" style="margin:0;">
+              <label class="form-label">Sin visitas hace más de (días)</label>
+              <input class="form-input" type="number" id="camp-days" value="30" min="1" style="width:100px" />
+            </div>
+            <div class="form-field" style="margin:0;">
+              <label class="form-label">Template de mensaje</label>
+              <select class="form-input" id="camp-template" style="width:280px">
+                <option value="motivacional">💪 Motivacional — "¡Te extrañamos! Volvé a entrenar"</option>
+                <option value="oferta">🎁 Oferta especial — "20% OFF en tu renovación este mes"</option>
+                <option value="recordatorio">💳 Recordatorio de pago — "Tenés un saldo pendiente"</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="filterCampanas()" style="margin-top:18px;">
+              <i data-lucide="search"></i> Buscar
+            </button>
+          </div>
+        </div>
+        <div id="camp-results" style="display:none;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <span style="font-size:13px;color:var(--text-muted);" id="camp-result-label">3 socios encontrados</span>
+            <button class="btn btn-primary" onclick="simularEnvio()">
+              <i data-lucide="send"></i> Simular envío
+            </button>
+          </div>
+          <table style="width:100%">
+            <thead><tr>
+              <th>Nombre</th><th>Último acceso</th><th>Teléfono</th><th>Plan</th><th>Estado</th>
+            </tr></thead>
+            <tbody id="camp-tbody"></tbody>
+          </table>
+        </div>
+        <div id="camp-empty" style="display:none;text-align:center;padding:40px 0;color:var(--text-muted);font-size:13px;">
+          Ningún socio cumple el criterio. Reducí el número de días.
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /shell -->
+
+<!-- PAYMENT MODAL -->
+<div class="overlay" id="payment-overlay" onclick="if(event.target===this)closePaymentModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>Registrar pago</h3>
+    <div class="charge-info" id="modal-charge-info">
+      <div class="ci-desc" id="modal-desc">Cobro seleccionado</div>
+      <div class="ci-sub">Saldo: <strong id="modal-saldo">—</strong></div>
+    </div>
+    <div class="form-field">
+      <label class="form-label">Monto a cobrar *</label>
+      <input class="form-input" type="number" id="modal-amount" step="100" style="width:180px" />
+    </div>
+    <div class="form-field">
+      <label class="form-label">Método de pago *</label>
+      <select class="form-input" id="modal-method" onchange="toggleCardFields()" style="width:220px">
+        <option value="cash">💵 Efectivo</option>
+        <option value="debit">💳 Tarjeta de débito</option>
+        <option value="credit">💳 Tarjeta de crédito</option>
+        <option value="transfer">🏦 Transferencia bancaria</option>
+        <option value="mp">📱 MercadoPago</option>
+      </select>
+    </div>
+    <div id="card-fields" style="display:none">
+      <div class="form-field">
+        <label class="form-label">Últimos 4 dígitos *</label>
+        <input class="form-input" maxlength="4" placeholder="0000" style="width:100px" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">Marca</label>
+        <input class="form-input" placeholder="Visa / Mastercard / Amex" style="width:200px" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closePaymentModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmPayment()">
+        <i data-lucide="check"></i> Confirmar pago
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Datos del gimnasio -->
+<div class="overlay" id="modal-gym" onclick="if(event.target===this)closeModal('modal-gym')">
+  <div class="modal" onclick="event.stopPropagation()" style="width:500px">
+    <h3>Datos del gimnasio</h3>
+    <div class="form-field"><label class="form-label">Nombre del gimnasio *</label><input class="form-input" value="Power Gym" /></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-field"><label class="form-label">CUIT *</label><input class="form-input" value="30-71234567-9" /></div>
+      <div class="form-field"><label class="form-label">Teléfono</label><input class="form-input" value="+54 11 4000-0000" /></div>
+    </div>
+    <div class="form-field"><label class="form-label">Dirección</label><input class="form-input" value="Av. Corrientes 1234, CABA" /></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-field"><label class="form-label">Horario de apertura</label><input class="form-input" type="time" value="06:00" /></div>
+      <div class="form-field"><label class="form-label">Horario de cierre</label><input class="form-input" type="time" value="23:00" /></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-gym')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveToast('modal-gym','Datos del gimnasio actualizados')">
+        <i data-lucide="save"></i> Guardar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Control de acceso -->
+<div class="overlay" id="modal-access" onclick="if(event.target===this)closeModal('modal-access')">
+  <div class="modal" onclick="event.stopPropagation()" style="width:500px">
+    <h3>Control de acceso</h3>
+    <div style="background:var(--content-bg);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div>
+          <div style="font-weight:600;font-size:13px;">Anti-passback</div>
+          <div style="font-size:12px;color:var(--text-muted);">Impide reingreso hasta que el socio salga</div>
+        </div>
+        <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;">
+          <input type="checkbox" id="apb-toggle" checked style="opacity:0;width:0;height:0;" onchange="document.getElementById('apb-mins').disabled=!this.checked">
+          <span id="apb-track" style="position:absolute;inset:0;background:var(--accent);border-radius:12px;transition:.2s;"></span>
+          <span style="position:absolute;left:2px;top:2px;width:20px;height:20px;background:white;border-radius:50%;transition:.2s;pointer-events:none;"></span>
+        </label>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:13px;">
+        <span>Minutos de bloqueo:</span>
+        <input id="apb-mins" class="form-input" type="number" value="5" min="1" max="60" style="width:70px" />
+      </div>
+    </div>
+    <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Franjas horarias habilitadas</div>
+    <div style="display:grid;gap:8px;font-size:13px;">
+      <div style="display:flex;align-items:center;gap:10px;"><span style="width:90px;">Lun – Vie</span><input class="form-input" type="time" value="06:00" style="width:90px"><span>a</span><input class="form-input" type="time" value="23:00" style="width:90px"></div>
+      <div style="display:flex;align-items:center;gap:10px;"><span style="width:90px;">Sábado</span><input class="form-input" type="time" value="08:00" style="width:90px"><span>a</span><input class="form-input" type="time" value="20:00" style="width:90px"></div>
+      <div style="display:flex;align-items:center;gap:10px;"><span style="width:90px;">Domingo</span><input class="form-input" type="time" value="09:00" style="width:90px"><span>a</span><input class="form-input" type="time" value="14:00" style="width:90px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-access')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveToast('modal-access','Configuración de acceso guardada')">
+        <i data-lucide="save"></i> Guardar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Usuarios del sistema -->
+<div class="overlay" id="modal-users" onclick="if(event.target===this)closeModal('modal-users')">
+  <div class="modal" onclick="event.stopPropagation()" style="width:580px">
+    <h3>Usuarios del sistema</h3>
+    <table style="width:100%;margin-bottom:16px;">
+      <thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th></th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Admin GymForge</td><td>admin@powergym.com</td>
+          <td><span class="badge badge-blue">Administrador</span></td>
+          <td><button class="btn" style="padding:3px 8px;font-size:12px;">✏️</button></td>
+        </tr>
+        <tr>
+          <td>Lucía Recepción</td><td>lucia@powergym.com</td>
+          <td><span class="badge badge-green">Recepcionista</span></td>
+          <td><button class="btn" style="padding:3px 8px;font-size:12px;">✏️</button></td>
+        </tr>
+        <tr>
+          <td>Pablo Trainer</td><td>pablo@powergym.com</td>
+          <td><span class="badge badge-amber">Entrenador</span></td>
+          <td><button class="btn" style="padding:3px 8px;font-size:12px;">✏️</button></td>
+        </tr>
+      </tbody>
+    </table>
+    <button class="btn" onclick="showToast('➕ Formulario Nuevo usuario disponible en Sprint 2')">➕ Nuevo usuario</button>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-users')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Nuevo plan -->
+<div class="overlay" id="modal-nuevo-plan" onclick="if(event.target===this)closeModal('modal-nuevo-plan')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3 id="plan-modal-title">Nuevo plan</h3>
+    <div class="form-field"><label class="form-label">Nombre *</label><input class="form-input" id="plan-nombre" placeholder="Ej: Mensual Full" /></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="form-field"><label class="form-label">Precio ARS *</label><input class="form-input" type="number" id="plan-precio" placeholder="35000" /></div>
+      <div class="form-field"><label class="form-label">Duración (días)</label><input class="form-input" type="number" id="plan-dias" placeholder="30" /></div>
+    </div>
+    <div class="form-field"><label class="form-label">Visitas máximas</label><input class="form-input" type="number" id="plan-visitas" placeholder="Vacío = ilimitadas" /></div>
+    <div class="form-field">
+      <label class="form-label">Activo</label>
+      <select class="form-input" id="plan-activo" style="width:120px">
+        <option value="1">Sí</option>
+        <option value="0">No</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-nuevo-plan')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarPlan()">
+        <i data-lucide="save"></i> Guardar plan
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────────
+const MEMBERS = [
+  {fn:'María Eugenia',ln:'García',   doc:'28456123', email:'maria.garcia@gmail.com',   phone:'+54 9 11 4567-8901', status:'Activo',    join:'01/02/2024', age:36, plan:'Mensual Full',    precio:35000, lastVisit:'21/04/2026'},
+  {fn:'Carlos',       ln:'López',    doc:'35789012', email:'clopez@hotmail.com',        phone:'+54 9 11 2345-6789', status:'Vencido',   join:'15/05/2023', age:29, plan:'Mensual Mañana',  precio:22000, lastVisit:'18/03/2026'},
+  {fn:'Ana',          ln:'Fernández',doc:'31234567', email:'ana.fernandez@yahoo.com',   phone:'+54 9 11 9876-5432', status:'Activo',    join:'10/08/2023', age:33, plan:'Mensual Full',    precio:35000, lastVisit:'22/04/2026'},
+  {fn:'Luis',         ln:'Rodríguez',doc:'40123456', email:'luis.rodriguez@gmail.com',  phone:'+54 9 11 1111-2222', status:'Moroso',    join:'20/01/2025', age:22, plan:'Mensual Full',    precio:35000, lastVisit:'02/03/2026'},
+  {fn:'Paula',        ln:'Martínez', doc:'27890123', email:'pmartinez@outlook.com',     phone:'+54 9 11 3333-4444', status:'Activo',    join:'05/07/2022', age:38, plan:'Visitas x10',     precio:18000, lastVisit:'20/04/2026'},
+  {fn:'Diego',        ln:'Sánchez',  doc:'33456789', email:'dsanchez@gmail.com',        phone:'+54 9 11 5555-6666', status:'Congelado', join:'12/11/2023', age:31, plan:'Mensual Full',    precio:35000, lastVisit:'15/01/2026'},
+  {fn:'Valeria',      ln:'Torres',   doc:'36012345', email:'valeria.torres@gmail.com',  phone:'+54 9 11 7777-8888', status:'Activo',    join:'01/03/2024', age:27, plan:'Trimestral Full', precio:90000, lastVisit:'21/04/2026'},
+  {fn:'Martín',       ln:'González', doc:'29678901', email:'mgonzalez@empresa.com',     phone:'+54 9 11 9999-0000', status:'Activo',    join:'18/09/2022', age:35, plan:'Mensual Full',    precio:35000, lastVisit:'19/04/2026'},
+  {fn:'Sofía',        ln:'Ramírez',  doc:'42345678', email:'sofia.ramirez@gmail.com',   phone:'+54 9 11 1234-5678', status:'Activo',    join:'07/06/2025', age:20, plan:'Mensual Mañana',  precio:22000, lastVisit:'22/04/2026'},
+  {fn:'Javier',       ln:'Díaz',     doc:'30901234', email:'jdiaz@hotmail.com',         phone:'+54 9 11 8765-4321', status:'Cancelado', join:'22/04/2021', age:40, plan:'—',               precio:0,     lastVisit:'10/11/2023'},
+];
+const STATUS_CLS = {Activo:'badge-green',Vencido:'badge-red',Moroso:'badge-amber',Congelado:'badge-blue',Cancelado:'badge-grey'};
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+let _current = 'dashboard', _history = [];
+
+function navigate(view) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  document.querySelectorAll('.nav-btn[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
+  _current = view; _history = [];
+  document.getElementById('back-btn').classList.remove('visible');
+  if(view==='kiosk') setTimeout(()=>document.getElementById('dni-input').focus(),100);
+}
+function push(view) {
+  _history.push(_current);
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  _current = view;
+  document.getElementById('back-btn').classList.add('visible');
+}
+function goBack() {
+  if(!_history.length) return;
+  const prev = _history.pop();
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+prev).classList.add('active');
+  _current = prev;
+  if(!_history.length) document.getElementById('back-btn').classList.remove('visible');
+}
+
+// ── Members table ──────────────────────────────────────────────────────────────
+function renderMembers(list) {
+  const tbody = document.getElementById('members-tbody');
+  tbody.innerHTML = list.map((m,i) => `
+    <tr onclick="openDetail(${MEMBERS.indexOf(m)})">
+      <td><div class="av-cell">${m.fn[0]}</div></td>
+      <td>${m.ln}</td><td>${m.fn}</td><td>${m.doc}</td>
+      <td>${m.email}</td><td>${m.phone}</td>
+      <td><span class="badge ${STATUS_CLS[m.status]}">${m.status}</span></td>
+      <td>${m.join}</td><td>${m.age}</td>
+      <td><button class="btn" style="padding:3px 10px;font-size:12px;"
+          onclick="event.stopPropagation();openDetail(${MEMBERS.indexOf(m)})">↗ Ver</button></td>
+    </tr>`).join('');
+  document.getElementById('members-count').textContent = list.length + ' socio(s)';
+}
+renderMembers(MEMBERS);
+
+function filterMembers(q) {
+  const status = document.getElementById('status-filter').value;
+  const lq = q.toLowerCase();
+  const filtered = MEMBERS.filter(m => {
+    const matchText = !q || m.fn.toLowerCase().includes(lq) || m.ln.toLowerCase().includes(lq)
+                      || m.doc.includes(q) || m.email.toLowerCase().includes(lq);
+    const matchStatus = !status || m.status === status;
+    return matchText && matchStatus;
+  });
+  renderMembers(filtered);
+}
+function clearFilter() {
+  document.getElementById('member-search').value = '';
+  document.getElementById('status-filter').value = '';
+  renderMembers(MEMBERS);
+}
+
+function openDetail(i) {
+  const m = MEMBERS[i];
+  document.getElementById('detail-avatar').textContent = m.fn[0];
+  document.getElementById('detail-name').textContent = m.ln + ', ' + m.fn;
+  document.getElementById('detail-doc').textContent = 'DNI ' + m.doc;
+  document.getElementById('detail-email').textContent = m.email;
+  document.getElementById('detail-phone').textContent = m.phone;
+  const sb = document.getElementById('detail-status-badge');
+  sb.textContent = m.status; sb.className = 'badge ' + STATUS_CLS[m.status];
+  document.getElementById('d-fname').textContent = m.fn;
+  document.getElementById('d-lname').textContent = m.ln;
+  document.getElementById('d-doc').textContent = m.doc;
+  document.getElementById('d-email').textContent = m.email;
+  document.getElementById('d-phone').textContent = m.phone;
+  document.getElementById('d-age').textContent = m.age + ' años';
+  switchTab('datos');
+  push('detail');
+}
+function openCreateMember() { push('create'); }
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+const TAB_NAMES = ['datos','membresias','cobros-tab','accesos','rutinas-tab'];
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active', TAB_NAMES[i]===name));
+  document.querySelectorAll('.tab-panel').forEach(p=>{
+    const show = p.id === 'tab-'+name;
+    p.classList.toggle('active', show);
+    p.style.display = show ? 'block' : 'none';
+  });
+}
+
+// ── Saldo toggle ──────────────────────────────────────────────────────────────
+function toggleSaldo(id, eyeId) {
+  const el = document.getElementById(id);
+  const eye = document.getElementById(eyeId);
+  const hidden = !el.classList.contains('hidden');
+  el.classList.toggle('hidden', hidden);
+  eye.textContent = hidden ? '🙈' : '👁️';
+  eye.title = hidden ? 'Mostrar saldo' : 'Ocultar saldo';
+}
+let _cobrosHidden = false;
+function toggleSaldoCobros() {
+  _cobrosHidden = !_cobrosHidden;
+  document.querySelectorAll('.cobro-saldo').forEach(el=>el.classList.toggle('hidden',_cobrosHidden));
+  const total = document.getElementById('cobros-total');
+  if(total) total.classList.toggle('hidden', _cobrosHidden);
+  const eyeTotal = document.getElementById('eye-cobros-total');
+  if(eyeTotal) eyeTotal.textContent = _cobrosHidden ? '🙈' : '👁️';
+  const eye = document.getElementById('eye-cobros');
+  eye.textContent = _cobrosHidden ? '🙈' : '👁️';
+}
+
+// ── Kiosk ──────────────────────────────────────────────────────────────────────
+function showKiosk(state) {
+  ['kiosk-idle','kiosk-granted','kiosk-denied'].forEach(id=>{
+    document.getElementById(id).style.display = (id==='kiosk-'+state) ? 'flex' : 'none';
+  });
+}
+function startCountdown(countdownId, onDone) {
+  let n = 3;
+  const el = document.getElementById(countdownId);
+  el.textContent = 'Cerrando en 3...';
+  const iv = setInterval(()=>{
+    n--; el.textContent = 'Cerrando en '+n+'...';
+    if(n<=0){ clearInterval(iv); onDone(); }
+  },1000);
+}
+function kioskDemo(state) {
+  showKiosk(state);
+  const countId = state==='granted' ? 'kiosk-countdown' : 'kiosk-countdown-denied';
+  startCountdown(countId, ()=>{ showKiosk('idle'); document.getElementById('dni-input').value=''; document.getElementById('dni-input').focus(); });
+}
+function dniCheckIn(dni) {
+  if(!dni || dni.length < 7) { document.getElementById('dni-input').style.borderColor='rgba(248,113,113,.5)'; setTimeout(()=>document.getElementById('dni-input').style.borderColor='',1000); return; }
+  const member = MEMBERS.find(m => m.doc === dni || m.doc === dni.replace(/\./g,''));
+  if(member) {
+    document.getElementById('kiosk-granted-name').textContent = '¡Hola, '+member.fn+'!';
+    document.getElementById('kiosk-granted-plan').textContent = member.status==='Activo' ? 'Plan Mensual Premium' : 'Estado: '+member.status;
+    if(member.status !== 'Activo') {
+      document.getElementById('kiosk-denied-name').textContent = member.fn+' '+member.ln;
+      document.getElementById('kiosk-denied-reason').textContent = member.status==='Moroso'?'Deuda pendiente':member.status==='Vencido'?'Membresía vencida':'Sin membresía activa';
+      document.getElementById('kiosk-denied-badge').textContent = '✗ ACCESO DENEGADO';
+      document.getElementById('kiosk-denied-msg').textContent = member.status==='Moroso'
+        ? '⚠️ Saldo deudor. Regularice en recepción antes de ingresar.'
+        : '⚠️ Comuníquese con recepción para regularizar su situación.';
+      kioskDemo('denied'); return;
+    }
+    kioskDemo('granted');
+  } else {
+    document.getElementById('kiosk-denied-name').textContent = 'DNI '+dni;
+    document.getElementById('kiosk-denied-reason').textContent = 'No encontrado en el sistema';
+    document.getElementById('kiosk-denied-badge').textContent = '✗ SOCIO NO REGISTRADO';
+    document.getElementById('kiosk-denied-msg').textContent = '⚠️ Este DNI no está registrado. Comuníquese con recepción.';
+    kioskDemo('denied');
+  }
+}
+
+// ── Payment modal ─────────────────────────────────────────────────────────────
+function openPaymentModal(desc, amount) {
+  document.getElementById('modal-desc').textContent = desc || 'Cobro general';
+  document.getElementById('modal-saldo').textContent = amount ? '$'+parseInt(amount).toLocaleString('es-AR') : '—';
+  document.getElementById('modal-amount').value = amount || '';
+  document.getElementById('modal-method').value = 'cash';
+  document.getElementById('card-fields').style.display = 'none';
+  document.getElementById('payment-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('modal-amount').focus(),100);
+}
+function closePaymentModal() { document.getElementById('payment-overlay').classList.remove('open'); }
+function toggleCardFields() {
+  const m = document.getElementById('modal-method').value;
+  document.getElementById('card-fields').style.display = (m==='debit'||m==='credit') ? 'block' : 'none';
+}
+function confirmPayment() {
+  const amount = document.getElementById('modal-amount').value;
+  if(!amount || amount<=0) { document.getElementById('modal-amount').focus(); return; }
+  closePaymentModal();
+  showToast('✅ Pago de $'+parseInt(amount).toLocaleString('es-AR')+' registrado correctamente');
+}
+
+// ── Global search ──────────────────────────────────────────────────────────────
+function onGlobalSearch(q) {
+  if(q.length < 2) return;
+  navigate('members');
+  document.getElementById('member-search').value = q;
+  filterMembers(q);
+}
+
+// ── Sidebar / theme ───────────────────────────────────────────────────────────
+function toggleSidebar() {
+  const s = document.getElementById('sidebar');
+  s.classList.toggle('collapsed');
+  document.getElementById('collapse-icon').textContent = s.classList.contains('collapsed') ? '▶' : '◀';
+}
+function toggleTheme() {
+  const isDark = document.body.hasAttribute('data-dark');
+  isDark ? document.body.removeAttribute('data-dark') : document.body.setAttribute('data-dark','');
+  const btn = document.getElementById('theme-btn');
+  btn.querySelector('.nav-label').textContent = isDark ? 'Tema oscuro' : 'Tema claro';
+}
+
+// ── Keyboard shortcuts ────────────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT') return;
+  if(e.key==='F1'){e.preventDefault();navigate('dashboard');}
+  if(e.key==='F3'){e.preventDefault();navigate('members');}
+  if(e.key==='F4'){e.preventDefault();navigate('kiosk');}
+  if(e.key==='F5'){e.preventDefault();navigate('cobros');}
+  if(e.altKey&&e.key==='ArrowLeft'){e.preventDefault();goBack();}
+  if(e.key==='Escape'){closePaymentModal();}
+  if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();document.getElementById('global-search').focus();}
+});
+
+// ── Modal helpers ─────────────────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  Object.assign(t.style,{position:'fixed',bottom:'24px',right:'24px',background:msg.startsWith('✅')?'#16A34A':'var(--accent)',
+    color:'white',padding:'12px 20px',borderRadius:'10px',fontFamily:'var(--font)',
+    fontSize:'13px',fontWeight:'500',zIndex:'500',boxShadow:'0 4px 20px rgba(0,0,0,.25)',transition:'opacity .3s'});
+  document.body.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300);},3000);
+}
+function saveToast(modalId, msg) { closeModal(modalId); showToast('✅ '+msg); }
+
+// ── Planes ────────────────────────────────────────────────────────────────────
+let _editPlanRow = null;
+function editPlan(btn) {
+  _editPlanRow = btn.closest('tr');
+  const cells = _editPlanRow.querySelectorAll('td');
+  document.getElementById('plan-modal-title').textContent = 'Editar plan';
+  document.getElementById('plan-nombre').value = cells[0].querySelector('strong').textContent;
+  document.getElementById('plan-precio').value = cells[1].textContent.replace(/\D/g,'');
+  document.getElementById('plan-dias').value = cells[2].textContent === '—' ? '' : cells[2].textContent;
+  document.getElementById('plan-visitas').value = cells[3].textContent === '∞' ? '' : cells[3].textContent;
+  document.getElementById('plan-activo').value = cells[4].querySelector('.badge').textContent.trim() === 'Sí' ? '1' : '0';
+  openModal('modal-nuevo-plan');
+}
+function deletePlan(btn) {
+  if(confirm('¿Eliminar este plan?')) {
+    btn.closest('tr').remove();
+    const count = document.getElementById('planes-tbody').querySelectorAll('tr').length;
+    document.getElementById('planes-count').textContent = count + ' plan(es)';
+  }
+}
+function guardarPlan() {
+  const nombre = document.getElementById('plan-nombre').value.trim();
+  if(!nombre) { document.getElementById('plan-nombre').focus(); return; }
+  const precio = parseInt(document.getElementById('plan-precio').value)||0;
+  const dias = document.getElementById('plan-dias').value||'—';
+  const visitas = document.getElementById('plan-visitas').value||'∞';
+  const activo = document.getElementById('plan-activo').value==='1';
+  if(_editPlanRow) {
+    const cells = _editPlanRow.querySelectorAll('td');
+    cells[0].innerHTML = '<strong>'+nombre+'</strong>';
+    cells[1].textContent = '$'+precio.toLocaleString('es-AR');
+    cells[2].textContent = dias;
+    cells[3].textContent = visitas;
+    cells[4].innerHTML = '<span class="badge '+(activo?'badge-green':'badge-grey')+'">'+(activo?'Sí':'No')+'</span>';
+    _editPlanRow = null;
+  } else {
+    const tbody = document.getElementById('planes-tbody');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><strong>${nombre}</strong></td>
+      <td>$${precio.toLocaleString('es-AR')}</td>
+      <td>${dias}</td><td>${visitas}</td>
+      <td><span class="badge ${activo?'badge-green':'badge-grey'}">${activo?'Sí':'No'}</span></td>
+      <td style="display:flex;gap:6px;">
+        <button class="btn" style="padding:3px 10px;font-size:12px;" onclick="editPlan(this)">✏️ Editar</button>
+        <button class="btn btn-danger" style="padding:3px 10px;font-size:12px;" onclick="deletePlan(this)">✕</button>
+      </td>`;
+    tbody.appendChild(tr);
+  }
+  document.getElementById('plan-modal-title').textContent = 'Nuevo plan';
+  closeModal('modal-nuevo-plan');
+  const count = document.getElementById('planes-tbody').querySelectorAll('tr').length;
+  document.getElementById('planes-count').textContent = count + ' plan(es)';
+  showToast('✅ Plan guardado correctamente');
+}
+
+// ── Campañas ──────────────────────────────────────────────────────────────────
+function filterCampanas() {
+  const days = parseInt(document.getElementById('camp-days').value)||30;
+  const today = new Date('2026-04-25');
+  const inactive = MEMBERS.filter(m => {
+    if(!m.lastVisit || m.lastVisit==='—') return true;
+    const parts = m.lastVisit.split('/');
+    const last = new Date(parts[2], parts[1]-1, parts[0]);
+    return (today - last) / 86400000 >= days;
+  });
+  const results = document.getElementById('camp-results');
+  const empty = document.getElementById('camp-empty');
+  if(!inactive.length){results.style.display='none';empty.style.display='block';return;}
+  results.style.display='block';empty.style.display='none';
+  document.getElementById('camp-result-label').textContent = inactive.length+' socio(s) encontrado(s)';
+  document.getElementById('camp-tbody').innerHTML = inactive.map(m=>`
+    <tr>
+      <td>${m.fn} ${m.ln}</td>
+      <td>${m.lastVisit||'—'}</td>
+      <td>${m.phone}</td>
+      <td>${m.plan}</td>
+      <td><span class="badge ${STATUS_CLS[m.status]}">${m.status}</span></td>
+    </tr>`).join('');
+}
+function simularEnvio() {
+  const template = document.getElementById('camp-template').value;
+  const msgs = {motivacional:'💪 ¡Te extrañamos! Volvé a entrenar.',oferta:'🎁 20% OFF en tu renovación.',recordatorio:'💳 Tenés un saldo pendiente.'};
+  showToast('📤 Envío simulado: '+msgs[template]);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+navigate('dashboard');
+document.querySelectorAll('.tab-panel').forEach(p=>{ p.style.display = p.classList.contains('active')?'block':'none'; });
+lucide.createIcons();
+</script>
+</body>
+</html>

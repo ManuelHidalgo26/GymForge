@@ -22,6 +22,16 @@ public class PaymentRepository : IPaymentRepository
                         p.Status == PaymentStatus.Completed)
             .SumAsync(p => p.Amount, ct);
 
+    public async Task<IReadOnlyList<Payment>> GetByPeriodAsync(
+        Guid companyId, Guid siteId, DateTime from, DateTime to, CancellationToken ct = default) =>
+        await _db.Payments
+            .Include(p => p.Member)
+            .Where(p => p.CompanyId == companyId && p.SiteId == siteId &&
+                        p.ReceivedAt >= from && p.ReceivedAt < to &&
+                        p.Status == PaymentStatus.Completed)
+            .OrderByDescending(p => p.ReceivedAt)
+            .ToListAsync(ct);
+
     public async Task<int> SaveChangesAsync(CancellationToken ct = default) =>
         await _db.SaveChangesAsync(ct);
 }

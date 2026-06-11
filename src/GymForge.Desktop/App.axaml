@@ -7,6 +7,7 @@
              xmlns:vmCharges="using:GymForge.Desktop.ViewModels.Charges"
              xmlns:vmCash="using:GymForge.Desktop.ViewModels.Cash"
              xmlns:vmPlans="using:GymForge.Desktop.ViewModels.Plans"
+             xmlns:vmReports="using:GymForge.Desktop.ViewModels.Reports"
              xmlns:vmShared="using:GymForge.Desktop.ViewModels.Shared"
              xmlns:vDash="using:GymForge.Desktop.Views.Dashboard"
              xmlns:vMembers="using:GymForge.Desktop.Views.Members"
@@ -14,6 +15,7 @@
              xmlns:vCharges="using:GymForge.Desktop.Views.Charges"
              xmlns:vCash="using:GymForge.Desktop.Views.Cash"
              xmlns:vPlans="using:GymForge.Desktop.Views.Plans"
+             xmlns:vReports="using:GymForge.Desktop.Views.Reports"
              xmlns:vShared="using:GymForge.Desktop.Views.Shared"
              xmlns:conv="using:GymForge.Desktop.Converters"
              x:Class="GymForge.Desktop.App"
@@ -53,6 +55,9 @@
         </DataTemplate>
         <DataTemplate DataType="vmPlans:PlansViewModel">
             <vPlans:PlansView />
+        </DataTemplate>
+        <DataTemplate DataType="vmReports:ReportsViewModel">
+            <vReports:ReportsView />
         </DataTemplate>
         <DataTemplate DataType="vmCharges:PaymentModalViewModel">
             <vCharges:PaymentModalView />

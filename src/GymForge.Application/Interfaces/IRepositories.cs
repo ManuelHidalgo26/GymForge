@@ -41,6 +41,8 @@ public interface IPaymentRepository
 {
     Task AddAsync(Payment payment, CancellationToken ct = default);
     Task<decimal> SumReceivedAsync(Guid companyId, Guid siteId, DateTime from, DateTime to, CancellationToken ct = default);
+    /// <summary>Pagos completados del período, con el socio cargado, más recientes primero.</summary>
+    Task<IReadOnlyList<Payment>> GetByPeriodAsync(Guid companyId, Guid siteId, DateTime from, DateTime to, CancellationToken ct = default);
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
 

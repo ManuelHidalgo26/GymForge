@@ -1,0 +1,88 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:fa="using:FluentAvalonia.UI.Controls"
+             xmlns:vm="using:GymForge.Desktop.ViewModels.Reports"
+             xmlns:rep="using:GymForge.Application.UseCases.Reports"
+             x:Class="GymForge.Desktop.Views.Reports.ReportsView"
+             x:DataType="vm:ReportsViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <!-- ── Toolbar: rango de fechas ───────────────────────────────────── -->
+        <Border Grid.Row="0" Padding="16,12"
+                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                BorderThickness="0,0,0,1">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="10">
+                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Document}" FontSize="20" VerticalAlignment="Center" />
+                    <TextBlock Text="Reportes" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8"
+                            HorizontalAlignment="Right">
+                    <TextBlock Text="Desde" FontSize="12" Opacity="0.7" VerticalAlignment="Center" />
+                    <DatePicker SelectedDate="{Binding From, Converter={StaticResource DateOnlyOffset}}" />
+                    <TextBlock Text="Hasta" FontSize="12" Opacity="0.7" VerticalAlignment="Center" />
+                    <DatePicker SelectedDate="{Binding To, Converter={StaticResource DateOnlyOffset}}" />
+                    <Button Content="Hoy" Command="{Binding TodayCommand}" Classes="NavButton" />
+                    <Button Content="Este mes" Command="{Binding ThisMonthCommand}" Classes="NavButton" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ── KPIs del período ───────────────────────────────────────────── -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,*" Margin="16,12" ColumnSpacing="12">
+            <Border Grid.Column="0" CornerRadius="12" Padding="16"
+                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+                <StackPanel Spacing="2">
+                    <TextBlock Text="Recaudación del período" FontSize="12" Opacity="0.6" />
+                    <TextBlock Text="{Binding Total, StringFormat={}{0:C}}" FontSize="24" FontWeight="Bold" />
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="1" CornerRadius="12" Padding="16"
+                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+                <StackPanel Spacing="2">
+                    <TextBlock Text="Pagos registrados" FontSize="12" Opacity="0.6" />
+                    <TextBlock Text="{Binding Count}" FontSize="24" FontWeight="Bold" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- ── Tabla de pagos ─────────────────────────────────────────────── -->
+        <DataGrid Grid.Row="2"
+                  ItemsSource="{Binding Rows}"
+                  IsReadOnly="True" AutoGenerateColumns="False" CanUserSortColumns="True"
+                  Margin="16,0,16,12">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Fecha"
+                                    Binding="{Binding ReceivedAt, StringFormat={}{0:dd/MM/yyyy HH:mm}}"
+                                    Width="160" />
+                <DataGridTextColumn Header="Socio" Binding="{Binding MemberName}" Width="*" />
+                <DataGridTemplateColumn Header="Método" Width="170" SortMemberPath="Method">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="rep:ReportPaymentRow">
+                            <TextBlock Text="{Binding Method, Converter={StaticResource EnumEs}}"
+                                       VerticalAlignment="Center" Margin="8,0" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Monto"
+                                    Binding="{Binding Amount, StringFormat={}{0:C}}" Width="140" />
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- ── Estado vacío ───────────────────────────────────────────────── -->
+        <StackPanel Grid.Row="2" Spacing="10"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    IsVisible="{Binding IsEmpty}">
+            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Document}" FontSize="44" Opacity="0.25"
+                           HorizontalAlignment="Center" />
+            <TextBlock Text="Sin pagos en el período" FontSize="15" FontWeight="SemiBold" Opacity="0.7"
+                       HorizontalAlignment="Center" />
+            <TextBlock Text="Ajustá el rango de fechas o registrá cobros desde Caja."
+                       FontSize="12" Opacity="0.5" HorizontalAlignment="Center" />
+        </StackPanel>
+
+    </Grid>
+
+</UserControl>

@@ -72,6 +72,9 @@ public static class ServiceCollectionExtensions
         // ── Plans ─────────────────────────────────────────────────────────────
         services.AddTransient<ViewModels.Plans.PlansViewModel>();
 
+        // ── Reports ───────────────────────────────────────────────────────────
+        services.AddTransient<ViewModels.Reports.ReportsViewModel>();
+
         return services;
     }
 }

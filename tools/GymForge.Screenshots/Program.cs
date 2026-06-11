@@ -94,6 +94,10 @@ Capture("07-socios-vacio", new MembersListView { DataContext = emptyMembersVm },
 var plansVm = new GymForge.Desktop.ViewModels.Plans.PlansViewModel(mediator2, session) { IsFormOpen = true };
 Capture("08-planes", new GymForge.Desktop.Views.Plans.PlansView { DataContext = plansVm }, 1180, 760, outDir);
 
+// Reportes: recaudación del mes con los pagos del seed
+var reportsVm = new GymForge.Desktop.ViewModels.Reports.ReportsViewModel(mediator2, session);
+Capture("09-reportes", new GymForge.Desktop.Views.Reports.ReportsView { DataContext = reportsVm }, 1180, 760, outDir);
+
 // Shell completo: sidebar + topbar + dashboard (la ventana real de la app)
 var shell = new GymForge.Desktop.Views.Shell.MainWindow
 {

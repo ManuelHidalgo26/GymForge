@@ -126,8 +126,7 @@ public partial class MainWindowViewModel : ObservableObject
                                         "Módulo Rutinas", "Planes de entrenamiento — Sprint 3.", "Globe")),
             NavSection.Products  => Cached(section, () => new PlaceholderViewModel(
                                         "Módulo Productos", "Kiosk de ventas y stock — Sprint 3.", "Tag")),
-            NavSection.Reports   => Cached(section, () => new PlaceholderViewModel(
-                                        "Módulo Reportes", "Estadísticas y exportación PDF — Sprint 3.", "Document")),
+            NavSection.Reports   => Cached(section, () => _sp.GetRequiredService<ViewModels.Reports.ReportsViewModel>()),
             NavSection.Settings  => Cached(section, () => new PlaceholderViewModel(
                                         "Configuración", "Parámetros del sistema — Sprint 2.", "Settings")),
             _                    => null

@@ -8,6 +8,7 @@
              xmlns:vmCash="using:GymForge.Desktop.ViewModels.Cash"
              xmlns:vmPlans="using:GymForge.Desktop.ViewModels.Plans"
              xmlns:vmReports="using:GymForge.Desktop.ViewModels.Reports"
+             xmlns:vmSettings="using:GymForge.Desktop.ViewModels.Settings"
              xmlns:vmShared="using:GymForge.Desktop.ViewModels.Shared"
              xmlns:vDash="using:GymForge.Desktop.Views.Dashboard"
              xmlns:vMembers="using:GymForge.Desktop.Views.Members"
@@ -16,6 +17,7 @@
              xmlns:vCash="using:GymForge.Desktop.Views.Cash"
              xmlns:vPlans="using:GymForge.Desktop.Views.Plans"
              xmlns:vReports="using:GymForge.Desktop.Views.Reports"
+             xmlns:vSettings="using:GymForge.Desktop.Views.Settings"
              xmlns:vShared="using:GymForge.Desktop.Views.Shared"
              xmlns:conv="using:GymForge.Desktop.Converters"
              x:Class="GymForge.Desktop.App"
@@ -59,6 +61,9 @@
         <DataTemplate DataType="vmReports:ReportsViewModel">
             <vReports:ReportsView />
         </DataTemplate>
+        <DataTemplate DataType="vmSettings:SettingsViewModel">
+            <vSettings:SettingsView />
+        </DataTemplate>
         <DataTemplate DataType="vmCharges:PaymentModalViewModel">
             <vCharges:PaymentModalView />
         </DataTemplate>
@@ -72,6 +77,7 @@
             <conv:EnumDisplayConverter x:Key="EnumEs" />
             <conv:DateOnlyOffsetConverter x:Key="DateOnlyOffset" />
             <conv:ActiveColorConverter x:Key="ActiveColorConverter" />
+            <conv:ActiveColorBrushConverter x:Key="ActiveColorBrushConverter" />
             <conv:ActiveLabelConverter x:Key="ActiveLabelConverter" />
             <conv:ActiveToggleLabelConverter x:Key="ActiveToggleLabelConverter" />
             <ResourceDictionary.MergedDictionaries>

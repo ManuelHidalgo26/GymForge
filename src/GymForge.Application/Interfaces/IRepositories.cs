@@ -81,6 +81,9 @@ public interface ISiteRepository
 {
     Task<IReadOnlyList<Company>> GetCompaniesAsync(CancellationToken ct = default);
     Task<IReadOnlyList<Site>> GetByCompanyAsync(Guid companyId, CancellationToken ct = default);
+    Task<Company?> GetCompanyAsync(Guid companyId, CancellationToken ct = default);
+    Task AddSiteAsync(Site site, CancellationToken ct = default);
+    Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
 
 public interface IShiftRepository

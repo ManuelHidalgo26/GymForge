@@ -30,6 +30,15 @@ public class Company : BaseEntity
         };
     }
 
+    public void UpdateIdentity(string legalName, string taxId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(legalName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(taxId);
+        LegalName = legalName;
+        TaxId = taxId;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void UpdateBranding(string? logoUrl, string brandColorHex)
     {
         LogoUrl = logoUrl;

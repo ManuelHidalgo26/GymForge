@@ -18,4 +18,13 @@ public class SiteRepository : ISiteRepository
             .Where(s => s.CompanyId == companyId && s.IsActive)
             .OrderBy(s => s.Name)
             .ToListAsync(ct);
+
+    public async Task<Company?> GetCompanyAsync(Guid companyId, CancellationToken ct = default) =>
+        await _db.Companies.FirstOrDefaultAsync(c => c.Id == companyId, ct);
+
+    public async Task AddSiteAsync(Site site, CancellationToken ct = default) =>
+        await _db.Sites.AddAsync(site, ct);
+
+    public async Task<int> SaveChangesAsync(CancellationToken ct = default) =>
+        await _db.SaveChangesAsync(ct);
 }

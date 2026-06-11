@@ -24,6 +24,16 @@ public class ActiveLabelConverter : IValueConverter
         throw new NotSupportedException();
 }
 
+/// <summary>bool éxito → brush verde; false → rojo (mensajes de resultado).</summary>
+public class ActiveColorBrushConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        new SolidColorBrush(value is true ? Color.Parse("#2E7D32") : Color.Parse("#C62828"));
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}
+
 /// <summary>bool activo → acción contraria ("Desactivar"/"Activar").</summary>
 public class ActiveToggleLabelConverter : IValueConverter
 {

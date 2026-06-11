@@ -98,6 +98,11 @@ Capture("08-planes", new GymForge.Desktop.Views.Plans.PlansView { DataContext = 
 var reportsVm = new GymForge.Desktop.ViewModels.Reports.ReportsViewModel(mediator2, session);
 Capture("09-reportes", new GymForge.Desktop.Views.Reports.ReportsView { DataContext = reportsVm }, 1180, 760, outDir);
 
+// Configuración: datos del gimnasio + sedes
+var settingsVm = new GymForge.Desktop.ViewModels.Settings.SettingsViewModel(
+    mediator2, sp.GetRequiredService<ISiteRepository>(), session);
+Capture("10-configuracion", new GymForge.Desktop.Views.Settings.SettingsView { DataContext = settingsVm }, 1180, 760, outDir);
+
 // Shell completo: sidebar + topbar + dashboard (la ventana real de la app)
 var shell = new GymForge.Desktop.Views.Shell.MainWindow
 {

@@ -85,6 +85,34 @@ public class GatekeeperTests
             Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task ManualEntry_ResolvesByDni_NotByTag()
+    {
+        var now = new DateTime(2026, 4, 21, 10, 0, 0, DateTimeKind.Utc);
+        _clock.Now.Returns(now);
+        _clock.Today.Returns(DateOnly.FromDateTime(now));
+
+        var member = MakeActiveMember();
+        var membership = MakeActiveMembership(member.Id);
+
+        _memberRepo.FindByDocumentAsync(DocumentType.DNI, "12345678", Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(member);
+        _membershipRepo.GetCurrentActiveAsync(member.Id, Arg.Any<CancellationToken>())
+            .Returns(membership);
+        _chargeRepo.SumOutstandingAsync(member.Id, Arg.Any<CancellationToken>())
+            .Returns(0m);
+        _accessLogRepo.GetLastAsync(member.Id, 1, Arg.Any<CancellationToken>())
+            .ReturnsNull();
+
+        var result = await CreateSut().ValidateSwipeAsync(
+            new ValidateSwipeRequest("12345678", AccessMethod.Manual, 1, Guid.NewGuid(), Guid.NewGuid()));
+
+        result.Granted.Should().BeTrue();
+        result.MemberFullName.Should().Be("Juan Pérez");
+        await _memberRepo.DidNotReceive()
+            .FindByTagSerialAsync(Arg.Any<string>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
     // ── Denial scenarios ──────────────────────────────────────────────────────
 
     [Fact]

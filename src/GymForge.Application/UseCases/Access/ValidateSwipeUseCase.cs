@@ -61,11 +61,12 @@ public class ValidateSwipeUseCase
 
     public async Task<AccessDecision> ValidateSwipeAsync(ValidateSwipeRequest request, CancellationToken ct = default)
     {
-        // 1. Resolver credencial → Member
+        // 1. Resolver credencial → Member. La carga manual y el teclado son DNI;
+        //    el resto de los métodos resuelven por tag físico.
         Member? member = request.Method switch
         {
-            AccessMethod.RfidCard => await _memberRepo.FindByTagSerialAsync(request.Credential, request.CompanyId, ct),
-            AccessMethod.KeypadPin => await _memberRepo.FindByDocumentAsync(DocumentType.DNI, request.Credential, request.CompanyId, ct),
+            AccessMethod.KeypadPin or AccessMethod.Manual =>
+                await _memberRepo.FindByDocumentAsync(DocumentType.DNI, request.Credential, request.CompanyId, ct),
             _ => await _memberRepo.FindByTagSerialAsync(request.Credential, request.CompanyId, ct)
         };
 

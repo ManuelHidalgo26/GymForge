@@ -54,10 +54,10 @@ public partial class DashboardViewModel : ObservableObject
             RevenueThisMonth = await _payments.SumReceivedAsync(
                 _session.CompanyId, _session.SiteId, monthStart, monthStart.AddMonths(1));
 
-            // Accesos del día (día local convertido a UTC, que es como se guardan)
+            // Accesos PERMITIDOS del día (día local convertido a UTC, que es como se guardan)
             var dayStartUtc = DateTime.Today.ToUniversalTime();
             var logs = await _accessLogs.GetBySiteAsync(_session.SiteId, dayStartUtc, dayStartUtc.AddDays(1));
-            CheckInsToday = logs.Count;
+            CheckInsToday = logs.Count(l => l.AccessGranted);
         }
         finally
         {

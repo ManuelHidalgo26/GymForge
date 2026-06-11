@@ -110,6 +110,12 @@
                                        HorizontalAlignment="Center" VerticalAlignment="Center" />
                     </Border>
 
+                    <!-- Quién intentó ingresar (si la credencial se reconoció) -->
+                    <TextBlock Text="{Binding MemberName}" FontSize="30" FontWeight="Bold"
+                               Foreground="White" TextAlignment="Center" TextWrapping="Wrap"
+                               MaxWidth="360"
+                               IsVisible="{Binding MemberName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
                     <TextBlock Text="ACCESO DENEGADO" FontSize="28" FontWeight="Bold"
                                Foreground="#EF4444" TextAlignment="Center" />
 

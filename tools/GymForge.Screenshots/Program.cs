@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Threading;
 using GymForge.Application.Interfaces;
+using GymForge.Application.UseCases.Access;
 using GymForge.Application.UseCases.Cash;
 using GymForge.Application.UseCases.Catalog;
 using GymForge.Application.UseCases.Members;
@@ -111,6 +112,12 @@ Capture("11-clases", new GymForge.Desktop.Views.Classes.ClassesView { DataContex
 // Rutinas: biblioteca de ejercicios (80 del seed)
 var libraryVm = new GymForge.Desktop.ViewModels.Routines.ExerciseLibraryViewModel(mediator2, session);
 Capture("12-rutinas-biblioteca", new GymForge.Desktop.Views.Routines.ExerciseLibraryView { DataContext = libraryVm }, 1180, 760, outDir);
+
+// Check-in: ingreso manual por DNI de un socio con membresía → permitido
+var kioskVm = new GymForge.Desktop.ViewModels.Checkin.CheckInKioskViewModel(
+    sp.GetRequiredService<ValidateSwipeUseCase>(), session);
+Pump(kioskVm.ProcessCredentialAsync("30111222", AccessMethod.Manual));
+Capture("13-checkin-aprobado", new GymForge.Desktop.Views.Checkin.CheckInKioskView { DataContext = kioskVm }, 1180, 760, outDir);
 
 // Shell completo: sidebar + topbar + dashboard (la ventana real de la app)
 var shell = new GymForge.Desktop.Views.Shell.MainWindow

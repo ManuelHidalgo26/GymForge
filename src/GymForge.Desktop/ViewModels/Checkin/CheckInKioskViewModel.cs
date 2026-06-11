@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GymForge.Application.UseCases.Access;
+using GymForge.Desktop.Services;
 using GymForge.Domain.Enums;
 
 namespace GymForge.Desktop.ViewModels.Checkin;
@@ -10,9 +11,8 @@ public enum KioskState { Idle, Checking, Granted, Denied }
 public partial class CheckInKioskViewModel : ObservableObject
 {
     private readonly ValidateSwipeUseCase _gatekeeper;
-    private Guid _companyId;
-    private Guid _siteId;
-    private int _defaultDoorId = 1;
+    private readonly SessionContext _session;
+    private const int DefaultDoorId = 1;
     private Timer? _autoCloseTimer;
 
     [ObservableProperty] private KioskState _state = KioskState.Idle;
@@ -29,13 +29,10 @@ public partial class CheckInKioskViewModel : ObservableObject
     public bool IsDenied  => State == KioskState.Denied;
     public bool IsIdle    => State == KioskState.Idle;
 
-    public CheckInKioskViewModel(ValidateSwipeUseCase gatekeeper) => _gatekeeper = gatekeeper;
-
-    public void Initialize(Guid companyId, Guid siteId, int doorId = 1)
+    public CheckInKioskViewModel(ValidateSwipeUseCase gatekeeper, SessionContext session)
     {
-        _companyId = companyId;
-        _siteId = siteId;
-        _defaultDoorId = doorId;
+        _gatekeeper = gatekeeper;
+        _session = session;
     }
 
     /// <summary>Called by hardware reader (RFID/fingerprint) or manual PIN entry.</summary>
@@ -49,7 +46,7 @@ public partial class CheckInKioskViewModel : ObservableObject
         try
         {
             var decision = await _gatekeeper.ValidateSwipeAsync(
-                new ValidateSwipeRequest(credential, method, _defaultDoorId, _siteId, _companyId));
+                new ValidateSwipeRequest(credential, method, DefaultDoorId, _session.SiteId, _session.CompanyId));
 
             MemberName = decision.MemberFullName;
             MemberPhotoUrl = decision.PhotoUrl;

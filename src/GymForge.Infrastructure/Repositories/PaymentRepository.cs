@@ -14,6 +14,11 @@ public class PaymentRepository : IPaymentRepository
     public async Task AddAsync(Payment payment, CancellationToken ct = default) =>
         await _db.Payments.AddAsync(payment, ct);
 
+    public async Task<Payment?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
+        await _db.Payments
+            .Include(p => p.Allocations)
+            .FirstOrDefaultAsync(p => p.Id == id, ct);
+
     public async Task<decimal> SumReceivedAsync(
         Guid companyId, Guid siteId, DateTime from, DateTime to, CancellationToken ct = default) =>
         await _db.Payments

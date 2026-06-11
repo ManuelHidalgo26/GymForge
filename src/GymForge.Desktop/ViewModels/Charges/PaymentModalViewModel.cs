@@ -16,6 +16,7 @@ public partial class PaymentModalViewModel : ObservableObject
 {
     private readonly IMediator _mediator;
     private readonly SessionContext _session;
+    private readonly ReceiptService _receipts;
     private Guid _memberId;
 
     [ObservableProperty] private ChargeDto? _targetCharge;
@@ -36,10 +37,11 @@ public partial class PaymentModalViewModel : ObservableObject
     public event Action<PaymentDto>? PaymentRegistered;
     public event Action? Cancelled;
 
-    public PaymentModalViewModel(IMediator mediator, SessionContext session)
+    public PaymentModalViewModel(IMediator mediator, SessionContext session, ReceiptService receipts)
     {
         _mediator = mediator;
         _session  = session;
+        _receipts = receipts;
     }
 
     public void PreSelectCharge(ChargeDto charge)
@@ -76,6 +78,7 @@ public partial class PaymentModalViewModel : ObservableObject
                 CardLast4: IsCardRequired ? CardLast4 : null,
                 CardBrand: IsCardRequired ? CardBrand : null), ct);
 
+            await _receipts.TryGenerateAndOpenAsync(dto.Id, _session.CompanyId, ct);
             PaymentRegistered?.Invoke(dto);
         }
         catch (FluentValidation.ValidationException vex)

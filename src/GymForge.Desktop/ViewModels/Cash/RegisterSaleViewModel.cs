@@ -24,6 +24,7 @@ public partial class RegisterSaleViewModel : ObservableObject
     private readonly IMediator _mediator;
     private readonly IMemberRepository _memberRepo;
     private readonly SessionContext _session;
+    private readonly ReceiptService _receipts;
 
     [ObservableProperty] private SaleConcept _concept = SaleConcept.Membership;
 
@@ -65,11 +66,13 @@ public partial class RegisterSaleViewModel : ObservableObject
     public event Action? Registered;
     public event Action? Cancelled;
 
-    public RegisterSaleViewModel(IMediator mediator, IMemberRepository memberRepo, SessionContext session)
+    public RegisterSaleViewModel(
+        IMediator mediator, IMemberRepository memberRepo, SessionContext session, ReceiptService receipts)
     {
         _mediator = mediator;
         _memberRepo = memberRepo;
         _session = session;
+        _receipts = receipts;
     }
 
     public async Task LoadAsync(CancellationToken ct = default)
@@ -105,21 +108,23 @@ public partial class RegisterSaleViewModel : ObservableObject
             var cashierId = _session.EffectiveCashierId;
             var last4 = IsCardRequired ? CardLast4 : null;
 
+            PaymentDto payment;
             if (Concept == SaleConcept.Membership)
             {
                 if (SelectedPlan is null) { ErrorMessage = "Elegí un plan."; return; }
-                await _mediator.Send(new SellMembershipCommand(
+                payment = await _mediator.Send(new SellMembershipCommand(
                     _session.CompanyId, _session.SiteId, cashierId, _session.OpenShiftId,
                     SelectedMember.Id, SelectedPlan.Id, Method, last4), ct);
             }
             else
             {
                 if (SelectedProduct is null) { ErrorMessage = "Elegí un producto."; return; }
-                await _mediator.Send(new SellProductCommand(
+                payment = await _mediator.Send(new SellProductCommand(
                     _session.CompanyId, _session.SiteId, cashierId, _session.OpenShiftId,
                     SelectedProduct.Id, Quantity, SelectedMember.Id, Method, last4), ct);
             }
 
+            await _receipts.TryGenerateAndOpenAsync(payment.Id, _session.CompanyId, ct);
             Registered?.Invoke();
         }
         catch (ValidationException vex)

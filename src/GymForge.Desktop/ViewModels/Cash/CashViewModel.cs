@@ -20,6 +20,7 @@ public partial class CashViewModel : ObservableObject
     private readonly IShiftRepository _shiftRepo;
     private readonly IMemberRepository _memberRepo;
     private readonly SessionContext _session;
+    private readonly ReceiptService _receipts;
 
     public SessionContext Session => _session;
 
@@ -42,12 +43,14 @@ public partial class CashViewModel : ObservableObject
     public bool HasNoMovements => CurrentShift is { Movements.Count: 0 };
 
     public CashViewModel(
-        IMediator mediator, IShiftRepository shiftRepo, IMemberRepository memberRepo, SessionContext session)
+        IMediator mediator, IShiftRepository shiftRepo, IMemberRepository memberRepo,
+        SessionContext session, ReceiptService receipts)
     {
         _mediator = mediator;
         _shiftRepo = shiftRepo;
         _memberRepo = memberRepo;
         _session = session;
+        _receipts = receipts;
 
         _session.PropertyChanged += (_, e) =>
         {
@@ -59,7 +62,7 @@ public partial class CashViewModel : ObservableObject
     [RelayCommand]
     private async Task OpenSaleModalAsync()
     {
-        var modal = new RegisterSaleViewModel(_mediator, _memberRepo, _session);
+        var modal = new RegisterSaleViewModel(_mediator, _memberRepo, _session, _receipts);
         modal.Registered += async () =>
         {
             IsSaleModalOpen = false;

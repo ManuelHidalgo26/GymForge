@@ -43,6 +43,10 @@ public static class ServiceCollectionExtensions
         // Singleton: tenant + sede activa + cajero + turno de caja en curso
         services.AddSingleton<SessionContext>();
 
+        // ── Recibos ───────────────────────────────────────────────────────────
+        // Genera y abre el recibo PDF de cada cobro
+        services.AddSingleton<ReceiptService>();
+
         // ── Shell ─────────────────────────────────────────────────────────────
         // Singleton: owns the navigation router + VM cache
         services.AddSingleton<MainWindowViewModel>(sp => new MainWindowViewModel(sp));

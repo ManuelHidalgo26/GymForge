@@ -37,6 +37,7 @@ public static class InfrastructureServiceExtensions
 
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<IPinHasher, Pbkdf2PinHasher>();
+        services.AddSingleton<IReceiptPdfWriter, ReceiptPdfGenerator>();
         services.AddScoped<IEventBus, InProcessEventBus>();
 
         services.AddScoped<DatabaseSeeder>();

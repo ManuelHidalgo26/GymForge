@@ -127,7 +127,9 @@ dotnet ef database update --project src/GymForge.Infrastructure --startup-projec
       de ejercicios con búsqueda/filtro)
 - [ ] Clases v2: horarios + reservas · Rutinas v2: armador por socio
 - [ ] Vista Productos (catálogo + stock; hoy es placeholder)
-- [ ] Recibo PDF al cobrar (QuestPDF) — siguiente
+- [x] Recibo PDF al cobrar (QuestPDF): se genera y abre solo al confirmar
+      cualquier cobro (modal de pago y de venta); queda en
+      `%LOCALAPPDATA%\GymForge\recibos\AAAA-MM\`. Reimpresión desde historial: pendiente.
 - [ ] Licenciamiento (ver Sprint 3) — siguiente
 
 ### 🔲 Distribución y licencias (Sprint 3)

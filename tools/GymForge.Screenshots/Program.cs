@@ -6,6 +6,7 @@ using GymForge.Application.Interfaces;
 using GymForge.Application.UseCases.Access;
 using GymForge.Application.UseCases.Cash;
 using GymForge.Application.UseCases.Catalog;
+using GymForge.Application.UseCases.Charges;
 using GymForge.Application.UseCases.Members;
 using GymForge.Application.UseCases.Sales;
 using GymForge.Application.UseCases.Staff;
@@ -40,7 +41,17 @@ await sp.InitialiseDatabaseAsync();
 var session = sp.GetRequiredService<SessionContext>();
 await session.InitializeAsync();
 
-await SeedSampleMembersAsync(sp, session);
+var samplePaymentId = await SeedSampleMembersAsync(sp, session);
+
+// Recibo PDF de muestra del último cobro (verificación visual del layout)
+if (samplePaymentId is { } paymentId)
+{
+    var receipt = await sp.GetRequiredService<IMediator>().Send(
+        new BuildReceiptQuery(paymentId, session.CompanyId));
+    var pdf = sp.GetRequiredService<IReceiptPdfWriter>().Generate(receipt);
+    await File.WriteAllBytesAsync(Path.Combine(outDir, "recibo-sample.pdf"), pdf);
+    Console.WriteLine("  recibo-sample.pdf");
+}
 
 // Pre-cargar las ViewModels (queries a DB) ANTES de tocar el hilo de UI.
 var dashboardVm = sp.GetRequiredService<DashboardViewModel>();
@@ -182,7 +193,7 @@ static void CaptureWindow(string name, Window window, string outDir)
     Console.WriteLine($"  {name}.png  {frame?.PixelSize}");
 }
 
-static async Task SeedSampleMembersAsync(IServiceProvider sp, SessionContext session)
+static async Task<Guid?> SeedSampleMembersAsync(IServiceProvider sp, SessionContext session)
 {
     var mediator = sp.GetRequiredService<IMediator>();
 
@@ -208,9 +219,20 @@ static async Task SeedSampleMembersAsync(IServiceProvider sp, SessionContext ses
     // Vender una membresía a los primeros 3 → quedan activos + generan recaudación.
     var plans = await mediator.Send(new GetMembershipTypesQuery(session.CompanyId));
     var plan = plans.FirstOrDefault(p => p.Price > 0);
-    if (plan is not null)
-        foreach (var memberId in ids.Take(3))
-            await mediator.Send(new SellMembershipCommand(
-                session.CompanyId, session.SiteId, session.EffectiveCashierId, null,
-                memberId, plan.Id, PaymentMethod.Cash));
+    if (plan is null) return null;
+
+    Guid? lastPaymentId = null;
+    var buyers = ids.Take(3).ToList();
+    for (int i = 0; i < buyers.Count; i++)
+    {
+        var isCard = i == buyers.Count - 1; // el último con tarjeta → recibo más completo
+        var payment = await mediator.Send(new SellMembershipCommand(
+            session.CompanyId, session.SiteId, session.EffectiveCashierId, null,
+            buyers[i], plan.Id,
+            isCard ? PaymentMethod.CreditCard : PaymentMethod.Cash,
+            isCard ? "4321" : null));
+        lastPaymentId = payment.Id;
+    }
+
+    return lastPaymentId;
 }

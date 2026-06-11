@@ -19,6 +19,7 @@ public partial class ChargesViewModel : ObservableObject
     private readonly IChargeRepository _chargeRepo;
     private readonly IMediator _mediator;
     private readonly SessionContext _session;
+    private readonly ReceiptService _receipts;
 
     // Injected at construction; null = mostrar todos los cobros del site
     private Guid? _filterMemberId;
@@ -41,11 +42,13 @@ public partial class ChargesViewModel : ObservableObject
         OnPropertyChanged(nameof(IsEmpty));
     partial void OnIsLoadingChanged(bool value) => OnPropertyChanged(nameof(IsEmpty));
 
-    public ChargesViewModel(IChargeRepository chargeRepo, IMediator mediator, SessionContext session)
+    public ChargesViewModel(
+        IChargeRepository chargeRepo, IMediator mediator, SessionContext session, ReceiptService receipts)
     {
         _chargeRepo = chargeRepo;
         _mediator   = mediator;
         _session    = session;
+        _receipts   = receipts;
     }
 
     /// <summary>Limita la vista a los cobros de un socio concreto.</summary>
@@ -92,7 +95,7 @@ public partial class ChargesViewModel : ObservableObject
     [RelayCommand]
     private void OpenPaymentModal(ChargeRowVm? row = null)
     {
-        var modal = new PaymentModalViewModel(_mediator, _session);
+        var modal = new PaymentModalViewModel(_mediator, _session, _receipts);
 
         if (row is not null)
             modal.PreSelectCharge(row.Dto);

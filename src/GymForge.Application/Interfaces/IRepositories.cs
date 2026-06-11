@@ -42,6 +42,8 @@ public interface IChargeRepository : IRepository<Charge>
 public interface IPaymentRepository
 {
     Task AddAsync(Payment payment, CancellationToken ct = default);
+    /// <summary>Pago por id con sus asignaciones cargadas (para armar el recibo).</summary>
+    Task<Payment?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<decimal> SumReceivedAsync(Guid companyId, Guid siteId, DateTime from, DateTime to, CancellationToken ct = default);
     /// <summary>Pagos completados del período, con el socio cargado, más recientes primero.</summary>
     Task<IReadOnlyList<Payment>> GetByPeriodAsync(Guid companyId, Guid siteId, DateTime from, DateTime to, CancellationToken ct = default);

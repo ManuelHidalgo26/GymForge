@@ -1,7 +1,9 @@
 // GymForge.Api — Self-hosted Kestrel on localhost:5000
 // Used for IPC between GymForge.Desktop and future mobile/web clients
 using GymForge.Application;
+using GymForge.Application.Interfaces;
 using GymForge.Application.UseCases.Access;
+using GymForge.Application.UseCases.Licensing;
 using GymForge.Api.Endpoints;
 using GymForge.Infrastructure;
 using Serilog;
@@ -29,6 +31,17 @@ try
     var app = builder.Build();
 
     await app.Services.InitialiseDatabaseAsync();
+
+    // Licencia persistida → límites en memoria (Free si no hay clave).
+    using (var scope = app.Services.CreateScope())
+    {
+        var company = (await scope.ServiceProvider.GetRequiredService<ISiteRepository>()
+            .GetCompaniesAsync()).FirstOrDefault();
+        if (company is not null)
+            app.Services.GetRequiredService<CurrentLicense>().State =
+                app.Services.GetRequiredService<ILicenseService>()
+                    .Resolve(company.LicenseKey, DateOnly.FromDateTime(DateTime.Now));
+    }
 
     // ── Endpoints ──────────────────────────────────────────────────────────────
     app.MapMemberEndpoints();

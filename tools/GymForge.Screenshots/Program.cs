@@ -7,6 +7,7 @@ using GymForge.Application.UseCases.Access;
 using GymForge.Application.UseCases.Cash;
 using GymForge.Application.UseCases.Catalog;
 using GymForge.Application.UseCases.Charges;
+using GymForge.Application.UseCases.Licensing;
 using GymForge.Application.UseCases.Members;
 using GymForge.Application.UseCases.Sales;
 using GymForge.Application.UseCases.Staff;
@@ -42,6 +43,12 @@ var session = sp.GetRequiredService<SessionContext>();
 await session.InitializeAsync();
 
 var samplePaymentId = await SeedSampleMembersAsync(sp, session);
+
+// Con una clave real en el entorno, Configuración se captura en estado licenciado
+// (prueba de punta a punta de la clave pública embebida en LicenseService).
+if (Environment.GetEnvironmentVariable("GYMFORGE_SAMPLE_LICENSE") is { Length: > 0 } licenseKey)
+    await sp.GetRequiredService<IMediator>().Send(
+        new ActivateLicenseCommand(session.CompanyId, licenseKey));
 
 // Recibo PDF de muestra del último cobro (verificación visual del layout)
 if (samplePaymentId is { } paymentId)
@@ -112,9 +119,11 @@ Capture("09-reportes", new GymForge.Desktop.Views.Reports.ReportsView { DataCont
 
 // Configuración: datos del gimnasio + sedes
 var settingsVm = new GymForge.Desktop.ViewModels.Settings.SettingsViewModel(
-    mediator2, sp.GetRequiredService<ISiteRepository>(), session,
-    sp.GetRequiredService<GymForge.Application.UseCases.Access.GatekeeperConfig>());
-Capture("10-configuracion", new GymForge.Desktop.Views.Settings.SettingsView { DataContext = settingsVm }, 1180, 760, outDir);
+    mediator2, sp.GetRequiredService<ISiteRepository>(),
+    sp.GetRequiredService<IMemberRepository>(), session,
+    sp.GetRequiredService<GymForge.Application.UseCases.Access.GatekeeperConfig>(),
+    sp.GetRequiredService<GymForge.Application.UseCases.Licensing.CurrentLicense>());
+Capture("10-configuracion", new GymForge.Desktop.Views.Settings.SettingsView { DataContext = settingsVm }, 1180, 1560, outDir);
 
 // Clases: catálogo con el formulario abierto (sin datos → estado vacío + form)
 var classesVm = new GymForge.Desktop.ViewModels.Classes.ClassesViewModel(mediator2, session) { IsFormOpen = true };

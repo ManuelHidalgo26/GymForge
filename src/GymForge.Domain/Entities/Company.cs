@@ -11,6 +11,8 @@ public class Company : BaseEntity
     public string? FiscalConfigJson { get; private set; }
     /// <summary>Configuración general (JSON): reglas de acceso, etc.</summary>
     public string? SettingsJson { get; private set; }
+    /// <summary>Clave de licencia firmada (null = tier Free).</summary>
+    public string? LicenseKey { get; private set; }
     public string BrandColorHex { get; private set; } = "#6366F1";
     public bool IsActive { get; private set; } = true;
 
@@ -57,6 +59,13 @@ public class Company : BaseEntity
     public void SetFiscalConfig(string fiscalConfigJson)
     {
         FiscalConfigJson = fiscalConfigJson;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void ActivateLicense(string licenseKey)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(licenseKey);
+        LicenseKey = licenseKey.Trim();
         UpdatedAt = DateTime.UtcNow;
     }
 }

@@ -57,10 +57,21 @@ public class CreateSiteCommandValidator : AbstractValidator<CreateSiteCommand>
 public class CreateSiteCommandHandler : IRequestHandler<CreateSiteCommand, SiteDto>
 {
     private readonly ISiteRepository _repo;
-    public CreateSiteCommandHandler(ISiteRepository repo) => _repo = repo;
+    private readonly Licensing.CurrentLicense _license;
+
+    public CreateSiteCommandHandler(ISiteRepository repo, Licensing.CurrentLicense license)
+    {
+        _repo = repo;
+        _license = license;
+    }
 
     public async Task<SiteDto> Handle(CreateSiteCommand cmd, CancellationToken ct)
     {
+        if (await _repo.CountActiveSitesAsync(cmd.CompanyId, ct) >= _license.State.MaxSites)
+            throw new InvalidOperationException(
+                $"El plan {_license.State.Tier} permite {_license.State.MaxSites} sede(s). " +
+                "Activá una licencia superior en Configuración → Licencia.");
+
         var site = Site.Create(cmd.CompanyId, cmd.Name.Trim(), cmd.Address.Trim());
         await _repo.AddSiteAsync(site, ct);
         await _repo.SaveChangesAsync(ct);

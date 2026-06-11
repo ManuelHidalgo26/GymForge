@@ -21,6 +21,8 @@ public interface IMemberRepository : IRepository<Member>
     Task<IReadOnlyList<Member>> SearchAsync(string query, Guid companyId, Guid siteId, int take = 50, CancellationToken ct = default);
     Task<IReadOnlyList<Member>> GetPagedAsync(Guid companyId, Guid siteId, int page, int pageSize, MemberStatus? status = null, CancellationToken ct = default);
     Task<int> CountAsync(Guid companyId, Guid siteId, MemberStatus? status = null, CancellationToken ct = default);
+    /// <summary>Total de socios de la empresa (todas las sedes) — para el límite de licencia.</summary>
+    Task<int> CountByCompanyAsync(Guid companyId, CancellationToken ct = default);
     /// <summary>True si el socio tiene movimientos (membresías, cobros, pagos o accesos).</summary>
     Task<bool> HasActivityAsync(Guid memberId, CancellationToken ct = default);
 }

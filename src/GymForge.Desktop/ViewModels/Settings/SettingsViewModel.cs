@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using FluentValidation;
 using GymForge.Application.Interfaces;
 using GymForge.Application.UseCases.Access;
+using GymForge.Application.UseCases.Licensing;
 using GymForge.Application.UseCases.Settings;
 using GymForge.Desktop.Services;
 using MediatR;
@@ -15,8 +16,10 @@ public partial class SettingsViewModel : ObservableObject
 {
     private readonly IMediator _mediator;
     private readonly ISiteRepository _siteRepo;
+    private readonly IMemberRepository _memberRepo;
     private readonly SessionContext _session;
     private readonly GatekeeperConfig _gatekeeper;
+    private readonly CurrentLicense _license;
     private Guid? _editingSiteId;   // null = agregando
 
     // Datos del gimnasio
@@ -42,13 +45,23 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string? _accessMessage;
     [ObservableProperty] private bool _accessSaved;
 
+    // Licencia
+    [ObservableProperty] private string _licensePlanDisplay = string.Empty;
+    [ObservableProperty] private string _licenseUsageDisplay = string.Empty;
+    [ObservableProperty] private string _licenseKeyInput = string.Empty;
+    [ObservableProperty] private string? _licenseMessage;
+    [ObservableProperty] private bool _licenseSaved;
+
     public SettingsViewModel(
-        IMediator mediator, ISiteRepository siteRepo, SessionContext session, GatekeeperConfig gatekeeper)
+        IMediator mediator, ISiteRepository siteRepo, IMemberRepository memberRepo,
+        SessionContext session, GatekeeperConfig gatekeeper, CurrentLicense license)
     {
         _mediator = mediator;
         _siteRepo = siteRepo;
+        _memberRepo = memberRepo;
         _session = session;
         _gatekeeper = gatekeeper;
+        _license = license;
     }
 
     [RelayCommand]
@@ -68,6 +81,25 @@ public partial class SettingsViewModel : ObservableObject
         StopOnOweAmount = _gatekeeper.StopOnOweAmount;
         WarnOnOweAmount = _gatekeeper.WarnOnOweAmount;
         AntiPassbackMinutes = _gatekeeper.AntiPassbackMinutes;
+
+        await RefreshLicenseAsync(ct);
+    }
+
+    private async Task RefreshLicenseAsync(CancellationToken ct = default)
+    {
+        var state = _license.State;
+        LicensePlanDisplay = state.Status switch
+        {
+            LicenseStatus.Active => $"Plan {state.Tier} — vence el {state.ExpiresOn:dd/MM/yyyy}",
+            LicenseStatus.Grace =>
+                $"Plan {state.Tier} — venció el {state.ExpiresOn:dd/MM/yyyy} (período de gracia, renovala)",
+            LicenseStatus.Expired => $"Plan {state.Tier} vencido — operando con límites Free",
+            _ => "Plan Free (sin licencia)",
+        };
+
+        var members = await _memberRepo.CountByCompanyAsync(_session.CompanyId, ct);
+        var sites = await _siteRepo.CountActiveSitesAsync(_session.CompanyId, ct);
+        LicenseUsageDisplay = $"Socios: {members} de {state.MaxMembers} · Sedes: {sites} de {state.MaxSites}";
     }
 
     // ── Datos del gimnasio ──────────────────────────────────────────────────
@@ -169,6 +201,29 @@ public partial class SettingsViewModel : ObservableObject
             await LoadAsync();
         }
         catch (Exception ex) { SiteMessage = ex.Message; }
+    }
+
+    // ── Licencia ────────────────────────────────────────────────────────────
+
+    [RelayCommand]
+    private async Task ActivateLicenseAsync()
+    {
+        LicenseMessage = null;
+        LicenseSaved = false;
+        try
+        {
+            var state = await _mediator.Send(
+                new ActivateLicenseCommand(_session.CompanyId, LicenseKeyInput.Trim()));
+            LicenseSaved = true;
+            LicenseMessage = $"Licencia {state.Tier} activada. Vence el {state.ExpiresOn:dd/MM/yyyy}.";
+            LicenseKeyInput = string.Empty;
+            await RefreshLicenseAsync();
+        }
+        catch (ValidationException vex)
+        {
+            LicenseMessage = string.Join("\n", vex.Errors.Select(e => e.ErrorMessage));
+        }
+        catch (Exception ex) { LicenseMessage = ex.Message; }
     }
 
     // ── Reglas de acceso ────────────────────────────────────────────────────

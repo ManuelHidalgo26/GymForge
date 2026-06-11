@@ -1,5 +1,6 @@
 using FluentAssertions;
 using GymForge.Application.Interfaces;
+using GymForge.Application.UseCases.Licensing;
 using GymForge.Application.UseCases.Members;
 using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
@@ -10,6 +11,7 @@ namespace GymForge.Application.Tests.Handlers;
 public class CreateMemberCommandTests
 {
     private readonly IMemberRepository _repo = Substitute.For<IMemberRepository>();
+    private readonly CurrentLicense _license = new();
 
     private static CreateMemberCommand ValidCommand() => new(
         CompanyId: Guid.NewGuid(),
@@ -27,7 +29,7 @@ public class CreateMemberCommandTests
     public async Task Handle_PersistsMemberAndReturnsDto()
     {
         var cmd = ValidCommand();
-        var handler = new CreateMemberCommandHandler(_repo);
+        var handler = new CreateMemberCommandHandler(_repo, _license);
 
         var dto = await handler.Handle(cmd, CancellationToken.None);
 
@@ -50,12 +52,27 @@ public class CreateMemberCommandTests
     public async Task Handle_ActivateImmediately_CreatesActiveMember()
     {
         var cmd = ValidCommand() with { ActivateImmediately = true };
-        var dto = await new CreateMemberCommandHandler(_repo).Handle(cmd, CancellationToken.None);
+        var dto = await new CreateMemberCommandHandler(_repo, _license).Handle(cmd, CancellationToken.None);
 
         dto.Status.Should().Be(MemberStatus.Active);
         await _repo.Received(1).AddAsync(
             Arg.Is<Member>(m => m.Status == MemberStatus.Active && m.JoinDate != null),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_LimiteDeLicenciaAlcanzado_BloqueaElAlta()
+    {
+        var cmd = ValidCommand();
+        _repo.CountByCompanyAsync(cmd.CompanyId, Arg.Any<CancellationToken>())
+            .Returns(LicenseState.FreeMaxMembers);   // ya está en el tope Free (50)
+
+        var act = () => new CreateMemberCommandHandler(_repo, _license)
+            .Handle(cmd, CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*límite de 50 socios*");
+        await _repo.DidNotReceive().AddAsync(Arg.Any<Member>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

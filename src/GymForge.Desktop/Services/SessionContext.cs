@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using GymForge.Application.DTOs;
 using GymForge.Application.Interfaces;
 using GymForge.Application.UseCases.Access;
+using GymForge.Application.UseCases.Licensing;
 using GymForge.Application.UseCases.Settings;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,11 +19,17 @@ public partial class SessionContext : ObservableObject
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly GatekeeperConfig _gatekeeper;
+    private readonly CurrentLicense _license;
+    private readonly ILicenseService _licenseService;
 
-    public SessionContext(IServiceScopeFactory scopeFactory, GatekeeperConfig gatekeeper)
+    public SessionContext(
+        IServiceScopeFactory scopeFactory, GatekeeperConfig gatekeeper,
+        CurrentLicense license, ILicenseService licenseService)
     {
         _scopeFactory = scopeFactory;
         _gatekeeper = gatekeeper;
+        _license = license;
+        _licenseService = licenseService;
     }
 
     public Guid CompanyId { get; private set; }
@@ -70,6 +77,10 @@ public partial class SessionContext : ObservableObject
 
         CompanyId = company.Id;
         GymName = company.LegalName;
+
+        // Licencia persistida → estado/límites en memoria (Free si no hay clave).
+        _license.State = _licenseService.Resolve(
+            company.LicenseKey, DateOnly.FromDateTime(DateTime.Now));
 
         // Reglas de acceso persistidas → gatekeeper en memoria.
         if (AccessSettings.FromJson(company.SettingsJson) is { } access)

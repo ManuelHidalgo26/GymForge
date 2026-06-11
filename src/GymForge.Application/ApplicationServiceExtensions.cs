@@ -22,6 +22,10 @@ public static class ApplicationServiceExtensions
         services.AddValidatorsFromAssembly(assembly);
         services.AddScoped<ICashRegister, CashRegister>();
 
+        // Licenciamiento: estado vivo + validador de claves firmadas (offline)
+        services.AddSingleton<UseCases.Licensing.CurrentLicense>();
+        services.AddSingleton<Interfaces.ILicenseService, UseCases.Licensing.LicenseService>();
+
         return services;
     }
 }

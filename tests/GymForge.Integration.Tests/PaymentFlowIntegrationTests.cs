@@ -49,7 +49,8 @@ public class PaymentFlowIntegrationTests : IAsyncLifetime
     [Fact]
     public async Task CreateMember_WithRealTenant_Persists()
     {
-        var handler = new CreateMemberCommandHandler(new MemberRepository(_db));
+        var handler = new CreateMemberCommandHandler(
+            new MemberRepository(_db), new GymForge.Application.UseCases.Licensing.CurrentLicense());
 
         var dto = await handler.Handle(new CreateMemberCommand(
             _companyId, _site.Id, "Ana", "García",

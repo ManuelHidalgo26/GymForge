@@ -65,8 +65,8 @@ dotnet test GymForge.sln
 # Reset DB + seed
 .\scripts\seed.ps1
 
-# Agregar migración EF (requiere .NET 9 SDK)
-dotnet ef migrations add NombreMigracion --project src/GymForge.Infrastructure --startup-project src/GymForge.Api
+# Agregar migración EF (requiere .NET 9 SDK; usa el design-time factory de Infrastructure)
+dotnet ef migrations add NombreMigracion --project src/GymForge.Infrastructure --startup-project src/GymForge.Infrastructure
 
 # Aplicar migraciones
 dotnet ef database update --project src/GymForge.Infrastructure --startup-project src/GymForge.Api
@@ -130,15 +130,20 @@ dotnet ef database update --project src/GymForge.Infrastructure --startup-projec
 - [x] Recibo PDF al cobrar (QuestPDF): se genera y abre solo al confirmar
       cualquier cobro (modal de pago y de venta); queda en
       `%LOCALAPPDATA%\GymForge\recibos\AAAA-MM\`. Reimpresión desde historial: pendiente.
-- [ ] Licenciamiento (ver Sprint 3) — siguiente
+- [x] Licenciamiento v1 (detalle en Sprint 3)
 
 ### 🔲 Distribución y licencias (Sprint 3)
 - [x] Ejecutable único autocontenido (`scripts/publish.ps1` → `dist/GymForge.Desktop.exe`)
 - [ ] Ícono de la app (.ico) + metadata del exe (versión, empresa)
 - [ ] Distribución: GitHub Releases primero; landing de descarga después
-- [ ] Licenciamiento: clave de licencia por gimnasio + validación online con
-      período de gracia offline (la app es offline-first); tier gratis limitado
-      (p.ej. 1 sede / 50 socios) y tiers pagos. Cobro vía Mercado Pago.
+- [x] Licenciamiento v1 (offline): claves firmadas ECDSA P-256 (`GYMF.payload.firma`)
+      verificadas con la clave pública embebida en `LicenseService`; tier Free
+      (1 sede / 50 socios) aplicado en alta de socio y de sede; activación en
+      Config → Licencia; 15 días de gracia tras vencer y luego degrada a Free.
+      Emisión de claves: `dotnet run --project tools/GymForge.LicenseGen -- new --gym "..."`
+      (la clave privada vive en `%LOCALAPPDATA%\GymForge\vendor\` — NO está en el
+      repo; respaldarla. Si se pierde: `init-keys` + re-embeber la pública + rebuild).
+- [ ] Licenciamiento v2: validación/revocación online + venta vía Mercado Pago.
 - [ ] Firma de código (certificado) para evitar el aviso de SmartScreen
 
 > Nota: el login de cajero usa el PIN del admin sembrado (1234). Si tu

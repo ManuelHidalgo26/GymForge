@@ -152,6 +152,29 @@
                     </StackPanel>
                 </Border>
 
+                <!-- ── Licencia ───────────────────────────────────────────── -->
+                <Border CornerRadius="12" Padding="24"
+                        Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Licencia" FontSize="15" FontWeight="SemiBold" />
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="{Binding LicensePlanDisplay}" FontSize="13" FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding LicenseUsageDisplay}" FontSize="12" Opacity="0.7" />
+                        </StackPanel>
+                        <TextBlock FontSize="12" Opacity="0.6" TextWrapping="Wrap"
+                                   Text="El plan Free permite 1 sede y 50 socios. Para ampliar los límites, pegá la clave de licencia que recibiste al comprar tu plan." />
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBox Text="{Binding LicenseKeyInput}" Watermark="GYMF.…" Width="430" />
+                            <Button Content="Activar" Command="{Binding ActivateLicenseCommand}" Classes="NavButton"
+                                    Background="{DynamicResource SystemAccentColor}" Foreground="White" />
+                        </StackPanel>
+                        <TextBlock Text="{Binding LicenseMessage}" FontSize="12"
+                                   Foreground="{Binding LicenseSaved, Converter={StaticResource ActiveColorBrushConverter}}"
+                                   IsVisible="{Binding LicenseMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
                 <!-- ── Info del sistema ───────────────────────────────────── -->
                 <Border CornerRadius="12" Padding="24"
                         Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">

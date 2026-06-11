@@ -41,11 +41,22 @@ public class CreateMemberCommandValidator : AbstractValidator<CreateMemberComman
 public class CreateMemberCommandHandler : IRequestHandler<CreateMemberCommand, MemberDto>
 {
     private readonly IMemberRepository _repo;
+    private readonly Licensing.CurrentLicense _license;
 
-    public CreateMemberCommandHandler(IMemberRepository repo) => _repo = repo;
+    public CreateMemberCommandHandler(IMemberRepository repo, Licensing.CurrentLicense license)
+    {
+        _repo = repo;
+        _license = license;
+    }
 
     public async Task<MemberDto> Handle(CreateMemberCommand cmd, CancellationToken ct)
     {
+        var count = await _repo.CountByCompanyAsync(cmd.CompanyId, ct);
+        if (count >= _license.State.MaxMembers)
+            throw new InvalidOperationException(
+                $"Alcanzaste el límite de {_license.State.MaxMembers} socios del plan " +
+                $"{_license.State.Tier}. Activá una licencia en Configuración → Licencia.");
+
         var member = Member.Create(
             cmd.CompanyId,
             cmd.SiteId,

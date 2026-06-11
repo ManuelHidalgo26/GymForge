@@ -93,4 +93,7 @@ public class MemberRepository : IMemberRepository
             query = query.Where(m => m.Status == status.Value);
         return await query.CountAsync(ct);
     }
+
+    public async Task<int> CountByCompanyAsync(Guid companyId, CancellationToken ct = default) =>
+        await _db.Members.CountAsync(m => m.CompanyId == companyId, ct);
 }

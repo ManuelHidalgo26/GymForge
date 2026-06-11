@@ -47,7 +47,12 @@ public interface IPaymentRepository
 public interface IMembershipTypeRepository
 {
     Task<MembershipType?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    /// <summary>Solo planes activos (para vender).</summary>
     Task<IReadOnlyList<MembershipType>> GetByCompanyAsync(Guid companyId, CancellationToken ct = default);
+    /// <summary>Todos los planes, incluidos inactivos (para administrar).</summary>
+    Task<IReadOnlyList<MembershipType>> GetAllByCompanyAsync(Guid companyId, CancellationToken ct = default);
+    Task AddAsync(MembershipType plan, CancellationToken ct = default);
+    Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
 
 public interface IProductRepository

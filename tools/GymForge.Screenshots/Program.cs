@@ -90,6 +90,10 @@ Capture("06-caja-venta-modal", new CashView { DataContext = cashVm }, 1180, 900,
 var emptyMembersVm = new MembersListViewModel(mediator2, session) { SearchText = "zzz-sin-resultados" };
 Capture("07-socios-vacio", new MembersListView { DataContext = emptyMembersVm }, 1180, 720, outDir);
 
+// Planes: listado con el formulario de alta abierto
+var plansVm = new GymForge.Desktop.ViewModels.Plans.PlansViewModel(mediator2, session) { IsFormOpen = true };
+Capture("08-planes", new GymForge.Desktop.Views.Plans.PlansView { DataContext = plansVm }, 1180, 760, outDir);
+
 // Shell completo: sidebar + topbar + dashboard (la ventana real de la app)
 var shell = new GymForge.Desktop.Views.Shell.MainWindow
 {

@@ -74,6 +74,20 @@ public class EnumDisplayConverter : IValueConverter
         [ChargeStatusFilter.Pending] = "Pendientes",
         [ChargeStatusFilter.Overdue] = "Vencidos",
         [ChargeStatusFilter.All] = "Todos",
+
+        // Modalidad de plan
+        [MembershipBasis.OpenEnded] = "Sin vencimiento",
+        [MembershipBasis.Renewal] = "Renovable",
+        [MembershipBasis.PresetDate] = "Hasta fecha fija",
+        [MembershipBasis.VisitPack] = "Pack de visitas",
+        [MembershipBasis.ClassPack] = "Pack de clases",
+        [MembershipBasis.Trial] = "Prueba",
+        [MembershipBasis.AddOn] = "Adicional",
+
+        // Unidades de duración (strings del dominio)
+        ["Day"] = "Día(s)",
+        ["Month"] = "Mes(es)",
+        ["Year"] = "Año(s)",
     };
 
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>

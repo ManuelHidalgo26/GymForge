@@ -21,4 +21,18 @@ public class MembershipTypeRepository : IMembershipTypeRepository
             .ToListAsync(ct);
         return list.OrderBy(m => m.Price).ToList();
     }
+
+    public async Task<IReadOnlyList<MembershipType>> GetAllByCompanyAsync(Guid companyId, CancellationToken ct = default)
+    {
+        var list = await _db.MembershipTypes
+            .Where(m => m.CompanyId == companyId)
+            .ToListAsync(ct);
+        return list.OrderByDescending(m => m.IsActive).ThenBy(m => m.Price).ToList();
+    }
+
+    public async Task AddAsync(MembershipType plan, CancellationToken ct = default) =>
+        await _db.MembershipTypes.AddAsync(plan, ct);
+
+    public async Task<int> SaveChangesAsync(CancellationToken ct = default) =>
+        await _db.SaveChangesAsync(ct);
 }

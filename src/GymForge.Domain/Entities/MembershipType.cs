@@ -82,6 +82,7 @@ public class MembershipType : BaseEntity
     }
 
     public void Deactivate() { IsActive = false; UpdatedAt = DateTime.UtcNow; }
+    public void Activate() { IsActive = true; UpdatedAt = DateTime.UtcNow; }
 
     private record ScheduleRestriction(int[] Days, TimeOnly From, TimeOnly To);
 }

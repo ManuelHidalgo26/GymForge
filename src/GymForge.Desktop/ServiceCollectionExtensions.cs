@@ -69,6 +69,9 @@ public static class ServiceCollectionExtensions
         // ── Cash register ─────────────────────────────────────────────────────
         services.AddTransient<CashViewModel>();
 
+        // ── Plans ─────────────────────────────────────────────────────────────
+        services.AddTransient<ViewModels.Plans.PlansViewModel>();
+
         return services;
     }
 }

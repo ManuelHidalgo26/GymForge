@@ -1,0 +1,156 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:fa="using:FluentAvalonia.UI.Controls"
+             xmlns:vm="using:GymForge.Desktop.ViewModels.Plans"
+             xmlns:dto="using:GymForge.Application.DTOs"
+             xmlns:enums="using:GymForge.Domain.Enums"
+             x:Class="GymForge.Desktop.Views.Plans.PlansView"
+             x:DataType="vm:PlansViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <!-- ── Toolbar ────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0" Padding="16,12"
+                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                BorderThickness="0,0,0,1">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="Planes" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    <Border CornerRadius="12" Padding="8,2"
+                            Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+                        <TextBlock Text="{Binding Plans.Count}" FontSize="12" VerticalAlignment="Center" />
+                    </Border>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8"
+                            HorizontalAlignment="Right">
+                    <Button Command="{Binding LoadCommand}" Classes="NavButton" ToolTip.Tip="Actualizar">
+                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Refresh}" FontSize="16" />
+                    </Button>
+                    <Button Command="{Binding OpenFormCommand}" Classes="NavButton"
+                            Background="{DynamicResource SystemAccentColor}" Foreground="White">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Add}" FontSize="16" />
+                            <TextBlock Text="Nuevo plan" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ── Formulario nuevo plan ──────────────────────────────────────── -->
+        <Border Grid.Row="1" Padding="16,12" IsVisible="{Binding IsFormOpen}"
+                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                BorderThickness="0,0,0,1">
+            <StackPanel Spacing="10">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Nombre *" FontSize="12" Opacity="0.7" />
+                        <TextBox Text="{Binding Name}" Watermark="Ej: Mensual full" Width="220" />
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Modalidad" FontSize="12" Opacity="0.7" />
+                        <ComboBox ItemsSource="{Binding BasisOptions}" SelectedItem="{Binding Basis}" Width="170">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="enums:MembershipBasis">
+                                    <TextBlock Text="{Binding Converter={StaticResource EnumEs}}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Precio *" FontSize="12" Opacity="0.7" />
+                        <NumericUpDown Value="{Binding Price}" Minimum="0" Increment="1000"
+                                       FormatString="C0" Width="150" />
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Duración" FontSize="12" Opacity="0.7" />
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <NumericUpDown Value="{Binding DurationValue}" Minimum="1" Increment="1" Width="110" />
+                            <ComboBox ItemsSource="{Binding DurationUnits}" SelectedItem="{Binding DurationUnit}" Width="100">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="x:String">
+                                        <TextBlock Text="{Binding Converter={StaticResource EnumEs}}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+
+                <fa:InfoBar IsOpen="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                            Severity="Error" Title="Error" Message="{Binding ErrorMessage}" IsClosable="False" />
+
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="Crear plan" Command="{Binding CreateCommand}" Classes="NavButton"
+                            Background="{DynamicResource SystemAccentColor}" Foreground="White" />
+                    <Button Content="Cancelar" Command="{Binding CancelFormCommand}" Classes="NavButton" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- ── Grid de planes ─────────────────────────────────────────────── -->
+        <DataGrid Grid.Row="2"
+                  ItemsSource="{Binding Plans}"
+                  IsReadOnly="True" AutoGenerateColumns="False" CanUserSortColumns="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Nombre" Binding="{Binding Name}" Width="*" />
+                <DataGridTemplateColumn Header="Modalidad" Width="150" SortMemberPath="Basis">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="dto:MembershipTypeDto">
+                            <TextBlock Text="{Binding Basis, Converter={StaticResource EnumEs}}"
+                                       VerticalAlignment="Center" Margin="8,0" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Duración" Binding="{Binding DurationLabel}" Width="110" />
+                <DataGridTextColumn Header="Precio" Binding="{Binding Price, StringFormat={}{0:C}}" Width="130" />
+                <DataGridTemplateColumn Header="Estado" Width="110" SortMemberPath="IsActive">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="dto:MembershipTypeDto">
+                            <Border CornerRadius="10" Padding="8,2" Margin="4,0"
+                                    HorizontalAlignment="Left" VerticalAlignment="Center">
+                                <Border.Background>
+                                    <SolidColorBrush Color="{Binding IsActive, Converter={StaticResource ActiveColorConverter}}" Opacity="0.15" />
+                                </Border.Background>
+                                <TextBlock Text="{Binding IsActive, Converter={StaticResource ActiveLabelConverter}}"
+                                           FontSize="11" FontWeight="SemiBold">
+                                    <TextBlock.Foreground>
+                                        <SolidColorBrush Color="{Binding IsActive, Converter={StaticResource ActiveColorConverter}}" />
+                                    </TextBlock.Foreground>
+                                </TextBlock>
+                            </Border>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="" Width="120">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="dto:MembershipTypeDto">
+                            <Button Classes="NavButton" Margin="4,2"
+                                    CommandParameter="{Binding}"
+                                    Command="{Binding $parent[UserControl].((vm:PlansViewModel)DataContext).ToggleActiveCommand}">
+                                <TextBlock Text="{Binding IsActive, Converter={StaticResource ActiveToggleLabelConverter}}"
+                                           FontSize="12" />
+                            </Button>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- ── Estado vacío ───────────────────────────────────────────────── -->
+        <StackPanel Grid.Row="2" Spacing="10"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    IsVisible="{Binding IsEmpty}">
+            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.List}" FontSize="44" Opacity="0.25"
+                           HorizontalAlignment="Center" />
+            <TextBlock Text="Todavía no hay planes" FontSize="15" FontWeight="SemiBold" Opacity="0.7"
+                       HorizontalAlignment="Center" />
+            <TextBlock Text="Creá el primero con «Nuevo plan»." FontSize="12" Opacity="0.5"
+                       HorizontalAlignment="Center" />
+        </StackPanel>
+
+    </Grid>
+
+</UserControl>

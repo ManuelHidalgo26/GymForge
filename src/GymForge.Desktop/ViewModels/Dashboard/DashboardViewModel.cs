@@ -10,7 +10,13 @@ public partial class DashboardViewModel : ObservableObject
 {
     private readonly IMemberRepository _members;
     private readonly IPaymentRepository _payments;
+    private readonly IAccessLogRepository _accessLogs;
     private readonly SessionContext _session;
+
+    /// <summary>Acciones rápidas: las cablea MainWindowViewModel a la navegación.</summary>
+    public event Action? CreateMemberRequested;
+    public event Action? CheckInRequested;
+    public event Action? ChargeRequested;
 
     [ObservableProperty] private int _totalActiveMembers;
     [ObservableProperty] private int _checkInsToday;
@@ -18,12 +24,19 @@ public partial class DashboardViewModel : ObservableObject
     [ObservableProperty] private decimal _revenueThisMonth;
     [ObservableProperty] private bool _isLoading;
 
-    public DashboardViewModel(IMemberRepository members, IPaymentRepository payments, SessionContext session)
+    public DashboardViewModel(
+        IMemberRepository members, IPaymentRepository payments,
+        IAccessLogRepository accessLogs, SessionContext session)
     {
         _members = members;
         _payments = payments;
+        _accessLogs = accessLogs;
         _session = session;
     }
+
+    [RelayCommand] private void QuickCreateMember() => CreateMemberRequested?.Invoke();
+    [RelayCommand] private void QuickCheckIn() => CheckInRequested?.Invoke();
+    [RelayCommand] private void QuickCharge() => ChargeRequested?.Invoke();
 
     [RelayCommand]
     private async Task LoadAsync()
@@ -41,7 +54,10 @@ public partial class DashboardViewModel : ObservableObject
             RevenueThisMonth = await _payments.SumReceivedAsync(
                 _session.CompanyId, _session.SiteId, monthStart, monthStart.AddMonths(1));
 
-            CheckInsToday = 0;   // AccessLog aggregation — pendiente
+            // Accesos del día (día local convertido a UTC, que es como se guardan)
+            var dayStartUtc = DateTime.Today.ToUniversalTime();
+            var logs = await _accessLogs.GetBySiteAsync(_session.SiteId, dayStartUtc, dayStartUtc.AddDays(1));
+            CheckInsToday = logs.Count;
         }
         finally
         {

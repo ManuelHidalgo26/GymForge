@@ -30,6 +30,7 @@ public partial class CreateMemberViewModel : ObservableObject
     [ObservableProperty] private DateOnly? _birthDate;
     [ObservableProperty] private MemberSource _source = MemberSource.WalkIn;
     [ObservableProperty] private bool _marketingConsent;
+    [ObservableProperty] private bool _activateImmediately = true;
 
     // State
     [ObservableProperty] private bool _isSaving;
@@ -72,7 +73,8 @@ public partial class CreateMemberViewModel : ObservableObject
                 DocumentType, DocumentNumber.Trim(),
                 Gender, Email?.Trim(), Mobile?.Trim(),
                 BirthDate, Source,
-                MarketingConsent: MarketingConsent), ct);
+                MarketingConsent: MarketingConsent,
+                ActivateImmediately: ActivateImmediately), ct);
 
             MemberCreated?.Invoke(dto);
         }

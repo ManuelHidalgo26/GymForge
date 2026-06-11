@@ -55,6 +55,12 @@ public partial class MainWindowViewModel : ObservableObject
         var membersList = _sp.GetRequiredService<MembersListViewModel>();
         membersList.OpenDetailRequested  += OpenMemberDetail;
         membersList.CreateMemberRequested += OpenCreateMember;
+
+        // Acciones rápidas del Dashboard
+        var dashboard = _sp.GetRequiredService<DashboardViewModel>();
+        dashboard.CreateMemberRequested += OpenCreateMember;
+        dashboard.CheckInRequested += () => Navigate(NavSection.Access);
+        dashboard.ChargeRequested += () => Navigate(NavSection.Cash);
     }
 
     private void OnSessionChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)

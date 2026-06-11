@@ -134,9 +134,12 @@
                             </ComboBox>
                         </StackPanel>
 
-                        <!-- Consentimiento -->
+                        <!-- Consentimiento + estado inicial -->
                         <StackPanel Grid.Row="4" Grid.Column="1" Margin="0,0,0,14"
                                     VerticalAlignment="Center" Spacing="6">
+                            <CheckBox IsChecked="{Binding ActivateImmediately}"
+                                      Content="Crear como socio activo" FontSize="13"
+                                      ToolTip.Tip="Destildalo para registrarlo como prospecto (aún no es socio)" />
                             <CheckBox IsChecked="{Binding MarketingConsent}"
                                       Content="Acepta comunicaciones" FontSize="13" />
                         </StackPanel>

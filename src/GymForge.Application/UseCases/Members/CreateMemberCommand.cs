@@ -20,7 +20,8 @@ public record CreateMemberCommand(
     DateOnly? BirthDate,
     MemberSource Source = MemberSource.WalkIn,
     Guid? SalesRepId = null,
-    bool MarketingConsent = false) : IRequest<MemberDto>;
+    bool MarketingConsent = false,
+    bool ActivateImmediately = false) : IRequest<MemberDto>;
 
 public class CreateMemberCommandValidator : AbstractValidator<CreateMemberCommand>
 {
@@ -56,6 +57,11 @@ public class CreateMemberCommandHandler : IRequestHandler<CreateMemberCommand, M
 
         member.UpdateContact(cmd.Email, cmd.Mobile);
         member.CompleteProfile(cmd.BirthDate, cmd.Source, cmd.SalesRepId, cmd.MarketingConsent);
+
+        // Alta directa como socio activo (mostrador); sin esto queda Prospecto
+        // hasta que compre una membresía.
+        if (cmd.ActivateImmediately)
+            member.Activate(DateOnly.FromDateTime(DateTime.Today));
 
         await _repo.AddAsync(member, ct);
         await _repo.SaveChangesAsync(ct);

@@ -32,6 +32,7 @@ public partial class MembersListViewModel : ObservableObject
     private int _currentPage = 1;
 
     [ObservableProperty] private MemberStatus? _statusFilter;
+    [ObservableProperty] private string? _errorMessage;
 
     public const int PageSize = 50;
     public int TotalPages => Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
@@ -93,6 +94,22 @@ public partial class MembersListViewModel : ObservableObject
 
     [RelayCommand]
     private void CreateMember() => CreateMemberRequested?.Invoke();
+
+    [RelayCommand]
+    private async Task DeleteMemberAsync(MemberDto? member)
+    {
+        if (member is null) return;
+        ErrorMessage = null;
+        try
+        {
+            await _mediator.Send(new DeleteMemberCommand(member.Id));
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+    }
 
     // ── Pagination & search ───────────────────────────────────────────────────
 

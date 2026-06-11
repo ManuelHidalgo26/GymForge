@@ -110,21 +110,24 @@
                 <StackPanel Spacing="12">
                     <TextBlock Text="Acciones rápidas" FontSize="14" FontWeight="SemiBold" />
                     <WrapPanel Orientation="Horizontal">
-                        <Button Classes="QuickAction" Margin="0,0,10,0">
+                        <Button Classes="QuickAction" Margin="0,0,10,0"
+                                Command="{Binding QuickCreateMemberCommand}">
                             <StackPanel Spacing="8" HorizontalAlignment="Center">
                                 <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Add}" FontSize="24"
                                                HorizontalAlignment="Center" />
                                 <TextBlock Text="Nuevo socio" FontSize="12" HorizontalAlignment="Center" />
                             </StackPanel>
                         </Button>
-                        <Button Classes="QuickAction" Margin="0,0,10,0">
+                        <Button Classes="QuickAction" Margin="0,0,10,0"
+                                Command="{Binding QuickCheckInCommand}">
                             <StackPanel Spacing="8" HorizontalAlignment="Center">
                                 <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Permissions}" FontSize="24"
                                                HorizontalAlignment="Center" />
                                 <TextBlock Text="Check-in manual" FontSize="12" HorizontalAlignment="Center" />
                             </StackPanel>
                         </Button>
-                        <Button Classes="QuickAction">
+                        <Button Classes="QuickAction"
+                                Command="{Binding QuickChargeCommand}">
                             <StackPanel Spacing="8" HorizontalAlignment="Center">
                                 <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Tag}" FontSize="24"
                                                HorizontalAlignment="Center" />

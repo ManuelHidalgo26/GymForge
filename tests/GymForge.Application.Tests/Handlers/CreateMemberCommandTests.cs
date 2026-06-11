@@ -47,6 +47,18 @@ public class CreateMemberCommandTests
     }
 
     [Fact]
+    public async Task Handle_ActivateImmediately_CreatesActiveMember()
+    {
+        var cmd = ValidCommand() with { ActivateImmediately = true };
+        var dto = await new CreateMemberCommandHandler(_repo).Handle(cmd, CancellationToken.None);
+
+        dto.Status.Should().Be(MemberStatus.Active);
+        await _repo.Received(1).AddAsync(
+            Arg.Is<Member>(m => m.Status == MemberStatus.Active && m.JoinDate != null),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public void Validator_EmptyFirstName_Fails()
     {
         var cmd = ValidCommand() with { FirstName = "" };

@@ -45,4 +45,18 @@ public class ExerciseRepository : IExerciseRepository
 
         return await q.OrderBy(e => e.Name).Take(take).ToListAsync(ct);
     }
+
+    public async Task<Exercise?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
+        await _db.Exercises.FirstOrDefaultAsync(e => e.Id == id, ct);
+
+    public async Task AddAsync(Exercise exercise, CancellationToken ct = default) =>
+        await _db.Exercises.AddAsync(exercise, ct);
+
+    public void Remove(Exercise exercise) => _db.Exercises.Remove(exercise);
+
+    public async Task<bool> IsInUseAsync(Guid exerciseId, CancellationToken ct = default) =>
+        await _db.RoutineItems.AnyAsync(ri => ri.ExerciseId == exerciseId, ct);
+
+    public async Task<int> SaveChangesAsync(CancellationToken ct = default) =>
+        await _db.SaveChangesAsync(ct);
 }

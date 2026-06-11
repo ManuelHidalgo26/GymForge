@@ -45,4 +45,23 @@ public class Exercise : BaseEntity
     }
 
     public bool IsGlobal => TenantId is null;
+
+    public void Update(
+        string name,
+        MuscleGroup primaryMuscleGroup,
+        Equipment equipment,
+        MovementType movementType,
+        int difficulty)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        if (difficulty < 1 || difficulty > 5)
+            throw new ArgumentException("La dificultad debe estar entre 1 y 5.");
+
+        Name = name;
+        PrimaryMuscleGroup = primaryMuscleGroup;
+        Equipment = equipment;
+        MovementType = movementType;
+        Difficulty = difficulty;
+        UpdatedAt = DateTime.UtcNow;
+    }
 }

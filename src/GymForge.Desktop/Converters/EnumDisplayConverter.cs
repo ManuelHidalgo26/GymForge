@@ -88,6 +88,40 @@ public class EnumDisplayConverter : IValueConverter
         ["Day"] = "Día(s)",
         ["Month"] = "Mes(es)",
         ["Year"] = "Año(s)",
+
+        // Grupos musculares
+        [MuscleGroup.Chest] = "Pecho",
+        [MuscleGroup.Back] = "Espalda",
+        [MuscleGroup.Shoulders] = "Hombros",
+        [MuscleGroup.Biceps] = "Bíceps",
+        [MuscleGroup.Triceps] = "Tríceps",
+        [MuscleGroup.Forearms] = "Antebrazos",
+        [MuscleGroup.Quads] = "Cuádriceps",
+        [MuscleGroup.Hamstrings] = "Isquiotibiales",
+        [MuscleGroup.Glutes] = "Glúteos",
+        [MuscleGroup.Calves] = "Gemelos",
+        [MuscleGroup.Abs] = "Abdominales",
+        [MuscleGroup.Obliques] = "Oblicuos",
+        [MuscleGroup.Traps] = "Trapecios",
+        [MuscleGroup.Lats] = "Dorsales",
+        [MuscleGroup.Cardio] = "Cardio",
+        [MuscleGroup.FullBody] = "Cuerpo completo",
+
+        // Equipamiento
+        [Equipment.Barbell] = "Barra",
+        [Equipment.Dumbbell] = "Mancuernas",
+        [Equipment.Machine] = "Máquina",
+        [Equipment.Cable] = "Polea",
+        [Equipment.Bodyweight] = "Peso corporal",
+        [Equipment.Band] = "Banda elástica",
+        [Equipment.Kettlebell] = "Pesa rusa",
+        [Equipment.Other] = "Otro",
+
+        // Tipo de movimiento
+        [MovementType.Compound] = "Compuesto",
+        [MovementType.Isolation] = "Aislamiento",
+        [MovementType.Cardio] = "Cardio",
+        [MovementType.Mobility] = "Movilidad",
     };
 
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>

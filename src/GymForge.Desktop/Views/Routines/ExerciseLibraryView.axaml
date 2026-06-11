@@ -1,0 +1,89 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:fa="using:FluentAvalonia.UI.Controls"
+             xmlns:vm="using:GymForge.Desktop.ViewModels.Routines"
+             xmlns:ex="using:GymForge.Application.UseCases.Exercises"
+             xmlns:enums="using:GymForge.Domain.Enums"
+             x:Class="GymForge.Desktop.Views.Routines.ExerciseLibraryView"
+             x:DataType="vm:ExerciseLibraryViewModel">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <Border Grid.Row="0" Padding="16,12"
+                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                BorderThickness="0,0,0,1">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8">
+                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Globe}" FontSize="20" VerticalAlignment="Center" />
+                    <TextBlock Text="Biblioteca de ejercicios" FontSize="18" FontWeight="SemiBold"
+                               VerticalAlignment="Center" />
+                    <Border CornerRadius="12" Padding="8,2"
+                            Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+                        <TextBlock Text="{Binding Exercises.Count}" FontSize="12" VerticalAlignment="Center" />
+                    </Border>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8"
+                            HorizontalAlignment="Right">
+                    <TextBox Width="240" Watermark="Buscar ejercicio..."
+                             Text="{Binding SearchText}" />
+                    <ComboBox Width="170" PlaceholderText="Grupo muscular"
+                              ItemsSource="{Binding MuscleGroups}"
+                              SelectedItem="{Binding MuscleFilter}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="enums:MuscleGroup">
+                                <TextBlock Text="{Binding Converter={StaticResource EnumEs}}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <Button Content="Limpiar" Command="{Binding ClearFiltersCommand}" Classes="NavButton" />
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <DataGrid Grid.Row="1" ItemsSource="{Binding Exercises}"
+                  IsReadOnly="True" AutoGenerateColumns="False" CanUserSortColumns="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Ejercicio" Binding="{Binding Name}" Width="*" />
+                <DataGridTemplateColumn Header="Grupo muscular" Width="160" SortMemberPath="Muscle">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="ex:ExerciseDto">
+                            <TextBlock Text="{Binding Muscle, Converter={StaticResource EnumEs}}"
+                                       VerticalAlignment="Center" Margin="8,0" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Equipo" Width="140" SortMemberPath="Equipment">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="ex:ExerciseDto">
+                            <TextBlock Text="{Binding Equipment, Converter={StaticResource EnumEs}}"
+                                       VerticalAlignment="Center" Margin="8,0" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Tipo" Width="120" SortMemberPath="Movement">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="ex:ExerciseDto">
+                            <TextBlock Text="{Binding Movement, Converter={StaticResource EnumEs}}"
+                                       VerticalAlignment="Center" Margin="8,0" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Dificultad" Binding="{Binding Difficulty, StringFormat={}{0}/5}" Width="100" />
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <StackPanel Grid.Row="1" Spacing="10"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    IsVisible="{Binding IsEmpty}">
+            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Globe}" FontSize="44" Opacity="0.25"
+                           HorizontalAlignment="Center" />
+            <TextBlock Text="Sin ejercicios para esos filtros" FontSize="15" FontWeight="SemiBold" Opacity="0.7"
+                       HorizontalAlignment="Center" />
+            <TextBlock Text="Probá con otra búsqueda u otro grupo muscular." FontSize="12" Opacity="0.5"
+                       HorizontalAlignment="Center" />
+        </StackPanel>
+
+    </Grid>
+
+</UserControl>

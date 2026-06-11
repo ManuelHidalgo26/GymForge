@@ -120,10 +120,8 @@ public partial class MainWindowViewModel : ObservableObject
 
             NavSection.Plans     => Cached(section, () => _sp.GetRequiredService<ViewModels.Plans.PlansViewModel>()),
 
-            NavSection.Classes   => Cached(section, () => new PlaceholderViewModel(
-                                        "Módulo Clases", "Horarios, turnos y reservas — Sprint 2.", "Calendar")),
-            NavSection.Routines  => Cached(section, () => new PlaceholderViewModel(
-                                        "Módulo Rutinas", "Planes de entrenamiento — Sprint 3.", "Globe")),
+            NavSection.Classes   => Cached(section, () => _sp.GetRequiredService<ViewModels.Classes.ClassesViewModel>()),
+            NavSection.Routines  => Cached(section, () => _sp.GetRequiredService<ViewModels.Routines.ExerciseLibraryViewModel>()),
             NavSection.Products  => Cached(section, () => new PlaceholderViewModel(
                                         "Módulo Productos", "Kiosk de ventas y stock — Sprint 3.", "Tag")),
             NavSection.Reports   => Cached(section, () => _sp.GetRequiredService<ViewModels.Reports.ReportsViewModel>()),

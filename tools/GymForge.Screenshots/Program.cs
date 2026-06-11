@@ -103,6 +103,14 @@ var settingsVm = new GymForge.Desktop.ViewModels.Settings.SettingsViewModel(
     mediator2, sp.GetRequiredService<ISiteRepository>(), session);
 Capture("10-configuracion", new GymForge.Desktop.Views.Settings.SettingsView { DataContext = settingsVm }, 1180, 760, outDir);
 
+// Clases: catálogo con el formulario abierto (sin datos → estado vacío + form)
+var classesVm = new GymForge.Desktop.ViewModels.Classes.ClassesViewModel(mediator2, session) { IsFormOpen = true };
+Capture("11-clases", new GymForge.Desktop.Views.Classes.ClassesView { DataContext = classesVm }, 1180, 760, outDir);
+
+// Rutinas: biblioteca de ejercicios (80 del seed)
+var libraryVm = new GymForge.Desktop.ViewModels.Routines.ExerciseLibraryViewModel(mediator2);
+Capture("12-rutinas-biblioteca", new GymForge.Desktop.Views.Routines.ExerciseLibraryView { DataContext = libraryVm }, 1180, 760, outDir);
+
 // Shell completo: sidebar + topbar + dashboard (la ventana real de la app)
 var shell = new GymForge.Desktop.Views.Shell.MainWindow
 {

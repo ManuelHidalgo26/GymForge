@@ -109,6 +109,20 @@ public interface IAccessLogRepository
     Task<IReadOnlyList<AccessLog>> GetBySiteAsync(Guid siteId, DateTime from, DateTime to, CancellationToken ct = default);
 }
 
+public interface IClassRepository
+{
+    Task<IReadOnlyList<ClassDescription>> GetByCompanyAsync(Guid companyId, CancellationToken ct = default);
+    Task AddAsync(ClassDescription cls, CancellationToken ct = default);
+    Task<int> SaveChangesAsync(CancellationToken ct = default);
+}
+
+public interface IExerciseRepository
+{
+    /// <summary>Busca en la biblioteca global + ejercicios del tenant.</summary>
+    Task<IReadOnlyList<Exercise>> SearchAsync(
+        string? query, MuscleGroup? muscle, int take = 300, CancellationToken ct = default);
+}
+
 public interface IEventBus
 {
     Task PublishAsync<T>(T domainEvent, CancellationToken ct = default) where T : class;

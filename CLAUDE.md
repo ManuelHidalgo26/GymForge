@@ -122,7 +122,13 @@ dotnet ef database update --project src/GymForge.Infrastructure --startup-projec
 - [ ] WhatsApp via Twilio/Wassenger (notificaciones cobros)
 - [ ] Dunning automático (job nocturno 5 etapas)
 - [ ] Webcam (foto socio) + biometría ZKTeco real (BioBroker /enroll)
-- [ ] UI restante del mockup: Planes, Clases, Rutinas, Reportes, Config
+- [x] UI del mockup: Planes (CRUD), Reportes (recaudación por período),
+      Config (gimnasio+sedes), Clases v1 (catálogo) y Rutinas v1 (biblioteca
+      de ejercicios con búsqueda/filtro)
+- [ ] Clases v2: horarios + reservas · Rutinas v2: armador por socio
+- [ ] Vista Productos (catálogo + stock; hoy es placeholder)
+- [ ] Recibo PDF al cobrar (QuestPDF) — siguiente
+- [ ] Licenciamiento (ver Sprint 3) — siguiente
 
 ### 🔲 Distribución y licencias (Sprint 3)
 - [x] Ejecutable único autocontenido (`scripts/publish.ps1` → `dist/GymForge.Desktop.exe`)

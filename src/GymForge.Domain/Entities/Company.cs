@@ -9,6 +9,8 @@ public class Company : BaseEntity
     public string Currency { get; private set; } = "ARS";
     public string Timezone { get; private set; } = "Argentina Standard Time";
     public string? FiscalConfigJson { get; private set; }
+    /// <summary>Configuración general (JSON): reglas de acceso, etc.</summary>
+    public string? SettingsJson { get; private set; }
     public string BrandColorHex { get; private set; } = "#6366F1";
     public bool IsActive { get; private set; } = true;
 
@@ -43,6 +45,12 @@ public class Company : BaseEntity
     {
         LogoUrl = logoUrl;
         BrandColorHex = brandColorHex;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void SetSettings(string settingsJson)
+    {
+        SettingsJson = settingsJson;
         UpdatedAt = DateTime.UtcNow;
     }
 

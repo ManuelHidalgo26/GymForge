@@ -56,14 +56,39 @@
                         <ItemsControl ItemsSource="{Binding Sites}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="set:SiteDto">
-                                    <Grid ColumnDefinitions="Auto,*" Margin="0,4">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,2">
                                         <fa:SymbolIcon Grid.Column="0" Symbol="{x:Static fa:Symbol.Home}"
                                                        FontSize="14" Margin="0,0,10,0" Opacity="0.6" />
-                                        <TextBlock Grid.Column="1">
+                                        <TextBlock Grid.Column="1" VerticalAlignment="Center">
                                             <Run Text="{Binding Name}" FontWeight="SemiBold" />
                                             <Run Text=" — " />
                                             <Run Text="{Binding Address}" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                                         </TextBlock>
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2">
+                                            <Button Classes="IconButton" ToolTip.Tip="Modificar sede"
+                                                    CommandParameter="{Binding}"
+                                                    Command="{Binding $parent[UserControl].((vm:SettingsViewModel)DataContext).EditSiteCommand}">
+                                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Edit}" FontSize="13" />
+                                            </Button>
+                                            <Button Classes="IconButton" ToolTip.Tip="Eliminar sede">
+                                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Delete}" FontSize="13" Foreground="#C62828" />
+                                                <Button.Flyout>
+                                                    <Flyout Placement="BottomEdgeAlignedRight">
+                                                        <StackPanel Spacing="8" Width="240">
+                                                            <TextBlock Text="¿Eliminar esta sede?" FontWeight="SemiBold" FontSize="13" />
+                                                            <TextBlock FontSize="11" Opacity="0.6" TextWrapping="Wrap"
+                                                                       Text="Si tiene socios o movimientos se desactiva (conserva el historial). No se puede eliminar la única sede." />
+                                                            <Button Content="Eliminar"
+                                                                    Background="#C62828" Foreground="White"
+                                                                    HorizontalAlignment="Stretch"
+                                                                    HorizontalContentAlignment="Center"
+                                                                    CommandParameter="{Binding}"
+                                                                    Command="{Binding $parent[UserControl].((vm:SettingsViewModel)DataContext).DeleteSiteCommand}" />
+                                                        </StackPanel>
+                                                    </Flyout>
+                                                </Button.Flyout>
+                                            </Button>
+                                        </StackPanel>
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -71,20 +96,59 @@
 
                         <Border Height="1" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
 
-                        <TextBlock Text="Agregar sede" FontSize="13" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding SiteFormTitle}" FontSize="13" FontWeight="SemiBold" />
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBox Text="{Binding NewSiteName}" Watermark="Nombre (ej: Sede Sur)" Width="200" />
-                            <TextBox Text="{Binding NewSiteAddress}" Watermark="Dirección" Width="260" />
-                            <Button Command="{Binding AddSiteCommand}" Classes="NavButton">
+                            <TextBox Text="{Binding NewSiteName}" Watermark="Nombre (ej: Sede Sur)" Width="170" />
+                            <TextBox Text="{Binding NewSiteAddress}" Watermark="Dirección" Width="220" />
+                            <TextBox Text="{Binding NewSitePhone}" Watermark="Teléfono (opcional)" Width="150" />
+                            <Button Command="{Binding SaveSiteCommand}" Classes="NavButton">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Add}" FontSize="14" />
-                                    <TextBlock Text="Agregar" />
+                                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Save}" FontSize="14" />
+                                    <TextBlock Text="Guardar" />
                                 </StackPanel>
                             </Button>
+                            <Button Content="Cancelar" Classes="NavButton"
+                                    IsVisible="{Binding IsEditingSite}"
+                                    Command="{Binding CancelSiteEditCommand}" />
                         </StackPanel>
-                        <TextBlock Text="{Binding SiteMessage}" FontSize="12" Foreground="#C62828"
+                        <TextBlock Text="{Binding SiteMessage}" FontSize="12"
+                                   Foreground="{Binding SiteSaved, Converter={StaticResource ActiveColorBrushConverter}}"
                                    IsVisible="{Binding SiteMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
                                    TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <!-- ── Reglas de acceso ───────────────────────────────────── -->
+                <Border CornerRadius="12" Padding="24"
+                        Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Control de acceso" FontSize="15" FontWeight="SemiBold" />
+                        <TextBlock FontSize="12" Opacity="0.6" TextWrapping="Wrap"
+                                   Text="Reglas del molinete/kiosko: cuánto puede deber un socio antes de avisar o bloquear el ingreso, y el tiempo mínimo entre pasadas (anti-passback)." />
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Avisar deuda desde" FontSize="12" Opacity="0.7" />
+                                <NumericUpDown Value="{Binding WarnOnOweAmount}" Minimum="0" Increment="1000"
+                                               FormatString="C0" Width="160" />
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Bloquear deuda desde" FontSize="12" Opacity="0.7" />
+                                <NumericUpDown Value="{Binding StopOnOweAmount}" Minimum="0" Increment="1000"
+                                               FormatString="C0" Width="160" />
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Anti-passback (min)" FontSize="12" Opacity="0.7" />
+                                <NumericUpDown Value="{Binding AntiPassbackMinutes}" Minimum="0" Maximum="120"
+                                               Increment="1" Width="130" />
+                            </StackPanel>
+                        </StackPanel>
+                        <TextBlock Text="{Binding AccessMessage}" FontSize="12"
+                                   Foreground="{Binding AccessSaved, Converter={StaticResource ActiveColorBrushConverter}}"
+                                   IsVisible="{Binding AccessMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                   TextWrapping="Wrap" />
+                        <Button Content="Guardar reglas" Command="{Binding SaveAccessCommand}" Classes="NavButton"
+                                Background="{DynamicResource SystemAccentColor}" Foreground="White"
+                                HorizontalAlignment="Left" />
                     </StackPanel>
                 </Border>
 

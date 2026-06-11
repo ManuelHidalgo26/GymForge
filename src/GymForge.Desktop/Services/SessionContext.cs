@@ -1,6 +1,8 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using GymForge.Application.DTOs;
 using GymForge.Application.Interfaces;
+using GymForge.Application.UseCases.Access;
+using GymForge.Application.UseCases.Settings;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GymForge.Desktop.Services;
@@ -15,8 +17,13 @@ public sealed record SiteOption(Guid Id, string Name);
 public partial class SessionContext : ObservableObject
 {
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly GatekeeperConfig _gatekeeper;
 
-    public SessionContext(IServiceScopeFactory scopeFactory) => _scopeFactory = scopeFactory;
+    public SessionContext(IServiceScopeFactory scopeFactory, GatekeeperConfig gatekeeper)
+    {
+        _scopeFactory = scopeFactory;
+        _gatekeeper = gatekeeper;
+    }
 
     public Guid CompanyId { get; private set; }
 
@@ -63,6 +70,14 @@ public partial class SessionContext : ObservableObject
 
         CompanyId = company.Id;
         GymName = company.LegalName;
+
+        // Reglas de acceso persistidas → gatekeeper en memoria.
+        if (AccessSettings.FromJson(company.SettingsJson) is { } access)
+        {
+            _gatekeeper.StopOnOweAmount = access.StopOnOweAmount;
+            _gatekeeper.WarnOnOweAmount = access.WarnOnOweAmount;
+            _gatekeeper.AntiPassbackMinutes = access.AntiPassbackMinutes;
+        }
 
         var siteList = await sites.GetByCompanyAsync(company.Id);
         Sites = siteList.Select(s => new SiteOption(s.Id, s.Name)).ToList();

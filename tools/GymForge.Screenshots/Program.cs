@@ -100,7 +100,8 @@ Capture("09-reportes", new GymForge.Desktop.Views.Reports.ReportsView { DataCont
 
 // Configuración: datos del gimnasio + sedes
 var settingsVm = new GymForge.Desktop.ViewModels.Settings.SettingsViewModel(
-    mediator2, sp.GetRequiredService<ISiteRepository>(), session);
+    mediator2, sp.GetRequiredService<ISiteRepository>(), session,
+    sp.GetRequiredService<GymForge.Application.UseCases.Access.GatekeeperConfig>());
 Capture("10-configuracion", new GymForge.Desktop.Views.Settings.SettingsView { DataContext = settingsVm }, 1180, 760, outDir);
 
 // Clases: catálogo con el formulario abierto (sin datos → estado vacío + form)
@@ -108,7 +109,7 @@ var classesVm = new GymForge.Desktop.ViewModels.Classes.ClassesViewModel(mediato
 Capture("11-clases", new GymForge.Desktop.Views.Classes.ClassesView { DataContext = classesVm }, 1180, 760, outDir);
 
 // Rutinas: biblioteca de ejercicios (80 del seed)
-var libraryVm = new GymForge.Desktop.ViewModels.Routines.ExerciseLibraryViewModel(mediator2);
+var libraryVm = new GymForge.Desktop.ViewModels.Routines.ExerciseLibraryViewModel(mediator2, session);
 Capture("12-rutinas-biblioteca", new GymForge.Desktop.Views.Routines.ExerciseLibraryView { DataContext = libraryVm }, 1180, 760, outDir);
 
 // Shell completo: sidebar + topbar + dashboard (la ventana real de la app)

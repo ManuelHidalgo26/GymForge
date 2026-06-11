@@ -84,7 +84,12 @@ public interface ISiteRepository
     Task<IReadOnlyList<Company>> GetCompaniesAsync(CancellationToken ct = default);
     Task<IReadOnlyList<Site>> GetByCompanyAsync(Guid companyId, CancellationToken ct = default);
     Task<Company?> GetCompanyAsync(Guid companyId, CancellationToken ct = default);
+    Task<Site?> GetSiteAsync(Guid siteId, CancellationToken ct = default);
     Task AddSiteAsync(Site site, CancellationToken ct = default);
+    void RemoveSite(Site site);
+    /// <summary>True si la sede tiene datos (socios, turnos de caja o pagos).</summary>
+    Task<bool> SiteHasDataAsync(Guid siteId, CancellationToken ct = default);
+    Task<int> CountActiveSitesAsync(Guid companyId, CancellationToken ct = default);
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
 
@@ -123,6 +128,12 @@ public interface IExerciseRepository
     /// <summary>Busca en la biblioteca global + ejercicios del tenant.</summary>
     Task<IReadOnlyList<Exercise>> SearchAsync(
         string? query, MuscleGroup? muscle, int take = 300, CancellationToken ct = default);
+    Task<Exercise?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    Task AddAsync(Exercise exercise, CancellationToken ct = default);
+    void Remove(Exercise exercise);
+    /// <summary>True si alguna rutina usa el ejercicio (no se puede borrar).</summary>
+    Task<bool> IsInUseAsync(Guid exerciseId, CancellationToken ct = default);
+    Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
 
 public interface IEventBus

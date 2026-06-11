@@ -22,6 +22,19 @@ public class SiteRepository : ISiteRepository
     public async Task<Company?> GetCompanyAsync(Guid companyId, CancellationToken ct = default) =>
         await _db.Companies.FirstOrDefaultAsync(c => c.Id == companyId, ct);
 
+    public async Task<Site?> GetSiteAsync(Guid siteId, CancellationToken ct = default) =>
+        await _db.Sites.FirstOrDefaultAsync(s => s.Id == siteId, ct);
+
+    public void RemoveSite(Site site) => _db.Sites.Remove(site);
+
+    public async Task<bool> SiteHasDataAsync(Guid siteId, CancellationToken ct = default) =>
+        await _db.Members.AnyAsync(m => m.SiteId == siteId, ct) ||
+        await _db.Shifts.AnyAsync(s => s.SiteId == siteId, ct) ||
+        await _db.Payments.AnyAsync(p => p.SiteId == siteId, ct);
+
+    public async Task<int> CountActiveSitesAsync(Guid companyId, CancellationToken ct = default) =>
+        await _db.Sites.CountAsync(s => s.CompanyId == companyId && s.IsActive, ct);
+
     public async Task AddSiteAsync(Site site, CancellationToken ct = default) =>
         await _db.Sites.AddAsync(site, ct);
 

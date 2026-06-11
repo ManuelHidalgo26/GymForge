@@ -24,10 +24,11 @@ public sealed record ValidateSwipeRequest(
 
 public class GatekeeperConfig
 {
-    public decimal StopOnOweAmount { get; init; } = 10_000m;
-    public decimal WarnOnOweAmount { get; init; } = 5_000m;
-    public string Timezone { get; init; } = "Argentina Standard Time";
-    public int AntiPassbackMinutes { get; init; } = 5;
+    // set (no init): los valores persistidos por Company se aplican al arrancar.
+    public decimal StopOnOweAmount { get; set; } = 10_000m;
+    public decimal WarnOnOweAmount { get; set; } = 5_000m;
+    public string Timezone { get; set; } = "Argentina Standard Time";
+    public int AntiPassbackMinutes { get; set; } = 5;
 }
 
 public class ValidateSwipeUseCase

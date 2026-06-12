@@ -3,6 +3,7 @@
              xmlns:fa="using:FluentAvalonia.UI.Controls"
              xmlns:vm="using:GymForge.Desktop.ViewModels.Members"
              xmlns:enums="using:GymForge.Domain.Enums"
+             xmlns:dto="using:GymForge.Application.DTOs"
              x:Class="GymForge.Desktop.Views.Members.CreateMemberView"
              x:DataType="vm:CreateMemberViewModel">
 
@@ -144,6 +145,61 @@
                                       Content="Acepta comunicaciones" FontSize="13" />
                         </StackPanel>
 
+                    </Grid>
+
+                    <!-- ── Membresía inicial: alta + cobro en un paso ──────── -->
+                    <Border Height="1" Margin="0,4,0,16"
+                            Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
+
+                    <TextBlock Text="Membresía inicial" FontSize="15" FontWeight="SemiBold"
+                               Margin="0,0,0,10" />
+                    <CheckBox IsChecked="{Binding ChargeNow}" FontSize="13"
+                              Content="Cobrar la primera cuota ahora"
+                              ToolTip.Tip="Guarda el socio, le vende el plan elegido y abre el recibo, todo junto" />
+
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="16"
+                          IsVisible="{Binding ChargeNow}" Margin="0,12,0,0">
+
+                        <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,14">
+                            <TextBlock Classes="FieldLabel" Text="Plan *" />
+                            <ComboBox ItemsSource="{Binding Plans}" SelectedItem="{Binding SelectedPlan}"
+                                      HorizontalAlignment="Stretch">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="dto:MembershipTypeDto">
+                                        <TextBlock>
+                                            <Run Text="{Binding Name}" />
+                                            <Run Text=" — " />
+                                            <Run Text="{Binding Price, StringFormat={}{0:C}}" />
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,14">
+                            <TextBlock Classes="FieldLabel" Text="Forma de pago" />
+                            <ComboBox ItemsSource="{Binding PayMethods}" SelectedItem="{Binding PayMethod}"
+                                      HorizontalAlignment="Stretch">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="enums:PaymentMethod">
+                                        <TextBlock Text="{Binding Converter={StaticResource EnumEs}}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.Column="0"
+                                    IsVisible="{Binding IsCardRequired}">
+                            <TextBlock Classes="FieldLabel" Text="Últimos 4 dígitos de la tarjeta *" />
+                            <TextBox Text="{Binding PayCardLast4}" Watermark="1234" MaxLength="4" />
+                        </StackPanel>
+
+                        <TextBlock Grid.Row="1" Grid.Column="1" FontSize="13" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"
+                                   IsVisible="{Binding SelectedPlan, Converter={x:Static ObjectConverters.IsNotNull}}">
+                            <Run Text="Total a cobrar: " />
+                            <Run Text="{Binding SelectedPlan.Price, StringFormat={}{0:C}}" />
+                        </TextBlock>
                     </Grid>
 
                     <!-- Error -->

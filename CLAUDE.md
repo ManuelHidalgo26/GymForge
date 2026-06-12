@@ -135,6 +135,9 @@ dotnet ef database update --project src/GymForge.Infrastructure --startup-projec
       recaudación de 30 días (XAML nativo), vencimientos de la semana y
       actividad del día con avatares; verificado en light y dark
       (capturas 01 y 14 de tools/GymForge.Screenshots)
+- [x] Alta + cobro en un paso: "Nuevo socio" puede vender el plan y cobrar la
+      primera cuota ahí mismo (sección "Membresía inicial"); abre el recibo PDF
+      y si el cobro falla el reintento no duplica al socio
 
 ### 🔲 Distribución y licencias (Sprint 3)
 - [x] Ejecutable único autocontenido (`scripts/publish.ps1` → `dist/GymForge.exe`)

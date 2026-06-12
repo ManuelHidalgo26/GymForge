@@ -68,6 +68,10 @@ var membersVm = sp.GetRequiredService<MembersListViewModel>();
 await membersVm.LoadCommand.ExecuteAsync(null);
 
 var createVm = sp.GetRequiredService<CreateMemberViewModel>();
+// Mostrar la sección "Membresía inicial" con un plan elegido
+await createVm.LoadPlansCommand.ExecuteAsync(null);
+createVm.ChargeNow = true;
+createVm.SelectedPlan = createVm.Plans.FirstOrDefault();
 
 var cashVm = sp.GetRequiredService<CashViewModel>();
 await cashVm.LoadCommand.ExecuteAsync(null);

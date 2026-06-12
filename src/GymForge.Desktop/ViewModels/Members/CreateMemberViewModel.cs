@@ -1,10 +1,13 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GymForge.Application.DTOs;
+using GymForge.Application.UseCases.Catalog;
 using GymForge.Application.UseCases.Members;
+using GymForge.Application.UseCases.Sales;
 using GymForge.Desktop.Services;
 using GymForge.Domain.Enums;
 using MediatR;
+using System.Collections.ObjectModel;
 
 namespace GymForge.Desktop.ViewModels.Members;
 
@@ -12,6 +15,11 @@ public partial class CreateMemberViewModel : ObservableObject
 {
     private readonly IMediator _mediator;
     private readonly SessionContext _session;
+    private readonly ReceiptService _receipts;
+
+    // Si el alta ya pasó pero el cobro falló, el reintento de Guardar
+    // solo repite el cobro (evita duplicar al socio).
+    private MemberDto? _createdMember;
 
     // Form fields
     [ObservableProperty][NotifyCanExecuteChangedFor(nameof(SaveCommand))]
@@ -32,6 +40,32 @@ public partial class CreateMemberViewModel : ObservableObject
     [ObservableProperty] private bool _marketingConsent;
     [ObservableProperty] private bool _activateImmediately = true;
 
+    // Cobro inicial (alta + primera cuota en un solo paso)
+    [ObservableProperty][NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    private bool _chargeNow;
+    [ObservableProperty] private ObservableCollection<MembershipTypeDto> _plans = [];
+    [ObservableProperty][NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    private MembershipTypeDto? _selectedPlan;
+    [ObservableProperty][NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    private PaymentMethod _payMethod = PaymentMethod.Cash;
+    [ObservableProperty][NotifyCanExecuteChangedFor(nameof(SaveCommand))]
+    private string? _payCardLast4;
+
+    public IReadOnlyList<PaymentMethod> PayMethods { get; } =
+        Enum.GetValues<PaymentMethod>().ToList();
+
+    public bool IsCardRequired =>
+        PayMethod is PaymentMethod.CreditCard or PaymentMethod.DebitCard;
+
+    partial void OnPayMethodChanged(PaymentMethod value) =>
+        OnPropertyChanged(nameof(IsCardRequired));
+
+    partial void OnChargeNowChanged(bool value)
+    {
+        if (value && Plans.Count == 0)
+            _ = LoadPlansCommand.ExecuteAsync(null);
+    }
+
     // State
     [ObservableProperty] private bool _isSaving;
     [ObservableProperty] private string? _errorMessage;
@@ -49,16 +83,27 @@ public partial class CreateMemberViewModel : ObservableObject
     public event Action<MemberDto>? MemberCreated;
     public event Action? Cancelled;
 
-    public CreateMemberViewModel(IMediator mediator, SessionContext session)
+    public CreateMemberViewModel(IMediator mediator, SessionContext session, ReceiptService receipts)
     {
         _mediator = mediator;
         _session = session;
+        _receipts = receipts;
     }
 
     private bool CanSave => !IsSaving
         && !string.IsNullOrWhiteSpace(FirstName)
         && !string.IsNullOrWhiteSpace(LastName)
-        && !string.IsNullOrWhiteSpace(DocumentNumber);
+        && !string.IsNullOrWhiteSpace(DocumentNumber)
+        && (!ChargeNow || (SelectedPlan is not null
+            && (!IsCardRequired || PayCardLast4?.Length == 4)));
+
+    [RelayCommand]
+    private async Task LoadPlansAsync(CancellationToken ct = default)
+    {
+        // Solo planes con precio: uno gratis no requiere cobro inicial.
+        var plans = await _mediator.Send(new GetMembershipTypesQuery(_session.CompanyId), ct);
+        Plans = new ObservableCollection<MembershipTypeDto>(plans.Where(p => p.Price > 0));
+    }
 
     [RelayCommand(CanExecute = nameof(CanSave))]
     private async Task SaveAsync(CancellationToken ct = default)
@@ -67,7 +112,7 @@ public partial class CreateMemberViewModel : ObservableObject
         ErrorMessage = null;
         try
         {
-            var dto = await _mediator.Send(new CreateMemberCommand(
+            _createdMember ??= await _mediator.Send(new CreateMemberCommand(
                 _session.CompanyId, _session.SiteId,
                 FirstName.Trim(), LastName.Trim(),
                 DocumentType, DocumentNumber.Trim(),
@@ -76,7 +121,31 @@ public partial class CreateMemberViewModel : ObservableObject
                 MarketingConsent: MarketingConsent,
                 ActivateImmediately: ActivateImmediately), ct);
 
-            MemberCreated?.Invoke(dto);
+            if (ChargeNow && SelectedPlan is not null)
+            {
+                try
+                {
+                    var payment = await _mediator.Send(new SellMembershipCommand(
+                        _session.CompanyId, _session.SiteId,
+                        _session.EffectiveCashierId, _session.OpenShiftId,
+                        _createdMember.Id, SelectedPlan.Id, PayMethod,
+                        IsCardRequired ? PayCardLast4 : null), ct);
+
+                    await _receipts.TryGenerateAndOpenAsync(payment.Id, _session.CompanyId, ct);
+                }
+                catch (Exception ex)
+                {
+                    // El socio ya quedó guardado: informar y permitir reintentar solo el cobro.
+                    var reason = ex is FluentValidation.ValidationException vex
+                        ? string.Join(" ", vex.Errors.Select(e => e.ErrorMessage))
+                        : ex.Message;
+                    ErrorMessage = $"El socio se guardó, pero el cobro falló: {reason} " +
+                                   "Reintentá con Guardar, o cobrale después desde Caja.";
+                    return;
+                }
+            }
+
+            MemberCreated?.Invoke(_createdMember);
         }
         catch (FluentValidation.ValidationException vex)
         {

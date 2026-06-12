@@ -137,8 +137,9 @@ dotnet ef database update --project src/GymForge.Infrastructure --startup-projec
       (capturas 01 y 14 de tools/GymForge.Screenshots)
 
 ### 🔲 Distribución y licencias (Sprint 3)
-- [x] Ejecutable único autocontenido (`scripts/publish.ps1` → `dist/GymForge.Desktop.exe`)
-- [ ] Ícono de la app (.ico) + metadata del exe (versión, empresa)
+- [x] Ejecutable único autocontenido (`scripts/publish.ps1` → `dist/GymForge.exe`)
+- [x] Ícono de la app (.ico multi-resolución, regenerable con `scripts/make-icon.ps1`)
+      + metadata del exe (GymForge v0.2.0, empresa, descripción) + ícono de ventana
 - [ ] Distribución: GitHub Releases primero; landing de descarga después
 - [x] Licenciamiento v1 (offline): claves firmadas ECDSA P-256 (`GYMF.payload.firma`)
       verificadas con la clave pública embebida en `LicenseService`; tier Free

@@ -11,6 +11,18 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
+
+    <!-- Identidad del ejecutable (Explorador → Propiedades → Detalles) -->
+    <ApplicationIcon>Assets\gymforge.ico</ApplicationIcon>
+    <AssemblyName>GymForge</AssemblyName>
+    <Product>GymForge</Product>
+    <AssemblyTitle>GymForge — Gestión de gimnasios</AssemblyTitle>
+    <Description>Sistema de gestión de gimnasios offline-first: socios, accesos, caja, cobros y rutinas.</Description>
+    <Company>GymForge</Company>
+    <Copyright>© 2026 GymForge</Copyright>
+    <Version>0.2.0</Version>
+    <FileVersion>0.2.0.0</FileVersion>
+    <NeutralLanguage>es-AR</NeutralLanguage>
   </PropertyGroup>
 
   <ItemGroup>

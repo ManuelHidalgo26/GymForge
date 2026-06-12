@@ -30,7 +30,7 @@
     <Application.Styles>
         <FluentTheme />
         <sty:FluentAvaloniaTheme />
-        <StyleInclude Source="avares://GymForge.Desktop/Assets/Styles/AppStyles.axaml" />
+        <StyleInclude Source="avares://GymForge/Assets/Styles/AppStyles.axaml" />
     </Application.Styles>
 
     <!-- ContentControl router: maps ViewModel type → View automatically -->
@@ -91,7 +91,7 @@
             <conv:ActiveLabelConverter x:Key="ActiveLabelConverter" />
             <conv:ActiveToggleLabelConverter x:Key="ActiveToggleLabelConverter" />
             <ResourceDictionary.MergedDictionaries>
-                <ResourceInclude Source="avares://GymForge.Desktop/Assets/Styles/Colors.axaml" />
+                <ResourceInclude Source="avares://GymForge/Assets/Styles/Colors.axaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

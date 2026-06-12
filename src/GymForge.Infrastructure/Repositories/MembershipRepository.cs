@@ -46,10 +46,12 @@ public class MembershipRepository : IMembershipRepository
         Guid companyId, DateOnly from, DateOnly to, CancellationToken ct = default) =>
         await _db.Memberships
             .Include(m => m.Member)
+            .Include(m => m.MembershipType)
             .Where(m =>
                 m.CompanyId == companyId &&
                 m.Status == MembershipStatus.Active &&
                 m.EndDate >= from &&
                 m.EndDate <= to)
+            .OrderBy(m => m.EndDate)
             .ToListAsync(ct);
 }

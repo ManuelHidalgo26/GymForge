@@ -78,8 +78,7 @@ AppBuilder.Configure<App>()
     .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })
     .SetupWithoutStarting();
 
-// ── 3. Capturar cada vista ───────────────────────────────────────────────────
-Capture("01-dashboard", new DashboardView { DataContext = dashboardVm }, 1180, 720, outDir);
+// ── 3. Capturar cada vista (el dashboard se captura al final, con actividad) ─
 Capture("02-socios-lista", new MembersListView { DataContext = membersVm }, 1180, 720, outDir);
 Capture("03-socio-alta", new CreateMemberView { DataContext = createVm }, 1180, 720, outDir);
 Capture("04-caja-login", new CashView { DataContext = cashVm }, 1180, 720, outDir);
@@ -138,6 +137,19 @@ var kioskVm = new GymForge.Desktop.ViewModels.Checkin.CheckInKioskViewModel(
     sp.GetRequiredService<ValidateSwipeUseCase>(), session);
 Pump(kioskVm.ProcessCredentialAsync("30111222", AccessMethod.Manual));
 Capture("13-checkin-aprobado", new GymForge.Desktop.Views.Checkin.CheckInKioskView { DataContext = kioskVm }, 1180, 760, outDir);
+
+// Más actividad para el dashboard: otro permitido + un rechazo (sin membresía)
+Pump(kioskVm.ProcessCredentialAsync("31222333", AccessMethod.Manual));
+Pump(kioskVm.ProcessCredentialAsync("33444555", AccessMethod.Manual));
+
+// Dashboard premium: KPIs con tendencia + gráfico 30 días + actividad del día
+Pump(dashboardVm.LoadCommand.ExecuteAsync(null));
+Capture("01-dashboard", new DashboardView { DataContext = dashboardVm }, 1180, 820, outDir);
+
+// Dashboard en dark mode (auditoría del tema oscuro)
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+Capture("14-dashboard-dark", new DashboardView { DataContext = dashboardVm }, 1180, 820, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
 
 // Shell completo: sidebar + topbar + dashboard (la ventana real de la app)
 var shell = new GymForge.Desktop.Views.Shell.MainWindow

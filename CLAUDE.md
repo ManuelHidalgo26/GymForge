@@ -131,6 +131,10 @@ dotnet ef database update --project src/GymForge.Infrastructure --startup-projec
       cualquier cobro (modal de pago y de venta); queda en
       `%LOCALAPPDATA%\GymForge\recibos\AAAA-MM\`. Reimpresión desde historial: pendiente.
 - [x] Licenciamiento v1 (detalle en Sprint 3)
+- [x] Dashboard premium: KPIs con tendencia y subtítulos reales, gráfico de
+      recaudación de 30 días (XAML nativo), vencimientos de la semana y
+      actividad del día con avatares; verificado en light y dark
+      (capturas 01 y 14 de tools/GymForge.Screenshots)
 
 ### 🔲 Distribución y licencias (Sprint 3)
 - [x] Ejecutable único autocontenido (`scripts/publish.ps1` → `dist/GymForge.Desktop.exe`)

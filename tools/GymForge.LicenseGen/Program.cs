@@ -43,12 +43,30 @@ void WithPrivateKey(Action<ECDsa> action)
 {
     if (!File.Exists(keyPath))
     {
-        Console.WriteLine("No hay clave privada todavía. Corré primero: ... init-keys");
+        Console.WriteLine($"No se encontró la clave privada en: {keyPath}");
+        Console.WriteLine("Si es la primera vez en esta PC, creala con:");
+        Console.WriteLine("  dotnet run --project tools/GymForge.LicenseGen -- init-keys");
+        Console.WriteLine("(Ojo: usá una terminal normal, no elevada como administrador,");
+        Console.WriteLine(" porque cambia la carpeta del perfil de usuario.)");
         Environment.Exit(1);
     }
 
     using var ecdsa = ECDsa.Create();
     ecdsa.ImportPkcs8PrivateKey(Convert.FromBase64String(File.ReadAllText(keyPath).Trim()), out _);
+
+    // La privada tiene que corresponder a la pública embebida en la app distribuida;
+    // si no, las claves emitidas serían rechazadas por el exe.
+    var derivedPublic = Convert.ToBase64String(ecdsa.ExportSubjectPublicKeyInfo());
+    if (derivedPublic != GymForge.Application.UseCases.Licensing.LicenseService.VendorPublicKey)
+    {
+        Console.WriteLine("⚠ ATENCIÓN: esta clave privada NO corresponde a la clave pública");
+        Console.WriteLine("  embebida en la app (LicenseService.VendorPublicKey).");
+        Console.WriteLine("  Las licencias que emitas acá van a ser RECHAZADAS por el exe");
+        Console.WriteLine("  distribuido. Restaurá el backup de la clave privada original,");
+        Console.WriteLine("  o re-embebé esta pública y volvé a publicar la app.");
+        Console.WriteLine();
+    }
+
     action(ecdsa);
 }
 
@@ -70,7 +88,8 @@ void GenerateLicense(string[] a)
     var gym = Opt("gym");
     if (string.IsNullOrWhiteSpace(gym))
     {
-        Console.WriteLine("Falta --gym \"Nombre del gimnasio\".");
+        Console.WriteLine("Falta el nombre del gimnasio. Ejemplo completo:");
+        Console.WriteLine("  dotnet run --project tools/GymForge.LicenseGen -- new --gym \"Iron Temple\" --months 12");
         Environment.Exit(1);
         return;
     }

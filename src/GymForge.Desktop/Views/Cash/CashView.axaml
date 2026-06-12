@@ -9,14 +9,11 @@
     <Grid RowDefinitions="Auto,*" Name="Root">
 
         <!-- ── Toolbar ────────────────────────────────────────────────────── -->
-        <Border Grid.Row="0" Padding="16,12"
-                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                BorderThickness="0,0,0,1">
+        <Border Grid.Row="0" Classes="Toolbar">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="10">
                     <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Tag}" FontSize="20" VerticalAlignment="Center" />
-                    <TextBlock Text="Caja" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    <TextBlock Text="Caja" Classes="ToolbarTitle" />
                 </StackPanel>
 
                 <!-- Último hijo del DockPanel: llena el resto, así que se alinea a la derecha -->
@@ -27,7 +24,7 @@
                         <Run Text="Cajero: " Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                         <Run Text="{Binding Session.CashierName}" FontWeight="SemiBold" />
                     </TextBlock>
-                    <Button Command="{Binding SignOutCommand}" Classes="NavButton" ToolTip.Tip="Cerrar sesión de cajero">
+                    <Button Command="{Binding SignOutCommand}" Classes="Ghost" ToolTip.Tip="Cerrar sesión de cajero">
                         <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Clear}" FontSize="16" />
                     </Button>
                 </StackPanel>
@@ -41,14 +38,12 @@
                 <!-- Status / error -->
                 <Border IsVisible="{Binding StatusMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
                         CornerRadius="8" Padding="12,8"
-                        Background="{DynamicResource SubtleFillColorSecondaryBrush}">
-                    <TextBlock Text="{Binding StatusMessage}" Foreground="#C62828" TextWrapping="Wrap" />
+                        Background="{DynamicResource DangerTintBrush}">
+                    <TextBlock Text="{Binding StatusMessage}" Foreground="{DynamicResource DangerBrush}" TextWrapping="Wrap" />
                 </Border>
 
                 <!-- 1) Login cajero -->
-                <Border IsVisible="{Binding !Session.IsSignedIn}"
-                        CornerRadius="12" Padding="24"
-                        Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+                <Border IsVisible="{Binding !Session.IsSignedIn}" Classes="Card" Padding="24">
                     <StackPanel Spacing="12">
                         <TextBlock Text="Iniciar sesión de cajero" FontSize="15" FontWeight="SemiBold" />
                         <TextBlock Text="Ingresá tu PIN para operar la caja (admin de ejemplo: 1234)."
@@ -56,18 +51,15 @@
                         <TextBox Watermark="PIN" PasswordChar="●" MaxLength="8" Width="200"
                                  HorizontalAlignment="Left"
                                  Text="{Binding Pin}" />
-                        <Button Command="{Binding LoginCommand}" Classes="NavButton" Width="200"
-                                HorizontalContentAlignment="Center"
-                                Background="{DynamicResource SystemAccentColor}" Foreground="White">
+                        <Button Command="{Binding LoginCommand}" Classes="Primary" Width="200"
+                                HorizontalContentAlignment="Center">
                             <TextBlock Text="Ingresar" />
                         </Button>
                     </StackPanel>
                 </Border>
 
                 <!-- 2) Caja cerrada: resultado del último arqueo -->
-                <Border IsVisible="{Binding IsShiftClosed}"
-                        CornerRadius="12" Padding="20"
-                        Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+                <Border IsVisible="{Binding IsShiftClosed}" Classes="Card" Padding="20">
                     <StackPanel Spacing="8">
                         <TextBlock Text="Última caja cerrada" FontSize="15" FontWeight="SemiBold" />
                         <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
@@ -83,20 +75,17 @@
                 </Border>
 
                 <!-- 3) Abrir caja -->
-                <Border IsVisible="{Binding CanOpenShift}"
-                        CornerRadius="12" Padding="24"
-                        Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+                <Border IsVisible="{Binding CanOpenShift}" Classes="Card" Padding="24">
                     <StackPanel Spacing="12">
                         <TextBlock Text="Abrir caja" FontSize="15" FontWeight="SemiBold" />
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <StackPanel Spacing="4">
-                                <TextBlock Text="Fondo inicial" FontSize="12" Opacity="0.6" />
+                                <TextBlock Text="Fondo inicial" Classes="FormLabel" />
                                 <TextBox Width="200" Text="{Binding OpeningCash}" />
                             </StackPanel>
                         </StackPanel>
-                        <Button Command="{Binding OpenShiftCommand}" Classes="NavButton" Width="200"
-                                HorizontalContentAlignment="Center"
-                                Background="{DynamicResource SystemAccentColor}" Foreground="White">
+                        <Button Command="{Binding OpenShiftCommand}" Classes="Primary" Width="200"
+                                HorizontalContentAlignment="Center">
                             <TextBlock Text="Abrir caja" />
                         </Button>
                     </StackPanel>
@@ -106,32 +95,32 @@
                 <StackPanel IsVisible="{Binding HasOpenShift}" Spacing="16">
 
                     <!-- Resumen / arqueo en vivo -->
-                    <Border CornerRadius="12" Padding="20"
-                            Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+                    <Border Classes="Card" Padding="20">
                         <Grid ColumnDefinitions="*,*,*,*">
                             <StackPanel Grid.Column="0" Spacing="2">
-                                <TextBlock Text="Fondo inicial" FontSize="12" Opacity="0.6" />
+                                <TextBlock Text="Fondo inicial" Classes="FormLabel" />
                                 <TextBlock Text="{Binding CurrentShift.OpeningCash, StringFormat={}{0:C}}" FontSize="16" FontWeight="SemiBold" />
                             </StackPanel>
                             <StackPanel Grid.Column="1" Spacing="2">
-                                <TextBlock Text="Ingresos" FontSize="12" Opacity="0.6" />
-                                <TextBlock Text="{Binding CurrentShift.CashIn, StringFormat={}{0:C}}" FontSize="16" FontWeight="SemiBold" Foreground="#2E7D32" />
+                                <TextBlock Text="Ingresos" Classes="FormLabel" />
+                                <TextBlock Text="{Binding CurrentShift.CashIn, StringFormat={}{0:C}}" FontSize="16" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource SuccessBrush}" />
                             </StackPanel>
                             <StackPanel Grid.Column="2" Spacing="2">
-                                <TextBlock Text="Egresos" FontSize="12" Opacity="0.6" />
-                                <TextBlock Text="{Binding CurrentShift.CashOut, StringFormat={}{0:C}}" FontSize="16" FontWeight="SemiBold" Foreground="#C62828" />
+                                <TextBlock Text="Egresos" Classes="FormLabel" />
+                                <TextBlock Text="{Binding CurrentShift.CashOut, StringFormat={}{0:C}}" FontSize="16" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource DangerBrush}" />
                             </StackPanel>
                             <StackPanel Grid.Column="3" Spacing="2">
-                                <TextBlock Text="Esperado" FontSize="12" Opacity="0.6" />
+                                <TextBlock Text="Esperado" Classes="FormLabel" />
                                 <TextBlock Text="{Binding CurrentShift.ExpectedCash, StringFormat={}{0:C}}" FontSize="16" FontWeight="Bold" />
                             </StackPanel>
                         </Grid>
                     </Border>
 
                     <!-- Registrar cobro / venta -->
-                    <Button Command="{Binding OpenSaleModalCommand}" Classes="NavButton"
-                            HorizontalAlignment="Left"
-                            Background="{DynamicResource SystemAccentColor}" Foreground="White">
+                    <Button Command="{Binding OpenSaleModalCommand}" Classes="Primary"
+                            HorizontalAlignment="Left">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Add}" FontSize="16" />
                             <TextBlock Text="Registrar cobro / venta" />
@@ -139,8 +128,7 @@
                     </Button>
 
                     <!-- Movimientos -->
-                    <Border CornerRadius="12" Padding="20"
-                            Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+                    <Border Classes="Card" Padding="20">
                         <StackPanel Spacing="12">
                             <TextBlock Text="Movimientos" FontSize="15" FontWeight="SemiBold" />
 
@@ -166,13 +154,13 @@
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <TextBox Watermark="Monto" Width="140" Text="{Binding MovementAmount}" />
                                 <TextBox Watermark="Detalle (opcional)" Width="240" Text="{Binding MovementNotes}" />
-                                <Button Command="{Binding AddIncomeCommand}" Classes="NavButton" ToolTip.Tip="Registrar ingreso">
+                                <Button Command="{Binding AddIncomeCommand}" Classes="Secondary" ToolTip.Tip="Registrar ingreso">
                                     <StackPanel Orientation="Horizontal" Spacing="6">
                                         <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Add}" FontSize="14" />
                                         <TextBlock Text="Ingreso" />
                                     </StackPanel>
                                 </Button>
-                                <Button Command="{Binding AddExpenseCommand}" Classes="NavButton" ToolTip.Tip="Registrar egreso">
+                                <Button Command="{Binding AddExpenseCommand}" Classes="Secondary" ToolTip.Tip="Registrar egreso">
                                     <StackPanel Orientation="Horizontal" Spacing="6">
                                         <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Remove}" FontSize="14" />
                                         <TextBlock Text="Egreso" />
@@ -183,15 +171,13 @@
                     </Border>
 
                     <!-- Cierre / arqueo -->
-                    <Border CornerRadius="12" Padding="20"
-                            Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+                    <Border Classes="Card" Padding="20">
                         <StackPanel Spacing="12">
                             <TextBlock Text="Cerrar caja (arqueo)" FontSize="15" FontWeight="SemiBold" />
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <TextBox Watermark="Efectivo contado" Width="180" Text="{Binding DeclaredCash}" />
                                 <TextBox Watermark="Notas (opcional)" Width="240" Text="{Binding CloseNotes}" />
-                                <Button Command="{Binding CloseShiftCommand}" Classes="NavButton"
-                                        Background="#C62828" Foreground="White">
+                                <Button Command="{Binding CloseShiftCommand}" Classes="Danger">
                                     <TextBlock Text="Cerrar caja" />
                                 </Button>
                             </StackPanel>

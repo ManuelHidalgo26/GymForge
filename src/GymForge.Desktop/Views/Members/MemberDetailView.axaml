@@ -26,28 +26,22 @@
     <Grid RowDefinitions="Auto,Auto,*">
 
         <!-- ── Header: avatar + datos básicos + back ────────────────────── -->
-        <Border Grid.Row="0" Padding="20,16"
-                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                BorderThickness="0,0,0,1">
+        <Border Grid.Row="0" Classes="Toolbar" Padding="20,16">
             <DockPanel>
 
                 <!-- Back button -->
                 <Button DockPanel.Dock="Left"
                         Command="{Binding GoBackCommand}"
-                        Classes="NavButton" Margin="0,0,12,0"
+                        Classes="Ghost" Margin="0,0,12,0"
                         ToolTip.Tip="Volver a la lista">
                     <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Back}" FontSize="20" />
                 </Button>
 
                 <!-- Avatar -->
-                <Border DockPanel.Dock="Left"
+                <Border DockPanel.Dock="Left" Classes="Avatar"
                         Width="56" Height="56" CornerRadius="28"
-                        Background="{DynamicResource SystemAccentColor}"
                         Margin="0,0,14,0">
-                    <TextBlock FontSize="20" FontWeight="Bold" Foreground="White"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center"
+                    <TextBlock FontSize="20" FontWeight="Bold"
                                Text="{Binding Member.FirstName[0]}" />
                 </Border>
 
@@ -71,15 +65,14 @@
                 </StackPanel>
 
                 <!-- Status badge -->
-                <Border DockPanel.Dock="Right" CornerRadius="12" Padding="10,4"
-                        VerticalAlignment="Center" Margin="0,0,8,0">
+                <Border DockPanel.Dock="Right" Classes="Pill" Padding="10,4" Margin="0,0,8,0">
                     <Border.Background>
                         <SolidColorBrush Color="{Binding Member.Status,
                             Converter={StaticResource StatusColorConverter}}"
                             Opacity="0.15" />
                     </Border.Background>
                     <TextBlock Text="{Binding Member.Status}"
-                               FontSize="12" FontWeight="SemiBold"
+                               FontSize="12"
                                Foreground="{Binding Member.Status,
                                    Converter={StaticResource StatusColorConverter}}" />
                 </Border>
@@ -88,10 +81,7 @@
         </Border>
 
         <!-- ── Tab bar ───────────────────────────────────────────────────── -->
-        <Border Grid.Row="1"
-                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                BorderThickness="0,0,0,1">
+        <Border Grid.Row="1" Classes="Toolbar" Padding="0">
             <StackPanel Orientation="Horizontal">
 
                 <Button Content="Datos" Classes="TabButton"

@@ -9,40 +9,35 @@
     <Grid RowDefinitions="Auto,Auto,*">
 
         <!-- ── Toolbar: rango de fechas ───────────────────────────────────── -->
-        <Border Grid.Row="0" Padding="16,12"
-                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                BorderThickness="0,0,0,1">
+        <Border Grid.Row="0" Classes="Toolbar">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="10">
                     <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Document}" FontSize="20" VerticalAlignment="Center" />
-                    <TextBlock Text="Reportes" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    <TextBlock Text="Reportes" Classes="ToolbarTitle" />
                 </StackPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8"
                             HorizontalAlignment="Right">
-                    <TextBlock Text="Desde" FontSize="12" Opacity="0.7" VerticalAlignment="Center" />
+                    <TextBlock Text="Desde" Classes="FormLabel" VerticalAlignment="Center" />
                     <DatePicker SelectedDate="{Binding From, Converter={StaticResource DateOnlyOffset}}" />
-                    <TextBlock Text="Hasta" FontSize="12" Opacity="0.7" VerticalAlignment="Center" />
+                    <TextBlock Text="Hasta" Classes="FormLabel" VerticalAlignment="Center" />
                     <DatePicker SelectedDate="{Binding To, Converter={StaticResource DateOnlyOffset}}" />
-                    <Button Content="Hoy" Command="{Binding TodayCommand}" Classes="NavButton" />
-                    <Button Content="Este mes" Command="{Binding ThisMonthCommand}" Classes="NavButton" />
+                    <Button Content="Hoy" Command="{Binding TodayCommand}" Classes="Ghost" />
+                    <Button Content="Este mes" Command="{Binding ThisMonthCommand}" Classes="Ghost" />
                 </StackPanel>
             </DockPanel>
         </Border>
 
         <!-- ── KPIs del período ───────────────────────────────────────────── -->
         <Grid Grid.Row="1" ColumnDefinitions="*,*" Margin="16,12" ColumnSpacing="12">
-            <Border Grid.Column="0" CornerRadius="12" Padding="16"
-                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+            <Border Grid.Column="0" Classes="Card">
                 <StackPanel Spacing="2">
-                    <TextBlock Text="Recaudación del período" FontSize="12" Opacity="0.6" />
+                    <TextBlock Text="Recaudación del período" Classes="FormLabel" />
                     <TextBlock Text="{Binding Total, StringFormat={}{0:C}}" FontSize="24" FontWeight="Bold" />
                 </StackPanel>
             </Border>
-            <Border Grid.Column="1" CornerRadius="12" Padding="16"
-                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+            <Border Grid.Column="1" Classes="Card">
                 <StackPanel Spacing="2">
-                    <TextBlock Text="Pagos registrados" FontSize="12" Opacity="0.6" />
+                    <TextBlock Text="Pagos registrados" Classes="FormLabel" />
                     <TextBlock Text="{Binding Count}" FontSize="24" FontWeight="Bold" />
                 </StackPanel>
             </Border>
@@ -72,15 +67,10 @@
         </DataGrid>
 
         <!-- ── Estado vacío ───────────────────────────────────────────────── -->
-        <StackPanel Grid.Row="2" Spacing="10"
-                    HorizontalAlignment="Center" VerticalAlignment="Center"
-                    IsVisible="{Binding IsEmpty}">
-            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Document}" FontSize="44" Opacity="0.25"
-                           HorizontalAlignment="Center" />
-            <TextBlock Text="Sin pagos en el período" FontSize="15" FontWeight="SemiBold" Opacity="0.7"
-                       HorizontalAlignment="Center" />
-            <TextBlock Text="Ajustá el rango de fechas o registrá cobros desde Caja."
-                       FontSize="12" Opacity="0.5" HorizontalAlignment="Center" />
+        <StackPanel Grid.Row="2" Classes="EmptyState" IsVisible="{Binding IsEmpty}">
+            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Document}" />
+            <TextBlock Classes="EmptyTitle" Text="Sin pagos en el período" />
+            <TextBlock Classes="EmptyBody" Text="Ajustá el rango de fechas o registrá cobros desde Caja." />
         </StackPanel>
 
     </Grid>

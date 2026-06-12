@@ -9,13 +9,10 @@
     <Grid RowDefinitions="Auto,*">
 
         <!-- ── Toolbar ────────────────────────────────────────────────────── -->
-        <Border Grid.Row="0" Padding="16,12"
-                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                BorderThickness="0,0,0,1">
+        <Border Grid.Row="0" Classes="Toolbar">
             <StackPanel Orientation="Horizontal" Spacing="10">
                 <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Settings}" FontSize="20" VerticalAlignment="Center" />
-                <TextBlock Text="Configuración" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <TextBlock Text="Configuración" Classes="ToolbarTitle" />
             </StackPanel>
         </Border>
 
@@ -23,17 +20,16 @@
             <StackPanel Spacing="16" MaxWidth="720" HorizontalAlignment="Center">
 
                 <!-- ── Datos del gimnasio ─────────────────────────────────── -->
-                <Border CornerRadius="12" Padding="24"
-                        Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+                <Border Classes="Card" Padding="24">
                     <StackPanel Spacing="12">
                         <TextBlock Text="Datos del gimnasio" FontSize="15" FontWeight="SemiBold" />
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <StackPanel Spacing="4">
-                                <TextBlock Text="Nombre / Razón social *" FontSize="12" Opacity="0.7" />
+                                <TextBlock Text="Nombre / Razón social *" Classes="FormLabel" />
                                 <TextBox Text="{Binding LegalName}" Width="320" />
                             </StackPanel>
                             <StackPanel Spacing="4">
-                                <TextBlock Text="CUIT *" FontSize="12" Opacity="0.7" />
+                                <TextBlock Text="CUIT *" Classes="FormLabel" />
                                 <TextBox Text="{Binding TaxId}" Watermark="30-12345678-9" Width="180" />
                             </StackPanel>
                         </StackPanel>
@@ -41,15 +37,13 @@
                                    Foreground="{Binding CompanySaved, Converter={StaticResource ActiveColorBrushConverter}}"
                                    IsVisible="{Binding CompanyMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
                                    TextWrapping="Wrap" />
-                        <Button Content="Guardar cambios" Command="{Binding SaveCompanyCommand}" Classes="NavButton"
-                                Background="{DynamicResource SystemAccentColor}" Foreground="White"
+                        <Button Content="Guardar cambios" Command="{Binding SaveCompanyCommand}" Classes="Primary"
                                 HorizontalAlignment="Left" />
                     </StackPanel>
                 </Border>
 
                 <!-- ── Sedes ──────────────────────────────────────────────── -->
-                <Border CornerRadius="12" Padding="24"
-                        Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+                <Border Classes="Card" Padding="24">
                     <StackPanel Spacing="12">
                         <TextBlock Text="Sedes" FontSize="15" FontWeight="SemiBold" />
 
@@ -71,7 +65,8 @@
                                                 <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Edit}" FontSize="13" />
                                             </Button>
                                             <Button Classes="IconButton" ToolTip.Tip="Eliminar sede">
-                                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Delete}" FontSize="13" Foreground="#C62828" />
+                                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Delete}" FontSize="13"
+                                                               Foreground="{DynamicResource DangerBrush}" />
                                                 <Button.Flyout>
                                                     <Flyout Placement="BottomEdgeAlignedRight">
                                                         <StackPanel Spacing="8" Width="240">
@@ -79,7 +74,7 @@
                                                             <TextBlock FontSize="11" Opacity="0.6" TextWrapping="Wrap"
                                                                        Text="Si tiene socios o movimientos se desactiva (conserva el historial). No se puede eliminar la única sede." />
                                                             <Button Content="Eliminar"
-                                                                    Background="#C62828" Foreground="White"
+                                                                    Classes="Danger"
                                                                     HorizontalAlignment="Stretch"
                                                                     HorizontalContentAlignment="Center"
                                                                     CommandParameter="{Binding}"
@@ -101,13 +96,13 @@
                             <TextBox Text="{Binding NewSiteName}" Watermark="Nombre (ej: Sede Sur)" Width="170" />
                             <TextBox Text="{Binding NewSiteAddress}" Watermark="Dirección" Width="220" />
                             <TextBox Text="{Binding NewSitePhone}" Watermark="Teléfono (opcional)" Width="150" />
-                            <Button Command="{Binding SaveSiteCommand}" Classes="NavButton">
+                            <Button Command="{Binding SaveSiteCommand}" Classes="Secondary">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                     <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Save}" FontSize="14" />
                                     <TextBlock Text="Guardar" />
                                 </StackPanel>
                             </Button>
-                            <Button Content="Cancelar" Classes="NavButton"
+                            <Button Content="Cancelar" Classes="Ghost"
                                     IsVisible="{Binding IsEditingSite}"
                                     Command="{Binding CancelSiteEditCommand}" />
                         </StackPanel>
@@ -119,25 +114,24 @@
                 </Border>
 
                 <!-- ── Reglas de acceso ───────────────────────────────────── -->
-                <Border CornerRadius="12" Padding="24"
-                        Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+                <Border Classes="Card" Padding="24">
                     <StackPanel Spacing="12">
                         <TextBlock Text="Control de acceso" FontSize="15" FontWeight="SemiBold" />
                         <TextBlock FontSize="12" Opacity="0.6" TextWrapping="Wrap"
                                    Text="Reglas del molinete/kiosko: cuánto puede deber un socio antes de avisar o bloquear el ingreso, y el tiempo mínimo entre pasadas (anti-passback)." />
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <StackPanel Spacing="4">
-                                <TextBlock Text="Avisar deuda desde" FontSize="12" Opacity="0.7" />
+                                <TextBlock Text="Avisar deuda desde" Classes="FormLabel" />
                                 <NumericUpDown Value="{Binding WarnOnOweAmount}" Minimum="0" Increment="1000"
                                                FormatString="C0" Width="160" />
                             </StackPanel>
                             <StackPanel Spacing="4">
-                                <TextBlock Text="Bloquear deuda desde" FontSize="12" Opacity="0.7" />
+                                <TextBlock Text="Bloquear deuda desde" Classes="FormLabel" />
                                 <NumericUpDown Value="{Binding StopOnOweAmount}" Minimum="0" Increment="1000"
                                                FormatString="C0" Width="160" />
                             </StackPanel>
                             <StackPanel Spacing="4">
-                                <TextBlock Text="Anti-passback (min)" FontSize="12" Opacity="0.7" />
+                                <TextBlock Text="Anti-passback (min)" Classes="FormLabel" />
                                 <NumericUpDown Value="{Binding AntiPassbackMinutes}" Minimum="0" Maximum="120"
                                                Increment="1" Width="130" />
                             </StackPanel>
@@ -146,27 +140,24 @@
                                    Foreground="{Binding AccessSaved, Converter={StaticResource ActiveColorBrushConverter}}"
                                    IsVisible="{Binding AccessMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
                                    TextWrapping="Wrap" />
-                        <Button Content="Guardar reglas" Command="{Binding SaveAccessCommand}" Classes="NavButton"
-                                Background="{DynamicResource SystemAccentColor}" Foreground="White"
+                        <Button Content="Guardar reglas" Command="{Binding SaveAccessCommand}" Classes="Primary"
                                 HorizontalAlignment="Left" />
                     </StackPanel>
                 </Border>
 
                 <!-- ── Licencia ───────────────────────────────────────────── -->
-                <Border CornerRadius="12" Padding="24"
-                        Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+                <Border Classes="Card" Padding="24">
                     <StackPanel Spacing="12">
                         <TextBlock Text="Licencia" FontSize="15" FontWeight="SemiBold" />
                         <StackPanel Spacing="4">
                             <TextBlock Text="{Binding LicensePlanDisplay}" FontSize="13" FontWeight="SemiBold" />
-                            <TextBlock Text="{Binding LicenseUsageDisplay}" FontSize="12" Opacity="0.7" />
+                            <TextBlock Text="{Binding LicenseUsageDisplay}" Classes="FormLabel" />
                         </StackPanel>
                         <TextBlock FontSize="12" Opacity="0.6" TextWrapping="Wrap"
                                    Text="El plan Free permite 1 sede y 50 socios. Para ampliar los límites, pegá la clave de licencia que recibiste al comprar tu plan." />
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <TextBox Text="{Binding LicenseKeyInput}" Watermark="GYMF.…" Width="430" />
-                            <Button Content="Activar" Command="{Binding ActivateLicenseCommand}" Classes="NavButton"
-                                    Background="{DynamicResource SystemAccentColor}" Foreground="White" />
+                            <Button Content="Activar" Command="{Binding ActivateLicenseCommand}" Classes="Primary" />
                         </StackPanel>
                         <TextBlock Text="{Binding LicenseMessage}" FontSize="12"
                                    Foreground="{Binding LicenseSaved, Converter={StaticResource ActiveColorBrushConverter}}"
@@ -176,8 +167,7 @@
                 </Border>
 
                 <!-- ── Info del sistema ───────────────────────────────────── -->
-                <Border CornerRadius="12" Padding="24"
-                        Background="{DynamicResource CardBackgroundFillColorDefaultBrush}">
+                <Border Classes="Card" Padding="24">
                     <StackPanel Spacing="6">
                         <TextBlock Text="Sistema" FontSize="15" FontWeight="SemiBold" />
                         <TextBlock FontSize="12" Opacity="0.7"

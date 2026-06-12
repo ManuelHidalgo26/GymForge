@@ -8,7 +8,7 @@ namespace GymForge.Desktop.Converters;
 public class ActiveColorConverter : IValueConverter
 {
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is true ? Color.Parse("#2E7D32") : Color.Parse("#757575");
+        value is true ? Color.Parse("#22C55E") : Color.Parse("#9CA3AF");
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException();

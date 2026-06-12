@@ -127,7 +127,7 @@ public partial class MemberDetailViewModel : ObservableObject
                 l.SwipedAt,
                 l.AccessGranted ? "Concedido" : "Denegado",
                 l.DenialReason?.ToString(),
-                l.AccessGranted ? "#2E7D32" : "#C62828")));
+                l.AccessGranted ? "#22C55E" : "#EF4444")));
     }
 
     // ── Navigation ────────────────────────────────────────────────────────────

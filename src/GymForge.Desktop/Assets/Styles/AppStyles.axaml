@@ -1,7 +1,209 @@
 <Styles xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:fa="using:FluentAvalonia.UI.Controls">
 
-    <!-- ── Navigation buttons ── -->
+    <!-- ════════════════════════════════════════════════════════════════════
+         Design system GymForge — clases opt-in.
+         Lenguaje: cards flotantes (radio 14, sombra suave) sobre lienzo gris,
+         acento indigo de marca con tintes al ~14%, pills de estado redondeadas.
+         Los colores semánticos viven en Colors.axaml (light/dark).
+         ════════════════════════════════════════════════════════════════════ -->
+
+    <!-- ── Superficies ── -->
+    <Style Selector="Border.Card">
+        <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="Padding" Value="22,18" />
+        <Setter Property="BoxShadow" Value="0 2 8 0 #10000000" />
+    </Style>
+
+    <!-- Barra superior de cada vista: fondo de card + borde inferior -->
+    <Style Selector="Border.Toolbar">
+        <Setter Property="Padding" Value="16,12" />
+        <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
+        <Setter Property="BorderThickness" Value="0,0,0,1" />
+    </Style>
+    <Style Selector="Border.FooterBar">
+        <Setter Property="Padding" Value="16,8" />
+        <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
+        <Setter Property="BorderThickness" Value="0,1,0,0" />
+    </Style>
+
+    <!-- Chip cuadrado con tinte para el ícono de un KPI o sección -->
+    <Style Selector="Border.IconChip">
+        <Setter Property="Width" Value="38" />
+        <Setter Property="Height" Value="38" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Background" Value="{DynamicResource AccentTintBrush}" />
+    </Style>
+
+    <!-- Avatar circular con iniciales -->
+    <Style Selector="Border.Avatar">
+        <Setter Property="Width" Value="30" />
+        <Setter Property="Height" Value="30" />
+        <Setter Property="CornerRadius" Value="15" />
+        <Setter Property="Background" Value="{DynamicResource AccentTintBrush}" />
+    </Style>
+    <Style Selector="Border.Avatar > TextBlock">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource SystemAccentColor}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- ── Tipografía ── -->
+    <Style Selector="TextBlock.PageTitle">
+        <Setter Property="FontSize" Value="24" />
+        <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+    <Style Selector="TextBlock.PageSubtitle">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+    </Style>
+    <Style Selector="TextBlock.ToolbarTitle">
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.SectionTitle">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.Caption">
+        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}" />
+    </Style>
+    <Style Selector="TextBlock.FormLabel">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+    </Style>
+
+    <!-- ── Pills de estado ── -->
+    <Style Selector="Border.Pill">
+        <Setter Property="CornerRadius" Value="99" />
+        <Setter Property="Padding" Value="8,3" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.Pill > TextBlock">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="Border.Pill.success">
+        <Setter Property="Background" Value="{DynamicResource SuccessTintBrush}" />
+    </Style>
+    <Style Selector="Border.Pill.success > TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+    </Style>
+    <Style Selector="Border.Pill.warning">
+        <Setter Property="Background" Value="{DynamicResource WarningTintBrush}" />
+    </Style>
+    <Style Selector="Border.Pill.warning > TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
+    </Style>
+    <Style Selector="Border.Pill.danger">
+        <Setter Property="Background" Value="{DynamicResource DangerTintBrush}" />
+    </Style>
+    <Style Selector="Border.Pill.danger > TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+    </Style>
+    <Style Selector="Border.Pill.neutral">
+        <Setter Property="Background" Value="{DynamicResource NeutralTintBrush}" />
+    </Style>
+    <Style Selector="Border.Pill.neutral > TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource NeutralBrush}" />
+    </Style>
+    <Style Selector="Border.Pill.accent">
+        <Setter Property="Background" Value="{DynamicResource AccentTintBrush}" />
+    </Style>
+    <Style Selector="Border.Pill.accent > TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource SystemAccentColor}" />
+    </Style>
+
+    <!-- Contador junto a un título (p.ej. "Planes [12]") -->
+    <Style Selector="Border.CountBadge">
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="8,2" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+    </Style>
+    <Style Selector="Border.CountBadge > TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- ── Botones ── -->
+    <Style Selector="Button.Primary">
+        <Setter Property="Background" Value="{DynamicResource SystemAccentColor}" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Padding" Value="14,9" />
+        <Setter Property="CornerRadius" Value="9" />
+    </Style>
+    <Style Selector="Button.Primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SystemAccentColorDark1}" />
+        <Setter Property="TextBlock.Foreground" Value="White" />
+    </Style>
+    <Style Selector="Button.Primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SystemAccentColorDark2}" />
+        <Setter Property="TextBlock.Foreground" Value="White" />
+    </Style>
+
+    <Style Selector="Button.Secondary">
+        <Setter Property="Padding" Value="14,9" />
+        <Setter Property="CornerRadius" Value="9" />
+    </Style>
+
+    <Style Selector="Button.Danger">
+        <Setter Property="Background" Value="{DynamicResource DangerBrush}" />
+        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Padding" Value="14,9" />
+        <Setter Property="CornerRadius" Value="9" />
+    </Style>
+    <Style Selector="Button.Danger:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="#B91C1C" />
+        <Setter Property="TextBlock.Foreground" Value="White" />
+    </Style>
+
+    <!-- Botón silencioso de toolbar (ícono o texto corto) -->
+    <Style Selector="Button.Ghost">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Padding" Value="10,7" />
+        <Setter Property="CornerRadius" Value="8" />
+    </Style>
+    <Style Selector="Button.Ghost:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+    </Style>
+    <Style Selector="Button.Ghost:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}" />
+    </Style>
+
+    <!-- ── Estados vacíos ── -->
+    <Style Selector="StackPanel.EmptyState">
+        <Setter Property="Spacing" Value="10" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="StackPanel.EmptyState fa|SymbolIcon">
+        <Setter Property="FontSize" Value="44" />
+        <Setter Property="Opacity" Value="0.25" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.EmptyTitle">
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+    </Style>
+    <Style Selector="TextBlock.EmptyBody">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}" />
+    </Style>
+
+    <!-- ── Navigation buttons (sidebar) ── -->
     <Style Selector="Button.NavButton">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />

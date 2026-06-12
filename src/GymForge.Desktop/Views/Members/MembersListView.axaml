@@ -9,10 +9,7 @@
     <Grid RowDefinitions="Auto,Auto,*,Auto">
 
         <!-- ── Toolbar ────────────────────────────────────────────────────── -->
-        <Border Grid.Row="0" Padding="16,12"
-                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                BorderThickness="0,0,0,1">
+        <Border Grid.Row="0" Classes="Toolbar">
             <Grid ColumnDefinitions="*,Auto">
 
                 <StackPanel Orientation="Horizontal" Spacing="8">
@@ -40,18 +37,18 @@
 
                     <Button Content="Limpiar"
                             Command="{Binding ClearSearchCommand}"
-                            Classes="NavButton" />
+                            Classes="Ghost" />
                 </StackPanel>
 
                 <!-- Right: refresh + nuevo socio -->
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
                     <Button Command="{Binding LoadCommand}"
-                            Classes="NavButton"
+                            Classes="Ghost"
                             ToolTip.Tip="Actualizar">
                         <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Refresh}" FontSize="16" />
                     </Button>
                     <Button Command="{Binding CreateMemberCommand}"
-                            Classes="NavButton">
+                            Classes="Primary">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Add}" FontSize="16" />
                             <TextBlock Text="Nuevo socio" />
@@ -84,13 +81,8 @@
                 <DataGridTemplateColumn Header="" Width="44" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <Border Width="28" Height="28" CornerRadius="14"
-                                    Background="{DynamicResource SystemAccentColor}"
-                                    Margin="6,0">
-                                <TextBlock Text="{Binding FirstName[0]}"
-                                           Foreground="White" FontWeight="SemiBold" FontSize="12"
-                                           HorizontalAlignment="Center"
-                                           VerticalAlignment="Center" />
+                            <Border Classes="Avatar" Width="28" Height="28" Margin="6,0">
+                                <TextBlock Text="{Binding FirstName[0]}" />
                             </Border>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
@@ -112,16 +104,14 @@
                                         SortMemberPath="Status">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <Border CornerRadius="10" Padding="8,2" Margin="4,0"
-                                    HorizontalAlignment="Left">
+                            <Border Classes="Pill" Margin="4,0">
                                 <Border.Background>
                                     <SolidColorBrush
                                         Color="{Binding Status,
                                             Converter={StaticResource StatusColorConverter}}"
                                         Opacity="0.15" />
                                 </Border.Background>
-                                <TextBlock Text="{Binding Status, Converter={StaticResource EnumEs}}"
-                                           FontSize="11" FontWeight="SemiBold">
+                                <TextBlock Text="{Binding Status, Converter={StaticResource EnumEs}}">
                                     <TextBlock.Foreground>
                                         <SolidColorBrush
                                             Color="{Binding Status,
@@ -149,7 +139,8 @@
                                     <fa:SymbolIcon Symbol="{x:Static fa:Symbol.ChevronRight}" FontSize="16" />
                                 </Button>
                                 <Button Classes="IconButton" ToolTip.Tip="Eliminar socio">
-                                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Delete}" FontSize="14" Foreground="#C62828" />
+                                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Delete}" FontSize="14"
+                                                   Foreground="{DynamicResource DangerBrush}" />
                                     <Button.Flyout>
                                         <Flyout Placement="BottomEdgeAlignedRight">
                                             <StackPanel Spacing="8" Width="230">
@@ -157,7 +148,7 @@
                                                 <TextBlock FontSize="11" Opacity="0.6" TextWrapping="Wrap"
                                                            Text="Solo se puede eliminar si no tiene movimientos. Esta acción no se deshace." />
                                                 <Button Content="Eliminar definitivamente"
-                                                        Background="#C62828" Foreground="White"
+                                                        Classes="Danger"
                                                         HorizontalAlignment="Stretch"
                                                         HorizontalContentAlignment="Center"
                                                         CommandParameter="{Binding}"
@@ -175,23 +166,15 @@
         </DataGrid>
 
         <!-- ── Estado vacío ───────────────────────────────────────────────── -->
-        <StackPanel Grid.Row="2" Spacing="10"
-                    HorizontalAlignment="Center" VerticalAlignment="Center"
-                    IsVisible="{Binding IsEmpty}">
-            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.People}" FontSize="44" Opacity="0.25"
-                           HorizontalAlignment="Center" />
-            <TextBlock Text="Todavía no hay socios para mostrar"
-                       FontSize="15" FontWeight="SemiBold" Opacity="0.7"
-                       HorizontalAlignment="Center" />
-            <TextBlock Text="Creá el primero con «Nuevo socio», o ajustá la búsqueda y los filtros."
-                       FontSize="12" Opacity="0.5" HorizontalAlignment="Center" />
+        <StackPanel Grid.Row="2" Classes="EmptyState" IsVisible="{Binding IsEmpty}">
+            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.People}" />
+            <TextBlock Classes="EmptyTitle" Text="Todavía no hay socios para mostrar" />
+            <TextBlock Classes="EmptyBody"
+                       Text="Creá el primero con «Nuevo socio», o ajustá la búsqueda y los filtros." />
         </StackPanel>
 
         <!-- ── Footer / Paginación ────────────────────────────────────────── -->
-        <Border Grid.Row="3" Padding="16,8"
-                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                BorderThickness="0,1,0,0">
+        <Border Grid.Row="3" Classes="FooterBar">
             <Grid ColumnDefinitions="*,Auto">
 
                 <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
@@ -203,7 +186,7 @@
 
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
                     <!-- Habilitado/deshabilitado por el CanExecute del comando -->
-                    <Button Command="{Binding PreviousPageCommand}" Classes="NavButton">
+                    <Button Command="{Binding PreviousPageCommand}" Classes="Ghost">
                         <fa:SymbolIcon Symbol="{x:Static fa:Symbol.ChevronLeft}" FontSize="14" />
                     </Button>
                     <TextBlock VerticalAlignment="Center" FontSize="12">
@@ -212,7 +195,7 @@
                         <Run Text=" / " />
                         <Run Text="{Binding TotalPages}" />
                     </TextBlock>
-                    <Button Command="{Binding NextPageCommand}" Classes="NavButton">
+                    <Button Command="{Binding NextPageCommand}" Classes="Ghost">
                         <fa:SymbolIcon Symbol="{x:Static fa:Symbol.ChevronRight}" FontSize="14" />
                     </Button>
                 </StackPanel>

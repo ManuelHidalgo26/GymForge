@@ -22,18 +22,14 @@
     <Grid RowDefinitions="Auto,*,Auto">
 
         <!-- ── Header ────────────────────────────────────────────────────── -->
-        <Border Grid.Row="0" Padding="20,14"
-                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                BorderThickness="0,0,0,1">
+        <Border Grid.Row="0" Classes="Toolbar" Padding="20,14">
             <DockPanel>
                 <Button DockPanel.Dock="Left"
                         Command="{Binding CancelCommand}"
-                        Classes="NavButton" Margin="0,0,12,0">
+                        Classes="Ghost" Margin="0,0,12,0">
                     <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Back}" FontSize="20" />
                 </Button>
-                <TextBlock Text="Nuevo socio" FontSize="18" FontWeight="SemiBold"
-                           VerticalAlignment="Center" />
+                <TextBlock Text="Nuevo socio" Classes="ToolbarTitle" />
             </DockPanel>
         </Border>
 
@@ -235,7 +231,7 @@
                             </Grid>
                         </Border>
                         <Button Command="{Binding CapturePhotoCommand}"
-                                Classes="NavButton"
+                                Classes="Secondary"
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Center">
                             <StackPanel Orientation="Horizontal" Spacing="6">
@@ -258,7 +254,7 @@
                             IsVisible="{Binding HasFingerprint}"
                             HorizontalAlignment="Center" />
                         <Button Command="{Binding EnrollFingerprintCommand}"
-                                Classes="NavButton"
+                                Classes="Secondary"
                                 HorizontalAlignment="Stretch"
                                 HorizontalContentAlignment="Center">
                             <StackPanel Orientation="Horizontal" Spacing="6">
@@ -277,18 +273,16 @@
         </ScrollViewer>
 
         <!-- ── Footer: Cancelar / Guardar ───────────────────────────────── -->
-        <Border Grid.Row="2" Padding="24,12"
-                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                BorderThickness="0,1,0,0">
+        <Border Grid.Row="2" Classes="FooterBar" Padding="24,12">
             <StackPanel Orientation="Horizontal" Spacing="10"
                         HorizontalAlignment="Right">
                 <Button Content="Cancelar"
                         Command="{Binding CancelCommand}"
-                        Classes="NavButton"
-                        Width="110" />
+                        Classes="Ghost"
+                        Width="110"
+                        HorizontalContentAlignment="Center" />
                 <Button Command="{Binding SaveCommand}"
-                        Classes="NavButton"
+                        Classes="Primary"
                         Width="160"
                         IsDefault="True">
                     <StackPanel Orientation="Horizontal" Spacing="8"

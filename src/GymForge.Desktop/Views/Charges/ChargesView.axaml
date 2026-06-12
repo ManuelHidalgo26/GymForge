@@ -8,19 +8,13 @@
     <Grid RowDefinitions="Auto,*,Auto">
 
         <!-- ── Toolbar ────────────────────────────────────────────────────── -->
-        <Border Grid.Row="0" Padding="16,12"
-                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                BorderThickness="0,0,0,1">
+        <Border Grid.Row="0" Classes="Toolbar">
             <DockPanel>
 
                 <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8">
-                    <TextBlock Text="Cobros" FontSize="18" FontWeight="SemiBold"
-                               VerticalAlignment="Center" />
-                    <Border CornerRadius="12" Padding="8,2"
-                            Background="{DynamicResource SubtleFillColorSecondaryBrush}">
-                        <TextBlock Text="{Binding Charges.Count}"
-                                   FontSize="12" VerticalAlignment="Center" />
+                    <TextBlock Text="Cobros" Classes="ToolbarTitle" />
+                    <Border Classes="CountBadge">
+                        <TextBlock Text="{Binding Charges.Count}" />
                     </Border>
                 </StackPanel>
 
@@ -38,7 +32,7 @@
 
                     <!-- Registrar cobro manual -->
                     <Button Command="{Binding OpenPaymentModalCommand}"
-                            Classes="NavButton"
+                            Classes="Primary"
                             IsEnabled="{Binding SelectedCharge, Converter={x:Static ObjectConverters.IsNotNull}}">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Accept}" FontSize="16" />
@@ -46,7 +40,7 @@
                         </StackPanel>
                     </Button>
 
-                    <Button Command="{Binding LoadCommand}" Classes="NavButton">
+                    <Button Command="{Binding LoadCommand}" Classes="Ghost" ToolTip.Tip="Actualizar">
                         <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Refresh}" FontSize="16" />
                     </Button>
                 </StackPanel>
@@ -98,13 +92,11 @@
                 <DataGridTemplateColumn Header="Estado" Width="110">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="vm:ChargeRowVm">
-                            <Border CornerRadius="10" Padding="8,2" Margin="4,0"
-                                    HorizontalAlignment="Left">
+                            <Border Classes="Pill" Margin="4,0">
                                 <Border.Background>
                                     <SolidColorBrush Color="{Binding StatusColor}" Opacity="0.15" />
                                 </Border.Background>
-                                <TextBlock Text="{Binding StatusLabel}"
-                                           FontSize="11" FontWeight="SemiBold">
+                                <TextBlock Text="{Binding StatusLabel}">
                                     <TextBlock.Foreground>
                                         <SolidColorBrush Color="{Binding StatusColor}" />
                                     </TextBlock.Foreground>
@@ -132,29 +124,20 @@
         </DataGrid>
 
         <!-- ── Estado vacío ───────────────────────────────────────────────── -->
-        <StackPanel Grid.Row="1" Spacing="10"
-                    HorizontalAlignment="Center" VerticalAlignment="Center"
-                    IsVisible="{Binding IsEmpty}">
-            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Accept}" FontSize="44" Opacity="0.25"
-                           HorizontalAlignment="Center" />
-            <TextBlock Text="No hay cobros para mostrar"
-                       FontSize="15" FontWeight="SemiBold" Opacity="0.7"
-                       HorizontalAlignment="Center" />
-            <TextBlock Text="Los cobros aparecen al vender membresías o generar cuotas."
-                       FontSize="12" Opacity="0.5" HorizontalAlignment="Center" />
+        <StackPanel Grid.Row="1" Classes="EmptyState" IsVisible="{Binding IsEmpty}">
+            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Accept}" />
+            <TextBlock Classes="EmptyTitle" Text="No hay cobros para mostrar" />
+            <TextBlock Classes="EmptyBody" Text="Los cobros aparecen al vender membresías o generar cuotas." />
         </StackPanel>
 
         <!-- ── Footer: total saldo ────────────────────────────────────────── -->
-        <Border Grid.Row="2" Padding="16,10"
-                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                BorderThickness="0,1,0,0">
+        <Border Grid.Row="2" Classes="FooterBar">
             <DockPanel>
                 <TextBlock DockPanel.Dock="Right"
                            FontSize="14" FontWeight="SemiBold">
                     <Run Text="Saldo total: " />
                     <Run Text="{Binding TotalOutstanding, StringFormat={}{0:C}}"
-                         Foreground="#C62828" />
+                         Foreground="{DynamicResource DangerBrush}" />
                 </TextBlock>
 
                 <fa:ProgressRing IsVisible="{Binding IsLoading}"

@@ -15,6 +15,18 @@
             <SolidColorBrush x:Key="TopbarBackground" Color="#FFFFFF" />
             <SolidColorBrush x:Key="ContentBackground" Color="#F0F0F2" />
             <SolidColorBrush x:Key="CardBackgroundFillColorDefaultBrush" Color="#FFFFFF" />
+
+            <!-- Tokens semánticos: color pleno para texto/íconos, tinte para fondos -->
+            <SolidColorBrush x:Key="SurfaceBorderBrush" Color="#E6E6EA" />
+            <SolidColorBrush x:Key="AccentTintBrush" Color="#1F6366F1" />
+            <SolidColorBrush x:Key="SuccessBrush" Color="#15803D" />
+            <SolidColorBrush x:Key="SuccessTintBrush" Color="#2422C55E" />
+            <SolidColorBrush x:Key="WarningBrush" Color="#C2410C" />
+            <SolidColorBrush x:Key="WarningTintBrush" Color="#24F59E0B" />
+            <SolidColorBrush x:Key="DangerBrush" Color="#DC2626" />
+            <SolidColorBrush x:Key="DangerTintBrush" Color="#24EF4444" />
+            <SolidColorBrush x:Key="NeutralBrush" Color="#6B7280" />
+            <SolidColorBrush x:Key="NeutralTintBrush" Color="#246B7280" />
         </ResourceDictionary>
 
         <!-- ── Dark Theme ──────────────────────────────────────────────── -->
@@ -23,6 +35,17 @@
             <SolidColorBrush x:Key="TopbarBackground" Color="#242426" />
             <SolidColorBrush x:Key="ContentBackground" Color="#2C2C2E" />
             <SolidColorBrush x:Key="CardBackgroundFillColorDefaultBrush" Color="#3A3A3C" />
+
+            <SolidColorBrush x:Key="SurfaceBorderBrush" Color="#3F3F42" />
+            <SolidColorBrush x:Key="AccentTintBrush" Color="#2E818CF8" />
+            <SolidColorBrush x:Key="SuccessBrush" Color="#4ADE80" />
+            <SolidColorBrush x:Key="SuccessTintBrush" Color="#2622C55E" />
+            <SolidColorBrush x:Key="WarningBrush" Color="#FDBA74" />
+            <SolidColorBrush x:Key="WarningTintBrush" Color="#26F59E0B" />
+            <SolidColorBrush x:Key="DangerBrush" Color="#F87171" />
+            <SolidColorBrush x:Key="DangerTintBrush" Color="#26EF4444" />
+            <SolidColorBrush x:Key="NeutralBrush" Color="#9CA3AF" />
+            <SolidColorBrush x:Key="NeutralTintBrush" Color="#269CA3AF" />
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 

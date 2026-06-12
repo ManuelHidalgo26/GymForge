@@ -28,7 +28,7 @@
 
         <!-- Monto -->
         <StackPanel Spacing="4">
-            <TextBlock Text="Monto a cobrar *" FontSize="12" Opacity="0.7" />
+            <TextBlock Text="Monto a cobrar *" Classes="FormLabel" />
             <NumericUpDown Value="{Binding Amount}"
                            FormatString="C2"
                            Minimum="0.01"
@@ -39,7 +39,7 @@
 
         <!-- Método de pago -->
         <StackPanel Spacing="4">
-            <TextBlock Text="Método de pago *" FontSize="12" Opacity="0.7" />
+            <TextBlock Text="Método de pago *" Classes="FormLabel" />
             <ComboBox ItemsSource="{Binding Methods}"
                       SelectedItem="{Binding Method}"
                       Width="200"
@@ -55,7 +55,7 @@
         <!-- Datos de tarjeta (sólo si aplica) -->
         <StackPanel IsVisible="{Binding IsCardRequired}" Spacing="8">
             <StackPanel Spacing="4">
-                <TextBlock Text="Últimos 4 dígitos *" FontSize="12" Opacity="0.7" />
+                <TextBlock Text="Últimos 4 dígitos *" Classes="FormLabel" />
                 <TextBox Text="{Binding CardLast4}"
                          MaxLength="4"
                          Watermark="0000"
@@ -63,7 +63,7 @@
                          HorizontalAlignment="Left" />
             </StackPanel>
             <StackPanel Spacing="4">
-                <TextBlock Text="Marca de tarjeta" FontSize="12" Opacity="0.7" />
+                <TextBlock Text="Marca de tarjeta" Classes="FormLabel" />
                 <TextBox Text="{Binding CardBrand}"
                          Watermark="Visa / Mastercard / Amex"
                          Width="200"
@@ -82,9 +82,9 @@
         <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
             <Button Content="Cancelar"
                     Command="{Binding CancelCommand}"
-                    Classes="NavButton" />
+                    Classes="Ghost" />
             <Button Command="{Binding ConfirmCommand}"
-                    Classes="NavButton"
+                    Classes="Primary"
                     IsDefault="True">
                 <StackPanel Orientation="Horizontal" Spacing="6">
                     <fa:ProgressRing IsVisible="{Binding IsSaving}"

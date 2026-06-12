@@ -152,12 +152,13 @@ public sealed class ChargeRowVm(ChargeDto dto) : ObservableObject
         ConceptType.Adjustment       => "Ajuste",
         _                            => Dto.ConceptType.ToString()
     };
+    // Paleta alineada con StatusColorConverter (badges de socios)
     public string StatusColor => Dto.Status switch
     {
-        ChargeStatus.Paid          => "#2E7D32",
-        ChargeStatus.PartiallyPaid => "#F57C00",
-        ChargeStatus.Overdue       => "#C62828",
-        ChargeStatus.Pending       => "#1565C0",
-        _                          => "#757575"
+        ChargeStatus.Paid          => "#22C55E",
+        ChargeStatus.PartiallyPaid => "#F59E0B",
+        ChargeStatus.Overdue       => "#EF4444",
+        ChargeStatus.Pending       => "#3B82F6",
+        _                          => "#9CA3AF"
     };
 }

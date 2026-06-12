@@ -29,7 +29,8 @@
 
     <Application.Styles>
         <FluentTheme />
-        <sty:FluentAvaloniaTheme />
+        <!-- Accent indigo de marca: no depender del color de acento de Windows -->
+        <sty:FluentAvaloniaTheme CustomAccentColor="#6366F1" />
         <StyleInclude Source="avares://GymForge/Assets/Styles/AppStyles.axaml" />
     </Application.Styles>
 

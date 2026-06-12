@@ -10,25 +10,20 @@
     <Grid RowDefinitions="Auto,Auto,*">
 
         <!-- ── Toolbar ────────────────────────────────────────────────────── -->
-        <Border Grid.Row="0" Padding="16,12"
-                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                BorderThickness="0,0,0,1">
+        <Border Grid.Row="0" Classes="Toolbar">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8">
-                    <TextBlock Text="Planes" FontSize="18" FontWeight="SemiBold" VerticalAlignment="Center" />
-                    <Border CornerRadius="12" Padding="8,2"
-                            Background="{DynamicResource SubtleFillColorSecondaryBrush}">
-                        <TextBlock Text="{Binding Plans.Count}" FontSize="12" VerticalAlignment="Center" />
+                    <TextBlock Text="Planes" Classes="ToolbarTitle" />
+                    <Border Classes="CountBadge">
+                        <TextBlock Text="{Binding Plans.Count}" />
                     </Border>
                 </StackPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8"
                             HorizontalAlignment="Right">
-                    <Button Command="{Binding LoadCommand}" Classes="NavButton" ToolTip.Tip="Actualizar">
+                    <Button Command="{Binding LoadCommand}" Classes="Ghost" ToolTip.Tip="Actualizar">
                         <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Refresh}" FontSize="16" />
                     </Button>
-                    <Button Command="{Binding OpenFormCommand}" Classes="NavButton"
-                            Background="{DynamicResource SystemAccentColor}" Foreground="White">
+                    <Button Command="{Binding OpenFormCommand}" Classes="Primary">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Add}" FontSize="16" />
                             <TextBlock Text="Nuevo plan" />
@@ -39,18 +34,15 @@
         </Border>
 
         <!-- ── Formulario nuevo plan ──────────────────────────────────────── -->
-        <Border Grid.Row="1" Padding="16,12" IsVisible="{Binding IsFormOpen}"
-                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
-                BorderThickness="0,0,0,1">
+        <Border Grid.Row="1" Classes="Toolbar" IsVisible="{Binding IsFormOpen}">
             <StackPanel Spacing="10">
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <StackPanel Spacing="4">
-                        <TextBlock Text="Nombre *" FontSize="12" Opacity="0.7" />
+                        <TextBlock Text="Nombre *" Classes="FormLabel" />
                         <TextBox Text="{Binding Name}" Watermark="Ej: Mensual full" Width="220" />
                     </StackPanel>
                     <StackPanel Spacing="4">
-                        <TextBlock Text="Modalidad" FontSize="12" Opacity="0.7" />
+                        <TextBlock Text="Modalidad" Classes="FormLabel" />
                         <ComboBox ItemsSource="{Binding BasisOptions}" SelectedItem="{Binding Basis}" Width="170">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate x:DataType="enums:MembershipBasis">
@@ -60,12 +52,12 @@
                         </ComboBox>
                     </StackPanel>
                     <StackPanel Spacing="4">
-                        <TextBlock Text="Precio *" FontSize="12" Opacity="0.7" />
+                        <TextBlock Text="Precio *" Classes="FormLabel" />
                         <NumericUpDown Value="{Binding Price}" Minimum="0" Increment="1000"
                                        FormatString="C0" Width="150" />
                     </StackPanel>
                     <StackPanel Spacing="4">
-                        <TextBlock Text="Duración" FontSize="12" Opacity="0.7" />
+                        <TextBlock Text="Duración" Classes="FormLabel" />
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <NumericUpDown Value="{Binding DurationValue}" Minimum="1" Increment="1" Width="110" />
                             <ComboBox ItemsSource="{Binding DurationUnits}" SelectedItem="{Binding DurationUnit}" Width="100">
@@ -83,9 +75,8 @@
                             Severity="Error" Title="Error" Message="{Binding ErrorMessage}" IsClosable="False" />
 
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Button Content="Crear plan" Command="{Binding CreateCommand}" Classes="NavButton"
-                            Background="{DynamicResource SystemAccentColor}" Foreground="White" />
-                    <Button Content="Cancelar" Command="{Binding CancelFormCommand}" Classes="NavButton" />
+                    <Button Content="Crear plan" Command="{Binding CreateCommand}" Classes="Primary" />
+                    <Button Content="Cancelar" Command="{Binding CancelFormCommand}" Classes="Ghost" />
                 </StackPanel>
             </StackPanel>
         </Border>
@@ -109,13 +100,11 @@
                 <DataGridTemplateColumn Header="Estado" Width="110" SortMemberPath="IsActive">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:MembershipTypeDto">
-                            <Border CornerRadius="10" Padding="8,2" Margin="4,0"
-                                    HorizontalAlignment="Left" VerticalAlignment="Center">
+                            <Border Classes="Pill" Margin="4,0">
                                 <Border.Background>
                                     <SolidColorBrush Color="{Binding IsActive, Converter={StaticResource ActiveColorConverter}}" Opacity="0.15" />
                                 </Border.Background>
-                                <TextBlock Text="{Binding IsActive, Converter={StaticResource ActiveLabelConverter}}"
-                                           FontSize="11" FontWeight="SemiBold">
+                                <TextBlock Text="{Binding IsActive, Converter={StaticResource ActiveLabelConverter}}">
                                     <TextBlock.Foreground>
                                         <SolidColorBrush Color="{Binding IsActive, Converter={StaticResource ActiveColorConverter}}" />
                                     </TextBlock.Foreground>
@@ -127,7 +116,7 @@
                 <DataGridTemplateColumn Header="" Width="120">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:MembershipTypeDto">
-                            <Button Classes="NavButton" Margin="4,2"
+                            <Button Classes="Ghost" Margin="4,2"
                                     CommandParameter="{Binding}"
                                     Command="{Binding $parent[UserControl].((vm:PlansViewModel)DataContext).ToggleActiveCommand}">
                                 <TextBlock Text="{Binding IsActive, Converter={StaticResource ActiveToggleLabelConverter}}"
@@ -140,15 +129,10 @@
         </DataGrid>
 
         <!-- ── Estado vacío ───────────────────────────────────────────────── -->
-        <StackPanel Grid.Row="2" Spacing="10"
-                    HorizontalAlignment="Center" VerticalAlignment="Center"
-                    IsVisible="{Binding IsEmpty}">
-            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.List}" FontSize="44" Opacity="0.25"
-                           HorizontalAlignment="Center" />
-            <TextBlock Text="Todavía no hay planes" FontSize="15" FontWeight="SemiBold" Opacity="0.7"
-                       HorizontalAlignment="Center" />
-            <TextBlock Text="Creá el primero con «Nuevo plan»." FontSize="12" Opacity="0.5"
-                       HorizontalAlignment="Center" />
+        <StackPanel Grid.Row="2" Classes="EmptyState" IsVisible="{Binding IsEmpty}">
+            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.List}" />
+            <TextBlock Classes="EmptyTitle" Text="Todavía no hay planes" />
+            <TextBlock Classes="EmptyBody" Text="Creá el primero con «Nuevo plan»." />
         </StackPanel>
 
     </Grid>

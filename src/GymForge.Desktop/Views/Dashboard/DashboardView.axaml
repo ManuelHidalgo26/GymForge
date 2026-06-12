@@ -6,20 +6,6 @@
              x:DataType="vm:DashboardViewModel">
 
     <UserControl.Styles>
-        <Style Selector="Border.Card">
-            <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
-            <Setter Property="CornerRadius" Value="14" />
-            <Setter Property="Padding" Value="22,18" />
-            <Setter Property="BoxShadow" Value="0 2 8 0 #10000000" />
-        </Style>
-
-        <!-- Chip cuadrado con tinte para el ícono de cada KPI -->
-        <Style Selector="Border.IconChip">
-            <Setter Property="Width" Value="38" />
-            <Setter Property="Height" Value="38" />
-            <Setter Property="CornerRadius" Value="10" />
-        </Style>
-
         <!-- Barras del gráfico de recaudación -->
         <Style Selector="Border.bar">
             <Setter Property="Background" Value="{DynamicResource SystemAccentColor}" />
@@ -33,18 +19,12 @@
             <Setter Property="Opacity" Value="1" />
         </Style>
 
-        <!-- Acciones rápidas del header -->
-        <Style Selector="Button.HeaderAction">
-            <Setter Property="Padding" Value="14,9" />
-            <Setter Property="CornerRadius" Value="9" />
-        </Style>
-
         <!-- Etiqueta de vencimiento -->
         <Style Selector="TextBlock.when">
             <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
         </Style>
         <Style Selector="TextBlock.when.urgent">
-            <Setter Property="Foreground" Value="#E8590C" />
+            <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
             <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
     </UserControl.Styles>
@@ -55,25 +35,23 @@
             <!-- ── Header: título + fecha | acciones rápidas ──────────────── -->
             <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,4">
                 <StackPanel Spacing="3">
-                    <TextBlock Text="Dashboard" FontSize="24" FontWeight="Bold" />
-                    <TextBlock Text="{Binding TodayLabel}" FontSize="13"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <TextBlock Text="Dashboard" Classes="PageTitle" />
+                    <TextBlock Text="{Binding TodayLabel}" Classes="PageSubtitle" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                    <Button Classes="HeaderAction" Command="{Binding QuickCreateMemberCommand}"
-                            Background="{DynamicResource SystemAccentColor}" Foreground="White">
+                    <Button Classes="Primary" Command="{Binding QuickCreateMemberCommand}">
                         <StackPanel Orientation="Horizontal" Spacing="7">
                             <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Add}" FontSize="15" />
                             <TextBlock Text="Nuevo socio" FontSize="13" />
                         </StackPanel>
                     </Button>
-                    <Button Classes="HeaderAction" Command="{Binding QuickCheckInCommand}">
+                    <Button Classes="Secondary" Command="{Binding QuickCheckInCommand}">
                         <StackPanel Orientation="Horizontal" Spacing="7">
                             <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Permissions}" FontSize="15" />
                             <TextBlock Text="Check-in" FontSize="13" />
                         </StackPanel>
                     </Button>
-                    <Button Classes="HeaderAction" Command="{Binding QuickChargeCommand}">
+                    <Button Classes="Secondary" Command="{Binding QuickChargeCommand}">
                         <StackPanel Orientation="Horizontal" Spacing="7">
                             <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Tag}" FontSize="15" />
                             <TextBlock Text="Cobrar" FontSize="13" />
@@ -97,7 +75,7 @@
                 <Border Grid.Column="0" Classes="Card">
                     <StackPanel Spacing="10">
                         <Grid ColumnDefinitions="Auto,*">
-                            <Border Classes="IconChip" Background="#1F6366F1">
+                            <Border Classes="IconChip">
                                 <fa:SymbolIcon Symbol="{x:Static fa:Symbol.People}" FontSize="18"
                                                Foreground="{DynamicResource SystemAccentColor}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -107,8 +85,7 @@
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                         </Grid>
                         <TextBlock Text="{Binding TotalActiveMembers}" FontSize="30" FontWeight="Bold" />
-                        <TextBlock Text="{Binding MembersSubtitle}" FontSize="11.5"
-                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                        <TextBlock Text="{Binding MembersSubtitle}" Classes="Caption" />
                     </StackPanel>
                 </Border>
 
@@ -116,9 +93,9 @@
                 <Border Grid.Column="1" Classes="Card">
                     <StackPanel Spacing="10">
                         <Grid ColumnDefinitions="Auto,*">
-                            <Border Classes="IconChip" Background="#1A0E9F6E">
+                            <Border Classes="IconChip" Background="{DynamicResource SuccessTintBrush}">
                                 <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Permissions}" FontSize="18"
-                                               Foreground="#0E9F6E"
+                                               Foreground="{DynamicResource SuccessBrush}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <TextBlock Grid.Column="1" Text="Check-ins hoy" FontSize="13"
@@ -126,8 +103,7 @@
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                         </Grid>
                         <TextBlock Text="{Binding CheckInsToday}" FontSize="30" FontWeight="Bold" />
-                        <TextBlock Text="{Binding CheckInsSubtitle}" FontSize="11.5"
-                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                        <TextBlock Text="{Binding CheckInsSubtitle}" Classes="Caption" />
                     </StackPanel>
                 </Border>
 
@@ -135,9 +111,9 @@
                 <Border Grid.Column="2" Classes="Card">
                     <StackPanel Spacing="10">
                         <Grid ColumnDefinitions="Auto,*">
-                            <Border Classes="IconChip" Background="#1AE8590C">
+                            <Border Classes="IconChip" Background="{DynamicResource WarningTintBrush}">
                                 <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Alert}" FontSize="18"
-                                               Foreground="#E8590C"
+                                               Foreground="{DynamicResource WarningBrush}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <TextBlock Grid.Column="1" Text="En mora" FontSize="13"
@@ -145,8 +121,7 @@
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                         </Grid>
                         <TextBlock Text="{Binding OverdueMembers}" FontSize="30" FontWeight="Bold" />
-                        <TextBlock Text="{Binding OverdueSubtitle}" FontSize="11.5"
-                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                        <TextBlock Text="{Binding OverdueSubtitle}" Classes="Caption" />
                     </StackPanel>
                 </Border>
 
@@ -154,9 +129,9 @@
                 <Border Grid.Column="3" Classes="Card">
                     <StackPanel Spacing="10">
                         <Grid ColumnDefinitions="Auto,*">
-                            <Border Classes="IconChip" Background="#1A16A34A">
+                            <Border Classes="IconChip" Background="{DynamicResource SuccessTintBrush}">
                                 <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Tag}" FontSize="18"
-                                               Foreground="#16A34A"
+                                               Foreground="{DynamicResource SuccessBrush}"
                                                HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <TextBlock Grid.Column="1" Text="Recaudación del mes" FontSize="13"
@@ -184,7 +159,7 @@
                     <StackPanel Spacing="14">
                         <Grid ColumnDefinitions="*,Auto">
                             <StackPanel Spacing="2">
-                                <TextBlock Text="Recaudación" FontSize="14" FontWeight="SemiBold" />
+                                <TextBlock Text="Recaudación" Classes="SectionTitle" />
                                 <TextBlock Text="Últimos 30 días" FontSize="11.5"
                                            Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
                             </StackPanel>
@@ -230,7 +205,7 @@
                     <!-- Vencen esta semana -->
                     <Border Classes="Card">
                         <StackPanel Spacing="10">
-                            <TextBlock Text="Vencen esta semana" FontSize="14" FontWeight="SemiBold" />
+                            <TextBlock Text="Vencen esta semana" Classes="SectionTitle" />
                             <TextBlock Text="Sin vencimientos en los próximos 7 días 🎉" FontSize="12"
                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                        IsVisible="{Binding HasNoExpiring}" />
@@ -238,10 +213,8 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="vm:ExpiringRowVm">
                                         <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,4">
-                                            <Border Width="30" Height="30" CornerRadius="15" Background="#1F6366F1">
-                                                <TextBlock Text="{Binding Initials}" FontSize="11" FontWeight="SemiBold"
-                                                           Foreground="{DynamicResource SystemAccentColor}"
-                                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            <Border Classes="Avatar">
+                                                <TextBlock Text="{Binding Initials}" />
                                             </Border>
                                             <StackPanel Grid.Column="1" Margin="10,0,8,0" VerticalAlignment="Center" Spacing="1">
                                                 <TextBlock Text="{Binding MemberName}" FontSize="12.5" FontWeight="SemiBold"
@@ -262,7 +235,7 @@
                     <!-- Actividad de hoy -->
                     <Border Classes="Card">
                         <StackPanel Spacing="10">
-                            <TextBlock Text="Actividad de hoy" FontSize="14" FontWeight="SemiBold" />
+                            <TextBlock Text="Actividad de hoy" Classes="SectionTitle" />
                             <TextBlock Text="Todavía no hubo accesos hoy" FontSize="12"
                                        Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                        IsVisible="{Binding HasNoAccess}" />
@@ -270,10 +243,8 @@
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="vm:AccessRowVm">
                                         <Grid ColumnDefinitions="Auto,*,Auto,Auto" Margin="0,4">
-                                            <Border Width="30" Height="30" CornerRadius="15" Background="#1F6366F1">
-                                                <TextBlock Text="{Binding Initials}" FontSize="11" FontWeight="SemiBold"
-                                                           Foreground="{DynamicResource SystemAccentColor}"
-                                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                            <Border Classes="Avatar">
+                                                <TextBlock Text="{Binding Initials}" />
                                             </Border>
                                             <StackPanel Grid.Column="1" Margin="10,0,8,0" VerticalAlignment="Center" Spacing="1">
                                                 <TextBlock Text="{Binding MemberName}" FontSize="12.5" FontWeight="SemiBold"

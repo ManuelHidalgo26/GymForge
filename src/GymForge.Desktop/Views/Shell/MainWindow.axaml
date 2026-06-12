@@ -215,7 +215,7 @@
             <!-- Topbar -->
             <Border Grid.Row="0" Padding="16,0"
                     Background="{DynamicResource TopbarBackground}"
-                    BorderBrush="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+                    BorderBrush="{DynamicResource SurfaceBorderBrush}"
                     BorderThickness="0,0,0,1">
                 <DockPanel>
                     <!-- Back button (visible when navigated to a detail view) -->
@@ -260,21 +260,20 @@
                         <TextBlock Text="{Binding Session.CashierName}"
                                    VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold"
                                    IsVisible="{Binding Session.IsSignedIn}" />
-                        <Border Width="32" Height="32" CornerRadius="16"
-                                Background="{DynamicResource SystemAccentColor}"
+                        <Border Classes="Avatar" Width="32" Height="32" CornerRadius="16"
                                 ToolTip.Tip="{Binding Session.CashierName}">
-                            <TextBlock Text="A" FontWeight="Bold" Foreground="White"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center" />
+                            <TextBlock Text="A" FontWeight="Bold" />
                         </Border>
                     </StackPanel>
                 </DockPanel>
             </Border>
 
-            <!-- Content router — DataTemplates in App.axaml resolve the correct View -->
-            <ContentControl Grid.Row="1"
-                            Name="ContentArea"
-                            Content="{Binding CurrentViewModel}" />
+            <!-- Content router — DataTemplates in App.axaml resolve the correct View.
+                 Lienzo gris: las cards de cada vista flotan sobre este fondo. -->
+            <Border Grid.Row="1" Background="{DynamicResource ContentBackground}">
+                <ContentControl Name="ContentArea"
+                                Content="{Binding CurrentViewModel}" />
+            </Border>
 
         </Grid>
 

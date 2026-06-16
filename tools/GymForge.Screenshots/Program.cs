@@ -183,9 +183,12 @@ Pump(kioskVm.ProcessCredentialAsync("33444555", AccessMethod.Manual));
 Pump(dashboardVm.LoadCommand.ExecuteAsync(null));
 Capture("01-dashboard", new DashboardView { DataContext = dashboardVm }, 1180, 820, outDir);
 
-// Dashboard en dark mode (auditoría del tema oscuro)
+// Auditoría del tema oscuro: dashboard + vistas nuevas (Fase 7, consistencia dark)
 Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
 Capture("14-dashboard-dark", new DashboardView { DataContext = dashboardVm }, 1180, 820, outDir);
+Capture("15-productos-dark", new GymForge.Desktop.Views.Products.ProductsView { DataContext = productsVm }, 1180, 760, outDir);
+Capture("11-clases-dark", new GymForge.Desktop.Views.Classes.ClassesView { DataContext = classesVm }, 1180, 760, outDir);
+Capture("16-rutinas-armador-dark", new GymForge.Desktop.Views.Routines.RoutineBuilderView { DataContext = builderVm }, 1180, 820, outDir);
 Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
 
 // Shell completo: sidebar + topbar + dashboard (la ventana real de la app)

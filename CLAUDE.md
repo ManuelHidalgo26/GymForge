@@ -117,7 +117,9 @@ dotnet ef database update --project src/GymForge.Infrastructure --startup-projec
 - [x] Cobro unificado: pago persiste + impacta caja (ICashRegister); modal de
       cobro/venta (membresía → socio+plan / producto → socio+producto+stock);
       recaudación del Dashboard desde pagos reales
-- [ ] POS: scanner HID, venta a no socio (Payment.MemberId nullable), recibo PDF
+- [x] POS: venta a no socio (Payment.MemberId nullable + Payment.SaleId) con
+      toggle "consumidor final" en Caja; recibo de venta con detalle armado
+      desde Sale.Lines (con IVA por línea). Pendiente: scanner HID.
 - [ ] Facturación AFIP WSFE (SOAP) — FiscalBroker completo
 - [ ] WhatsApp via Twilio/Wassenger (notificaciones cobros)
 - [ ] Dunning automático (job nocturno 5 etapas)
@@ -125,11 +127,16 @@ dotnet ef database update --project src/GymForge.Infrastructure --startup-projec
 - [x] UI del mockup: Planes (CRUD), Reportes (recaudación por período),
       Config (gimnasio+sedes), Clases v1 (catálogo) y Rutinas v1 (biblioteca
       de ejercicios con búsqueda/filtro)
-- [ ] Clases v2: horarios + reservas · Rutinas v2: armador por socio
-- [ ] Vista Productos (catálogo + stock; hoy es placeholder)
+- [x] Clases v2: agenda semanal de horarios + reservas de socios (cupo,
+      reserva/cancelación) · Rutinas v2: armador por socio (rutina → días →
+      ejercicios de la biblioteca con series/reps). "Rutinas" es un hub con
+      pestañas Armador | Biblioteca.
+- [x] Vista Productos: catálogo + stock por sede (ABM + ajuste de stock con
+      punto de reposición y aviso "Reponer")
 - [x] Recibo PDF al cobrar (QuestPDF): se genera y abre solo al confirmar
       cualquier cobro (modal de pago y de venta); queda en
-      `%LOCALAPPDATA%\GymForge\recibos\AAAA-MM\`. Reimpresión desde historial: pendiente.
+      `%LOCALAPPDATA%\GymForge\recibos\AAAA-MM\`. Reimpresión desde el historial
+      de pagos (Reportes → botón "Recibo"): regenera el PDF con BuildReceiptQuery.
 - [x] Licenciamiento v1 (detalle en Sprint 3)
 - [x] Dashboard premium: KPIs con tendencia y subtítulos reales, gráfico de
       recaudación de 30 días (XAML nativo), vencimientos de la semana y

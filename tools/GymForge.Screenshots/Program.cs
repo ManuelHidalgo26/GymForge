@@ -136,6 +136,17 @@ Capture("11-clases", new GymForge.Desktop.Views.Classes.ClassesView { DataContex
 var libraryVm = new GymForge.Desktop.ViewModels.Routines.ExerciseLibraryViewModel(mediator2, session);
 Capture("12-rutinas-biblioteca", new GymForge.Desktop.Views.Routines.ExerciseLibraryView { DataContext = libraryVm }, 1180, 760, outDir);
 
+// Productos: catálogo con stock por sede (alta nueva + uno con aviso de reposición)
+WaitFor(mediator2.Send(new GymForge.Application.UseCases.Products.CreateProductCommand(
+    session.CompanyId, "TOAL-GF", "Toalla GymForge", 12_000m, 6_000m, "7791234567890")));
+var productsVm = new GymForge.Desktop.ViewModels.Products.ProductsViewModel(mediator2, session);
+Pump(productsVm.LoadCommand.ExecuteAsync(null));
+var agua = productsVm.Products.First(p => p.Sku == "AGUA-500");
+WaitFor(mediator2.Send(new GymForge.Application.UseCases.Products.AdjustStockCommand(
+    session.CompanyId, session.SiteId, agua.Id, 0m, agua.StockQty + 5m)));  // → pill "Reponer"
+Pump(productsVm.LoadCommand.ExecuteAsync(null));
+Capture("15-productos", new GymForge.Desktop.Views.Products.ProductsView { DataContext = productsVm }, 1180, 760, outDir);
+
 // Check-in: ingreso manual por DNI de un socio con membresía → permitido
 var kioskVm = new GymForge.Desktop.ViewModels.Checkin.CheckInKioskViewModel(
     sp.GetRequiredService<ValidateSwipeUseCase>(), session);

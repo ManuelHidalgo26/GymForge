@@ -31,6 +31,27 @@ public class Product : BaseEntity
             SalePrice = salePrice,
             CostPrice = costPrice
         };
+
+    public void Update(string name, decimal salePrice, decimal costPrice, string? barcode)
+    {
+        Name = name;
+        SalePrice = salePrice;
+        CostPrice = costPrice;
+        Barcode = barcode;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Activate()
+    {
+        IsActive = true;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void Deactivate()
+    {
+        IsActive = false;
+        UpdatedAt = DateTime.UtcNow;
+    }
 }
 
 public class StockBySite : BaseEntity
@@ -51,8 +72,16 @@ public class StockBySite : BaseEntity
 
     public void AdjustStock(decimal delta)
     {
-        Qty += delta;
-        if (Qty < 0) throw new InvalidOperationException("Stock cannot go negative.");
+        var newQty = Qty + delta;
+        if (newQty < 0) throw new InvalidOperationException("Stock cannot go negative.");
+        Qty = newQty;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void SetReorderPoint(decimal reorderPoint)
+    {
+        if (reorderPoint < 0) throw new InvalidOperationException("Reorder point cannot be negative.");
+        ReorderPoint = reorderPoint;
         UpdatedAt = DateTime.UtcNow;
     }
 }

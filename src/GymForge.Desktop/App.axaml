@@ -11,6 +11,7 @@
              xmlns:vmSettings="using:GymForge.Desktop.ViewModels.Settings"
              xmlns:vmClasses="using:GymForge.Desktop.ViewModels.Classes"
              xmlns:vmRoutines="using:GymForge.Desktop.ViewModels.Routines"
+             xmlns:vmProducts="using:GymForge.Desktop.ViewModels.Products"
              xmlns:vmShared="using:GymForge.Desktop.ViewModels.Shared"
              xmlns:vDash="using:GymForge.Desktop.Views.Dashboard"
              xmlns:vMembers="using:GymForge.Desktop.Views.Members"
@@ -22,6 +23,7 @@
              xmlns:vSettings="using:GymForge.Desktop.Views.Settings"
              xmlns:vClasses="using:GymForge.Desktop.Views.Classes"
              xmlns:vRoutines="using:GymForge.Desktop.Views.Routines"
+             xmlns:vProducts="using:GymForge.Desktop.Views.Products"
              xmlns:vShared="using:GymForge.Desktop.Views.Shared"
              xmlns:conv="using:GymForge.Desktop.Converters"
              x:Class="GymForge.Desktop.App"
@@ -74,6 +76,9 @@
         </DataTemplate>
         <DataTemplate DataType="vmRoutines:ExerciseLibraryViewModel">
             <vRoutines:ExerciseLibraryView />
+        </DataTemplate>
+        <DataTemplate DataType="vmProducts:ProductsViewModel">
+            <vProducts:ProductsView />
         </DataTemplate>
         <DataTemplate DataType="vmCharges:PaymentModalViewModel">
             <vCharges:PaymentModalView />

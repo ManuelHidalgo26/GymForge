@@ -86,6 +86,9 @@ public static class ServiceCollectionExtensions
         services.AddTransient<ViewModels.Classes.ClassesViewModel>();
         services.AddTransient<ViewModels.Routines.ExerciseLibraryViewModel>();
 
+        // ── Products ──────────────────────────────────────────────────────────
+        services.AddTransient<ViewModels.Products.ProductsViewModel>();
+
         return services;
     }
 }

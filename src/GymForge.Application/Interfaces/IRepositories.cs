@@ -66,8 +66,15 @@ public interface IMembershipTypeRepository
 public interface IProductRepository
 {
     Task<Product?> GetByIdAsync(Guid id, CancellationToken ct = default);
+    /// <summary>Solo productos activos (para vender).</summary>
     Task<IReadOnlyList<Product>> GetByCompanyAsync(Guid companyId, CancellationToken ct = default);
+    /// <summary>Todos los productos con su stock, incluidos inactivos (para administrar).</summary>
+    Task<IReadOnlyList<Product>> GetAllByCompanyAsync(Guid companyId, CancellationToken ct = default);
+    Task<Product?> GetBySkuAsync(Guid companyId, string sku, CancellationToken ct = default);
     Task<StockBySite?> GetStockAsync(Guid productId, Guid siteId, CancellationToken ct = default);
+    Task AddAsync(Product product, CancellationToken ct = default);
+    Task AddStockAsync(StockBySite stock, CancellationToken ct = default);
+    Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
 
 public interface ISaleRepository

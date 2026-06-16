@@ -1,0 +1,181 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:fa="using:FluentAvalonia.UI.Controls"
+             xmlns:vm="using:GymForge.Desktop.ViewModels.Products"
+             xmlns:dto="using:GymForge.Application.DTOs"
+             x:Class="GymForge.Desktop.Views.Products.ProductsView"
+             x:DataType="vm:ProductsViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*">
+
+        <!-- ── Toolbar ────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0" Classes="Toolbar">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8">
+                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Tag}" FontSize="20" VerticalAlignment="Center" />
+                    <TextBlock Text="Productos" Classes="ToolbarTitle" />
+                    <Border Classes="CountBadge">
+                        <TextBlock Text="{Binding Products.Count}" />
+                    </Border>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8"
+                            HorizontalAlignment="Right">
+                    <Button Command="{Binding LoadCommand}" Classes="Ghost" ToolTip.Tip="Actualizar">
+                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Refresh}" FontSize="16" />
+                    </Button>
+                    <Button Command="{Binding OpenCreateFormCommand}" Classes="Primary">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Add}" FontSize="16" />
+                            <TextBlock Text="Nuevo producto" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ── Formulario alta / edición ──────────────────────────────────── -->
+        <Border Grid.Row="1" Classes="Toolbar" IsVisible="{Binding IsFormOpen}">
+            <StackPanel Spacing="10">
+                <TextBlock Text="{Binding FormTitle}" FontSize="13" FontWeight="SemiBold" />
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="SKU *" Classes="FormLabel" />
+                        <TextBox Text="{Binding Sku}" Watermark="Ej: PROT-1KG" Width="140"
+                                 IsEnabled="{Binding IsSkuEditable}" />
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Nombre *" Classes="FormLabel" />
+                        <TextBox Text="{Binding Name}" Watermark="Ej: Proteína 1kg" Width="240" />
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Precio de venta *" Classes="FormLabel" />
+                        <NumericUpDown Value="{Binding SalePrice}" Minimum="0" Increment="500"
+                                       FormatString="C0" Width="150" />
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Costo" Classes="FormLabel" />
+                        <NumericUpDown Value="{Binding CostPrice}" Minimum="0" Increment="500"
+                                       FormatString="C0" Width="150" />
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Código de barras" Classes="FormLabel" />
+                        <TextBox Text="{Binding Barcode}" Watermark="(opcional)" Width="160" />
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="Guardar" Command="{Binding SaveCommand}" Classes="Primary" />
+                    <Button Content="Cancelar" Command="{Binding CancelFormCommand}" Classes="Ghost" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- ── Formulario de stock ────────────────────────────────────────── -->
+        <Border Grid.Row="2" Classes="Toolbar" IsVisible="{Binding IsStockFormOpen}">
+            <StackPanel Spacing="10">
+                <TextBlock Text="{Binding StockFormTitle}" FontSize="13" FontWeight="SemiBold" />
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Ajuste (+ entrada / − salida)" Classes="FormLabel" />
+                        <NumericUpDown Value="{Binding StockDelta}" Increment="1" Width="150" />
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Avisar reposición desde" Classes="FormLabel" />
+                        <NumericUpDown Value="{Binding ReorderPoint}" Minimum="0" Increment="1" Width="150" />
+                    </StackPanel>
+                    <StackPanel Spacing="4" VerticalAlignment="Bottom">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Aplicar" Command="{Binding ApplyStockCommand}" Classes="Primary" />
+                            <Button Content="Cancelar" Command="{Binding CancelStockFormCommand}" Classes="Ghost" />
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- ── Error ──────────────────────────────────────────────────────── -->
+        <fa:InfoBar Grid.Row="3" Margin="16,8,16,0"
+                    IsOpen="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                    Severity="Error" Title="Atención"
+                    Message="{Binding ErrorMessage}" IsClosable="False" />
+
+        <!-- ── Catálogo ───────────────────────────────────────────────────── -->
+        <DataGrid Grid.Row="4" ItemsSource="{Binding Products}"
+                  IsReadOnly="True" AutoGenerateColumns="False" CanUserSortColumns="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="SKU" Binding="{Binding Sku}" Width="120" />
+                <DataGridTextColumn Header="Producto" Binding="{Binding Name}" Width="*" />
+                <DataGridTextColumn Header="Precio" Binding="{Binding SalePrice, StringFormat={}{0:C}}" Width="120" />
+                <DataGridTextColumn Header="Costo" Binding="{Binding CostPrice, StringFormat={}{0:C}}" Width="120" />
+
+                <!-- Stock con aviso de reposición -->
+                <DataGridTemplateColumn Header="Stock" Width="130" SortMemberPath="StockQty">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="dto:ProductRowDto">
+                            <StackPanel Orientation="Horizontal" Spacing="6" Margin="8,0">
+                                <TextBlock Text="{Binding StockQty, StringFormat={}{0:0.##}}"
+                                           VerticalAlignment="Center" />
+                                <Border Classes="Pill warning" IsVisible="{Binding IsLowStock}">
+                                    <TextBlock Text="Reponer" />
+                                </Border>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- Estado -->
+                <DataGridTemplateColumn Header="Estado" Width="100" SortMemberPath="IsActive">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="dto:ProductRowDto">
+                            <Border Classes="Pill" Margin="4,0">
+                                <Border.Background>
+                                    <SolidColorBrush Color="{Binding IsActive, Converter={StaticResource ActiveColorConverter}}" Opacity="0.15" />
+                                </Border.Background>
+                                <TextBlock Text="{Binding IsActive, Converter={StaticResource ActiveLabelConverter}}">
+                                    <TextBlock.Foreground>
+                                        <SolidColorBrush Color="{Binding IsActive, Converter={StaticResource ActiveColorConverter}}" />
+                                    </TextBlock.Foreground>
+                                </TextBlock>
+                            </Border>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- Acciones -->
+                <DataGridTemplateColumn Header="" Width="190" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="dto:ProductRowDto">
+                            <StackPanel Orientation="Horizontal" Spacing="4" Margin="4,0">
+                                <Button Classes="IconButton" ToolTip.Tip="Modificar"
+                                        CommandParameter="{Binding}"
+                                        Command="{Binding $parent[UserControl].((vm:ProductsViewModel)DataContext).EditProductCommand}">
+                                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Edit}" FontSize="14" />
+                                </Button>
+                                <Button Classes="IconButton" ToolTip.Tip="Ajustar stock"
+                                        CommandParameter="{Binding}"
+                                        Command="{Binding $parent[UserControl].((vm:ProductsViewModel)DataContext).OpenStockFormCommand}">
+                                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Sync}" FontSize="14" />
+                                </Button>
+                                <Button Classes="Ghost"
+                                        CommandParameter="{Binding}"
+                                        Command="{Binding $parent[UserControl].((vm:ProductsViewModel)DataContext).ToggleActiveCommand}">
+                                    <TextBlock Text="{Binding IsActive, Converter={StaticResource ActiveToggleLabelConverter}}"
+                                               FontSize="12" />
+                                </Button>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- ── Estado vacío ───────────────────────────────────────────────── -->
+        <StackPanel Grid.Row="4" Classes="EmptyState" IsVisible="{Binding IsEmpty}">
+            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Tag}" />
+            <TextBlock Classes="EmptyTitle" Text="Todavía no hay productos" />
+            <TextBlock Classes="EmptyBody"
+                       Text="Creá el primero con «Nuevo producto»; después cargale stock y vendelo desde Caja." />
+        </StackPanel>
+
+    </Grid>
+
+</UserControl>

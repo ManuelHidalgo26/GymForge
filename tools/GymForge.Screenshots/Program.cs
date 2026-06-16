@@ -43,6 +43,7 @@ var session = sp.GetRequiredService<SessionContext>();
 await session.InitializeAsync();
 
 var samplePaymentId = await SeedSampleMembersAsync(sp, session);
+var sampleScheduleId = await SeedSampleClassesAsync(sp, session);
 
 // Con una clave real en el entorno, Configuración se captura en estado licenciado
 // (prueba de punta a punta de la clave pública embebida en LicenseService).
@@ -133,8 +134,13 @@ var settingsVm = new GymForge.Desktop.ViewModels.Settings.SettingsViewModel(
     sp.GetRequiredService<GymForge.Application.UseCases.Licensing.CurrentLicense>());
 Capture("10-configuracion", new GymForge.Desktop.Views.Settings.SettingsView { DataContext = settingsVm }, 1180, 1560, outDir);
 
-// Clases: catálogo con el formulario abierto (sin datos → estado vacío + form)
-var classesVm = new GymForge.Desktop.ViewModels.Classes.ClassesViewModel(mediator2, session) { IsFormOpen = true };
+// Clases v2: agenda semanal con un horario seleccionado y sus reservas
+var classesVm = new GymForge.Desktop.ViewModels.Classes.ClassesViewModel(
+    mediator2, sp.GetRequiredService<IMemberRepository>(), session);
+Pump(classesVm.LoadCommand.ExecuteAsync(null));
+classesVm.SelectedSchedule = classesVm.Schedules.FirstOrDefault(s => s.Id == sampleScheduleId)
+    ?? classesVm.Schedules.FirstOrDefault();
+for (int i = 0; i < 15; i++) { Dispatcher.UIThread.RunJobs(); Thread.Sleep(10); }  // dejar cargar las reservas
 Capture("11-clases", new GymForge.Desktop.Views.Classes.ClassesView { DataContext = classesVm }, 1180, 760, outDir);
 
 // Rutinas: biblioteca de ejercicios (80 del seed)
@@ -232,6 +238,31 @@ static void CaptureWindow(string name, Window window, string outDir)
     frame?.Save(path);
     window.Close();
     Console.WriteLine($"  {name}.png  {frame?.PixelSize}");
+}
+
+static async Task<Guid> SeedSampleClassesAsync(IServiceProvider sp, SessionContext session)
+{
+    var mediator = sp.GetRequiredService<IMediator>();
+    var memberRepo = sp.GetRequiredService<IMemberRepository>();
+
+    var cls = await mediator.Send(new GymForge.Application.UseCases.Classes.CreateClassCommand(
+        session.CompanyId, "Funcional", 60, 12));
+    await mediator.Send(new GymForge.Application.UseCases.Classes.CreateClassCommand(
+        session.CompanyId, "Spinning", 45, 16));
+
+    var today = DateTime.Today;
+    var monday = DateOnly.FromDateTime(today).AddDays(-(((int)today.DayOfWeek + 6) % 7));
+    var first = await mediator.Send(new GymForge.Application.UseCases.Classes.CreateScheduleCommand(
+        session.CompanyId, session.SiteId, cls.Id, monday.ToDateTime(new TimeOnly(18, 0)), 12));
+    await mediator.Send(new GymForge.Application.UseCases.Classes.CreateScheduleCommand(
+        session.CompanyId, session.SiteId, cls.Id, monday.AddDays(2).ToDateTime(new TimeOnly(19, 0)), 12));
+
+    var members = await memberRepo.GetPagedAsync(session.CompanyId, session.SiteId, 1, 10);
+    foreach (var m in members.Take(3))
+        await mediator.Send(new GymForge.Application.UseCases.Classes.BookMemberCommand(
+            session.CompanyId, first.Id, m.Id));
+
+    return first.Id;
 }
 
 static async Task<Guid?> SeedSampleMembersAsync(IServiceProvider sp, SessionContext session)

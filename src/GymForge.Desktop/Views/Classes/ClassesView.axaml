@@ -2,36 +2,48 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:fa="using:FluentAvalonia.UI.Controls"
              xmlns:vm="using:GymForge.Desktop.ViewModels.Classes"
+             xmlns:cls="using:GymForge.Application.UseCases.Classes"
+             xmlns:dto="using:GymForge.Application.DTOs"
              x:Class="GymForge.Desktop.Views.Classes.ClassesView"
              x:DataType="vm:ClassesViewModel">
 
-    <Grid RowDefinitions="Auto,Auto,*">
+    <Grid RowDefinitions="Auto,Auto,Auto,*">
 
+        <!-- ── Toolbar ─────────────────────────────────────────────────────── -->
         <Border Grid.Row="0" Classes="Toolbar">
             <DockPanel>
-                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8">
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                     <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Calendar}" FontSize="20" VerticalAlignment="Center" />
                     <TextBlock Text="Clases" Classes="ToolbarTitle" />
-                    <Border Classes="CountBadge">
-                        <TextBlock Text="{Binding Classes.Count}" />
-                    </Border>
+                    <Border Classes="CountBadge"><TextBlock Text="{Binding Schedules.Count}" /></Border>
                 </StackPanel>
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8"
-                            HorizontalAlignment="Right">
-                    <Button Command="{Binding LoadCommand}" Classes="Ghost" ToolTip.Tip="Actualizar">
-                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Refresh}" FontSize="16" />
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                    <Button Command="{Binding PrevWeekCommand}" Classes="Ghost" ToolTip.Tip="Semana anterior">
+                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Back}" FontSize="14" />
                     </Button>
-                    <Button Command="{Binding OpenFormCommand}" Classes="Primary">
+                    <TextBlock Text="{Binding WeekLabel}" VerticalAlignment="Center" FontWeight="SemiBold" Width="120"
+                               TextAlignment="Center" />
+                    <Button Command="{Binding NextWeekCommand}" Classes="Ghost" ToolTip.Tip="Semana siguiente">
+                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Forward}" FontSize="14" />
+                    </Button>
+                    <Button Content="Esta semana" Command="{Binding ThisWeekCommand}" Classes="Ghost" />
+                    <Button Command="{Binding OpenFormCommand}" Classes="Ghost">
                         <StackPanel Orientation="Horizontal" Spacing="6">
-                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Add}" FontSize="16" />
+                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Add}" FontSize="14" />
                             <TextBlock Text="Nueva clase" />
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{Binding OpenScheduleFormCommand}" Classes="Primary">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Add}" FontSize="14" />
+                            <TextBlock Text="Nuevo horario" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
             </DockPanel>
         </Border>
 
-        <!-- Formulario -->
+        <!-- ── Form: nueva clase ───────────────────────────────────────────── -->
         <Border Grid.Row="1" Classes="Toolbar" IsVisible="{Binding IsFormOpen}">
             <StackPanel Spacing="10">
                 <StackPanel Orientation="Horizontal" Spacing="10">
@@ -48,8 +60,6 @@
                         <NumericUpDown Value="{Binding Capacity}" Minimum="1" Increment="5" Width="120" />
                     </StackPanel>
                 </StackPanel>
-                <fa:InfoBar IsOpen="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
-                            Severity="Error" Title="Error" Message="{Binding ErrorMessage}" IsClosable="False" />
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <Button Content="Crear clase" Command="{Binding CreateCommand}" Classes="Primary" />
                     <Button Content="Cancelar" Command="{Binding CancelFormCommand}" Classes="Ghost" />
@@ -57,21 +67,134 @@
             </StackPanel>
         </Border>
 
-        <DataGrid Grid.Row="2" ItemsSource="{Binding Classes}"
-                  IsReadOnly="True" AutoGenerateColumns="False" CanUserSortColumns="True">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Clase" Binding="{Binding Name}" Width="*" />
-                <DataGridTextColumn Header="Duración" Binding="{Binding DurationMin, StringFormat={}{0} min}" Width="140" />
-                <DataGridTextColumn Header="Cupo" Binding="{Binding Capacity, StringFormat={}{0} personas}" Width="140" />
-            </DataGrid.Columns>
-        </DataGrid>
+        <!-- ── Form: nuevo horario ─────────────────────────────────────────── -->
+        <Border Grid.Row="2" Classes="Toolbar" IsVisible="{Binding IsScheduleFormOpen}">
+            <StackPanel Spacing="10">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Clase *" Classes="FormLabel" />
+                        <ComboBox ItemsSource="{Binding Classes}" SelectedItem="{Binding ScheduleClass}" Width="200">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="cls:ClassDto">
+                                    <TextBlock Text="{Binding Name}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Fecha *" Classes="FormLabel" />
+                        <DatePicker SelectedDate="{Binding ScheduleDate, Converter={StaticResource DateOnlyOffset}}" />
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Hora *" Classes="FormLabel" />
+                        <TimePicker SelectedTime="{Binding ScheduleTime}" ClockIdentifier="24HourClock" />
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Cupo" Classes="FormLabel" />
+                        <NumericUpDown Value="{Binding ScheduleCapacity}" Minimum="1" Increment="1" Width="120" />
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="Crear horario" Command="{Binding CreateScheduleCommand}" Classes="Primary" />
+                    <Button Content="Cancelar" Command="{Binding CancelScheduleFormCommand}" Classes="Ghost" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
 
-        <StackPanel Grid.Row="2" Classes="EmptyState" IsVisible="{Binding IsEmpty}">
-            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Calendar}" />
-            <TextBlock Classes="EmptyTitle" Text="Todavía no hay clases" />
-            <TextBlock Classes="EmptyBody"
-                       Text="Creá la primera con «Nueva clase». Los horarios y reservas llegan después." />
-        </StackPanel>
+        <!-- ── Cuerpo: agenda + reservas ───────────────────────────────────── -->
+        <Grid Grid.Row="3" ColumnDefinitions="*,360" Margin="16,12">
+
+            <!-- Error -->
+            <fa:InfoBar Grid.Column="0" Grid.ColumnSpan="2" VerticalAlignment="Top"
+                        IsOpen="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                        Severity="Error" Title="Error" Message="{Binding ErrorMessage}" IsClosable="False" />
+
+            <!-- Agenda de la semana -->
+            <ListBox Grid.Column="0" Margin="0,0,12,0"
+                     ItemsSource="{Binding Schedules}"
+                     SelectedItem="{Binding SelectedSchedule}"
+                     Background="Transparent">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="cls:ScheduleRowDto">
+                        <Grid ColumnDefinitions="Auto,*,Auto" Margin="4">
+                            <Border Grid.Column="0" Classes="IconChip" VerticalAlignment="Center">
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Calendar}" />
+                            </Border>
+                            <StackPanel Grid.Column="1" Spacing="2" Margin="12,0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding ClassName}" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding Start, StringFormat='ddd dd/MM · HH:mm'}"
+                                           Classes="FormLabel" />
+                            </StackPanel>
+                            <Border Grid.Column="2" Classes="Pill" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Occupancy}" />
+                            </Border>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+
+            <!-- Estado vacío de la agenda -->
+            <StackPanel Grid.Column="0" Classes="EmptyState" IsVisible="{Binding IsEmpty}">
+                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Calendar}" />
+                <TextBlock Classes="EmptyTitle" Text="Sin horarios esta semana" />
+                <TextBlock Classes="EmptyBody" Text="Creá uno con «Nuevo horario» o cambiá de semana." />
+            </StackPanel>
+
+            <!-- Panel del horario seleccionado: reservas -->
+            <Border Grid.Column="1" Classes="Card" IsVisible="{Binding HasSelection}" VerticalAlignment="Stretch">
+                <Grid RowDefinitions="Auto,Auto,Auto,*" DataContext="{Binding SelectedSchedule}">
+                    <StackPanel Grid.Row="0" Spacing="2">
+                        <TextBlock Text="{Binding ClassName}" FontSize="16" FontWeight="Bold" />
+                        <TextBlock Text="{Binding Start, StringFormat='dddd dd/MM · HH:mm'}" Classes="FormLabel" />
+                        <TextBlock Text="{Binding Occupancy, StringFormat='Ocupación: {0}'}" Classes="FormLabel" />
+                    </StackPanel>
+
+                    <!-- Reservar socio (usa el VM raíz) -->
+                    <StackPanel Grid.Row="1" Spacing="6" Margin="0,12,0,0"
+                                DataContext="{Binding $parent[UserControl].((vm:ClassesViewModel)DataContext)}">
+                        <TextBlock Text="Reservar socio" Classes="FormLabel" />
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Margin="6,0,0,0" Classes="Primary"
+                                    Content="Reservar" Command="{Binding BookMemberCommand}" />
+                            <AutoCompleteBox ItemsSource="{Binding Members}"
+                                             SelectedItem="{Binding SelectedMember}"
+                                             ValueMemberBinding="{Binding FullName}"
+                                             FilterMode="Contains" Watermark="Buscar socio..." />
+                        </DockPanel>
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="2" Text="Reservados" Classes="FormLabel" Margin="0,14,0,4" />
+
+                    <ListBox Grid.Row="3"
+                             ItemsSource="{Binding $parent[UserControl].((vm:ClassesViewModel)DataContext).Bookings}"
+                             Background="Transparent">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="cls:BookingRowDto">
+                                <DockPanel Margin="2">
+                                    <Button DockPanel.Dock="Right" Classes="Ghost" ToolTip.Tip="Cancelar reserva"
+                                            Command="{Binding $parent[UserControl].((vm:ClassesViewModel)DataContext).CancelBookingCommand}"
+                                            CommandParameter="{Binding Id}">
+                                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Cancel}" FontSize="14" />
+                                    </Button>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding MemberName}" />
+                                    </StackPanel>
+                                </DockPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+
+            <!-- Sin horario seleccionado -->
+            <StackPanel Grid.Column="1" Classes="EmptyState" IsVisible="{Binding !HasSelection}"
+                        VerticalAlignment="Center">
+                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.People}" />
+                <TextBlock Classes="EmptyTitle" Text="Elegí un horario" />
+                <TextBlock Classes="EmptyBody" Text="Seleccioná un horario de la agenda para ver y cargar reservas." />
+            </StackPanel>
+
+        </Grid>
 
     </Grid>
 

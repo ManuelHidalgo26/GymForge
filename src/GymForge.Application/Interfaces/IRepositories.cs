@@ -132,7 +132,21 @@ public interface IAccessLogRepository
 public interface IClassRepository
 {
     Task<IReadOnlyList<ClassDescription>> GetByCompanyAsync(Guid companyId, CancellationToken ct = default);
+    Task<ClassDescription?> GetClassAsync(Guid classDescriptionId, CancellationToken ct = default);
     Task AddAsync(ClassDescription cls, CancellationToken ct = default);
+
+    // Horarios (ClassSchedule)
+    Task AddScheduleAsync(ClassSchedule schedule, CancellationToken ct = default);
+    /// <summary>Horario por id con su clase y reservas cargadas.</summary>
+    Task<ClassSchedule?> GetScheduleAsync(Guid scheduleId, CancellationToken ct = default);
+    /// <summary>Horarios de la sede en un rango, con clase y reservas (para contar ocupación).</summary>
+    Task<IReadOnlyList<ClassSchedule>> GetSchedulesAsync(
+        Guid companyId, Guid siteId, DateTime from, DateTime to, CancellationToken ct = default);
+
+    // Reservas (Booking)
+    Task AddBookingAsync(Booking booking, CancellationToken ct = default);
+    Task<Booking?> GetBookingAsync(Guid bookingId, CancellationToken ct = default);
+
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
 

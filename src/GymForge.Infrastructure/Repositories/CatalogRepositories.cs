@@ -17,8 +17,36 @@ public class ClassRepository : IClassRepository
             .OrderBy(c => c.Name)
             .ToListAsync(ct);
 
+    public async Task<ClassDescription?> GetClassAsync(Guid classDescriptionId, CancellationToken ct = default) =>
+        await _db.ClassDescriptions.FirstOrDefaultAsync(c => c.Id == classDescriptionId, ct);
+
     public async Task AddAsync(ClassDescription cls, CancellationToken ct = default) =>
         await _db.ClassDescriptions.AddAsync(cls, ct);
+
+    public async Task AddScheduleAsync(ClassSchedule schedule, CancellationToken ct = default) =>
+        await _db.ClassSchedules.AddAsync(schedule, ct);
+
+    public async Task<ClassSchedule?> GetScheduleAsync(Guid scheduleId, CancellationToken ct = default) =>
+        await _db.ClassSchedules
+            .Include(s => s.ClassDescription)
+            .Include(s => s.Bookings).ThenInclude(b => b.Member)
+            .FirstOrDefaultAsync(s => s.Id == scheduleId, ct);
+
+    public async Task<IReadOnlyList<ClassSchedule>> GetSchedulesAsync(
+        Guid companyId, Guid siteId, DateTime from, DateTime to, CancellationToken ct = default) =>
+        await _db.ClassSchedules
+            .Include(s => s.ClassDescription)
+            .Include(s => s.Bookings)
+            .Where(s => s.CompanyId == companyId && s.SiteId == siteId &&
+                        s.StartDatetime >= from && s.StartDatetime < to)
+            .OrderBy(s => s.StartDatetime)
+            .ToListAsync(ct);
+
+    public async Task AddBookingAsync(Booking booking, CancellationToken ct = default) =>
+        await _db.Bookings.AddAsync(booking, ct);
+
+    public async Task<Booking?> GetBookingAsync(Guid bookingId, CancellationToken ct = default) =>
+        await _db.Bookings.FirstOrDefaultAsync(b => b.Id == bookingId, ct);
 
     public async Task<int> SaveChangesAsync(CancellationToken ct = default) =>
         await _db.SaveChangesAsync(ct);

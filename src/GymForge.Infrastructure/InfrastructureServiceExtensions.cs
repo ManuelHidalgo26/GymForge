@@ -56,6 +56,10 @@ public static class InfrastructureServiceExtensions
         await BaselineLegacyDatabaseAsync(db);
         await db.Database.MigrateAsync();
         await seeder.SeedAsync();
+
+        // Datos de demo para probar a mano (opt-in por env var).
+        if (Environment.GetEnvironmentVariable("GYMFORGE_SEED_DEMO") == "1")
+            await DemoDataSeeder.SeedAsync(scope.ServiceProvider);
     }
 
     // Versión informativa que se registra en __EFMigrationsHistory al hacer baseline.

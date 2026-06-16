@@ -69,7 +69,7 @@
   </ItemGroup>
 
   <ItemGroup Label="Updates">
-    <PackageVersion Include="Velopack" Version="0.0.981" />
+    <PackageVersion Include="Velopack" Version="1.2.0" />
   </ItemGroup>
 
   <ItemGroup Label="Polly + resilience">

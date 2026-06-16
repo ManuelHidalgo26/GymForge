@@ -6,6 +6,11 @@ using GymForge.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using System.Globalization;
+using Velopack;
+
+// Velopack: maneja los hooks de instalación/actualización (al correr el Setup.exe
+// o tras actualizar). En una ejecución normal no hace nada y sigue de largo.
+VelopackApp.Build().Run();
 
 // Moneda y fechas en formato AR ($35.000,00) sin depender de la config regional
 // de la máquina (en una Windows en-US mostraría US$).

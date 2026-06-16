@@ -63,6 +63,22 @@
                 </DataGridTemplateColumn>
                 <DataGridTextColumn Header="Monto"
                                     Binding="{Binding Amount, StringFormat={}{0:C}}" Width="140" />
+                <DataGridTemplateColumn Header="" Width="140">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="rep:ReportPaymentRow">
+                            <Button Classes="Ghost" Margin="8,0" HorizontalAlignment="Center"
+                                    ToolTip.Tip="Reimprimir recibo"
+                                    Command="{Binding ((vm:ReportsViewModel)DataContext).ReprintReceiptCommand,
+                                              RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                    CommandParameter="{Binding PaymentId}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Print}" />
+                                    <TextBlock Text="Recibo" />
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
 

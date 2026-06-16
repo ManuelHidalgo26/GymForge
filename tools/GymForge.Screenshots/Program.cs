@@ -121,7 +121,8 @@ var plansVm = new GymForge.Desktop.ViewModels.Plans.PlansViewModel(mediator2, se
 Capture("08-planes", new GymForge.Desktop.Views.Plans.PlansView { DataContext = plansVm }, 1180, 760, outDir);
 
 // Reportes: recaudación del mes con los pagos del seed
-var reportsVm = new GymForge.Desktop.ViewModels.Reports.ReportsViewModel(mediator2, session);
+var reportsVm = new GymForge.Desktop.ViewModels.Reports.ReportsViewModel(
+    mediator2, session, sp.GetRequiredService<GymForge.Desktop.Services.ReceiptService>());
 Capture("09-reportes", new GymForge.Desktop.Views.Reports.ReportsView { DataContext = reportsVm }, 1180, 760, outDir);
 
 // Configuración: datos del gimnasio + sedes

@@ -12,6 +12,7 @@ public partial class ReportsViewModel : ObservableObject
 {
     private readonly IMediator _mediator;
     private readonly SessionContext _session;
+    private readonly ReceiptService _receipts;
 
     [ObservableProperty] private DateOnly? _from;
     [ObservableProperty] private DateOnly? _to;
@@ -22,10 +23,11 @@ public partial class ReportsViewModel : ObservableObject
 
     public bool IsEmpty => !IsLoading && Rows.Count == 0;
 
-    public ReportsViewModel(IMediator mediator, SessionContext session)
+    public ReportsViewModel(IMediator mediator, SessionContext session, ReceiptService receipts)
     {
         _mediator = mediator;
         _session = session;
+        _receipts = receipts;
 
         var today = DateOnly.FromDateTime(DateTime.Today);
         _from = new DateOnly(today.Year, today.Month, 1);
@@ -52,6 +54,14 @@ public partial class ReportsViewModel : ObservableObject
             Rows = new ObservableCollection<ReportPaymentRow>(report.Rows);
         }
         finally { IsLoading = false; }
+    }
+
+    /// <summary>Reimprime el recibo de un pago: regenera el PDF y lo abre.</summary>
+    [RelayCommand]
+    private async Task ReprintReceiptAsync(Guid paymentId)
+    {
+        if (paymentId == Guid.Empty) return;
+        await _receipts.TryGenerateAndOpenAsync(paymentId, _session.CompanyId);
     }
 
     [RelayCommand]

@@ -4,7 +4,8 @@ using MediatR;
 
 namespace GymForge.Application.UseCases.Reports;
 
-public record ReportPaymentRow(DateTime ReceivedAt, string MemberName, PaymentMethod Method, decimal Amount);
+public record ReportPaymentRow(
+    Guid PaymentId, DateTime ReceivedAt, string MemberName, PaymentMethod Method, decimal Amount);
 
 public record PaymentsReport(decimal Total, int Count, IReadOnlyList<ReportPaymentRow> Rows);
 
@@ -25,7 +26,7 @@ public class GetPaymentsReportQueryHandler : IRequestHandler<GetPaymentsReportQu
 
         var list = await _payments.GetByPeriodAsync(q.CompanyId, q.SiteId, from, to, ct);
         var rows = list
-            .Select(p => new ReportPaymentRow(p.ReceivedAt, p.Member?.FullName ?? "—", p.Method, p.Amount))
+            .Select(p => new ReportPaymentRow(p.Id, p.ReceivedAt, p.Member?.FullName ?? "—", p.Method, p.Amount))
             .ToList();
 
         return new PaymentsReport(rows.Sum(r => r.Amount), rows.Count, rows);

@@ -169,15 +169,14 @@ WaitFor(mediator2.Send(new GymForge.Application.UseCases.Products.AdjustStockCom
 Pump(productsVm.LoadCommand.ExecuteAsync(null));
 Capture("15-productos", new GymForge.Desktop.Views.Products.ProductsView { DataContext = productsVm }, 1180, 760, outDir);
 
-// Check-in: ingreso manual por DNI de un socio con membresía → permitido
+// Check-in: varios accesos del día (poblan el panel "Accesos de hoy"); el último
+// permitido queda como resultado central. Sirve de actividad para el dashboard.
 var kioskVm = new GymForge.Desktop.ViewModels.Checkin.CheckInKioskViewModel(
-    sp.GetRequiredService<ValidateSwipeUseCase>(), session);
-Pump(kioskVm.ProcessCredentialAsync("30111222", AccessMethod.Manual));
+    sp.GetRequiredService<ValidateSwipeUseCase>(), mediator2, session);
+Pump(kioskVm.ProcessCredentialAsync("33444555", AccessMethod.Manual));  // sin membresía → rechazo
+Pump(kioskVm.ProcessCredentialAsync("31222333", AccessMethod.Manual));  // permitido
+Pump(kioskVm.ProcessCredentialAsync("30111222", AccessMethod.Manual));  // permitido (queda en pantalla)
 Capture("13-checkin-aprobado", new GymForge.Desktop.Views.Checkin.CheckInKioskView { DataContext = kioskVm }, 1180, 760, outDir);
-
-// Más actividad para el dashboard: otro permitido + un rechazo (sin membresía)
-Pump(kioskVm.ProcessCredentialAsync("31222333", AccessMethod.Manual));
-Pump(kioskVm.ProcessCredentialAsync("33444555", AccessMethod.Manual));
 
 // Dashboard premium: KPIs con tendencia + gráfico 30 días + actividad del día
 Pump(dashboardVm.LoadCommand.ExecuteAsync(null));

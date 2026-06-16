@@ -38,6 +38,7 @@ public static class ServiceCollectionExtensions
         // Gatekeeper
         services.AddSingleton<GatekeeperConfig>();
         services.AddScoped<ValidateSwipeUseCase>();
+        services.AddScoped<IValidateSwipeUseCase>(sp => sp.GetRequiredService<ValidateSwipeUseCase>());
 
         // ── Session ───────────────────────────────────────────────────────────
         // Singleton: tenant + sede activa + cajero + turno de caja en curso

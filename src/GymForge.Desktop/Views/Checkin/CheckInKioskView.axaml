@@ -1,146 +1,178 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:GymForge.Desktop.ViewModels.Checkin"
+             xmlns:access="using:GymForge.Application.UseCases.Access"
              xmlns:fa="using:FluentAvalonia.UI.Controls"
              x:Class="GymForge.Desktop.Views.Checkin.CheckInKioskView"
              x:DataType="vm:CheckInKioskViewModel"
              Background="#111113">
 
-    <!-- Full-screen kiosk — designed for touchscreen/RFID reader, no mouse required -->
     <Grid RowDefinitions="*,Auto">
 
-        <!-- Center card -->
-        <Border Grid.Row="0" HorizontalAlignment="Center" VerticalAlignment="Center"
-                Width="420" CornerRadius="20" Padding="40"
-                Background="#1E1E22"
-                BoxShadow="0 8 40 0 #88000000">
+        <Grid Grid.Row="0" ColumnDefinitions="*,380">
 
-            <StackPanel Spacing="24" HorizontalAlignment="Center">
+            <!-- ── Tarjeta central (lo que ve el socio) ──────────────────────── -->
+            <Border Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Width="420" CornerRadius="20" Padding="40"
+                    Background="#1E1E22" BoxShadow="0 8 40 0 #88000000">
 
-                <!-- IDLE state -->
-                <StackPanel IsVisible="{Binding IsIdle}" Spacing="20" HorizontalAlignment="Center">
-                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.TouchPointer}" FontSize="80" Opacity="0.3" Foreground="White" />
-                    <TextBlock Text="Acercá tu tarjeta o ingresá tu DNI"
-                               FontSize="18" Foreground="#AAAAAA"
-                               TextAlignment="Center" TextWrapping="Wrap" />
+                <StackPanel Spacing="24" HorizontalAlignment="Center">
 
-                    <!-- Manual PIN input -->
-                    <TextBox Text="{Binding CredentialInput}"
-                             Watermark="DNI / Número de socio"
-                             FontSize="22" TextAlignment="Center"
-                             Background="#2A2A30" Foreground="White"
-                             CornerRadius="10" Padding="16,12">
-                        <TextBox.KeyBindings>
-                            <KeyBinding Gesture="Enter" Command="{Binding ManualCheckInCommand}" />
-                        </TextBox.KeyBindings>
-                    </TextBox>
+                    <!-- IDLE -->
+                    <StackPanel IsVisible="{Binding IsIdle}" Spacing="20" HorizontalAlignment="Center">
+                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Contact}" FontSize="80" Opacity="0.3" Foreground="White" />
+                        <TextBlock Text="Acercá tu tarjeta o ingresá tu DNI"
+                                   FontSize="18" Foreground="#AAAAAA"
+                                   TextAlignment="Center" TextWrapping="Wrap" />
 
-                    <Button Content="Ingresar" Command="{Binding ManualCheckInCommand}"
-                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                            FontSize="18" Height="52" CornerRadius="10"
-                            Background="{DynamicResource SystemAccentColor}" Foreground="White" />
-                </StackPanel>
+                        <TextBox x:Name="DniInput" Text="{Binding CredentialInput}"
+                                 Watermark="DNI / Número de socio"
+                                 FontSize="22" TextAlignment="Center"
+                                 Background="#2A2A30" Foreground="White"
+                                 CornerRadius="10" Padding="16,12">
+                            <TextBox.KeyBindings>
+                                <KeyBinding Gesture="Enter" Command="{Binding ManualCheckInCommand}" />
+                            </TextBox.KeyBindings>
+                        </TextBox>
 
-                <!-- CHECKING state -->
-                <StackPanel IsVisible="{Binding State, Converter={x:Static ObjectConverters.Equal},
-                                        ConverterParameter={x:Static vm:KioskState.Checking}}"
-                            HorizontalAlignment="Center" Spacing="16">
-                    <fa:ProgressRing Width="60" Height="60" Foreground="White" />
-                    <TextBlock Text="Verificando..." FontSize="20" Foreground="White" TextAlignment="Center" />
-                </StackPanel>
+                        <Button Content="Ingresar" Command="{Binding ManualCheckInCommand}"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                                FontSize="18" Height="52" CornerRadius="10"
+                                Background="{DynamicResource SystemAccentColor}" Foreground="White" />
+                    </StackPanel>
 
-                <!-- GRANTED state — green semaphore -->
-                <StackPanel IsVisible="{Binding IsGranted}" Spacing="16" HorizontalAlignment="Center">
-                    <!-- Avatar / Photo -->
-                    <Border Width="160" Height="160" CornerRadius="80" ClipToBounds="True"
-                            HorizontalAlignment="Center">
-                        <Border.Background>
-                            <SolidColorBrush Color="#2A2A30" />
-                        </Border.Background>
-                        <Panel>
-                            <Image Source="{Binding MemberPhotoUrl}"
-                                   IsVisible="{Binding MemberPhotoUrl, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                   Stretch="UniformToFill" />
-                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Contact}" FontSize="80" Opacity="0.4" Foreground="White"
-                                           IsVisible="{Binding MemberPhotoUrl, Converter={x:Static ObjectConverters.IsNull}}" />
-                        </Panel>
-                    </Border>
+                    <!-- CHECKING -->
+                    <StackPanel IsVisible="{Binding State, Converter={x:Static ObjectConverters.Equal},
+                                            ConverterParameter={x:Static vm:KioskState.Checking}}"
+                                HorizontalAlignment="Center" Spacing="16">
+                        <fa:ProgressRing Width="60" Height="60" Foreground="White" />
+                        <TextBlock Text="Verificando..." FontSize="20" Foreground="White" TextAlignment="Center" />
+                    </StackPanel>
 
-                    <!-- Name in 72px -->
-                    <TextBlock Text="{Binding MemberName}" FontSize="42" FontWeight="Bold"
-                               Foreground="White" TextAlignment="Center" TextWrapping="Wrap"
-                               MaxWidth="360" />
+                    <!-- GRANTED -->
+                    <StackPanel IsVisible="{Binding IsGranted}" Spacing="16" HorizontalAlignment="Center">
+                        <Border Width="160" Height="160" CornerRadius="80" ClipToBounds="True"
+                                HorizontalAlignment="Center" Background="#2A2A30">
+                            <Panel>
+                                <Image Source="{Binding MemberPhotoUrl}"
+                                       IsVisible="{Binding MemberPhotoUrl, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                       Stretch="UniformToFill" />
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Contact}" FontSize="80" Opacity="0.4" Foreground="White"
+                                               IsVisible="{Binding MemberPhotoUrl, Converter={x:Static ObjectConverters.IsNull}}" />
+                            </Panel>
+                        </Border>
 
-                    <!-- Green badge -->
-                    <Border CornerRadius="12" Padding="20,10" HorizontalAlignment="Center"
-                            Background="#22C55E">
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Checkmark}" FontSize="28" Foreground="White" />
-                            <TextBlock Text="ACCESO PERMITIDO" FontSize="22" FontWeight="Bold"
-                                       Foreground="White" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Border>
+                        <TextBlock Text="{Binding MemberName}" FontSize="42" FontWeight="Bold"
+                                   Foreground="White" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="360" />
 
-                    <!-- Debt warning -->
-                    <Border CornerRadius="10" Padding="14,8" HorizontalAlignment="Center"
-                            Background="#F59E0B" IsVisible="{Binding HasDebtWarning}">
-                        <TextBlock FontSize="15" Foreground="White" TextAlignment="Center">
-                            <Run Text="⚠ Deuda: $" />
-                            <Run Text="{Binding OutstandingAmount, StringFormat='{}{0:N0}'}" FontWeight="Bold" />
+                        <Border CornerRadius="12" Padding="20,10" HorizontalAlignment="Center" Background="#22C55E">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Checkmark}" FontSize="28" Foreground="White" />
+                                <TextBlock Text="ACCESO PERMITIDO" FontSize="22" FontWeight="Bold"
+                                           Foreground="White" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border CornerRadius="10" Padding="14,8" HorizontalAlignment="Center"
+                                Background="#F59E0B" IsVisible="{Binding HasDebtWarning}">
+                            <TextBlock FontSize="15" Foreground="White" TextAlignment="Center">
+                                <Run Text="⚠ Deuda: $" />
+                                <Run Text="{Binding OutstandingAmount, StringFormat='{}{0:N0}'}" FontWeight="Bold" />
+                            </TextBlock>
+                        </Border>
+
+                        <TextBlock Text="{Binding LastAccessTime, StringFormat='Ingreso registrado: {0}'}"
+                                   FontSize="14" Foreground="#777" TextAlignment="Center" />
+
+                        <TextBlock FontSize="16" Foreground="#555" TextAlignment="Center">
+                            <Run Text="Cierra en " />
+                            <Run Text="{Binding CountdownSeconds}" FontWeight="Bold" Foreground="#888" />
+                            <Run Text="s" />
                         </TextBlock>
-                    </Border>
+                    </StackPanel>
 
-                    <!-- Last access -->
-                    <TextBlock Text="{Binding LastAccessTime, StringFormat='Ingreso registrado: {0}'}"
-                               FontSize="14" Foreground="#777" TextAlignment="Center" />
+                    <!-- DENIED -->
+                    <StackPanel IsVisible="{Binding IsDenied}" Spacing="16" HorizontalAlignment="Center">
+                        <Border Width="100" Height="100" CornerRadius="50" HorizontalAlignment="Center" Background="#EF4444">
+                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Dismiss}" FontSize="56" Foreground="White"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
 
-                    <!-- Auto-close countdown -->
-                    <TextBlock FontSize="16" Foreground="#555" TextAlignment="Center">
-                        <Run Text="Cierra en " />
-                        <Run Text="{Binding CountdownSeconds}" FontWeight="Bold" Foreground="#888" />
-                        <Run Text="s" />
-                    </TextBlock>
+                        <TextBlock Text="{Binding MemberName}" FontSize="30" FontWeight="Bold"
+                                   Foreground="White" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="360"
+                                   IsVisible="{Binding MemberName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+                        <TextBlock Text="ACCESO DENEGADO" FontSize="28" FontWeight="Bold"
+                                   Foreground="#EF4444" TextAlignment="Center" />
+
+                        <TextBlock Text="{Binding DenialMessage}" FontSize="18"
+                                   Foreground="#CCCCCC" TextAlignment="Center" TextWrapping="Wrap" MaxWidth="340" />
+
+                        <TextBlock FontSize="14" Foreground="#555" TextAlignment="Center">
+                            <Run Text="Cierra en " />
+                            <Run Text="{Binding CountdownSeconds}" FontWeight="Bold" />
+                            <Run Text="s" />
+                        </TextBlock>
+                    </StackPanel>
+
                 </StackPanel>
+            </Border>
 
-                <!-- DENIED state — red semaphore -->
-                <StackPanel IsVisible="{Binding IsDenied}" Spacing="16" HorizontalAlignment="Center">
-                    <Border Width="100" Height="100" CornerRadius="50" HorizontalAlignment="Center"
-                            Background="#EF4444">
-                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Dismiss}" FontSize="56" Foreground="White"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
-                    </Border>
+            <!-- ── Panel: accesos de hoy ─────────────────────────────────────── -->
+            <Border Grid.Column="1" Background="#171719" Padding="20,16">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Accesos de hoy"
+                               Foreground="#DDDDDD" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,12" />
 
-                    <!-- Quién intentó ingresar (si la credencial se reconoció) -->
-                    <TextBlock Text="{Binding MemberName}" FontSize="30" FontWeight="Bold"
-                               Foreground="White" TextAlignment="Center" TextWrapping="Wrap"
-                               MaxWidth="360"
-                               IsVisible="{Binding MemberName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                    <!-- Vacío -->
+                    <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,40,0,0"
+                                IsVisible="{Binding !HasHistory}" HorizontalAlignment="Center">
+                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.People}" FontSize="40" Opacity="0.25" Foreground="White" />
+                        <TextBlock Text="Todavía no hubo ingresos hoy" Foreground="#777"
+                                   FontSize="13" TextAlignment="Center" TextWrapping="Wrap" />
+                    </StackPanel>
 
-                    <TextBlock Text="ACCESO DENEGADO" FontSize="28" FontWeight="Bold"
-                               Foreground="#EF4444" TextAlignment="Center" />
+                    <ScrollViewer IsVisible="{Binding HasHistory}">
+                        <ItemsControl ItemsSource="{Binding TodaysAccess}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="access:AccessLogRowDto">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,5">
+                                        <Border Grid.Column="0" Width="34" Height="34" CornerRadius="17"
+                                                VerticalAlignment="Center" Background="#22C55E"
+                                                IsVisible="{Binding Granted}">
+                                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Checkmark}" FontSize="18" Foreground="White"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <Border Grid.Column="0" Width="34" Height="34" CornerRadius="17"
+                                                VerticalAlignment="Center" Background="#EF4444"
+                                                IsVisible="{Binding !Granted}">
+                                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Dismiss}" FontSize="18" Foreground="White"
+                                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                        <StackPanel Grid.Column="1" Margin="12,0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding MemberName}" Foreground="White" FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding StatusText}" Foreground="#999" FontSize="12" />
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="2" Text="{Binding At, StringFormat='HH:mm'}"
+                                                   Foreground="#777" FontSize="13" VerticalAlignment="Center" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
 
-                    <TextBlock Text="{Binding DenialMessage}" FontSize="18"
-                               Foreground="#CCCCCC" TextAlignment="Center"
-                               TextWrapping="Wrap" MaxWidth="340" />
+        </Grid>
 
-                    <TextBlock FontSize="14" Foreground="#555" TextAlignment="Center">
-                        <Run Text="Cierra en " />
-                        <Run Text="{Binding CountdownSeconds}" FontWeight="Bold" />
-                        <Run Text="s" />
-                    </TextBlock>
-                </StackPanel>
-
-            </StackPanel>
-        </Border>
-
-        <!-- Bottom bar: clock + manual reset -->
+        <!-- Barra inferior -->
         <Border Grid.Row="1" Padding="20,12" Background="#0D0D0F">
             <Grid ColumnDefinitions="*,Auto">
                 <TextBlock FontSize="13" Foreground="#444" VerticalAlignment="Center">
                     GymForge · Check-in Kiosk
                 </TextBlock>
-                <Button Grid.Column="1" Classes="subtle" Command="{Binding ResetCommand}"
-                        Foreground="#555">
+                <Button Grid.Column="1" Classes="subtle" Command="{Binding ResetCommand}" Foreground="#555">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Refresh}" FontSize="14" />
                         <TextBlock Text="Reiniciar" FontSize="12" />

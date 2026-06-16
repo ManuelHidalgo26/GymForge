@@ -31,7 +31,12 @@ public class GatekeeperConfig
     public int AntiPassbackMinutes { get; set; } = 5;
 }
 
-public class ValidateSwipeUseCase
+public interface IValidateSwipeUseCase
+{
+    Task<AccessDecision> ValidateSwipeAsync(ValidateSwipeRequest request, CancellationToken ct = default);
+}
+
+public class ValidateSwipeUseCase : IValidateSwipeUseCase
 {
     private readonly IMemberRepository _memberRepo;
     private readonly IMembershipRepository _membershipRepo;

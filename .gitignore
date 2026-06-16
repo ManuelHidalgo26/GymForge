@@ -71,3 +71,7 @@ setup*.exe
 *.bak
 *.tmp
 ~*
+
+## Productivity plugin (artefactos locales, no versionar en este repo)
+dashboard.html
+TASKS.md

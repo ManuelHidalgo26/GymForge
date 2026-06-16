@@ -1,4 +1,5 @@
 using FluentAssertions;
+using GymForge.Application.Interfaces;
 using GymForge.Application.Services;
 using GymForge.Application.UseCases.Cash;
 using GymForge.Domain.Entities;
@@ -6,6 +7,7 @@ using GymForge.Domain.Enums;
 using GymForge.Infrastructure.Persistence;
 using GymForge.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 
 namespace GymForge.Integration.Tests;
 
@@ -71,7 +73,7 @@ public class CashFlowIntegrationTests : IAsyncLifetime
         await _shiftRepo.SaveChangesAsync();
 
         // Cerrar con arqueo
-        var closed = await new CloseShiftCommandHandler(_shiftRepo).Handle(
+        var closed = await new CloseShiftCommandHandler(_shiftRepo, Substitute.For<IDatabaseBackup>()).Handle(
             new CloseShiftCommand(shift.Id, DeclaredCash: 48_500m, "Arqueo"), CancellationToken.None);
 
         closed.Status.Should().Be(ShiftStatus.Closed);

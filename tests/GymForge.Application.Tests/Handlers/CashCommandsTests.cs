@@ -87,7 +87,7 @@ public class CashCommandsTests
         _repo.GetByIdAsync(shift.Id, Arg.Any<CancellationToken>()).Returns(shift);
 
         // Sistema espera 15.000; el cajero declara 14.500 → faltante de 500.
-        var dto = await new CloseShiftCommandHandler(_repo).Handle(
+        var dto = await new CloseShiftCommandHandler(_repo, Substitute.For<IDatabaseBackup>()).Handle(
             new CloseShiftCommand(shift.Id, 14_500m, "Arqueo nocturno"), CancellationToken.None);
 
         dto.Status.Should().Be(ShiftStatus.Closed);

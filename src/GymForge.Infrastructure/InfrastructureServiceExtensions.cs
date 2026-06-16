@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace GymForge.Infrastructure;
 
@@ -20,6 +21,11 @@ public static class InfrastructureServiceExtensions
         services.AddDbContext<GymForgeDbContext>(opts =>
             opts.UseSqlite(connectionString,
                 sql => sql.MigrationsAssembly(typeof(GymForgeDbContext).Assembly.GetName().Name)));
+
+        // Resguardo y recuperación de la base local (singleton: tiene la ruta de la DB).
+        services.AddSingleton(sp => new DatabaseBackupService(
+            connectionString, sp.GetRequiredService<ILogger<DatabaseBackupService>>()));
+        services.AddSingleton<IDatabaseBackup>(sp => sp.GetRequiredService<DatabaseBackupService>());
 
         services.AddScoped<IMemberRepository, MemberRepository>();
         services.AddScoped<IMembershipRepository, MembershipRepository>();
@@ -52,6 +58,10 @@ public static class InfrastructureServiceExtensions
         using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<GymForgeDbContext>();
         var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+        var backup = scope.ServiceProvider.GetRequiredService<DatabaseBackupService>();
+
+        // Si la base está corrupta, archivarla y restaurar el último backup ANTES de abrirla.
+        backup.EnsureHealthy();
 
         await BaselineLegacyDatabaseAsync(db);
         await db.Database.MigrateAsync();
@@ -60,6 +70,9 @@ public static class InfrastructureServiceExtensions
         // Datos de demo para probar a mano (opt-in por env var).
         if (Environment.GetEnvironmentVariable("GYMFORGE_SEED_DEMO") == "1")
             await DemoDataSeeder.SeedAsync(scope.ServiceProvider);
+
+        // Snapshot diario (no duplica si ya hay uno de hoy), con la base ya sana y migrada.
+        backup.BackupIfDue();
     }
 
     // Versión informativa que se registra en __EFMigrationsHistory al hacer baseline.

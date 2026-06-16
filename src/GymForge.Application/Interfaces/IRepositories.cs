@@ -189,3 +189,10 @@ public interface IClock
     DateTime Now { get; }
     DateOnly Today { get; }
 }
+
+/// <summary>Resguardo de la base local. Best-effort: nunca lanza.</summary>
+public interface IDatabaseBackup
+{
+    /// <summary>Crea un backup ya (p. ej. al cerrar caja). El motivo va al log.</summary>
+    void BackupNow(string reason = "manual");
+}

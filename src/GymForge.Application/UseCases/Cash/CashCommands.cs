@@ -97,7 +97,13 @@ public class CloseShiftCommandValidator : AbstractValidator<CloseShiftCommand>
 public class CloseShiftCommandHandler : IRequestHandler<CloseShiftCommand, ShiftDto>
 {
     private readonly IShiftRepository _repo;
-    public CloseShiftCommandHandler(IShiftRepository repo) => _repo = repo;
+    private readonly IDatabaseBackup _backup;
+
+    public CloseShiftCommandHandler(IShiftRepository repo, IDatabaseBackup backup)
+    {
+        _repo = repo;
+        _backup = backup;
+    }
 
     public async Task<ShiftDto> Handle(CloseShiftCommand cmd, CancellationToken ct)
     {
@@ -109,6 +115,9 @@ public class CloseShiftCommandHandler : IRequestHandler<CloseShiftCommand, Shift
         shift.BeginClose(cmd.DeclaredCash, shift.ExpectedCash);
         shift.ConfirmClose(cmd.Notes);
         await _repo.SaveChangesAsync(ct);
+
+        // Resguardo de fin de jornada (best-effort: no rompe el cierre si falla).
+        _backup.BackupNow("cierre de caja");
         return ShiftDto.FromEntity(shift);
     }
 }

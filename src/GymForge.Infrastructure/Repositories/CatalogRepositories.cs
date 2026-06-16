@@ -52,6 +52,49 @@ public class ClassRepository : IClassRepository
         await _db.SaveChangesAsync(ct);
 }
 
+public class RoutineRepository : IRoutineRepository
+{
+    private readonly GymForgeDbContext _db;
+    public RoutineRepository(GymForgeDbContext db) => _db = db;
+
+    public async Task<IReadOnlyList<Routine>> GetByMemberAsync(
+        Guid companyId, Guid memberId, CancellationToken ct = default) =>
+        await _db.Routines
+            .Include(r => r.Days)
+            .Where(r => r.CompanyId == companyId && r.MemberId == memberId && r.IsActive)
+            .OrderByDescending(r => r.StartDate)
+            .ToListAsync(ct);
+
+    public async Task<Routine?> GetDetailAsync(Guid routineId, CancellationToken ct = default) =>
+        await _db.Routines
+            .Include(r => r.Days).ThenInclude(d => d.Items).ThenInclude(i => i.Exercise)
+            .Include(r => r.Days).ThenInclude(d => d.Items).ThenInclude(i => i.Sets)
+            .FirstOrDefaultAsync(r => r.Id == routineId, ct);
+
+    public async Task<Routine?> GetWithDaysAsync(Guid routineId, CancellationToken ct = default) =>
+        await _db.Routines
+            .Include(r => r.Days)
+            .FirstOrDefaultAsync(r => r.Id == routineId, ct);
+
+    public async Task<RoutineDay?> GetDayAsync(Guid dayId, CancellationToken ct = default) =>
+        await _db.RoutineDays
+            .Include(d => d.Routine)
+            .Include(d => d.Items)
+            .FirstOrDefaultAsync(d => d.Id == dayId, ct);
+
+    public async Task AddRoutineAsync(Routine routine, CancellationToken ct = default) =>
+        await _db.Routines.AddAsync(routine, ct);
+
+    public async Task AddDayAsync(RoutineDay day, CancellationToken ct = default) =>
+        await _db.RoutineDays.AddAsync(day, ct);
+
+    public async Task AddItemAsync(RoutineItem item, CancellationToken ct = default) =>
+        await _db.RoutineItems.AddAsync(item, ct);
+
+    public async Task<int> SaveChangesAsync(CancellationToken ct = default) =>
+        await _db.SaveChangesAsync(ct);
+}
+
 public class ExerciseRepository : IExerciseRepository
 {
     private readonly GymForgeDbContext _db;

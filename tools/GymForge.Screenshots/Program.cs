@@ -44,6 +44,7 @@ await session.InitializeAsync();
 
 var samplePaymentId = await SeedSampleMembersAsync(sp, session);
 var sampleScheduleId = await SeedSampleClassesAsync(sp, session);
+var sampleRoutineMemberId = await SeedSampleRoutineAsync(sp, session);
 
 // Con una clave real en el entorno, Configuración se captura en estado licenciado
 // (prueba de punta a punta de la clave pública embebida en LicenseService).
@@ -147,6 +148,16 @@ Capture("11-clases", new GymForge.Desktop.Views.Classes.ClassesView { DataContex
 var libraryVm = new GymForge.Desktop.ViewModels.Routines.ExerciseLibraryViewModel(mediator2, session);
 Capture("12-rutinas-biblioteca", new GymForge.Desktop.Views.Routines.ExerciseLibraryView { DataContext = libraryVm }, 1180, 760, outDir);
 
+// Rutinas v2: armador con un socio + rutina (días con ejercicios)
+var builderVm = new GymForge.Desktop.ViewModels.Routines.RoutineBuilderViewModel(
+    mediator2, sp.GetRequiredService<IMemberRepository>(), session);
+Pump(builderVm.LoadCommand.ExecuteAsync(null));
+builderVm.SelectedMember = builderVm.Members.FirstOrDefault(m => m.Id == sampleRoutineMemberId);
+for (int i = 0; i < 25; i++) { Dispatcher.UIThread.RunJobs(); Thread.Sleep(10); }  // cargar rutinas del socio
+builderVm.SelectedRoutine = builderVm.Routines.FirstOrDefault();
+for (int i = 0; i < 25; i++) { Dispatcher.UIThread.RunJobs(); Thread.Sleep(10); }  // cargar el detalle
+Capture("16-rutinas-armador", new GymForge.Desktop.Views.Routines.RoutineBuilderView { DataContext = builderVm }, 1180, 820, outDir);
+
 // Productos: catálogo con stock por sede (alta nueva + uno con aviso de reposición)
 WaitFor(mediator2.Send(new GymForge.Application.UseCases.Products.CreateProductCommand(
     session.CompanyId, "TOAL-GF", "Toalla GymForge", 12_000m, 6_000m, "7791234567890")));
@@ -238,6 +249,46 @@ static void CaptureWindow(string name, Window window, string outDir)
     frame?.Save(path);
     window.Close();
     Console.WriteLine($"  {name}.png  {frame?.PixelSize}");
+}
+
+static async Task<Guid> SeedSampleRoutineAsync(IServiceProvider sp, SessionContext session)
+{
+    var mediator = sp.GetRequiredService<IMediator>();
+    var memberRepo = sp.GetRequiredService<IMemberRepository>();
+
+    var members = await memberRepo.GetPagedAsync(session.CompanyId, session.SiteId, 1, 10);
+    var member = members.First();
+
+    var routine = await mediator.Send(new GymForge.Application.UseCases.Routines.CreateRoutineCommand(
+        session.CompanyId, member.Id, "Full Body", WorkoutGoal.Hypertrophy, 3));
+
+    await mediator.Send(new GymForge.Application.UseCases.Routines.AddRoutineDayCommand(
+        session.CompanyId, routine.Id, "Tren superior"));
+    await mediator.Send(new GymForge.Application.UseCases.Routines.AddRoutineDayCommand(
+        session.CompanyId, routine.Id, "Tren inferior"));
+
+    var detail = await mediator.Send(new GymForge.Application.UseCases.Routines.GetRoutineDetailQuery(
+        session.CompanyId, routine.Id));
+    var exercises = await mediator.Send(
+        new GymForge.Application.UseCases.Exercises.SearchExercisesQuery(null, null));
+    var ex = exercises.Take(6).ToList();
+
+    if (detail is { Days.Count: >= 2 } && ex.Count >= 5)
+    {
+        var (d1, d2) = (detail.Days[0].Id, detail.Days[1].Id);
+        await mediator.Send(new GymForge.Application.UseCases.Routines.AddRoutineItemCommand(
+            session.CompanyId, d1, ex[0].Id, 4, 8, 12));
+        await mediator.Send(new GymForge.Application.UseCases.Routines.AddRoutineItemCommand(
+            session.CompanyId, d1, ex[1].Id, 3, 10, 12));
+        await mediator.Send(new GymForge.Application.UseCases.Routines.AddRoutineItemCommand(
+            session.CompanyId, d1, ex[2].Id, 3, 12, 15));
+        await mediator.Send(new GymForge.Application.UseCases.Routines.AddRoutineItemCommand(
+            session.CompanyId, d2, ex[3].Id, 4, 8, 10));
+        await mediator.Send(new GymForge.Application.UseCases.Routines.AddRoutineItemCommand(
+            session.CompanyId, d2, ex[4].Id, 3, 10, 12));
+    }
+
+    return member.Id;
 }
 
 static async Task<Guid> SeedSampleClassesAsync(IServiceProvider sp, SessionContext session)

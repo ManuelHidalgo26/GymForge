@@ -34,6 +34,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<ISaleRepository, SaleRepository>();
         services.AddScoped<IClassRepository, ClassRepository>();
         services.AddScoped<IExerciseRepository, ExerciseRepository>();
+        services.AddScoped<IRoutineRepository, RoutineRepository>();
 
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<IPinHasher, Pbkdf2PinHasher>();

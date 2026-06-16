@@ -1,0 +1,215 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:fa="using:FluentAvalonia.UI.Controls"
+             xmlns:vm="using:GymForge.Desktop.ViewModels.Routines"
+             xmlns:rt="using:GymForge.Application.UseCases.Routines"
+             xmlns:ex="using:GymForge.Application.UseCases.Exercises"
+             xmlns:dto="using:GymForge.Application.DTOs"
+             xmlns:enums="using:GymForge.Domain.Enums"
+             x:Class="GymForge.Desktop.Views.Routines.RoutineBuilderView"
+             x:DataType="vm:RoutineBuilderViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*">
+
+        <!-- ── Selector de socio ───────────────────────────────────────────── -->
+        <Border Grid.Row="0" Classes="Toolbar">
+            <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Contact}" FontSize="20" VerticalAlignment="Center" />
+                <TextBlock Text="Socio" Classes="FormLabel" VerticalAlignment="Center" />
+                <AutoCompleteBox Width="320" ItemsSource="{Binding Members}"
+                                 SelectedItem="{Binding SelectedMember}"
+                                 ValueMemberBinding="{Binding FullName}"
+                                 FilterMode="Contains" Watermark="Buscar socio por nombre..." />
+            </StackPanel>
+        </Border>
+
+        <!-- ── Error ───────────────────────────────────────────────────────── -->
+        <fa:InfoBar Grid.Row="1" Margin="16,8,16,0"
+                    IsOpen="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                    Severity="Error" Title="Error" Message="{Binding ErrorMessage}" IsClosable="False" />
+
+        <!-- ── Sin socio ───────────────────────────────────────────────────── -->
+        <StackPanel Grid.Row="3" Classes="EmptyState" IsVisible="{Binding !HasMember}" VerticalAlignment="Center">
+            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Contact}" />
+            <TextBlock Classes="EmptyTitle" Text="Elegí un socio" />
+            <TextBlock Classes="EmptyBody" Text="Buscá un socio arriba para ver y armar sus rutinas." />
+        </StackPanel>
+
+        <!-- ── Cuerpo: rutinas + detalle ───────────────────────────────────── -->
+        <Grid Grid.Row="3" ColumnDefinitions="300,*" Margin="16,12" IsVisible="{Binding HasMember}">
+
+            <!-- Columna izquierda: rutinas del socio -->
+            <DockPanel Grid.Column="0" Margin="0,0,12,0">
+                <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+                    <TextBlock Text="Rutinas" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    <Button DockPanel.Dock="Right" HorizontalAlignment="Right" Classes="Primary"
+                            Command="{Binding OpenRoutineFormCommand}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Add}" FontSize="14" />
+                            <TextBlock Text="Nueva" />
+                        </StackPanel>
+                    </Button>
+                </DockPanel>
+
+                <!-- Form nueva rutina -->
+                <Border DockPanel.Dock="Top" Classes="Card" Margin="0,0,0,8" IsVisible="{Binding IsRoutineFormOpen}">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Nueva rutina" FontWeight="SemiBold" />
+                        <TextBox Text="{Binding RoutineName}" Watermark="Nombre (ej: Full Body)" />
+                        <ComboBox ItemsSource="{Binding Goals}" SelectedItem="{Binding RoutineGoal}"
+                                  HorizontalAlignment="Stretch">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="enums:WorkoutGoal">
+                                    <TextBlock Text="{Binding Converter={StaticResource EnumEs}}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="Días/sem" Classes="FormLabel" VerticalAlignment="Center" />
+                            <NumericUpDown Value="{Binding RoutineFreq}" Minimum="1" Maximum="7" Increment="1" Width="110" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Crear" Command="{Binding CreateRoutineCommand}" Classes="Primary" />
+                            <Button Content="Cancelar" Command="{Binding CancelRoutineFormCommand}" Classes="Ghost" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <ListBox ItemsSource="{Binding Routines}" SelectedItem="{Binding SelectedRoutine}"
+                         Background="Transparent">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="rt:RoutineDto">
+                            <StackPanel Spacing="2" Margin="2">
+                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                <TextBlock Classes="FormLabel">
+                                    <Run Text="{Binding Goal, Converter={StaticResource EnumEs}}" />
+                                    <Run Text=" · " />
+                                    <Run Text="{Binding FrequencyPerWeek}" />
+                                    <Run Text="x/sem · " />
+                                    <Run Text="{Binding DayCount}" />
+                                    <Run Text=" días" />
+                                </TextBlock>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </DockPanel>
+
+            <!-- Columna derecha: detalle de la rutina -->
+            <Border Grid.Column="1" Classes="Card" IsVisible="{Binding HasRoutine}">
+                <Grid RowDefinitions="Auto,Auto,*">
+                    <StackPanel Grid.Row="0" DataContext="{Binding Detail}" Spacing="2">
+                        <TextBlock Text="{Binding Name}" FontSize="18" FontWeight="Bold" />
+                        <TextBlock Classes="FormLabel">
+                            <Run Text="{Binding Goal, Converter={StaticResource EnumEs}}" />
+                            <Run Text=" · " />
+                            <Run Text="{Binding FrequencyPerWeek}" />
+                            <Run Text=" días/semana" />
+                        </TextBlock>
+                    </StackPanel>
+
+                    <!-- Agregar día -->
+                    <DockPanel Grid.Row="1" Margin="0,12,0,8">
+                        <Button DockPanel.Dock="Right" Classes="Ghost" Command="{Binding AddDayCommand}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Add}" FontSize="14" />
+                                <TextBlock Text="Agregar día" />
+                            </StackPanel>
+                        </Button>
+                        <TextBox Text="{Binding NewDayName}" Watermark="Nombre del día (opcional, ej: Tren superior)"
+                                 Margin="0,0,8,0" />
+                    </DockPanel>
+
+                    <!-- Form agregar ejercicio -->
+                    <Border Grid.Row="1" Classes="Card" Margin="0,48,0,0" IsVisible="{Binding IsItemFormOpen}"
+                            ZIndex="10">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Agregar ejercicio" FontWeight="SemiBold" />
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Ejercicio *" Classes="FormLabel" />
+                                    <ComboBox Width="240" ItemsSource="{Binding Exercises}" SelectedItem="{Binding ItemExercise}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate x:DataType="ex:ExerciseDto">
+                                                <TextBlock Text="{Binding Name}" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </StackPanel>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Series" Classes="FormLabel" />
+                                    <NumericUpDown Value="{Binding ItemSets}" Minimum="1" Maximum="12" Width="100" />
+                                </StackPanel>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Reps mín" Classes="FormLabel" />
+                                    <NumericUpDown Value="{Binding ItemRepsMin}" Minimum="1" Width="100" />
+                                </StackPanel>
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Reps máx" Classes="FormLabel" />
+                                    <NumericUpDown Value="{Binding ItemRepsMax}" Minimum="1" Width="100" />
+                                </StackPanel>
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="Agregar" Command="{Binding AddItemCommand}" Classes="Primary" />
+                                <Button Content="Cancelar" Command="{Binding CancelItemFormCommand}" Classes="Ghost" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Días con ejercicios -->
+                    <ScrollViewer Grid.Row="2">
+                        <ItemsControl ItemsSource="{Binding Detail.Days}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="rt:RoutineDayDto">
+                                    <Border Classes="Card" Margin="0,0,0,10">
+                                        <StackPanel Spacing="6">
+                                            <DockPanel>
+                                                <Button DockPanel.Dock="Right" Classes="Ghost"
+                                                        Command="{Binding $parent[UserControl].((vm:RoutineBuilderViewModel)DataContext).OpenItemFormCommand}"
+                                                        CommandParameter="{Binding}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Add}" FontSize="14" />
+                                                        <TextBlock Text="Ejercicio" />
+                                                    </StackPanel>
+                                                </Button>
+                                                <TextBlock FontWeight="SemiBold">
+                                                    <Run Text="Día " />
+                                                    <Run Text="{Binding DayNumber}" />
+                                                    <Run Text=" — " />
+                                                    <Run Text="{Binding Name}" />
+                                                </TextBlock>
+                                            </DockPanel>
+                                            <ItemsControl ItemsSource="{Binding Items}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="rt:RoutineItemDto">
+                                                        <DockPanel Margin="4,2">
+                                                            <Border DockPanel.Dock="Right" Classes="Pill" VerticalAlignment="Center">
+                                                                <TextBlock Text="{Binding SetsSummary}" />
+                                                            </Border>
+                                                            <TextBlock Text="{Binding ExerciseName}" VerticalAlignment="Center" />
+                                                        </DockPanel>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+
+            <!-- Sin rutina seleccionada -->
+            <StackPanel Grid.Column="1" Classes="EmptyState" IsVisible="{Binding !HasRoutine}"
+                        VerticalAlignment="Center">
+                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.AllApps}" />
+                <TextBlock Classes="EmptyTitle" Text="Elegí o creá una rutina" />
+                <TextBlock Classes="EmptyBody" Text="Seleccioná una rutina de la izquierda o creá una nueva." />
+            </StackPanel>
+
+        </Grid>
+
+    </Grid>
+
+</UserControl>

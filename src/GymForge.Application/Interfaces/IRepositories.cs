@@ -163,6 +163,22 @@ public interface IExerciseRepository
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
 
+public interface IRoutineRepository
+{
+    /// <summary>Rutinas del socio con sus días (para contar), sin items.</summary>
+    Task<IReadOnlyList<Routine>> GetByMemberAsync(Guid companyId, Guid memberId, CancellationToken ct = default);
+    /// <summary>Rutina completa: días → items → ejercicio + series.</summary>
+    Task<Routine?> GetDetailAsync(Guid routineId, CancellationToken ct = default);
+    /// <summary>Rutina con sus días (para validar tenant y numerar el día nuevo).</summary>
+    Task<Routine?> GetWithDaysAsync(Guid routineId, CancellationToken ct = default);
+    /// <summary>Día con su rutina (tenant) y sus items (para numerar el item nuevo).</summary>
+    Task<RoutineDay?> GetDayAsync(Guid dayId, CancellationToken ct = default);
+    Task AddRoutineAsync(Routine routine, CancellationToken ct = default);
+    Task AddDayAsync(RoutineDay day, CancellationToken ct = default);
+    Task AddItemAsync(RoutineItem item, CancellationToken ct = default);
+    Task<int> SaveChangesAsync(CancellationToken ct = default);
+}
+
 public interface IEventBus
 {
     Task PublishAsync<T>(T domainEvent, CancellationToken ct = default) where T : class;

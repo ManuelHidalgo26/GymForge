@@ -85,6 +85,8 @@ public static class ServiceCollectionExtensions
         // ── Classes & Routines ────────────────────────────────────────────────
         services.AddTransient<ViewModels.Classes.ClassesViewModel>();
         services.AddTransient<ViewModels.Routines.ExerciseLibraryViewModel>();
+        services.AddTransient<ViewModels.Routines.RoutineBuilderViewModel>();
+        services.AddTransient<ViewModels.Routines.RoutinesViewModel>();
 
         // ── Products ──────────────────────────────────────────────────────────
         services.AddTransient<ViewModels.Products.ProductsViewModel>();

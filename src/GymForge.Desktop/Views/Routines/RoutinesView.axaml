@@ -1,0 +1,17 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:GymForge.Desktop.ViewModels.Routines"
+             xmlns:vr="using:GymForge.Desktop.Views.Routines"
+             x:Class="GymForge.Desktop.Views.Routines.RoutinesView"
+             x:DataType="vm:RoutinesViewModel">
+
+    <TabControl Margin="8,4">
+        <TabItem Header="Armador">
+            <vr:RoutineBuilderView DataContext="{Binding Builder}" />
+        </TabItem>
+        <TabItem Header="Biblioteca">
+            <vr:ExerciseLibraryView DataContext="{Binding Library}" />
+        </TabItem>
+    </TabControl>
+
+</UserControl>

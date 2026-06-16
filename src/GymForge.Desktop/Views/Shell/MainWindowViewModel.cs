@@ -127,7 +127,7 @@ public partial class MainWindowViewModel : ObservableObject
             NavSection.Plans     => Cached(section, () => _sp.GetRequiredService<ViewModels.Plans.PlansViewModel>()),
 
             NavSection.Classes   => Cached(section, () => _sp.GetRequiredService<ViewModels.Classes.ClassesViewModel>()),
-            NavSection.Routines  => Cached(section, () => _sp.GetRequiredService<ViewModels.Routines.ExerciseLibraryViewModel>()),
+            NavSection.Routines  => Cached(section, () => _sp.GetRequiredService<ViewModels.Routines.RoutinesViewModel>()),
             NavSection.Products  => Cached(section, () => _sp.GetRequiredService<ViewModels.Products.ProductsViewModel>()),
             NavSection.Reports   => Cached(section, () => _sp.GetRequiredService<ViewModels.Reports.ReportsViewModel>()),
             NavSection.Settings  => Cached(section, () => _sp.GetRequiredService<ViewModels.Settings.SettingsViewModel>()),

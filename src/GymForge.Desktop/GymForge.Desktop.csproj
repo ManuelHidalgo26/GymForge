@@ -20,8 +20,8 @@
     <Description>Sistema de gestión de gimnasios offline-first: socios, accesos, caja, cobros y rutinas.</Description>
     <Company>GymForge</Company>
     <Copyright>© 2026 GymForge</Copyright>
-    <Version>0.2.0</Version>
-    <FileVersion>0.2.0.0</FileVersion>
+    <Version>0.3.0</Version>
+    <FileVersion>0.3.0.0</FileVersion>
     <NeutralLanguage>es-AR</NeutralLanguage>
   </PropertyGroup>
 

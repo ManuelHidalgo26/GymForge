@@ -45,8 +45,36 @@ public class SellProductCommandTests
     }
 
     [Fact]
+    public async Task Handle_VentaANoSocio_CreaPagoYVentaSinSocioConSaleId()
+    {
+        var companyId = Guid.NewGuid();
+        var siteId = Guid.NewGuid();
+        var product = Product.Create(companyId, "AGUA-500", "Agua 500ml", 1_500m);
+
+        _productRepo.GetByIdAsync(product.Id, Arg.Any<CancellationToken>()).Returns(product);
+        _productRepo.GetStockAsync(product.Id, siteId, Arg.Any<CancellationToken>())
+            .Returns((StockBySite?)null);
+
+        var dto = await Sut().Handle(new SellProductCommand(
+            companyId, siteId, Guid.NewGuid(), null,
+            product.Id, Quantity: 1, MemberId: null, PaymentMethod.Cash), CancellationToken.None);
+
+        dto.MemberId.Should().BeNull();
+        await _saleRepo.Received(1).AddAsync(
+            Arg.Is<Sale>(s => s.MemberId == null), Arg.Any<CancellationToken>());
+        await _paymentRepo.Received(1).AddAsync(
+            Arg.Is<Payment>(p => p.MemberId == null && p.SaleId != null), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public void Validator_NonPositiveQuantity_Fails() =>
         new SellProductCommandValidator().Validate(new SellProductCommand(
             Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), null, Guid.NewGuid(), 0, Guid.NewGuid(), PaymentMethod.Cash))
             .IsValid.Should().BeFalse();
+
+    [Fact]
+    public void Validator_SinSocio_EsValido() =>
+        new SellProductCommandValidator().Validate(new SellProductCommand(
+            Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), null, Guid.NewGuid(), 1, MemberId: null, PaymentMethod.Cash))
+            .IsValid.Should().BeTrue();
 }

@@ -14,9 +14,10 @@ public class BuildReceiptQueryHandlerTests
     private readonly IMemberRepository _memberRepo = Substitute.For<IMemberRepository>();
     private readonly ISiteRepository _siteRepo = Substitute.For<ISiteRepository>();
     private readonly IStaffRepository _staffRepo = Substitute.For<IStaffRepository>();
+    private readonly ISaleRepository _saleRepo = Substitute.For<ISaleRepository>();
 
     private BuildReceiptQueryHandler Sut() =>
-        new(_paymentRepo, _chargeRepo, _memberRepo, _siteRepo, _staffRepo);
+        new(_paymentRepo, _chargeRepo, _memberRepo, _siteRepo, _staffRepo, _saleRepo);
 
     private (Company Company, Site Site, Member Member, Staff Staff) SeedTenant()
     {
@@ -79,6 +80,32 @@ public class BuildReceiptQueryHandlerTests
         receipt.Items.Should().BeEmpty();
         receipt.OnAccount.Should().Be(10_000m);
         receipt.Total.Should().Be(10_000m);
+    }
+
+    [Fact]
+    public async Task Handle_VentaDeProducto_ArmaItemsDesdeLasLineasConIva()
+    {
+        var (company, site, _, staff) = SeedTenant();
+
+        // Venta a consumidor final (sin socio): Agua 1500 x2 + IVA 21% = 3630.
+        var sale = Sale.Create(company.Id, site.Id, staff.Id, memberId: null);
+        sale.Lines.Add(SaleLine.Create(sale.Id, "Agua mineral 500ml", 2, 1_500m, 0.21m));
+        sale.RecalculateTotals();
+        _saleRepo.GetByIdAsync(sale.Id, Arg.Any<CancellationToken>()).Returns(sale);
+
+        var payment = Payment.Create(company.Id, site.Id, memberId: null, staff.Id,
+            sale.Total, PaymentMethod.Cash, saleId: sale.Id);
+        _paymentRepo.GetByIdAsync(payment.Id, Arg.Any<CancellationToken>()).Returns(payment);
+
+        var receipt = await Sut().Handle(
+            new BuildReceiptQuery(payment.Id, company.Id), CancellationToken.None);
+
+        receipt.MemberName.Should().Be("Consumidor Final");
+        receipt.MemberDocument.Should().BeEmpty();
+        receipt.Items.Should().ContainSingle(i =>
+            i.Description == "Agua mineral 500ml x2" && i.Amount == 3_630m);
+        receipt.OnAccount.Should().Be(0m);
+        receipt.Total.Should().Be(3_630m);
     }
 
     [Fact]

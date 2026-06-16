@@ -58,11 +58,20 @@ public class PaymentConfiguration : IEntityTypeConfiguration<Payment>
 
         builder.HasIndex(p => p.MemberId).HasDatabaseName("IX_Payments_Member");
         builder.HasIndex(p => p.ShiftId).HasDatabaseName("IX_Payments_Shift");
+        builder.HasIndex(p => p.SaleId).HasDatabaseName("IX_Payments_Sale");
 
+        // Socio opcional: una venta a consumidor final genera un pago sin socio.
         builder.HasOne(p => p.Member)
             .WithMany()
             .HasForeignKey(p => p.MemberId)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Venta asociada (POS), sin navegación inversa desde Sale.
+        builder.HasOne<Sale>()
+            .WithMany()
+            .HasForeignKey(p => p.SaleId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder.HasMany(p => p.Allocations)
             .WithOne(a => a.Payment)

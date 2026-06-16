@@ -17,8 +17,13 @@
             <RadioButton GroupName="concepto" Content="Producto" IsChecked="{Binding IsProduct}" />
         </StackPanel>
 
+        <!-- Venta a consumidor final (solo productos) -->
+        <CheckBox Content="Venta a consumidor final (sin socio)"
+                  IsChecked="{Binding IsWalkIn}"
+                  IsVisible="{Binding IsWalkInAvailable}" />
+
         <!-- Socio -->
-        <StackPanel Spacing="4">
+        <StackPanel Spacing="4" IsVisible="{Binding IsMemberSelectorVisible}">
             <TextBlock Text="Socio *" Classes="FormLabel" />
             <AutoCompleteBox ItemsSource="{Binding Members}"
                              SelectedItem="{Binding SelectedMember}"

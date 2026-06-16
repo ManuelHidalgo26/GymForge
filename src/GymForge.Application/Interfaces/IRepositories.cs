@@ -80,6 +80,8 @@ public interface IProductRepository
 public interface ISaleRepository
 {
     Task AddAsync(Sale sale, CancellationToken ct = default);
+    /// <summary>Venta por id con sus líneas cargadas (para armar el recibo de venta).</summary>
+    Task<Sale?> GetByIdAsync(Guid id, CancellationToken ct = default);
     void UpdateStock(StockBySite stock);
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

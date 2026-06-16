@@ -19,7 +19,7 @@ public record SellProductCommand(
     Guid? ShiftId,
     Guid ProductId,
     decimal Quantity,
-    Guid MemberId,
+    Guid? MemberId,
     PaymentMethod Method,
     string? CardLast4 = null) : IRequest<PaymentDto>;
 
@@ -28,7 +28,7 @@ public class SellProductCommandValidator : AbstractValidator<SellProductCommand>
     public SellProductCommandValidator()
     {
         RuleFor(x => x.ProductId).NotEmpty().WithMessage("Elegí un producto.");
-        RuleFor(x => x.MemberId).NotEmpty().WithMessage("Elegí el socio al que se le vende.");
+        // El socio es opcional: venta a consumidor final (no socio).
         RuleFor(x => x.Quantity).GreaterThan(0).WithMessage("La cantidad debe ser positiva.");
         RuleFor(x => x.CardLast4)
             .NotEmpty().Length(4).When(x => x.Method is PaymentMethod.CreditCard or PaymentMethod.DebitCard)
@@ -74,7 +74,7 @@ public class SellProductCommandHandler : IRequestHandler<SellProductCommand, Pay
 
         var payment = Payment.Create(
             cmd.CompanyId, cmd.SiteId, cmd.MemberId, cmd.CashierId,
-            sale.Total, cmd.Method, cmd.ShiftId, cmd.CardLast4);
+            sale.Total, cmd.Method, cmd.ShiftId, cmd.CardLast4, saleId: sale.Id);
 
         await _saleRepo.AddAsync(sale, ct);
         await _paymentRepo.AddAsync(payment, ct);

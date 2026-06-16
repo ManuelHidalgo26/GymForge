@@ -106,6 +106,10 @@ Pump(cashVm.LoadCommand.ExecuteAsync(null));
 Capture("05-caja-operando", new CashView { DataContext = cashVm }, 1180, 900, outDir);
 
 Pump(cashVm.OpenSaleModalCommand.ExecuteAsync(null));
+// Mostrar el modo "Producto" con la venta a consumidor final (feature de POS sin socio)
+cashVm.SaleModal!.IsProduct = true;
+cashVm.SaleModal.SelectedProduct = cashVm.SaleModal.Products.FirstOrDefault();
+cashVm.SaleModal.IsWalkIn = true;
 Capture("06-caja-venta-modal", new CashView { DataContext = cashVm }, 1180, 900, outDir);
 
 // Estado vacío de la lista de socios (búsqueda sin coincidencias)

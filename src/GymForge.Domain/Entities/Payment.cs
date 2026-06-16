@@ -4,9 +4,12 @@ namespace GymForge.Domain.Entities;
 
 public class Payment : BaseEntity
 {
-    public Guid MemberId { get; private set; }
+    // Nullable: una venta a consumidor final (no socio) genera un pago sin socio.
+    public Guid? MemberId { get; private set; }
     public Guid CompanyId { get; private set; }
     public Guid SiteId { get; private set; }
+    // Venta de producto asociada (si el pago corresponde a una venta del POS).
+    public Guid? SaleId { get; private set; }
     public decimal Amount { get; private set; }
     public PaymentMethod Method { get; private set; }
     public string? Processor { get; private set; }
@@ -19,7 +22,7 @@ public class Payment : BaseEntity
     public PaymentStatus Status { get; private set; } = PaymentStatus.Completed;
     public string? Notes { get; private set; }
 
-    public Member Member { get; private set; } = null!;
+    public Member? Member { get; private set; }
     public ICollection<PaymentAllocation> Allocations { get; private set; } = [];
 
     private Payment() { }
@@ -27,14 +30,15 @@ public class Payment : BaseEntity
     public static Payment Create(
         Guid companyId,
         Guid siteId,
-        Guid memberId,
+        Guid? memberId,
         Guid cashierId,
         decimal amount,
         PaymentMethod method,
         Guid? shiftId = null,
         string? cardLast4 = null,
         string? cardBrand = null,
-        string? processorTxId = null)
+        string? processorTxId = null,
+        Guid? saleId = null)
     {
         if (amount <= 0) throw new ArgumentException("Payment amount must be positive.");
 
@@ -50,6 +54,7 @@ public class Payment : BaseEntity
             CardLast4 = cardLast4,
             CardBrand = cardBrand,
             ProcessorTxId = processorTxId,
+            SaleId = saleId,
             ReceivedAt = DateTime.UtcNow
         };
     }

@@ -27,7 +27,7 @@ public record ChargeDto(
 
 public record PaymentDto(
     Guid Id,
-    Guid MemberId,
+    Guid? MemberId,
     decimal Amount,
     PaymentMethod Method,
     DateTime ReceivedAt,

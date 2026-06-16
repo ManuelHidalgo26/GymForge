@@ -31,6 +31,9 @@ public partial class RegisterSaleViewModel : ObservableObject
     [ObservableProperty] private ObservableCollection<MemberDto> _members = [];
     [ObservableProperty] private MemberDto? _selectedMember;
 
+    // Venta a consumidor final (sin socio). Solo aplica a productos.
+    [ObservableProperty] private bool _isWalkIn;
+
     [ObservableProperty] private ObservableCollection<MembershipTypeDto> _plans = [];
     [ObservableProperty] private MembershipTypeDto? _selectedPlan;
 
@@ -56,6 +59,12 @@ public partial class RegisterSaleViewModel : ObservableObject
         get => Concept == SaleConcept.Product;
         set { if (value) Concept = SaleConcept.Product; }
     }
+
+    // El toggle de consumidor final solo tiene sentido vendiendo productos.
+    public bool IsWalkInAvailable => IsProduct;
+
+    // El selector de socio se oculta cuando es venta a consumidor final.
+    public bool IsMemberSelectorVisible => IsMembership || !IsWalkIn;
 
     public bool IsCardRequired => Method is PaymentMethod.CreditCard or PaymentMethod.DebitCard;
 
@@ -87,9 +96,19 @@ public partial class RegisterSaleViewModel : ObservableObject
 
     partial void OnConceptChanged(SaleConcept value)
     {
+        // Una membresía siempre se cobra a un socio: se cancela el modo consumidor final.
+        if (value == SaleConcept.Membership) IsWalkIn = false;
         OnPropertyChanged(nameof(IsMembership));
         OnPropertyChanged(nameof(IsProduct));
+        OnPropertyChanged(nameof(IsWalkInAvailable));
+        OnPropertyChanged(nameof(IsMemberSelectorVisible));
         OnPropertyChanged(nameof(EstimatedTotal));
+    }
+
+    partial void OnIsWalkInChanged(bool value)
+    {
+        if (value) SelectedMember = null;
+        OnPropertyChanged(nameof(IsMemberSelectorVisible));
     }
 
     partial void OnMethodChanged(PaymentMethod value) => OnPropertyChanged(nameof(IsCardRequired));
@@ -104,13 +123,13 @@ public partial class RegisterSaleViewModel : ObservableObject
         ErrorMessage = null;
         try
         {
-            if (SelectedMember is null) { ErrorMessage = "Elegí un socio."; return; }
             var cashierId = _session.EffectiveCashierId;
             var last4 = IsCardRequired ? CardLast4 : null;
 
             PaymentDto payment;
             if (Concept == SaleConcept.Membership)
             {
+                if (SelectedMember is null) { ErrorMessage = "Elegí un socio."; return; }
                 if (SelectedPlan is null) { ErrorMessage = "Elegí un plan."; return; }
                 payment = await _mediator.Send(new SellMembershipCommand(
                     _session.CompanyId, _session.SiteId, cashierId, _session.OpenShiftId,
@@ -119,9 +138,15 @@ public partial class RegisterSaleViewModel : ObservableObject
             else
             {
                 if (SelectedProduct is null) { ErrorMessage = "Elegí un producto."; return; }
+                if (!IsWalkIn && SelectedMember is null)
+                {
+                    ErrorMessage = "Elegí un socio o marcá venta a consumidor final.";
+                    return;
+                }
+                var memberId = IsWalkIn ? (Guid?)null : SelectedMember!.Id;
                 payment = await _mediator.Send(new SellProductCommand(
                     _session.CompanyId, _session.SiteId, cashierId, _session.OpenShiftId,
-                    SelectedProduct.Id, Quantity, SelectedMember.Id, Method, last4), ct);
+                    SelectedProduct.Id, Quantity, memberId, Method, last4), ct);
             }
 
             await _receipts.TryGenerateAndOpenAsync(payment.Id, _session.CompanyId, ct);

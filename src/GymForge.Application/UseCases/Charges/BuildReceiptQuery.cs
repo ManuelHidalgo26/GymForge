@@ -18,19 +18,22 @@ public class BuildReceiptQueryHandler : IRequestHandler<BuildReceiptQuery, Recei
     private readonly IMemberRepository _members;
     private readonly ISiteRepository _sites;
     private readonly IStaffRepository _staff;
+    private readonly ISaleRepository _sales;
 
     public BuildReceiptQueryHandler(
         IPaymentRepository payments,
         IChargeRepository charges,
         IMemberRepository members,
         ISiteRepository sites,
-        IStaffRepository staff)
+        IStaffRepository staff,
+        ISaleRepository sales)
     {
         _payments = payments;
         _charges = charges;
         _members = members;
         _sites = sites;
         _staff = staff;
+        _sales = sales;
     }
 
     public async Task<ReceiptDto> Handle(BuildReceiptQuery query, CancellationToken ct)
@@ -41,7 +44,9 @@ public class BuildReceiptQueryHandler : IRequestHandler<BuildReceiptQuery, Recei
 
         var company = await _sites.GetCompanyAsync(payment.CompanyId, ct);
         var site = await _sites.GetSiteAsync(payment.SiteId, ct);
-        var member = await _members.GetByIdAsync(payment.MemberId, ct);
+        var member = payment.MemberId is { } memberId
+            ? await _members.GetByIdAsync(memberId, ct)
+            : null;
         var cashier = await _staff.GetByIdAsync(payment.CashierId, ct);
 
         var items = new List<ReceiptItemDto>();
@@ -49,6 +54,16 @@ public class BuildReceiptQueryHandler : IRequestHandler<BuildReceiptQuery, Recei
         {
             var charge = await _charges.GetByIdAsync(allocation.ChargeId, ct);
             items.Add(new ReceiptItemDto(charge?.Description ?? "Cobro", allocation.Amount));
+        }
+
+        // Venta de producto: el detalle sale de las líneas de la venta. Se factura
+        // con IVA incluido por línea para que la suma cuadre con el total del pago.
+        if (items.Count == 0 && payment.SaleId is { } saleId)
+        {
+            var sale = await _sales.GetByIdAsync(saleId, ct);
+            if (sale is not null)
+                items.AddRange(sale.Lines.Select(l => new ReceiptItemDto(
+                    LineDescription(l), Math.Round(l.LineTotal * (1 + l.TaxRate), 2))));
         }
 
         var onAccount = payment.Amount - items.Sum(i => i.Amount);
@@ -60,7 +75,9 @@ public class BuildReceiptQueryHandler : IRequestHandler<BuildReceiptQuery, Recei
             GymName: company?.LegalName ?? "GymForge",
             GymTaxId: company?.TaxId ?? string.Empty,
             SiteName: site?.Name ?? string.Empty,
-            MemberName: member is null ? "Socio" : $"{member.FirstName} {member.LastName}",
+            MemberName: member is not null
+                ? $"{member.FirstName} {member.LastName}"
+                : payment.MemberId is null ? "Consumidor Final" : "Socio",
             MemberDocument: member is null
                 ? string.Empty
                 : $"{DocumentLabel(member.DocumentType)} {member.DocumentNumber}",
@@ -72,6 +89,10 @@ public class BuildReceiptQueryHandler : IRequestHandler<BuildReceiptQuery, Recei
             OnAccount: onAccount,
             Total: payment.Amount);
     }
+
+    /// <summary>Descripción de la línea con la cantidad cuando es mayor a 1 (ej. "Agua 500ml x2").</summary>
+    private static string LineDescription(Domain.Entities.SaleLine line) =>
+        line.Quantity > 1 ? $"{line.Description} x{line.Quantity:0.##}" : line.Description;
 
     private static string DocumentLabel(DocumentType type) => type switch
     {

@@ -75,3 +75,6 @@ setup*.exe
 ## Productivity plugin (artefactos locales, no versionar en este repo)
 dashboard.html
 TASKS.md
+
+## Claude Code (config local del editor; no versionar)
+.claude/settings.local.json

@@ -3,8 +3,10 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using GymForge.Desktop.Views.Shell;
 using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 
 namespace GymForge.Desktop;
 
@@ -16,6 +18,14 @@ public class App : Avalonia.Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        // Una excepción que escapa de un handler de UI se registra y se marca como
+        // manejada: la app no se cierra, el usuario ve el estado actual y puede seguir.
+        Dispatcher.UIThread.UnhandledException += (_, e) =>
+        {
+            Log.Error(e.Exception, "Excepción no controlada en el hilo de UI");
+            e.Handled = true;
+        };
+
         // Follow OS theme automatically; RequestedThemeVariant="Default" in AXAML
         // already does this, but we also sync our IsDarkTheme flag on the ViewModel.
         SyncThemeFlag();

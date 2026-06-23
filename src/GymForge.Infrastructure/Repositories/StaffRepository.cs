@@ -17,4 +17,8 @@ public class StaffRepository : IStaffRepository
         await _db.Staff
             .Where(s => s.CompanyId == companyId && s.IsActive)
             .ToListAsync(ct);
+
+    public void Update(Staff staff) => _db.Staff.Update(staff);
+
+    public async Task<int> SaveChangesAsync(CancellationToken ct = default) => await _db.SaveChangesAsync(ct);
 }

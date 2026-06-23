@@ -42,6 +42,43 @@
                     </StackPanel>
                 </Border>
 
+                <!-- ── Seguridad / PIN ────────────────────────────────────── -->
+                <Border Classes="Card" Padding="24">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Seguridad — PIN de acceso" FontSize="15" FontWeight="SemiBold" />
+
+                        <Border CornerRadius="8" Padding="12,8" Background="#33F59E0B"
+                                IsVisible="{Binding IsDefaultPinInUse}">
+                            <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource DangerBrush}"
+                                       Text="⚠ Todavía está activo el PIN de fábrica (1234). Cambialo antes de poner el gimnasio en marcha." />
+                        </Border>
+
+                        <TextBlock FontSize="12" Opacity="0.6" TextWrapping="Wrap"
+                                   Text="El PIN se usa para abrir caja e iniciar sesión de cajero. Tiene que tener entre 4 y 8 dígitos." />
+
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="PIN actual" Classes="FormLabel" />
+                                <TextBox Text="{Binding CurrentPin}" PasswordChar="●" MaxLength="8" Width="140" />
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Nuevo PIN" Classes="FormLabel" />
+                                <TextBox Text="{Binding NewPin}" PasswordChar="●" MaxLength="8" Width="140" />
+                            </StackPanel>
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Repetir nuevo PIN" Classes="FormLabel" />
+                                <TextBox Text="{Binding NewPinConfirm}" PasswordChar="●" MaxLength="8" Width="140" />
+                            </StackPanel>
+                        </StackPanel>
+                        <TextBlock Text="{Binding PinMessage}" FontSize="12"
+                                   Foreground="{Binding PinSaved, Converter={StaticResource ActiveColorBrushConverter}}"
+                                   IsVisible="{Binding PinMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                   TextWrapping="Wrap" />
+                        <Button Content="Cambiar PIN" Command="{Binding ChangePinCommand}" Classes="Primary"
+                                HorizontalAlignment="Left" />
+                    </StackPanel>
+                </Border>
+
                 <!-- ── Sedes ──────────────────────────────────────────────── -->
                 <Border Classes="Card" Padding="24">
                     <StackPanel Spacing="12">

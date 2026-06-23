@@ -90,6 +90,8 @@ public interface IStaffRepository
 {
     Task<Staff?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<IReadOnlyList<Staff>> GetActiveByCompanyAsync(Guid companyId, CancellationToken ct = default);
+    void Update(Staff staff);
+    Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
 
 public interface ISiteRepository

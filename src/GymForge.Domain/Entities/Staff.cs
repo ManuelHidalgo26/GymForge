@@ -55,5 +55,13 @@ public class Staff : BaseEntity
         UpdatedAt = DateTime.UtcNow;
     }
 
+    /// <summary>Reemplaza el hash del PIN (login del cajero). El hashing vive en la capa de aplicación.</summary>
+    public void ChangePin(string newPinCodeHash)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(newPinCodeHash);
+        PinCodeHash = newPinCodeHash;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void Deactivate() { IsActive = false; UpdatedAt = DateTime.UtcNow; }
 }

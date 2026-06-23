@@ -164,7 +164,10 @@ dotnet ef database update --project src/GymForge.Infrastructure --startup-projec
 - [x] Ejecutable único autocontenido (`scripts/publish.ps1` → `dist/GymForge.exe`)
 - [x] Ícono de la app (.ico multi-resolución, regenerable con `scripts/make-icon.ps1`)
       + metadata del exe (GymForge v0.2.0, empresa, descripción) + ícono de ventana
-- [ ] Distribución: GitHub Releases primero; landing de descarga después
+- [x] Distribución: GitHub Releases vía workflow `release.yml` (se dispara con un
+      tag `vX.Y.Z` o manualmente; compila+testea en Windows, empaqueta con
+      `pack.ps1`/`publish.ps1` y sube `GymForge-win-Setup.exe` + `GymForge.exe`).
+      Pendiente: landing de descarga.
 - [x] Licenciamiento v1 (offline): claves firmadas ECDSA P-256 (`GYMF.payload.firma`)
       verificadas con la clave pública embebida en `LicenseService`; tier Free
       (1 sede / 50 socios) aplicado en alta de socio y de sede; activación en

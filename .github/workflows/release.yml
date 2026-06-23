@@ -1,0 +1,94 @@
+name: Release
+
+# Compila en Windows, corre los tests y publica el instalador a GitHub Releases.
+# Se dispara al pushear un tag vX.Y.Z (ej. v0.4.0) o manualmente (workflow_dispatch).
+# Produce dos artefactos:
+#   - GymForge-win-Setup.exe  (instalador Velopack: acceso directo + menú inicio + base de auto-update)
+#   - GymForge.exe            (portable autocontenido, un solo archivo)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versión a publicar (ej. 0.4.0)'
+        required: true
+        default: '0.4.0'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    # windows-latest es obligatorio: Desktop y los sidecars targetean net9.0-windows
+    # y los empaquetadores (pack.ps1/publish.ps1) usan win-x64 + PowerShell.
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Determinar versión
+        id: ver
+        shell: pwsh
+        run: |
+          if ('${{ github.event_name }}' -eq 'workflow_dispatch') {
+            $v = '${{ github.event.inputs.version }}'
+          } else {
+            $v = '${{ github.ref_name }}' -replace '^v', ''
+          }
+          Write-Host "Versión a publicar: $v"
+          "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Restore
+        run: dotnet restore GymForge.sln
+
+      - name: Build
+        run: dotnet build GymForge.sln -c Release --no-restore
+
+      # Gate: si los tests fallan, no se publica (regla 6 de CLAUDE.md).
+      - name: Test
+        run: dotnet test GymForge.sln -c Release --no-build --verbosity normal
+
+      - name: Instalar Velopack (vpk)
+        run: dotnet tool install -g vpk --version 1.2.0
+
+      # Instalador Velopack -> releases\GymForge-win-Setup.exe (+ *.nupkg + RELEASES)
+      - name: Empaquetar instalador
+        shell: pwsh
+        run: ./scripts/pack.ps1 -Version ${{ steps.ver.outputs.version }}
+
+      # Portable autocontenido -> dist\GymForge.exe
+      - name: Publicar portable
+        shell: pwsh
+        run: ./scripts/publish.ps1
+
+      - name: Crear GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.ver.outputs.version }}
+          name: GymForge v${{ steps.ver.outputs.version }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          body: |
+            **GymForge v${{ steps.ver.outputs.version }} — instalador para el piloto**
+
+            - **`GymForge-win-Setup.exe`** — instalador recomendado (acceso directo + menú inicio + base para auto-update).
+            - `GymForge.exe` — portable, un solo archivo (no instala nada: doble click y arranca).
+
+            App **offline**: los datos se guardan en SQLite local en `%LOCALAPPDATA%\GymForge\gymforge.db`.
+            Primer arranque: login con PIN **1234** (cambialo desde **Configuración → Seguridad**).
+
+            > Windows puede mostrar un aviso de SmartScreen porque el ejecutable todavía no está firmado:
+            > **Más información → Ejecutar de todas formas**.
+          files: |
+            releases/*
+            dist/GymForge.exe

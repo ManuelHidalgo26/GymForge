@@ -47,6 +47,15 @@
                             ToolTip.Tip="Actualizar">
                         <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Refresh}" FontSize="16" />
                     </Button>
+                    <Button Command="{Binding ImportCommand}"
+                            Classes="Ghost"
+                            IsEnabled="{Binding !IsImporting}"
+                            ToolTip.Tip="Importar padrón desde un archivo CSV (columnas: nombre, apellido, dni, email, telefono, nacimiento)">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Document}" FontSize="16" />
+                            <TextBlock Text="Importar CSV" />
+                        </StackPanel>
+                    </Button>
                     <Button Command="{Binding CreateMemberCommand}"
                             Classes="Primary">
                         <StackPanel Orientation="Horizontal" Spacing="6">
@@ -59,11 +68,15 @@
             </Grid>
         </Border>
 
-        <!-- ── Error (p.ej. al eliminar con movimientos) ───────────────────── -->
-        <fa:InfoBar Grid.Row="1" Margin="16,8,16,0"
-                    IsOpen="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
-                    Severity="Warning" Title="No se pudo eliminar"
-                    Message="{Binding ErrorMessage}" IsClosable="False" />
+        <!-- ── Avisos (eliminar / importar) ─────────────────────────────────── -->
+        <StackPanel Grid.Row="1" Spacing="8" Margin="16,8,16,0">
+            <fa:InfoBar IsOpen="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                        Severity="Warning" Title="No se pudo eliminar"
+                        Message="{Binding ErrorMessage}" IsClosable="False" />
+            <fa:InfoBar IsOpen="{Binding ImportMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                        Severity="Informational" Title="Importación de socios"
+                        Message="{Binding ImportMessage}" IsClosable="True" />
+        </StackPanel>
 
         <!-- ── DataGrid ───────────────────────────────────────────────────── -->
         <DataGrid Grid.Row="2"

@@ -33,6 +33,17 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.File(Path.Combine(logDir, "gymforge-.log"), rollingInterval: RollingInterval.Day)
     .CreateLogger();
 
+// Red de seguridad: una excepción no controlada en un hilo de fondo o una tarea
+// olvidada queda en el log en vez de tirar la app de recepción sin dejar rastro.
+AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+    Log.Fatal(e.ExceptionObject as Exception, "Excepción no controlada (AppDomain)");
+
+TaskScheduler.UnobservedTaskException += (_, e) =>
+{
+    Log.Error(e.Exception, "Excepción no observada en una tarea en segundo plano");
+    e.SetObserved();
+};
+
 try
 {
     Log.Information("GymForge starting up");

@@ -6,6 +6,7 @@ using GymForge.Application.Interfaces;
 using GymForge.Application.UseCases.Access;
 using GymForge.Application.UseCases.Licensing;
 using GymForge.Application.UseCases.Settings;
+using GymForge.Application.UseCases.Staff;
 using GymForge.Desktop.Services;
 using MediatR;
 
@@ -45,6 +46,14 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string? _accessMessage;
     [ObservableProperty] private bool _accessSaved;
 
+    // Seguridad — PIN del cajero/admin
+    [ObservableProperty] private string _currentPin = string.Empty;
+    [ObservableProperty] private string _newPin = string.Empty;
+    [ObservableProperty] private string _newPinConfirm = string.Empty;
+    [ObservableProperty] private string? _pinMessage;
+    [ObservableProperty] private bool _pinSaved;
+    [ObservableProperty] private bool _isDefaultPinInUse;
+
     // Licencia
     [ObservableProperty] private string _licensePlanDisplay = string.Empty;
     [ObservableProperty] private string _licenseUsageDisplay = string.Empty;
@@ -81,6 +90,8 @@ public partial class SettingsViewModel : ObservableObject
         StopOnOweAmount = _gatekeeper.StopOnOweAmount;
         WarnOnOweAmount = _gatekeeper.WarnOnOweAmount;
         AntiPassbackMinutes = _gatekeeper.AntiPassbackMinutes;
+
+        IsDefaultPinInUse = await _mediator.Send(new CheckDefaultPinQuery(_session.CompanyId), ct);
 
         await RefreshLicenseAsync(ct);
     }
@@ -201,6 +212,37 @@ public partial class SettingsViewModel : ObservableObject
             await LoadAsync();
         }
         catch (Exception ex) { SiteMessage = ex.Message; }
+    }
+
+    // ── Seguridad — PIN ─────────────────────────────────────────────────────
+
+    [RelayCommand]
+    private async Task ChangePinAsync()
+    {
+        PinMessage = null;
+        PinSaved = false;
+
+        if (NewPin != NewPinConfirm)
+        {
+            PinMessage = "El nuevo PIN y su confirmación no coinciden.";
+            return;
+        }
+
+        try
+        {
+            await _mediator.Send(new ChangePinCommand(_session.CompanyId, CurrentPin.Trim(), NewPin.Trim()));
+            PinSaved = true;
+            PinMessage = "PIN actualizado.";
+            CurrentPin = string.Empty;
+            NewPin = string.Empty;
+            NewPinConfirm = string.Empty;
+            IsDefaultPinInUse = await _mediator.Send(new CheckDefaultPinQuery(_session.CompanyId));
+        }
+        catch (ValidationException vex)
+        {
+            PinMessage = string.Join("\n", vex.Errors.Select(e => e.ErrorMessage));
+        }
+        catch (Exception ex) { PinMessage = ex.Message; }
     }
 
     // ── Licencia ────────────────────────────────────────────────────────────

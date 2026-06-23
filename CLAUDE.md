@@ -31,7 +31,6 @@ GymForge.Hardware.Bio    → sidecar x86 :12001 (ZKTeco libzkfpcsharp)
 GymForge.Hardware.Access → sidecar :12002 (TCP ZKTeco C3 / Hikvision)
 GymForge.Desktop         → Avalonia app (Program.cs → App.axaml → MainWindow)
 GymForge.Api             → Minimal API Kestrel localhost:5000
-GymForge.Sync            → motor de sync cloud (Sprint 2)
 ```
 
 ---

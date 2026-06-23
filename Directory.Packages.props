@@ -41,7 +41,6 @@
 
   <ItemGroup Label="Reporting">
     <PackageVersion Include="QuestPDF" Version="2025.4.0" />
-    <PackageVersion Include="ClosedXML" Version="0.105.0" />
   </ItemGroup>
 
   <ItemGroup Label="Logging">

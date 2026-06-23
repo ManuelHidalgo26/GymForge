@@ -13,7 +13,7 @@ tecnología .NET 9 + Avalonia UI 11. Mercado objetivo: gimnasios AR/LATAM con 10
 | Business Logic | .NET 9 + MediatR + FluentValidation |
 | ORM | EF Core 9 — SQLite local (WAL) / PostgreSQL cloud |
 | Hardware sidecars | FiscalBroker :12000 · BioBroker :12001 · AccessBroker :12002 |
-| Reporting | QuestPDF (tickets) + ClosedXML (Excel) |
+| Reporting | QuestPDF (tickets/recibos) |
 | Logging | Serilog → archivo local |
 | Tests | xUnit + FluentAssertions + NSubstitute + Testcontainers |
 
@@ -31,7 +31,6 @@ GymForge.Hardware.Bio    → sidecar x86 :12001 (ZKTeco libzkfpcsharp)
 GymForge.Hardware.Access → sidecar :12002 (TCP ZKTeco C3 / Hikvision)
 GymForge.Desktop         → Avalonia app (Program.cs → App.axaml → MainWindow)
 GymForge.Api             → Minimal API Kestrel localhost:5000
-GymForge.Sync            → motor de sync cloud (Sprint 2)
 ```
 
 ---

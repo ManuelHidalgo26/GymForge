@@ -34,6 +34,10 @@ public partial class MembersListViewModel : ObservableObject
     [ObservableProperty] private MemberStatus? _statusFilter;
     [ObservableProperty] private string? _errorMessage;
 
+    // Importación de padrón (CSV)
+    [ObservableProperty] private string? _importMessage;
+    [ObservableProperty] private bool _isImporting;
+
     public const int PageSize = 50;
     public int TotalPages => Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
     public bool CanGoNext => CurrentPage < TotalPages;
@@ -47,6 +51,9 @@ public partial class MembersListViewModel : ObservableObject
 
     /// <summary>Fired when the user clicks "Nuevo socio".</summary>
     public event Action? CreateMemberRequested;
+
+    /// <summary>Fired when the user clicks "Importar": el code-behind abre el selector de archivo.</summary>
+    public event Action? ImportRequested;
 
     public MembersListViewModel(IMediator mediator, SessionContext session)
     {
@@ -94,6 +101,48 @@ public partial class MembersListViewModel : ObservableObject
 
     [RelayCommand]
     private void CreateMember() => CreateMemberRequested?.Invoke();
+
+    [RelayCommand]
+    private void Import() => ImportRequested?.Invoke();
+
+    /// <summary>
+    /// Parsea el CSV elegido y da de alta el padrón. Lo llama el code-behind tras
+    /// leer el archivo (la lectura/selección es responsabilidad de la vista).
+    /// </summary>
+    public async Task ImportFromCsvAsync(string csvText)
+    {
+        ImportMessage = null;
+        IsImporting = true;
+        try
+        {
+            var parsed = MemberCsvParser.Parse(csvText);
+            if (parsed.Rows.Count == 0)
+            {
+                ImportMessage = "No se encontraron socios para importar. " + string.Join(" ", parsed.Errors);
+                return;
+            }
+
+            var result = await _mediator.Send(new ImportMembersCommand(CompanyId, SiteId, parsed.Rows));
+
+            var summary = $"Importados: {result.Imported}." +
+                          (result.Skipped > 0 ? $" Omitidos: {result.Skipped}." : string.Empty);
+            var details = parsed.Errors.Concat(result.Errors).Take(8).ToList();
+            ImportMessage = details.Count > 0
+                ? summary + "\n" + string.Join("\n", details)
+                : summary;
+
+            CurrentPage = 1;
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            ImportMessage = ex.Message;
+        }
+        finally
+        {
+            IsImporting = false;
+        }
+    }
 
     [RelayCommand]
     private async Task DeleteMemberAsync(MemberDto? member)

@@ -146,6 +146,21 @@ dotnet ef database update --project src/GymForge.Infrastructure --startup-projec
       primera cuota ahí mismo (sección "Membresía inicial"); abre el recibo PDF
       y si el cobro falla el reintento no duplica al socio
 
+### 🚀 Puesta en marcha del piloto (gimnasio real, sin AFIP ni biometría)
+- [x] Cambio de PIN del cajero/admin desde Configuración → Seguridad
+      (`ChangePinCommand`, PBKDF2). Aviso visible mientras siga activo el PIN de
+      fábrica (1234) vía `CheckDefaultPinQuery`. El login es por PIN, así que el
+      PIN actual identifica al staff y se valida que no choque con otro.
+- [x] Importación del padrón por CSV (Socios → "Importar CSV"): `MemberCsvParser`
+      (autodetecta separador `,`/`;`, columnas por nombre sin acentos; requeridas
+      nombre/apellido/dni) + `ImportMembersCommand` (omite duplicados por DNI en
+      base y dentro del archivo, respeta el límite de licencia y no aborta ante
+      filas inválidas). Los socios importados quedan activos.
+- [x] Red de seguridad ante excepciones: handlers globales de `AppDomain` y
+      `TaskScheduler.UnobservedTaskException` (Program.cs) + `Dispatcher.UIThread`
+      (App.axaml.cs) → quedan registradas en `%LOCALAPPDATA%\GymForge\logs` en vez
+      de cerrar la app de recepción.
+
 ### 🔲 Distribución y licencias (Sprint 3)
 - [x] Ejecutable único autocontenido (`scripts/publish.ps1` → `dist/GymForge.exe`)
 - [x] Ícono de la app (.ico multi-resolución, regenerable con `scripts/make-icon.ps1`)

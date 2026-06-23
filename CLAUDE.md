@@ -13,7 +13,7 @@ tecnología .NET 9 + Avalonia UI 11. Mercado objetivo: gimnasios AR/LATAM con 10
 | Business Logic | .NET 9 + MediatR + FluentValidation |
 | ORM | EF Core 9 — SQLite local (WAL) / PostgreSQL cloud |
 | Hardware sidecars | FiscalBroker :12000 · BioBroker :12001 · AccessBroker :12002 |
-| Reporting | QuestPDF (tickets) + ClosedXML (Excel) |
+| Reporting | QuestPDF (tickets/recibos) |
 | Logging | Serilog → archivo local |
 | Tests | xUnit + FluentAssertions + NSubstitute + Testcontainers |
 

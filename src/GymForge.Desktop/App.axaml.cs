@@ -43,13 +43,35 @@ public class App : Avalonia.Application
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = new MainWindow
-            {
-                DataContext = Services.GetRequiredService<MainWindowViewModel>()
-            };
+            var session = Services.GetRequiredService<SessionContext>();
+            if (session.NeedsOnboarding)
+                desktop.MainWindow = BuildOnboardingWindow(desktop);
+            else
+                desktop.MainWindow = BuildShellWindow();
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private static MainWindow BuildShellWindow() =>
+        new() { DataContext = Services.GetRequiredService<MainWindowViewModel>() };
+
+    /// <summary>Ventana de onboarding; al completarse crea el shell y la reemplaza.</summary>
+    private static Views.Onboarding.OnboardingWindow BuildOnboardingWindow(
+        IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        var vm = Services.GetRequiredService<ViewModels.Onboarding.OnboardingViewModel>();
+        var window = new Views.Onboarding.OnboardingWindow { DataContext = vm };
+
+        vm.Completed += () =>
+        {
+            var shell = BuildShellWindow();
+            desktop.MainWindow = shell;
+            shell.Show();
+            window.Close();
+        };
+
+        return window;
     }
 
     /// <summary>Aplica el color de acento de la marca del gimnasio a FluentAvalonia

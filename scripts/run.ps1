@@ -11,4 +11,8 @@ if ($Reset) {
     }
 }
 
+# En dev sembramos el gimnasio de demostración (PIN admin 1234) para no pasar por el
+# onboarding en cada arranque. En producción la env var no está y aparece el asistente.
+$env:GYMFORGE_SEED_COMPANY = '1'
+
 dotnet run --project (Join-Path $PSScriptRoot '..\src\GymForge.Desktop')

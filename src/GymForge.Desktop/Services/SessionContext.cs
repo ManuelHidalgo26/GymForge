@@ -35,6 +35,9 @@ public partial class SessionContext : ObservableObject
 
     public Guid CompanyId { get; private set; }
 
+    /// <summary>No hay empresa en la base → primer arranque: mostrar el onboarding.</summary>
+    public bool NeedsOnboarding => CompanyId == Guid.Empty;
+
     /// <summary>Staff por defecto (admin) para operaciones sin login explícito de caja.</summary>
     public Guid DefaultStaffId { get; private set; }
 

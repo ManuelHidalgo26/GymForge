@@ -27,6 +27,10 @@ using Microsoft.Extensions.DependencyInjection;
 // Renderiza vistas reales de la app (Avalonia headless + Skia) a PNG, con datos
 // de ejemplo en una DB temporal. Permite revisar el UI sin abrir la ventana.
 
+// Las capturas usan el gimnasio de demostración (sin él, el primer arranque muestra
+// el onboarding y no habría tenant que poblar).
+Environment.SetEnvironmentVariable("GYMFORGE_SEED_COMPANY", "1");
+
 var outDir = Path.Combine(AppContext.BaseDirectory, "screenshots");
 Directory.CreateDirectory(outDir);
 
@@ -210,6 +214,23 @@ var shellBrand = new GymForge.Desktop.Views.Shell.MainWindow
 };
 CaptureWindow("17-marca-verde", shellBrand, outDir);
 GymForge.Desktop.App.ApplyBrandAccent("#6366F1");
+
+// Onboarding de primer arranque (asistente de configuración inicial).
+var onboardingVm = sp.GetRequiredService<GymForge.Desktop.ViewModels.Onboarding.OnboardingViewModel>();
+onboardingVm.GymName = "PowerGym";
+onboardingVm.TaxId = "30-11223344-5";
+onboardingVm.SiteAddress = "Av. Rivadavia 4500, CABA";
+onboardingVm.AdminFirstName = "Lucía";
+onboardingVm.AdminLastName = "Fernández";
+onboardingVm.AdminPin = "1234";
+onboardingVm.AdminPinConfirm = "1234";
+var onboardingWindow = new GymForge.Desktop.Views.Onboarding.OnboardingWindow
+{
+    DataContext = onboardingVm,
+    Width = 660,
+    Height = 880,
+};
+CaptureWindow("18-onboarding", onboardingWindow, outDir);
 
 Console.WriteLine($"OK -> {outDir}");
 return;

@@ -1,0 +1,139 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:fa="using:FluentAvalonia.UI.Controls"
+        xmlns:vm="using:GymForge.Desktop.ViewModels.Onboarding"
+        x:Class="GymForge.Desktop.Views.Onboarding.OnboardingWindow"
+        x:DataType="vm:OnboardingViewModel"
+        Title="GymForge — Configuración inicial"
+        Icon="/Assets/gymforge.ico"
+        Width="660" Height="880"
+        MinWidth="560" MinHeight="600"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource ContentBackground}">
+
+    <ScrollViewer>
+        <Border Classes="Card" MaxWidth="560" Margin="24" Padding="34"
+                HorizontalAlignment="Center" VerticalAlignment="Center">
+            <StackPanel Spacing="22">
+
+                <!-- ── Encabezado ─────────────────────────────────────────── -->
+                <StackPanel Spacing="12" HorizontalAlignment="Center">
+                    <Border Width="58" Height="58" CornerRadius="15"
+                            Background="{DynamicResource SystemAccentColor}"
+                            HorizontalAlignment="Center">
+                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Target}" FontSize="28" Foreground="White"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <TextBlock Text="Bienvenido a GymForge" FontSize="23" FontWeight="Bold"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Text="Configurá tu gimnasio para empezar a operar. Podés cambiar todo después en Configuración."
+                               Classes="PageSubtitle" HorizontalAlignment="Center"
+                               TextAlignment="Center" TextWrapping="Wrap" MaxWidth="420" />
+                </StackPanel>
+
+                <!-- ── Tu gimnasio ────────────────────────────────────────── -->
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Tu gimnasio" Classes="SectionTitle" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Nombre / Razón social *" Classes="FormLabel" />
+                            <TextBox Text="{Binding GymName}" Watermark="Ej: PowerGym S.R.L." />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="4">
+                            <TextBlock Text="CUIT *" Classes="FormLabel" />
+                            <TextBox Text="{Binding TaxId}" Watermark="30-12345678-9" Width="180" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+
+                <!-- ── Primera sede ───────────────────────────────────────── -->
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Primera sede" Classes="SectionTitle" />
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Nombre *" Classes="FormLabel" />
+                            <TextBox Text="{Binding SiteName}" Watermark="Sede Central" Width="180" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="4">
+                            <TextBlock Text="Dirección *" Classes="FormLabel" />
+                            <TextBox Text="{Binding SiteAddress}" Watermark="Av. Siempre Viva 742" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+
+                <!-- ── Responsable + PIN ──────────────────────────────────── -->
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Responsable" Classes="SectionTitle" />
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Nombre *" Classes="FormLabel" />
+                            <TextBox Text="{Binding AdminFirstName}" Watermark="Nombre" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="4">
+                            <TextBlock Text="Apellido *" Classes="FormLabel" />
+                            <TextBox Text="{Binding AdminLastName}" Watermark="Apellido" />
+                        </StackPanel>
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="PIN de acceso *" Classes="FormLabel" />
+                            <TextBox Text="{Binding AdminPin}" PasswordChar="●" MaxLength="8"
+                                     Watermark="4 a 8 dígitos" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Spacing="4">
+                            <TextBlock Text="Confirmar PIN *" Classes="FormLabel" />
+                            <TextBox Text="{Binding AdminPinConfirm}" PasswordChar="●" MaxLength="8"
+                                     Watermark="Repetí el PIN" />
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Text="Con este PIN vas a abrir la caja y operar el día a día."
+                               Classes="Caption" />
+                </StackPanel>
+
+                <!-- ── Color de marca ─────────────────────────────────────── -->
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Color de tu marca" Classes="SectionTitle" />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Classes="Swatch" Background="#6366F1" ToolTip.Tip="Indigo"
+                                Command="{Binding SelectAccentCommand}" CommandParameter="#6366F1"
+                                Classes.selected="{Binding BrandColorHex, Converter={StaticResource StringEquals}, ConverterParameter=#6366F1}" />
+                        <Button Classes="Swatch" Background="#2563EB" ToolTip.Tip="Azul"
+                                Command="{Binding SelectAccentCommand}" CommandParameter="#2563EB"
+                                Classes.selected="{Binding BrandColorHex, Converter={StaticResource StringEquals}, ConverterParameter=#2563EB}" />
+                        <Button Classes="Swatch" Background="#059669" ToolTip.Tip="Esmeralda"
+                                Command="{Binding SelectAccentCommand}" CommandParameter="#059669"
+                                Classes.selected="{Binding BrandColorHex, Converter={StaticResource StringEquals}, ConverterParameter=#059669}" />
+                        <Button Classes="Swatch" Background="#7C3AED" ToolTip.Tip="Violeta"
+                                Command="{Binding SelectAccentCommand}" CommandParameter="#7C3AED"
+                                Classes.selected="{Binding BrandColorHex, Converter={StaticResource StringEquals}, ConverterParameter=#7C3AED}" />
+                        <Button Classes="Swatch" Background="#D97706" ToolTip.Tip="Ámbar"
+                                Command="{Binding SelectAccentCommand}" CommandParameter="#D97706"
+                                Classes.selected="{Binding BrandColorHex, Converter={StaticResource StringEquals}, ConverterParameter=#D97706}" />
+                        <Button Classes="Swatch" Background="#DC2626" ToolTip.Tip="Granate"
+                                Command="{Binding SelectAccentCommand}" CommandParameter="#DC2626"
+                                Classes.selected="{Binding BrandColorHex, Converter={StaticResource StringEquals}, ConverterParameter=#DC2626}" />
+                    </StackPanel>
+                    <TextBlock Text="El logo lo cargás después en Configuración → Marca." Classes="Caption" />
+                </StackPanel>
+
+                <CheckBox IsChecked="{Binding CreateSamplePlans}"
+                          Content="Cargar planes de ejemplo (Mensual, Trimestral, Anual)" />
+
+                <fa:InfoBar IsOpen="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                            Severity="Error" Title="Revisá los datos"
+                            Message="{Binding ErrorMessage}" IsClosable="False" />
+
+                <Button Command="{Binding CompleteCommand}" Classes="Primary"
+                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        Height="46" IsEnabled="{Binding !IsBusy}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Accept}" FontSize="16" />
+                        <TextBlock Text="Crear gimnasio y empezar" FontSize="14" />
+                    </StackPanel>
+                </Button>
+
+            </StackPanel>
+        </Border>
+    </ScrollViewer>
+
+</Window>

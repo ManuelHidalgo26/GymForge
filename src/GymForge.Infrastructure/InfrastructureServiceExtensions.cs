@@ -47,6 +47,12 @@ public static class InfrastructureServiceExtensions
         services.AddSingleton<IReceiptPdfWriter, ReceiptPdfGenerator>();
         services.AddScoped<IEventBus, InProcessEventBus>();
 
+        // Notificaciones + cobro automático (dunning). Sender por defecto = log; el
+        // proveedor real (Twilio/Wassenger) se registra en su lugar. Off hasta configurar.
+        services.AddSingleton<INotificationSender, LogNotificationSender>();
+        services.AddSingleton<GymForge.Application.UseCases.Dunning.DunningConfig>();
+        services.AddScoped<GymForge.Application.UseCases.Dunning.DunningService>();
+
         services.AddScoped<DatabaseSeeder>();
 
         return services;

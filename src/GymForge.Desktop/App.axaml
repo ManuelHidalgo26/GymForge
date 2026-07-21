@@ -99,6 +99,7 @@
             <conv:ActiveColorBrushConverter x:Key="ActiveColorBrushConverter" />
             <conv:ActiveLabelConverter x:Key="ActiveLabelConverter" />
             <conv:ActiveToggleLabelConverter x:Key="ActiveToggleLabelConverter" />
+            <conv:StringEqualsConverter x:Key="StringEquals" />
             <ResourceDictionary.MergedDictionaries>
                 <ResourceInclude Source="avares://GymForge/Assets/Styles/Colors.axaml" />
             </ResourceDictionary.MergedDictionaries>

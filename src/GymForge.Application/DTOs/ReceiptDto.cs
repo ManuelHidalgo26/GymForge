@@ -21,4 +21,8 @@ public record ReceiptDto(
     IReadOnlyList<ReceiptItemDto> Items,
     /// <summary>Parte del pago que no se asignó a ningún cobro (queda a cuenta).</summary>
     decimal OnAccount,
-    decimal Total);
+    decimal Total,
+    /// <summary>Ruta local del logo del gimnasio (null = sin logo).</summary>
+    string? LogoPath = null,
+    /// <summary>Color de acento de la marca, para el encabezado del recibo.</summary>
+    string BrandColorHex = "#6366F1");

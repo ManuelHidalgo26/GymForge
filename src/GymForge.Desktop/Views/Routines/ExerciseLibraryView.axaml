@@ -12,7 +12,7 @@
         <Border Grid.Row="0" Classes="Toolbar">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8">
-                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Globe}" FontSize="20" VerticalAlignment="Center" />
+                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Target}" FontSize="20" VerticalAlignment="Center" />
                     <TextBlock Text="Biblioteca de ejercicios" Classes="ToolbarTitle" />
                     <Border Classes="CountBadge">
                         <TextBlock Text="{Binding Exercises.Count}" />

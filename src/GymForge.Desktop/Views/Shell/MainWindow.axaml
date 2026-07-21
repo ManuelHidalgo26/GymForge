@@ -38,19 +38,29 @@
                 BoxShadow="2 0 8 0 #22000000">
             <DockPanel>
 
-                <!-- Logo + Gym Name -->
+                <!-- Logo del gimnasio (o iniciales) + nombre + sede -->
                 <Border DockPanel.Dock="Top" Padding="12,16">
                     <StackPanel Orientation="Horizontal" Spacing="10">
-                        <Border Width="36" Height="36" CornerRadius="8"
-                                Background="{DynamicResource SystemAccentColor}">
-                            <TextBlock Text="GF" FontWeight="Bold" FontSize="14"
-                                       Foreground="White"
-                                       HorizontalAlignment="Center"
-                                       VerticalAlignment="Center" />
-                        </Border>
-                        <StackPanel IsVisible="{Binding !IsSidebarCollapsed}">
-                            <TextBlock Text="{Binding GymName}" FontWeight="SemiBold" FontSize="14" />
-                            <TextBlock Text="{Binding CurrentSiteName}" FontSize="11" Opacity="0.6" />
+                        <Panel Width="36" Height="36">
+                            <!-- Logo cargado por el gimnasio -->
+                            <Border CornerRadius="8" ClipToBounds="True"
+                                    IsVisible="{Binding Session.HasLogo}">
+                                <Image Source="{Binding Session.LogoImage}" Stretch="UniformToFill" />
+                            </Border>
+                            <!-- Fallback: iniciales sobre el chip de acento -->
+                            <Border CornerRadius="8"
+                                    Background="{DynamicResource SystemAccentColor}"
+                                    IsVisible="{Binding !Session.HasLogo}">
+                                <TextBlock Text="{Binding Session.GymInitials}"
+                                           FontWeight="Bold" FontSize="14" Foreground="White"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                        </Panel>
+                        <StackPanel IsVisible="{Binding !IsSidebarCollapsed}" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding GymName}" FontWeight="SemiBold" FontSize="14"
+                                       TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding CurrentSiteName}" FontSize="11" Opacity="0.6"
+                                       TextTrimming="CharacterEllipsis" />
                         </StackPanel>
                     </StackPanel>
                 </Border>
@@ -58,6 +68,9 @@
                 <!-- Nav Items -->
                 <ScrollViewer DockPanel.Dock="Top" VerticalScrollBarVisibility="Auto">
                     <StackPanel Spacing="2" Margin="8,0">
+
+                        <TextBlock Text="OPERACIÓN" Classes="NavSection"
+                                   IsVisible="{Binding !IsSidebarCollapsed}" />
 
                         <Button Command="{Binding NavigateCommand}"
                                 CommandParameter="{x:Static vm:NavSection.Dashboard}"
@@ -102,10 +115,13 @@
                                     Converter={StaticResource NavSectionActiveConverter},
                                     ConverterParameter=Cash}">
                             <StackPanel Orientation="Horizontal" Spacing="12">
-                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Tag}" FontSize="18" />
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Calculator}" FontSize="18" />
                                 <TextBlock Text="Caja" IsVisible="{Binding !IsSidebarCollapsed}" />
                             </StackPanel>
                         </Button>
+
+                        <TextBlock Text="GESTIÓN" Classes="NavSection"
+                                   IsVisible="{Binding !IsSidebarCollapsed}" />
 
                         <Button Command="{Binding NavigateCommand}"
                                 CommandParameter="{x:Static vm:NavSection.Plans}"
@@ -138,7 +154,7 @@
                                     Converter={StaticResource NavSectionActiveConverter},
                                     ConverterParameter=Routines}">
                             <StackPanel Orientation="Horizontal" Spacing="12">
-                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Globe}" FontSize="18" />
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Target}" FontSize="18" />
                                 <TextBlock Text="Rutinas" IsVisible="{Binding !IsSidebarCollapsed}" />
                             </StackPanel>
                         </Button>
@@ -150,7 +166,7 @@
                                     Converter={StaticResource NavSectionActiveConverter},
                                     ConverterParameter=Products}">
                             <StackPanel Orientation="Horizontal" Spacing="12">
-                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Tag}" FontSize="18" />
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Shop}" FontSize="18" />
                                 <TextBlock Text="Productos" IsVisible="{Binding !IsSidebarCollapsed}" />
                             </StackPanel>
                         </Button>
@@ -262,17 +278,22 @@
                                    IsVisible="{Binding Session.IsSignedIn}" />
                         <Border Classes="Avatar" Width="32" Height="32" CornerRadius="16"
                                 ToolTip.Tip="{Binding Session.CashierName}">
-                            <TextBlock Text="A" FontWeight="Bold" />
+                            <TextBlock Text="{Binding Session.CashierInitials}" FontWeight="Bold" />
                         </Border>
                     </StackPanel>
                 </DockPanel>
             </Border>
 
             <!-- Content router — DataTemplates in App.axaml resolve the correct View.
-                 Lienzo gris: las cards de cada vista flotan sobre este fondo. -->
+                 Lienzo gris: las cards de cada vista flotan sobre este fondo.
+                 Cross-fade sutil al navegar entre secciones. -->
             <Border Grid.Row="1" Background="{DynamicResource ContentBackground}">
-                <ContentControl Name="ContentArea"
-                                Content="{Binding CurrentViewModel}" />
+                <TransitioningContentControl Name="ContentArea"
+                                             Content="{Binding CurrentViewModel}">
+                    <TransitioningContentControl.PageTransition>
+                        <CrossFade Duration="0:0:0.18" />
+                    </TransitioningContentControl.PageTransition>
+                </TransitioningContentControl>
             </Border>
 
         </Grid>

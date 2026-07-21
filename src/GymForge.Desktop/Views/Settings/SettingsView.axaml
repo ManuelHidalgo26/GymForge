@@ -79,6 +79,80 @@
                     </StackPanel>
                 </Border>
 
+                <!-- ── Marca ──────────────────────────────────────────────── -->
+                <Border Classes="Card" Padding="24">
+                    <StackPanel Spacing="16">
+                        <StackPanel Spacing="3">
+                            <TextBlock Text="Marca" FontSize="15" FontWeight="SemiBold" />
+                            <TextBlock FontSize="12" Opacity="0.6" TextWrapping="Wrap"
+                                       Text="El logo aparece en el menú y en los recibos. El color de acento pinta botones, íconos y resaltados de toda la app." />
+                        </StackPanel>
+
+                        <!-- Logo -->
+                        <StackPanel Orientation="Horizontal" Spacing="16">
+                            <Border Width="64" Height="64" CornerRadius="12" ClipToBounds="True"
+                                    Background="{DynamicResource SubtleFillColorSecondaryBrush}"
+                                    BorderBrush="{DynamicResource SurfaceBorderBrush}" BorderThickness="1">
+                                <Panel>
+                                    <Image Source="{Binding LogoPreview}" Stretch="UniformToFill"
+                                           IsVisible="{Binding HasLogoPreview}" />
+                                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Image}" FontSize="26" Opacity="0.35"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   IsVisible="{Binding !HasLogoPreview}" />
+                                </Panel>
+                            </Border>
+                            <StackPanel Spacing="8" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button Command="{Binding PickLogoCommand}" Classes="Secondary">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Upload}" FontSize="14" />
+                                            <TextBlock Text="Elegir logo" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Content="Quitar" Classes="Ghost"
+                                            Command="{Binding RemoveLogoCommand}"
+                                            IsVisible="{Binding HasLogoPreview}" />
+                                </StackPanel>
+                                <TextBlock Text="PNG o JPG, preferentemente cuadrado." Classes="Caption" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Color de acento -->
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Color de acento" Classes="FormLabel" />
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <Button Classes="Swatch" Background="#6366F1" ToolTip.Tip="Indigo"
+                                        Command="{Binding SelectAccentCommand}" CommandParameter="#6366F1"
+                                        Classes.selected="{Binding BrandColorHex, Converter={StaticResource StringEquals}, ConverterParameter=#6366F1}" />
+                                <Button Classes="Swatch" Background="#2563EB" ToolTip.Tip="Azul"
+                                        Command="{Binding SelectAccentCommand}" CommandParameter="#2563EB"
+                                        Classes.selected="{Binding BrandColorHex, Converter={StaticResource StringEquals}, ConverterParameter=#2563EB}" />
+                                <Button Classes="Swatch" Background="#059669" ToolTip.Tip="Esmeralda"
+                                        Command="{Binding SelectAccentCommand}" CommandParameter="#059669"
+                                        Classes.selected="{Binding BrandColorHex, Converter={StaticResource StringEquals}, ConverterParameter=#059669}" />
+                                <Button Classes="Swatch" Background="#7C3AED" ToolTip.Tip="Violeta"
+                                        Command="{Binding SelectAccentCommand}" CommandParameter="#7C3AED"
+                                        Classes.selected="{Binding BrandColorHex, Converter={StaticResource StringEquals}, ConverterParameter=#7C3AED}" />
+                                <Button Classes="Swatch" Background="#D97706" ToolTip.Tip="Ámbar"
+                                        Command="{Binding SelectAccentCommand}" CommandParameter="#D97706"
+                                        Classes.selected="{Binding BrandColorHex, Converter={StaticResource StringEquals}, ConverterParameter=#D97706}" />
+                                <Button Classes="Swatch" Background="#DC2626" ToolTip.Tip="Granate"
+                                        Command="{Binding SelectAccentCommand}" CommandParameter="#DC2626"
+                                        Classes.selected="{Binding BrandColorHex, Converter={StaticResource StringEquals}, ConverterParameter=#DC2626}" />
+                                <TextBox Text="{Binding BrandColorHex}" Watermark="#6366F1" Width="110"
+                                         VerticalAlignment="Center" Margin="6,0,0,0" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <TextBlock Text="{Binding BrandMessage}" FontSize="12"
+                                   Foreground="{Binding BrandSaved, Converter={StaticResource ActiveColorBrushConverter}}"
+                                   IsVisible="{Binding BrandMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                   TextWrapping="Wrap" />
+                        <Button Content="Guardar marca" Command="{Binding SaveBrandingCommand}" Classes="Primary"
+                                HorizontalAlignment="Left" />
+                    </StackPanel>
+                </Border>
+
                 <!-- ── Sedes ──────────────────────────────────────────────── -->
                 <Border Classes="Card" Padding="24">
                     <StackPanel Spacing="12">

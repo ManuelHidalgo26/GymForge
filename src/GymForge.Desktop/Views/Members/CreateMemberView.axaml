@@ -191,7 +191,7 @@
                         </StackPanel>
 
                         <TextBlock Grid.Row="1" Grid.Column="1" FontSize="13" FontWeight="SemiBold"
-                                   VerticalAlignment="Center"
+                                   VerticalAlignment="Center" Classes="Numeric"
                                    IsVisible="{Binding SelectedPlan, Converter={x:Static ObjectConverters.IsNotNull}}">
                             <Run Text="Total a cobrar: " />
                             <Run Text="{Binding SelectedPlan.Price, StringFormat={}{0:C}}" />

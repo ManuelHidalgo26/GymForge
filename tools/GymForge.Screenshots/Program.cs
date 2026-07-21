@@ -199,6 +199,18 @@ var shell = new GymForge.Desktop.Views.Shell.MainWindow
 };
 CaptureWindow("00-shell", shell, outDir);
 
+// Branding: aplica un acento distinto (verde) y re-captura el shell para verificar
+// que FluentAvaloniaTheme.CustomAccentColor re-tinta toda la UI en caliente.
+GymForge.Desktop.App.ApplyBrandAccent("#059669");
+var shellBrand = new GymForge.Desktop.Views.Shell.MainWindow
+{
+    DataContext = sp.GetRequiredService<GymForge.Desktop.Views.Shell.MainWindowViewModel>(),
+    Width = 1366,
+    Height = 800,
+};
+CaptureWindow("17-marca-verde", shellBrand, outDir);
+GymForge.Desktop.App.ApplyBrandAccent("#6366F1");
+
 Console.WriteLine($"OK -> {outDir}");
 return;
 

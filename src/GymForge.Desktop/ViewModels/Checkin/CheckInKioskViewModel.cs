@@ -34,6 +34,9 @@ public partial class CheckInKioskViewModel : ObservableObject
     public bool IsIdle    => State == KioskState.Idle;
     public bool HasHistory => TodaysAccess.Count > 0;
 
+    /// <summary>Marca del gimnasio (logo/nombre/sede) para el encabezado del kiosk.</summary>
+    public SessionContext Session => _session;
+
     /// <summary>El code-behind enfoca el campo de DNI cuando se dispara (al cargar y al volver a Idle).</summary>
     public event Action? FocusRequested;
 

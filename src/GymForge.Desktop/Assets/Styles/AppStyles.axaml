@@ -10,11 +10,30 @@
          ════════════════════════════════════════════════════════════════════ -->
 
     <!-- ── Superficies ── -->
+    <!-- Card: borde hairline + sombra multicapa (ambiental + contacto) para dar
+         profundidad creíble. En dark la sombra casi no se ve y el borde define la card. -->
     <Style Selector="Border.Card">
         <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
         <Setter Property="CornerRadius" Value="14" />
         <Setter Property="Padding" Value="22,18" />
-        <Setter Property="BoxShadow" Value="0 2 8 0 #10000000" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BoxShadow" Value="0 1 2 0 #14000000, 0 10 26 -8 #1F000000" />
+    </Style>
+
+    <!-- Card clicable: cursor de mano + eleva y resalta el borde al pasar el mouse -->
+    <Style Selector="Border.Card.Interactive">
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.16" />
+                <BrushTransition Property="BorderBrush" Duration="0:0:0.16" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Border.Card.Interactive:pointerover">
+        <Setter Property="BoxShadow" Value="0 2 4 0 #1A000000, 0 16 34 -10 #2E000000" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorLight2}" />
     </Style>
 
     <!-- Barra superior de cada vista: fondo de card + borde inferior -->
@@ -79,6 +98,11 @@
     <Style Selector="TextBlock.FormLabel">
         <Setter Property="FontSize" Value="12" />
         <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+    </Style>
+    <!-- Cifras tabulares: montos y KPIs alinean en columnas y no "bailan" al cambiar.
+         FontFeatures se hereda a los Run hijos, así que sirve para textos con $ + Run. -->
+    <Style Selector="TextBlock.Numeric">
+        <Setter Property="FontFeatures" Value="+tnum" />
     </Style>
 
     <!-- ── Pills de estado ── -->
@@ -203,6 +227,14 @@
         <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}" />
     </Style>
 
+    <!-- Encabezado de grupo del sidebar (se oculta al colapsar) -->
+    <Style Selector="TextBlock.NavSection">
+        <Setter Property="FontSize" Value="10.5" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}" />
+        <Setter Property="Margin" Value="12,16,12,4" />
+    </Style>
+
     <!-- ── Navigation buttons (sidebar) ── -->
     <Style Selector="Button.NavButton">
         <Setter Property="Background" Value="Transparent" />
@@ -248,11 +280,34 @@
         <Setter Property="MinWidth" Value="260" />
     </Style>
 
+    <!-- ── Swatch de color (paleta de acento) ── -->
+    <!-- Conserva su color de fondo en hover/pressed (el template Fluent lo pisaría). -->
+    <Style Selector="Button.Swatch">
+        <Setter Property="Width" Value="30" />
+        <Setter Property="Height" Value="30" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="Button.Swatch:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{Binding $parent[Button].Background}" />
+    </Style>
+    <Style Selector="Button.Swatch:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{Binding $parent[Button].Background}" />
+    </Style>
+    <!-- Swatch seleccionado: anillo de acento -->
+    <Style Selector="Button.Swatch.selected">
+        <Setter Property="BorderThickness" Value="2" />
+        <Setter Property="BorderBrush" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+    </Style>
+
     <!-- ── DataGrid ── -->
+    <!-- Cifras tabulares en toda la grilla: las columnas de montos alinean. -->
     <Style Selector="DataGrid">
         <Setter Property="RowHeight" Value="38" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="GridLinesVisibility" Value="Horizontal" />
+        <Setter Property="(TextElement.FontFeatures)" Value="+tnum" />
     </Style>
 
 </Styles>

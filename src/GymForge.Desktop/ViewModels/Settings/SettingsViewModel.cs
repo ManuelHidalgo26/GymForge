@@ -1,4 +1,8 @@
 using System.Collections.ObjectModel;
+using System.IO;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FluentValidation;
@@ -28,6 +32,16 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _taxId = string.Empty;
     [ObservableProperty] private string? _companyMessage;
     [ObservableProperty] private bool _companySaved;
+
+    // Marca (logo + color de acento)
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasLogoPreview))]
+    private Bitmap? _logoPreview;
+    [ObservableProperty] private string _brandColorHex = SessionContext.DefaultBrandColorHex;
+    [ObservableProperty] private string? _brandMessage;
+    [ObservableProperty] private bool _brandSaved;
+    private string? _pendingLogoPath;   // ruta elegida, se persiste al guardar
+    public bool HasLogoPreview => LogoPreview is not null;
 
     // Sedes
     [ObservableProperty] private ObservableCollection<SiteDto> _sites = [];
@@ -83,6 +97,11 @@ public partial class SettingsViewModel : ObservableObject
             TaxId = company.TaxId;
         }
 
+        // Marca: refleja lo que ya cargó la sesión.
+        BrandColorHex = _session.BrandColorHex;
+        LogoPreview = _session.LogoImage;
+        _pendingLogoPath = _session.LogoPath;
+
         var sites = await _siteRepo.GetByCompanyAsync(_session.CompanyId, ct);
         Sites = new ObservableCollection<SiteDto>(
             sites.Select(s => new SiteDto(s.Id, s.Name, s.Address, s.Phone)));
@@ -132,6 +151,102 @@ public partial class SettingsViewModel : ObservableObject
             CompanyMessage = string.Join("\n", vex.Errors.Select(e => e.ErrorMessage));
         }
         catch (Exception ex) { CompanyMessage = ex.Message; }
+    }
+
+    // ── Marca ───────────────────────────────────────────────────────────────
+
+    [RelayCommand]
+    private async Task PickLogoAsync()
+    {
+        BrandMessage = null;
+        var top = (Avalonia.Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+        if (top?.StorageProvider is not { } storage) return;
+
+        var files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Elegí el logo del gimnasio",
+            AllowMultiple = false,
+            FileTypeFilter = [new FilePickerFileType("Imágenes") { Patterns = ["*.png", "*.jpg", "*.jpeg"] }],
+        });
+
+        if (files.FirstOrDefault()?.TryGetLocalPath() is not { } path) return;
+
+        _pendingLogoPath = path;
+        LogoPreview = LoadBitmap(path);
+    }
+
+    [RelayCommand]
+    private void RemoveLogo()
+    {
+        _pendingLogoPath = null;
+        LogoPreview = null;
+        BrandMessage = null;
+    }
+
+    /// <summary>Elige un color de acento y lo previsualiza en vivo en toda la app.
+    /// Se persiste recién al guardar.</summary>
+    [RelayCommand]
+    private void SelectAccent(string? hex)
+    {
+        if (string.IsNullOrWhiteSpace(hex)) return;
+        BrandColorHex = hex;
+        App.ApplyBrandAccent(hex);
+    }
+
+    [RelayCommand]
+    private async Task SaveBrandingAsync()
+    {
+        BrandMessage = null;
+        BrandSaved = false;
+        try
+        {
+            string? finalLogo = null;
+            if (_pendingLogoPath is { } src && File.Exists(src))
+            {
+                var brandDir = BrandDir();
+                var dest = Path.Combine(brandDir, "logo" + Path.GetExtension(src).ToLowerInvariant());
+                if (!string.Equals(Path.GetFullPath(src), Path.GetFullPath(dest), StringComparison.OrdinalIgnoreCase))
+                {
+                    // Reemplaza cualquier logo previo (posible otra extensión).
+                    foreach (var old in Directory.GetFiles(brandDir, "logo.*"))
+                        try { File.Delete(old); } catch { /* en uso: se ignora */ }
+                    File.Copy(src, dest, overwrite: true);
+                }
+                finalLogo = dest;
+            }
+
+            await _mediator.Send(new UpdateBrandingCommand(_session.CompanyId, finalLogo, BrandColorHex));
+            await _session.InitializeAsync();
+            App.ApplyBrandAccent(BrandColorHex);
+
+            LogoPreview = _session.LogoImage;
+            _pendingLogoPath = _session.LogoPath;
+            BrandSaved = true;
+            BrandMessage = "Marca guardada.";
+        }
+        catch (ValidationException vex)
+        {
+            BrandMessage = string.Join("\n", vex.Errors.Select(e => e.ErrorMessage));
+        }
+        catch (Exception ex) { BrandMessage = ex.Message; }
+    }
+
+    private static string BrandDir()
+    {
+        var dir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "GymForge", "brand");
+        Directory.CreateDirectory(dir);
+        return dir;
+    }
+
+    private static Bitmap? LoadBitmap(string path)
+    {
+        try
+        {
+            using var fs = File.OpenRead(path);
+            return new Bitmap(fs);
+        }
+        catch { return null; }
     }
 
     // ── Sedes ───────────────────────────────────────────────────────────────

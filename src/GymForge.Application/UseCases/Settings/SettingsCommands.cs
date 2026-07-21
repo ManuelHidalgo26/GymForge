@@ -39,6 +39,38 @@ public class UpdateCompanyCommandHandler : IRequestHandler<UpdateCompanyCommand>
     }
 }
 
+// ── Marca (logo + color de acento) ────────────────────────────────────────────
+
+/// <summary>Actualiza la identidad visual del gimnasio: logo (ruta local) y color
+/// de acento. El color re-tinta toda la UI vía FluentAvaloniaTheme.CustomAccentColor.</summary>
+public record UpdateBrandingCommand(Guid CompanyId, string? LogoPath, string BrandColorHex) : IRequest;
+
+public class UpdateBrandingCommandValidator : AbstractValidator<UpdateBrandingCommand>
+{
+    public UpdateBrandingCommandValidator()
+    {
+        RuleFor(x => x.BrandColorHex)
+            .Matches("^#(?:[0-9a-fA-F]{6})$")
+            .WithMessage("El color debe ser un hex de 6 dígitos, por ejemplo #6366F1.");
+    }
+}
+
+public class UpdateBrandingCommandHandler : IRequestHandler<UpdateBrandingCommand>
+{
+    private readonly ISiteRepository _repo;
+    public UpdateBrandingCommandHandler(ISiteRepository repo) => _repo = repo;
+
+    public async Task Handle(UpdateBrandingCommand cmd, CancellationToken ct)
+    {
+        var company = await _repo.GetCompanyAsync(cmd.CompanyId, ct)
+            ?? throw new InvalidOperationException("La empresa no existe.");
+
+        var logo = string.IsNullOrWhiteSpace(cmd.LogoPath) ? null : cmd.LogoPath.Trim();
+        company.UpdateBranding(logo, cmd.BrandColorHex.Trim().ToUpperInvariant());
+        await _repo.SaveChangesAsync(ct);
+    }
+}
+
 // ── Sedes ─────────────────────────────────────────────────────────────────────
 
 public record SiteDto(Guid Id, string Name, string Address, string? Phone = null);

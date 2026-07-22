@@ -60,6 +60,9 @@ try
     await App.Services.GetRequiredService<SessionContext>().InitializeAsync();
     Log.Information("Session initialised — UI starting");
 
+    // Cobro automático (dunning): una vez por día al abrir. Dormido hasta configurar proveedor.
+    await DunningStartup.RunDailyAsync(App.Services);
+
     BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
 }
 catch (Exception ex)

@@ -178,12 +178,11 @@
             </DataGrid.Columns>
         </DataGrid>
 
-        <!-- ── Estado vacío ───────────────────────────────────────────────── -->
+        <!-- ── Estado vacío (adaptativo: sin datos vs sin resultados) ──────── -->
         <StackPanel Grid.Row="2" Classes="EmptyState" IsVisible="{Binding IsEmpty}">
             <fa:SymbolIcon Symbol="{x:Static fa:Symbol.People}" />
-            <TextBlock Classes="EmptyTitle" Text="Todavía no hay socios para mostrar" />
-            <TextBlock Classes="EmptyBody"
-                       Text="Creá el primero con «Nuevo socio», o ajustá la búsqueda y los filtros." />
+            <TextBlock Classes="EmptyTitle" Text="{Binding EmptyTitle}" />
+            <TextBlock Classes="EmptyBody" Text="{Binding EmptyBody}" />
         </StackPanel>
 
         <!-- ── Footer / Paginación ────────────────────────────────────────── -->

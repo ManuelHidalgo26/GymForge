@@ -7,9 +7,41 @@
              x:DataType="vm:CheckInKioskViewModel"
              Background="#111113">
 
-    <Grid RowDefinitions="*,Auto">
+    <Grid RowDefinitions="Auto,*,Auto">
 
-        <Grid Grid.Row="0" ColumnDefinitions="*,380">
+        <!-- ── Encabezado de marca del gimnasio ──────────────────────────────── -->
+        <Border Grid.Row="0" Padding="24,14" Background="#0D0D0F">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                    <Panel Width="40" Height="40">
+                        <Border CornerRadius="9" ClipToBounds="True" IsVisible="{Binding Session.HasLogo}">
+                            <Image Source="{Binding Session.LogoImage}" Stretch="UniformToFill" />
+                        </Border>
+                        <Border CornerRadius="9" Background="{DynamicResource SystemAccentColor}"
+                                IsVisible="{Binding !Session.HasLogo}">
+                            <TextBlock Text="{Binding Session.GymInitials}" FontWeight="Bold" FontSize="16"
+                                       Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </Panel>
+                    <StackPanel VerticalAlignment="Center" Spacing="1">
+                        <TextBlock Text="{Binding Session.GymName}" Foreground="White"
+                                   FontSize="16" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding Session.CurrentSite.Name}" Foreground="#888" FontSize="12" />
+                    </StackPanel>
+                </StackPanel>
+
+                <Border Grid.Column="2" CornerRadius="99" Padding="14,6" VerticalAlignment="Center"
+                        Background="#1A1A1E">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Permissions}" FontSize="14" Foreground="#AAAAAA" />
+                        <TextBlock Text="Control de acceso" Foreground="#AAAAAA" FontSize="12" FontWeight="SemiBold"
+                                   VerticalAlignment="Center" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="1" ColumnDefinitions="*,380">
 
             <!-- ── Tarjeta central (lo que ve el socio) ──────────────────────── -->
             <Border Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center"
@@ -52,7 +84,9 @@
                     <!-- GRANTED -->
                     <StackPanel IsVisible="{Binding IsGranted}" Spacing="16" HorizontalAlignment="Center">
                         <Border Width="160" Height="160" CornerRadius="80" ClipToBounds="True"
-                                HorizontalAlignment="Center" Background="#2A2A30">
+                                HorizontalAlignment="Center" Background="#2A2A30"
+                                BorderBrush="#22C55E" BorderThickness="4"
+                                BoxShadow="0 0 32 0 #6622C55E">
                             <Panel>
                                 <Image Source="{Binding MemberPhotoUrl}"
                                        IsVisible="{Binding MemberPhotoUrl, Converter={x:Static ObjectConverters.IsNotNull}}"
@@ -167,11 +201,10 @@
         </Grid>
 
         <!-- Barra inferior -->
-        <Border Grid.Row="1" Padding="20,12" Background="#0D0D0F">
+        <Border Grid.Row="2" Padding="20,12" Background="#0D0D0F">
             <Grid ColumnDefinitions="*,Auto">
-                <TextBlock FontSize="13" Foreground="#444" VerticalAlignment="Center">
-                    GymForge · Check-in Kiosk
-                </TextBlock>
+                <TextBlock Text="{Binding Session.GymName, StringFormat='{}{0} · Check-in'}"
+                           FontSize="13" Foreground="#444" VerticalAlignment="Center" />
                 <Button Grid.Column="1" Classes="subtle" Command="{Binding ResetCommand}" Foreground="#555">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Refresh}" FontSize="14" />

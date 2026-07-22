@@ -1,9 +1,12 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Media;
 using Avalonia.Platform;
 using Avalonia.Styling;
 using Avalonia.Threading;
+using FluentAvalonia.Styling;
+using GymForge.Desktop.Services;
 using GymForge.Desktop.Views.Shell;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -34,15 +37,54 @@ public class App : Avalonia.Application
         if (PlatformSettings is { } ps)
             ps.ColorValuesChanged += (_, _) => SyncThemeFlag();
 
+        // Aplicar el color de marca del gimnasio (persistido) antes de mostrar la ventana.
+        if (Services is not null)
+            ApplyBrandAccent(Services.GetRequiredService<SessionContext>().BrandColorHex);
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            desktop.MainWindow = new MainWindow
-            {
-                DataContext = Services.GetRequiredService<MainWindowViewModel>()
-            };
+            var session = Services.GetRequiredService<SessionContext>();
+            if (session.NeedsOnboarding)
+                desktop.MainWindow = BuildOnboardingWindow(desktop);
+            else
+                desktop.MainWindow = BuildShellWindow();
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private static MainWindow BuildShellWindow() =>
+        new() { DataContext = Services.GetRequiredService<MainWindowViewModel>() };
+
+    /// <summary>Ventana de onboarding; al completarse crea el shell y la reemplaza.</summary>
+    private static Views.Onboarding.OnboardingWindow BuildOnboardingWindow(
+        IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        var vm = Services.GetRequiredService<ViewModels.Onboarding.OnboardingViewModel>();
+        var window = new Views.Onboarding.OnboardingWindow { DataContext = vm };
+
+        vm.Completed += () =>
+        {
+            var shell = BuildShellWindow();
+            desktop.MainWindow = shell;
+            shell.Show();
+            window.Close();
+        };
+
+        return window;
+    }
+
+    /// <summary>Aplica el color de acento de la marca del gimnasio a FluentAvalonia
+    /// (recalcula los tonos Light/Dark). Hex inválido → cae al indigo por defecto.</summary>
+    public static void ApplyBrandAccent(string? hex)
+    {
+        if (Current is null) return;
+        var faTheme = Current.Styles.OfType<FluentAvaloniaTheme>().FirstOrDefault();
+        if (faTheme is null) return;
+
+        faTheme.CustomAccentColor = Color.TryParse(hex, out var color)
+            ? color
+            : Color.Parse(SessionContext.DefaultBrandColorHex);
     }
 
     private void SyncThemeFlag()

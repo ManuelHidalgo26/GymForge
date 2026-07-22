@@ -48,6 +48,9 @@ public static class ServiceCollectionExtensions
         // Genera y abre el recibo PDF de cada cobro
         services.AddSingleton<ReceiptService>();
 
+        // ── Onboarding (primer arranque) ──────────────────────────────────────
+        services.AddTransient<ViewModels.Onboarding.OnboardingViewModel>();
+
         // ── Shell ─────────────────────────────────────────────────────────────
         // Singleton: owns the navigation router + VM cache
         services.AddSingleton<MainWindowViewModel>(sp => new MainWindowViewModel(sp));

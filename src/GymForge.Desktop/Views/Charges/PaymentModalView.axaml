@@ -19,7 +19,7 @@
             <StackPanel Spacing="4">
                 <TextBlock Text="{Binding TargetCharge.Description}"
                            FontWeight="SemiBold" FontSize="13" />
-                <TextBlock FontSize="12" Opacity="0.7">
+                <TextBlock FontSize="12" Opacity="0.7" Classes="Numeric">
                     <Run Text="Saldo: " />
                     <Run Text="{Binding TargetCharge.AmountOutstanding, StringFormat={}{0:C}}" />
                 </TextBlock>

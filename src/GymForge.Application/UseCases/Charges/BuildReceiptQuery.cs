@@ -87,7 +87,9 @@ public class BuildReceiptQueryHandler : IRequestHandler<BuildReceiptQuery, Recei
             CardBrand: payment.CardBrand,
             Items: items,
             OnAccount: onAccount,
-            Total: payment.Amount);
+            Total: payment.Amount,
+            LogoPath: string.IsNullOrWhiteSpace(company?.LogoUrl) ? null : company.LogoUrl,
+            BrandColorHex: string.IsNullOrWhiteSpace(company?.BrandColorHex) ? "#6366F1" : company.BrandColorHex);
     }
 
     /// <summary>Descripción de la línea con la cantidad cuando es mayor a 1 (ej. "Agua 500ml x2").</summary>

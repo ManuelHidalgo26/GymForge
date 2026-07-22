@@ -165,6 +165,14 @@ dotnet ef database update --project src/GymForge.Infrastructure --startup-projec
 - [x] Ícono de la app (.ico multi-resolución, regenerable con `scripts/make-icon.ps1`)
       + metadata del exe (GymForge v0.2.0, empresa, descripción) + ícono de ventana
 - [ ] Distribución: GitHub Releases primero; landing de descarga después
+- [x] Onboarding de primer arranque: en una instalación nueva la base queda limpia
+      (solo la biblioteca global de ejercicios) y aparece un asistente (`OnboardingWindow`)
+      que crea el gimnasio real (nombre+CUIT, sede, responsable+PIN, color, planes de
+      ejemplo) vía `CompleteOnboardingCommand`. El gimnasio demo (PIN 1234) quedó detrás
+      de `GYMFORGE_SEED_COMPANY=1` (lo setean `run.ps1`, `seed.ps1` y el tool de capturas).
+- [x] Pasada visual premium: design system (elevación, cifras tabulares), branding por
+      gimnasio (logo + color de acento que re-tinta toda la UI, en Config → Marca y en el
+      recibo), shell agrupado, kiosk de check-in y gráfico de recaudación tipo área.
 - [x] Licenciamiento v1 (offline): claves firmadas ECDSA P-256 (`GYMF.payload.firma`)
       verificadas con la clave pública embebida en `LicenseService`; tier Free
       (1 sede / 50 socios) aplicado en alta de socio y de sede; activación en
@@ -175,10 +183,11 @@ dotnet ef database update --project src/GymForge.Infrastructure --startup-projec
 - [ ] Licenciamiento v2: validación/revocación online + venta vía Mercado Pago.
 - [ ] Firma de código (certificado) para evitar el aviso de SmartScreen
 
-> Nota: el login de cajero usa el PIN del admin sembrado (1234). Si tu
-> `%LOCALAPPDATA%\GymForge\gymforge.db` viene de una versión anterior, el
-> arranque la adopta (baseline) pero conserva el PIN viejo; borrala para
-> regenerarla con el hash real y las 2 sedes de ejemplo.
+> Nota (dev): `run.ps1`/`seed.ps1` setean `GYMFORGE_SEED_COMPANY=1`, así que siembran el
+> gimnasio demo (PIN admin **1234**, 2 sedes). Un `dotnet run` **sin** esa env var deja la
+> base limpia y muestra el onboarding. Si tu `%LOCALAPPDATA%\GymForge\gymforge.db` viene de
+> una versión anterior, el arranque la adopta (baseline) pero conserva el PIN viejo; borrala
+> para regenerarla (o para probar el onboarding desde cero).
 
 ---
 

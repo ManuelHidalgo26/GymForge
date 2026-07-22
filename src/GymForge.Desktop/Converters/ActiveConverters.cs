@@ -52,3 +52,14 @@ public class ActiveToggleLabelConverter : IValueConverter
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException();
 }
+
+/// <summary>true si el string enlazado equivale al ConverterParameter (case-insensitive).
+/// Se usa para marcar el swatch de color seleccionado en la paleta de marca.</summary>
+public class StringEqualsConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        string.Equals(value as string, parameter as string, StringComparison.OrdinalIgnoreCase);
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        throw new NotSupportedException();
+}

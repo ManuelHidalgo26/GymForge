@@ -95,7 +95,7 @@
                 <TextBlock Text="Total" DockPanel.Dock="Left" FontWeight="SemiBold" />
                 <TextBlock Text="{Binding EstimatedTotal, StringFormat={}{0:C}}"
                            DockPanel.Dock="Right" HorizontalAlignment="Right"
-                           FontWeight="Bold" FontSize="16" />
+                           FontWeight="Bold" FontSize="16" Classes="Numeric" />
             </DockPanel>
         </Border>
 

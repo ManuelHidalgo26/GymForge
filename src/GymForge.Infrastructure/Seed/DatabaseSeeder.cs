@@ -22,8 +22,15 @@ public class DatabaseSeeder
 
     public async Task SeedAsync(CancellationToken ct = default)
     {
+        // La biblioteca global de ejercicios es dato de referencia: siempre se siembra.
         await SeedExercisesAsync(ct);
-        await SeedDefaultCompanyAsync(ct);
+
+        // El gimnasio de demostración ("Mi Gimnasio S.A.") solo se siembra en dev/pruebas
+        // (env var GYMFORGE_SEED_COMPANY=1). En una instalación de producción la base queda
+        // limpia y el primer arranque muestra el asistente de onboarding.
+        if (Environment.GetEnvironmentVariable("GYMFORGE_SEED_COMPANY") == "1")
+            await SeedDefaultCompanyAsync(ct);
+
         await _db.SaveChangesAsync(ct);
     }
 

@@ -12,7 +12,7 @@
         <Border Grid.Row="0" Classes="Toolbar">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="10">
-                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Tag}" FontSize="20" VerticalAlignment="Center" />
+                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Calculator}" FontSize="20" VerticalAlignment="Center" />
                     <TextBlock Text="Caja" Classes="ToolbarTitle" />
                 </StackPanel>
 
@@ -62,7 +62,7 @@
                 <Border IsVisible="{Binding IsShiftClosed}" Classes="Card" Padding="20">
                     <StackPanel Spacing="8">
                         <TextBlock Text="Última caja cerrada" FontSize="15" FontWeight="SemiBold" />
-                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" TextElement.FontFeatures="+tnum">
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="Efectivo esperado" Opacity="0.7" />
                             <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding CurrentShift.ExpectedCash, StringFormat={}{0:C}}" />
                             <TextBlock Grid.Row="1" Grid.Column="0" Text="Efectivo declarado" Opacity="0.7" />
@@ -96,7 +96,7 @@
 
                     <!-- Resumen / arqueo en vivo -->
                     <Border Classes="Card" Padding="20">
-                        <Grid ColumnDefinitions="*,*,*,*">
+                        <Grid ColumnDefinitions="*,*,*,*" TextElement.FontFeatures="+tnum">
                             <StackPanel Grid.Column="0" Spacing="2">
                                 <TextBlock Text="Fondo inicial" Classes="FormLabel" />
                                 <TextBlock Text="{Binding CurrentShift.OpeningCash, StringFormat={}{0:C}}" FontSize="16" FontWeight="SemiBold" />
@@ -142,7 +142,7 @@
                                         <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,4">
                                             <TextBlock Grid.Column="0" Text="{Binding Type, Converter={StaticResource EnumEs}}" Width="90" Opacity="0.8" />
                                             <TextBlock Grid.Column="1" Text="{Binding Notes}" Opacity="0.6" TextTrimming="CharacterEllipsis" />
-                                            <TextBlock Grid.Column="2" Text="{Binding Amount, StringFormat={}{0:C}}" FontWeight="SemiBold" />
+                                            <TextBlock Grid.Column="2" Text="{Binding Amount, StringFormat={}{0:C}}" FontWeight="SemiBold" Classes="Numeric" />
                                         </Grid>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>

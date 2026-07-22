@@ -6,19 +6,6 @@
              x:DataType="vm:DashboardViewModel">
 
     <UserControl.Styles>
-        <!-- Barras del gráfico de recaudación -->
-        <Style Selector="Border.bar">
-            <Setter Property="Background" Value="{DynamicResource SystemAccentColor}" />
-            <Setter Property="Opacity" Value="0.38" />
-            <Setter Property="CornerRadius" Value="3,3,0,0" />
-        </Style>
-        <Style Selector="Border.bar:pointerover">
-            <Setter Property="Opacity" Value="0.75" />
-        </Style>
-        <Style Selector="Border.bar.today">
-            <Setter Property="Opacity" Value="1" />
-        </Style>
-
         <!-- Etiqueta de vencimiento -->
         <Style Selector="TextBlock.when">
             <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
@@ -84,7 +71,7 @@
                                        Margin="11,0,0,0" VerticalAlignment="Center"
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                         </Grid>
-                        <TextBlock Text="{Binding TotalActiveMembers}" FontSize="30" FontWeight="Bold" />
+                        <TextBlock Text="{Binding TotalActiveMembers}" FontSize="30" FontWeight="Bold" Classes="Numeric" />
                         <TextBlock Text="{Binding MembersSubtitle}" Classes="Caption" />
                     </StackPanel>
                 </Border>
@@ -102,7 +89,7 @@
                                        Margin="11,0,0,0" VerticalAlignment="Center"
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                         </Grid>
-                        <TextBlock Text="{Binding CheckInsToday}" FontSize="30" FontWeight="Bold" />
+                        <TextBlock Text="{Binding CheckInsToday}" FontSize="30" FontWeight="Bold" Classes="Numeric" />
                         <TextBlock Text="{Binding CheckInsSubtitle}" Classes="Caption" />
                     </StackPanel>
                 </Border>
@@ -120,7 +107,7 @@
                                        Margin="11,0,0,0" VerticalAlignment="Center"
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                         </Grid>
-                        <TextBlock Text="{Binding OverdueMembers}" FontSize="30" FontWeight="Bold" />
+                        <TextBlock Text="{Binding OverdueMembers}" FontSize="30" FontWeight="Bold" Classes="Numeric" />
                         <TextBlock Text="{Binding OverdueSubtitle}" Classes="Caption" />
                     </StackPanel>
                 </Border>
@@ -138,7 +125,7 @@
                                        Margin="11,0,0,0" VerticalAlignment="Center"
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                         </Grid>
-                        <TextBlock FontSize="30" FontWeight="Bold">
+                        <TextBlock FontSize="30" FontWeight="Bold" Classes="Numeric">
                             <Run Text="$" /><Run Text="{Binding RevenueThisMonth, StringFormat={}{0:N0}}" />
                         </TextBlock>
                         <Border CornerRadius="99" Padding="8,2" HorizontalAlignment="Left"
@@ -165,30 +152,47 @@
                             </StackPanel>
                             <StackPanel Grid.Column="1" Spacing="2" HorizontalAlignment="Right">
                                 <TextBlock Text="{Binding Revenue30DaysTotal}" FontSize="18" FontWeight="Bold"
-                                           HorizontalAlignment="Right" />
+                                           HorizontalAlignment="Right" Classes="Numeric" />
                                 <TextBlock Text="total del período" FontSize="10.5" HorizontalAlignment="Right"
                                            Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
                             </StackPanel>
                         </Grid>
 
-                        <!-- 30 columnas que reparten el ancho disponible (sin clipping) -->
-                        <ItemsControl ItemsSource="{Binding RevenueBars}" Height="130">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <UniformGrid Rows="1" Columns="30" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="vm:RevenueBarVm">
-                                    <!-- Cada ítem ocupa la altura completa; la barra se apoya en la base -->
-                                    <Grid Height="130" ToolTip.Tip="{Binding Tooltip}" Background="Transparent">
-                                        <Border Classes="bar" Classes.today="{Binding IsToday}"
-                                                Height="{Binding BarHeight}" Margin="2.5,0"
-                                                VerticalAlignment="Bottom" />
-                                    </Grid>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                        <!-- Área + línea de recaudación (el Viewbox estira el sistema
+                             virtual 300×130 al ancho de la card); barras transparentes
+                             encima para los tooltips por día. -->
+                        <Grid Height="130">
+                            <Viewbox Stretch="Fill">
+                                <Canvas Width="300" Height="130">
+                                    <Path Data="{Binding RevenueAreaGeometry}"
+                                          Fill="{DynamicResource SystemAccentColor}" Opacity="0.95">
+                                        <Path.OpacityMask>
+                                            <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                                                <GradientStop Color="#59FFFFFF" Offset="0" />
+                                                <GradientStop Color="#00FFFFFF" Offset="1" />
+                                            </LinearGradientBrush>
+                                        </Path.OpacityMask>
+                                    </Path>
+                                    <Path Data="{Binding RevenueLineGeometry}"
+                                          Stroke="{DynamicResource SystemAccentColor}"
+                                          StrokeThickness="1.5"
+                                          StrokeLineCap="Round" StrokeJoin="Round" />
+                                </Canvas>
+                            </Viewbox>
+
+                            <ItemsControl ItemsSource="{Binding RevenueBars}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Rows="1" Columns="30" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:RevenueBarVm">
+                                        <Grid ToolTip.Tip="{Binding Tooltip}" Background="Transparent" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Grid>
 
                         <Grid ColumnDefinitions="*,Auto">
                             <TextBlock Text="{Binding ChartFromLabel}" FontSize="10.5"

@@ -133,7 +133,7 @@
         <!-- ── Footer: total saldo ────────────────────────────────────────── -->
         <Border Grid.Row="2" Classes="FooterBar">
             <DockPanel>
-                <TextBlock DockPanel.Dock="Right"
+                <TextBlock DockPanel.Dock="Right" Classes="Numeric"
                            FontSize="14" FontWeight="SemiBold">
                     <Run Text="Saldo total: " />
                     <Run Text="{Binding TotalOutstanding, StringFormat={}{0:C}}"

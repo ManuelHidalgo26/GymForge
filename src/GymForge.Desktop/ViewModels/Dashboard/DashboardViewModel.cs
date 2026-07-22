@@ -1,3 +1,4 @@
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GymForge.Application.Interfaces;
@@ -5,6 +6,7 @@ using GymForge.Desktop.Services;
 using GymForge.Domain.Enums;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Text;
 
 namespace GymForge.Desktop.ViewModels.Dashboard;
 
@@ -46,10 +48,15 @@ public partial class DashboardViewModel : ObservableObject
     [ObservableProperty] private bool _hasRevenueTrend;
 
     // ── Gráfico de recaudación (últimos 30 días) ────────────────────────────
+    // Sistema virtual 300×130; el Viewbox lo estira al ancho de la card.
+    private const double ChartWidth = 300;
     [ObservableProperty] private ObservableCollection<RevenueBarVm> _revenueBars = [];
     [ObservableProperty] private string _revenue30DaysTotal = string.Empty;
     [ObservableProperty] private string _chartFromLabel = string.Empty;
     [ObservableProperty] private string _chartToLabel = string.Empty;
+    // Área rellena + línea del gráfico de recaudación (área/línea premium).
+    [ObservableProperty] private Geometry? _revenueAreaGeometry;
+    [ObservableProperty] private Geometry? _revenueLineGeometry;
 
     // ── Listas accionables ──────────────────────────────────────────────────
     [ObservableProperty] private ObservableCollection<ExpiringRowVm> _expiringRows = [];
@@ -160,19 +167,53 @@ public partial class DashboardViewModel : ObservableObject
         var days = Enumerable.Range(0, 30).Select(i => fromLocal.AddDays(i)).ToList();
         var max = Math.Max(byDay.Count == 0 ? 0m : byDay.Values.Max(), 1m);
 
-        RevenueBars = new ObservableCollection<RevenueBarVm>(days.Select(d =>
+        var bars = days.Select(d =>
         {
             var amount = byDay.GetValueOrDefault(d.Date);
             var height = amount == 0 ? 3 : Math.Max(6, (double)(amount / max) * ChartHeight);
-            return new RevenueBarVm(
-                height,
-                $"{d:ddd d/MM} — ${amount:N0}",
-                d.Date == today);
-        }));
+            return new RevenueBarVm(height, $"{d:ddd d/MM} — ${amount:N0}", d.Date == today);
+        }).ToList();
+
+        RevenueBars = new ObservableCollection<RevenueBarVm>(bars);
+        BuildRevenueGeometry(bars.Select(b => b.BarHeight).ToList());
 
         Revenue30DaysTotal = $"${byDay.Values.Sum():N0}";
         ChartFromLabel = fromLocal.ToString("d MMM");
         ChartToLabel = today.ToString("d MMM");
+    }
+
+    /// <summary>Arma el área rellena y la línea del gráfico en el sistema virtual
+    /// 300×130 (invariante para el markup de Path; el Viewbox lo estira).</summary>
+    private void BuildRevenueGeometry(IReadOnlyList<double> heights)
+    {
+        var n = heights.Count;
+        if (n < 2) { RevenueAreaGeometry = RevenueLineGeometry = null; return; }
+
+        static string N(double v) => v.ToString("0.##", CultureInfo.InvariantCulture);
+        double X(int i) => i * (ChartWidth / (n - 1));
+        double Y(int i) => ChartHeight - heights[i];
+
+        var line = new StringBuilder($"M {N(X(0))},{N(Y(0))}");
+        for (var i = 1; i < n; i++)
+            line.Append($" L {N(X(i))},{N(Y(i))}");
+
+        // Área: la línea + cierre hacia la base.
+        var area = new StringBuilder($"M {N(X(0))},{N(ChartHeight)} L {N(X(0))},{N(Y(0))}");
+        for (var i = 1; i < n; i++)
+            area.Append($" L {N(X(i))},{N(Y(i))}");
+        area.Append($" L {N(ChartWidth)},{N(ChartHeight)} Z");
+
+        try
+        {
+            RevenueLineGeometry = Geometry.Parse(line.ToString());
+            RevenueAreaGeometry = Geometry.Parse(area.ToString());
+        }
+        catch
+        {
+            // Geometry.Parse necesita la plataforma de render inicializada; si aún no
+            // lo está (p. ej. pre-render fuera del hilo de UI), se reintenta al recargar.
+            RevenueAreaGeometry = RevenueLineGeometry = null;
+        }
     }
 
     private async Task LoadExpiringAsync(DateTime today)

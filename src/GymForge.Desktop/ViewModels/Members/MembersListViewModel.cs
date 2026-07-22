@@ -46,6 +46,14 @@ public partial class MembersListViewModel : ObservableObject
     /// <summary>Estado vacío: sin resultados y sin carga en curso.</summary>
     public bool IsEmpty => !IsLoading && Members.Count == 0;
 
+    /// <summary>Hay búsqueda o filtro activo → el vacío es "sin resultados", no "sin datos".</summary>
+    public bool HasActiveFilter => !string.IsNullOrWhiteSpace(SearchText) || StatusFilter is not null;
+
+    public string EmptyTitle => HasActiveFilter ? "Sin resultados" : "Todavía no hay socios";
+    public string EmptyBody => HasActiveFilter
+        ? "No encontramos socios con esos filtros. Probá otro término o limpiá la búsqueda."
+        : "Creá el primero con «Nuevo socio» para empezar.";
+
     /// <summary>Fired when the user opens a member's detail card.</summary>
     public event Action<MemberDto>? OpenDetailRequested;
 
@@ -198,13 +206,22 @@ public partial class MembersListViewModel : ObservableObject
 
     partial void OnSearchTextChanged(string value)
     {
+        NotifyEmptyCopy();
         if (value.Length == 0 || value.Length >= 2)
             _ = SearchAsync();
     }
 
     partial void OnStatusFilterChanged(MemberStatus? value)
     {
+        NotifyEmptyCopy();
         CurrentPage = 1;
         _ = LoadAsync();
+    }
+
+    private void NotifyEmptyCopy()
+    {
+        OnPropertyChanged(nameof(HasActiveFilter));
+        OnPropertyChanged(nameof(EmptyTitle));
+        OnPropertyChanged(nameof(EmptyBody));
     }
 }

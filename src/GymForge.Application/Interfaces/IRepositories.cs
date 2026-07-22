@@ -100,6 +100,8 @@ public interface ISiteRepository
     Task<IReadOnlyList<Site>> GetByCompanyAsync(Guid companyId, CancellationToken ct = default);
     Task<Company?> GetCompanyAsync(Guid companyId, CancellationToken ct = default);
     Task<Site?> GetSiteAsync(Guid siteId, CancellationToken ct = default);
+    /// <summary>Agrega la empresa (con sus sedes y staff en el grafo) al contexto. Onboarding.</summary>
+    Task AddCompanyAsync(Company company, CancellationToken ct = default);
     Task AddSiteAsync(Site site, CancellationToken ct = default);
     void RemoveSite(Site site);
     /// <summary>True si la sede tiene datos (socios, turnos de caja o pagos).</summary>

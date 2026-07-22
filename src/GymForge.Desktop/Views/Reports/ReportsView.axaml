@@ -32,13 +32,13 @@
             <Border Grid.Column="0" Classes="Card">
                 <StackPanel Spacing="2">
                     <TextBlock Text="Recaudación del período" Classes="FormLabel" />
-                    <TextBlock Text="{Binding Total, StringFormat={}{0:C}}" FontSize="24" FontWeight="Bold" />
+                    <TextBlock Text="{Binding Total, StringFormat={}{0:C}}" FontSize="24" FontWeight="Bold" Classes="Numeric" />
                 </StackPanel>
             </Border>
             <Border Grid.Column="1" Classes="Card">
                 <StackPanel Spacing="2">
                     <TextBlock Text="Pagos registrados" Classes="FormLabel" />
-                    <TextBlock Text="{Binding Count}" FontSize="24" FontWeight="Bold" />
+                    <TextBlock Text="{Binding Count}" FontSize="24" FontWeight="Bold" Classes="Numeric" />
                 </StackPanel>
             </Border>
         </Grid>

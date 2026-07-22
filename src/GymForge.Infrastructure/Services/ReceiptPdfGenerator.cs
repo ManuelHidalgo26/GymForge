@@ -30,6 +30,20 @@ public class ReceiptPdfGenerator : IReceiptPdfWriter
 
     private static string Money(decimal value) => value.ToString("C2", ArsFormat);
 
+    // Hex de marca válido (#RRGGBB) o el indigo por defecto para QuestPDF.
+    private static string BrandColor(string? hex) =>
+        !string.IsNullOrWhiteSpace(hex)
+        && System.Text.RegularExpressions.Regex.IsMatch(hex, "^#[0-9a-fA-F]{6}$")
+            ? hex.ToUpperInvariant()
+            : "#6366F1";
+
+    private static byte[]? TryLoadLogo(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return null;
+        try { return File.ReadAllBytes(path); }
+        catch { return null; }
+    }
+
     private static string MethodLabel(ReceiptDto r)
     {
         var label = r.Method switch
@@ -63,21 +77,29 @@ public class ReceiptPdfGenerator : IReceiptPdfWriter
             page.Margin(28);
             page.DefaultTextStyle(t => t.FontSize(10).FontColor(Colors.Grey.Darken4));
 
+            var brand = BrandColor(r.BrandColorHex);
+            var logo = TryLoadLogo(r.LogoPath);
+
             page.Header().Row(row =>
             {
-                row.RelativeItem().Column(col =>
+                row.RelativeItem().Row(head =>
                 {
-                    col.Item().Text(r.GymName).FontSize(16).Bold();
-                    if (!string.IsNullOrEmpty(r.GymTaxId))
-                        col.Item().Text($"CUIT {r.GymTaxId}").FontColor(Colors.Grey.Darken1);
-                    if (!string.IsNullOrEmpty(r.SiteName))
-                        col.Item().Text(r.SiteName).FontColor(Colors.Grey.Darken1);
+                    if (logo is not null)
+                        head.ConstantItem(46).Height(46).AlignMiddle().Image(logo).FitArea();
+
+                    head.RelativeItem().PaddingLeft(logo is not null ? 10 : 0).Column(col =>
+                    {
+                        col.Item().Text(r.GymName).FontSize(16).Bold();
+                        if (!string.IsNullOrEmpty(r.GymTaxId))
+                            col.Item().Text($"CUIT {r.GymTaxId}").FontColor(Colors.Grey.Darken1);
+                        if (!string.IsNullOrEmpty(r.SiteName))
+                            col.Item().Text(r.SiteName).FontColor(Colors.Grey.Darken1);
+                    });
                 });
 
                 row.ConstantItem(160).Column(col =>
                 {
-                    col.Item().AlignRight().Text("RECIBO").FontSize(14).SemiBold()
-                        .FontColor(Colors.Indigo.Medium);
+                    col.Item().AlignRight().Text("RECIBO").FontSize(14).SemiBold().FontColor(brand);
                     col.Item().AlignRight().Text(r.Code).FontSize(9)
                         .FontColor(Colors.Grey.Darken1);
                     col.Item().AlignRight().Text(r.IssuedAt.ToString("dd/MM/yyyy HH:mm")).FontSize(9)
@@ -138,7 +160,7 @@ public class ReceiptPdfGenerator : IReceiptPdfWriter
                 col.Item().AlignRight().Text(t =>
                 {
                     t.Span("TOTAL   ").FontSize(12).SemiBold();
-                    t.Span(Money(r.Total)).FontSize(16).Bold();
+                    t.Span(Money(r.Total)).FontSize(16).Bold().FontColor(brand);
                 });
 
                 col.Item().Text(t =>

@@ -1,3 +1,4 @@
+using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using GymForge.Application.DTOs;
 using GymForge.Application.Interfaces;
@@ -34,13 +35,37 @@ public partial class SessionContext : ObservableObject
 
     public Guid CompanyId { get; private set; }
 
+    /// <summary>No hay empresa en la base → primer arranque: mostrar el onboarding.</summary>
+    public bool NeedsOnboarding => CompanyId == Guid.Empty;
+
     /// <summary>Staff por defecto (admin) para operaciones sin login explícito de caja.</summary>
     public Guid DefaultStaffId { get; private set; }
 
     /// <summary>Cajero efectivo: el logueado o, si no hay, el staff por defecto.</summary>
     public Guid EffectiveCashierId => CashierId ?? DefaultStaffId;
 
-    [ObservableProperty] private string _gymName = "GymForge";
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(GymInitials))]
+    private string _gymName = "GymForge";
+
+    // ── Marca (branding del gimnasio) ────────────────────────────────────────
+    public const string DefaultBrandColorHex = "#6366F1";
+
+    /// <summary>Color de acento persistido; re-tinta toda la UI vía FluentAvaloniaTheme.</summary>
+    [ObservableProperty] private string _brandColorHex = DefaultBrandColorHex;
+
+    /// <summary>Logo del gimnasio para el shell/recibos; null = usar iniciales.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasLogo))]
+    private Bitmap? _logoImage;
+
+    public bool HasLogo => LogoImage is not null;
+
+    /// <summary>Ruta local del logo en disco (para el recibo PDF y re-carga).</summary>
+    public string? LogoPath { get; private set; }
+
+    /// <summary>Iniciales del nombre del gimnasio, para el fallback sin logo.</summary>
+    public string GymInitials => BuildInitials(GymName);
 
     public IReadOnlyList<SiteOption> Sites { get; private set; } = [];
 
@@ -53,9 +78,14 @@ public partial class SessionContext : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsSignedIn))]
     private Guid? _cashierId;
 
-    [ObservableProperty] private string? _cashierName;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CashierInitials))]
+    private string? _cashierName;
 
     public bool IsSignedIn => CashierId.HasValue;
+
+    /// <summary>Iniciales del cajero para el avatar del topbar ("?" si no hay sesión).</summary>
+    public string CashierInitials => string.IsNullOrWhiteSpace(CashierName) ? "?" : BuildInitials(CashierName);
 
     // ── Turno de caja ───────────────────────────────────────────────────────
     [ObservableProperty]
@@ -77,6 +107,12 @@ public partial class SessionContext : ObservableObject
 
         CompanyId = company.Id;
         GymName = company.LegalName;
+
+        // Marca: color de acento + logo desde disco (si existe).
+        BrandColorHex = string.IsNullOrWhiteSpace(company.BrandColorHex)
+            ? DefaultBrandColorHex : company.BrandColorHex;
+        LogoPath = string.IsNullOrWhiteSpace(company.LogoUrl) ? null : company.LogoUrl;
+        LogoImage = TryLoadLogo(LogoPath);
 
         // Licencia persistida → estado/límites en memoria (Free si no hay clave).
         _license.State = _licenseService.Resolve(
@@ -112,6 +148,30 @@ public partial class SessionContext : ObservableObject
     }
 
     public void SetOpenShift(Guid? shiftId) => OpenShiftId = shiftId;
+
+    /// <summary>Carga un Bitmap desde un archivo sin dejarlo bloqueado (para poder
+    /// reemplazar el logo más tarde). Devuelve null si no existe o no decodifica.</summary>
+    private static Bitmap? TryLoadLogo(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return null;
+        try
+        {
+            using var fs = File.OpenRead(path);
+            return new Bitmap(fs);
+        }
+        catch { return null; }
+    }
+
+    /// <summary>Iniciales para el fallback sin logo: 1-2 letras del nombre del gimnasio.</summary>
+    private static string BuildInitials(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "GF";
+        var words = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var first = words[0];
+        if (words.Length >= 2)
+            return string.Concat(first[0], words[1][0]).ToUpperInvariant();
+        return (first.Length >= 2 ? first[..2] : first).ToUpperInvariant();
+    }
 
     partial void OnCurrentSiteChanged(SiteOption? value)
     {

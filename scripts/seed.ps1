@@ -10,5 +10,8 @@ if (Test-Path $DbPath) {
     Write-Host "Removed existing DB" -ForegroundColor Yellow
 }
 
+# Dev: sembrar el gimnasio de demostración (PIN admin 1234), no solo la biblioteca.
+$env:GYMFORGE_SEED_COMPANY = '1'
+
 dotnet run --project "$PSScriptRoot\..\src\GymForge.Api" -- --seed-only
 Write-Host "✅ Seed complete" -ForegroundColor Green

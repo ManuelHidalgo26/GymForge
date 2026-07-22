@@ -35,6 +35,9 @@ public class SiteRepository : ISiteRepository
     public async Task<int> CountActiveSitesAsync(Guid companyId, CancellationToken ct = default) =>
         await _db.Sites.CountAsync(s => s.CompanyId == companyId && s.IsActive, ct);
 
+    public async Task AddCompanyAsync(Company company, CancellationToken ct = default) =>
+        await _db.Companies.AddAsync(company, ct);
+
     public async Task AddSiteAsync(Site site, CancellationToken ct = default) =>
         await _db.Sites.AddAsync(site, ct);
 

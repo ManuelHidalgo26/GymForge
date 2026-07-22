@@ -27,6 +27,12 @@ public static class InfrastructureServiceExtensions
             connectionString, sp.GetRequiredService<ILogger<DatabaseBackupService>>()));
         services.AddSingleton<IDatabaseBackup>(sp => sp.GetRequiredService<DatabaseBackupService>());
 
+        // Migración de datos entre PCs (exportar/importar el gimnasio completo).
+        services.AddSingleton<IDataTransfer>(sp => new DataTransferService(
+            connectionString,
+            sp.GetRequiredService<IDatabaseBackup>(),
+            sp.GetRequiredService<ILogger<DataTransferService>>()));
+
         services.AddScoped<IMemberRepository, MemberRepository>();
         services.AddScoped<IMembershipRepository, MembershipRepository>();
         services.AddScoped<IChargeRepository, ChargeRepository>();

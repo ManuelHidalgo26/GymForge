@@ -155,6 +155,11 @@ dotnet ef database update --project src/GymForge.Infrastructure --startup-projec
       nombre/apellido/dni) + `ImportMembersCommand` (omite duplicados por DNI en
       base y dentro del archivo, respeta el límite de licencia y no aborta ante
       filas inválidas). Los socios importados quedan activos.
+- [x] Migración de datos entre PCs (Config → "Copia de seguridad y migración"):
+      exporta un `.zip` con la base + logo + fotos (`IDataTransfer` /
+      `DataTransferService`); al importar valida el paquete, pide PIN, respalda lo
+      actual, reapunta las rutas absolutas de archivos a la PC nueva y reinicia la app.
+      Los recibos PDF no viajan (se regeneran). Ver `docs/superpowers/specs/2026-07-22-migracion-datos-design.md`.
 - [x] Red de seguridad ante excepciones: handlers globales de `AppDomain` y
       `TaskScheduler.UnobservedTaskException` (Program.cs) + `Dispatcher.UIThread`
       (App.axaml.cs) → quedan registradas en `%LOCALAPPDATA%\GymForge\logs` en vez

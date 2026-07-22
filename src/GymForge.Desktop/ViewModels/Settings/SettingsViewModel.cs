@@ -25,6 +25,7 @@ public partial class SettingsViewModel : ObservableObject
     private readonly SessionContext _session;
     private readonly GatekeeperConfig _gatekeeper;
     private readonly CurrentLicense _license;
+    private readonly IDataTransfer _dataTransfer;
     private Guid? _editingSiteId;   // null = agregando
 
     // Datos del gimnasio
@@ -75,9 +76,19 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string? _licenseMessage;
     [ObservableProperty] private bool _licenseSaved;
 
+    // Datos — exportar / importar (migración a otra PC)
+    [ObservableProperty] private string? _dataMessage;
+    [ObservableProperty] private bool _dataOk;
+    [ObservableProperty] private bool _isTransferBusy;
+    [ObservableProperty] private bool _isImportPending;
+    [ObservableProperty] private string _importSummary = string.Empty;
+    [ObservableProperty] private string _importPin = string.Empty;
+    private string? _pendingImportPath;   // paquete validado, esperando confirmación
+
     public SettingsViewModel(
         IMediator mediator, ISiteRepository siteRepo, IMemberRepository memberRepo,
-        SessionContext session, GatekeeperConfig gatekeeper, CurrentLicense license)
+        SessionContext session, GatekeeperConfig gatekeeper, CurrentLicense license,
+        IDataTransfer dataTransfer)
     {
         _mediator = mediator;
         _siteRepo = siteRepo;
@@ -85,6 +96,7 @@ public partial class SettingsViewModel : ObservableObject
         _session = session;
         _gatekeeper = gatekeeper;
         _license = license;
+        _dataTransfer = dataTransfer;
     }
 
     [RelayCommand]
@@ -381,6 +393,129 @@ public partial class SettingsViewModel : ObservableObject
             LicenseMessage = string.Join("\n", vex.Errors.Select(e => e.ErrorMessage));
         }
         catch (Exception ex) { LicenseMessage = ex.Message; }
+    }
+
+    // ── Datos: exportar / importar ──────────────────────────────────────────
+
+    /// <summary>
+    /// Arma el paquete con la base y los archivos del gimnasio. La app sigue usable
+    /// mientras tanto: la copia de la base es consistente aunque haya gente fichando.
+    /// </summary>
+    [RelayCommand]
+    private async Task ExportDataAsync()
+    {
+        DataMessage = null;
+        DataOk = false;
+
+        var top = (Avalonia.Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+        if (top?.StorageProvider is not { } storage) return;
+
+        var file = await storage.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = "Guardar los datos del gimnasio",
+            SuggestedFileName = _dataTransfer.SuggestedFileName(LegalName),
+            DefaultExtension = "zip",
+            FileTypeChoices = [new FilePickerFileType("Paquete GymForge") { Patterns = ["*.zip"] }],
+        });
+
+        if (file?.TryGetLocalPath() is not { } destino) return;
+
+        try
+        {
+            IsTransferBusy = true;
+            var info = await _dataTransfer.ExportAsync(destino);
+            DataOk = true;
+            DataMessage = $"Listo: {info.Members} socios y {info.Payments} cobros en {Path.GetFileName(destino)}.";
+        }
+        catch (Exception ex) { DataMessage = ex.Message; }
+        finally { IsTransferBusy = false; }
+    }
+
+    /// <summary>Paso 1 del import: valida el paquete y muestra qué contiene, sin tocar nada.</summary>
+    [RelayCommand]
+    private async Task ChooseImportFileAsync()
+    {
+        DataMessage = null;
+        DataOk = false;
+        ImportPin = string.Empty;
+
+        var top = (Avalonia.Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
+        if (top?.StorageProvider is not { } storage) return;
+
+        var files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Elegí el paquete a importar",
+            AllowMultiple = false,
+            FileTypeFilter = [new FilePickerFileType("Paquete GymForge") { Patterns = ["*.zip"] }],
+        });
+
+        if (files.FirstOrDefault()?.TryGetLocalPath() is not { } origen) return;
+
+        try
+        {
+            IsTransferBusy = true;
+            var info = await _dataTransfer.InspectAsync(origen);
+            _pendingImportPath = origen;
+            ImportSummary =
+                $"{info.GymName} · {info.Members} socios · {info.Payments} cobros · " +
+                $"exportado el {info.ExportedAt:dd/MM/yyyy}";
+            IsImportPending = true;
+        }
+        catch (Exception ex)
+        {
+            _pendingImportPath = null;
+            IsImportPending = false;
+            DataMessage = ex.Message;
+        }
+        finally { IsTransferBusy = false; }
+    }
+
+    /// <summary>Paso 2: con el PIN confirmado, reemplaza los datos y reinicia la app.</summary>
+    [RelayCommand]
+    private async Task ConfirmImportAsync()
+    {
+        if (_pendingImportPath is null) return;
+        DataMessage = null;
+        DataOk = false;
+
+        var staff = await _mediator.Send(new AuthenticateStaffCommand(_session.CompanyId, ImportPin.Trim()));
+        if (staff is null)
+        {
+            DataMessage = "PIN incorrecto.";
+            return;
+        }
+
+        try
+        {
+            IsTransferBusy = true;
+            await _dataTransfer.ImportAsync(_pendingImportPath);
+
+            // El DbContext y las pantallas quedaron con los datos del gimnasio anterior:
+            // reiniciar es más seguro que intentar refrescar todo en caliente.
+            RestartApp();
+        }
+        catch (Exception ex)
+        {
+            DataMessage = ex.Message;
+        }
+        finally { IsTransferBusy = false; }
+    }
+
+    [RelayCommand]
+    private void CancelImport()
+    {
+        _pendingImportPath = null;
+        IsImportPending = false;
+        ImportSummary = string.Empty;
+        ImportPin = string.Empty;
+    }
+
+    private static void RestartApp()
+    {
+        if (Environment.ProcessPath is { } exe)
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(exe) { UseShellExecute = true });
+
+        (Avalonia.Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.Shutdown();
     }
 
     // ── Reglas de acceso ────────────────────────────────────────────────────

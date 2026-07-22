@@ -1,0 +1,35 @@
+GymForge - Instalacion en la PC de recepcion
+=============================================
+
+Antes de instalar GymForge conviene registrar el certificado del editor. Es un tramite
+de una sola vez por PC y hace que Windows muestre "GymForge" como editor verificado en
+lugar del cartel de "Editor desconocido".
+
+Archivos que tienen que estar en la misma carpeta (pendrive o descarga):
+  - gymforge-code-signing.cer
+  - trust-cert.ps1
+  - GymForge-win-Setup.exe
+
+PASO 1 - Abrir PowerShell como administrador
+  Menu Inicio -> escribir "powershell" -> clic derecho en "Windows PowerShell"
+  -> "Ejecutar como administrador" -> Si.
+
+PASO 2 - Ir a la carpeta de los archivos y registrar el certificado
+  cd D:\GymForge            (cambiar por la ruta real de la carpeta)
+  .\trust-cert.ps1
+
+  Tiene que decir: "Listo: esta PC ya confia en el editor de GymForge."
+
+  Si Windows se queja de que no se pueden ejecutar scripts, usar en su lugar:
+  powershell -ExecutionPolicy Bypass -File .\trust-cert.ps1
+
+PASO 3 - Instalar
+  Doble clic en GymForge-win-Setup.exe. Ahora el aviso de Windows muestra
+  "GymForge" como editor.
+
+Si el instalador se bajo de internet, Windows puede avisar igual la primera vez.
+Para evitarlo, ejecutar antes (en la misma ventana de PowerShell):
+  Unblock-File .\GymForge-win-Setup.exe
+
+Para dar de baja el certificado (por ejemplo, al desinstalar GymForge):
+  .\trust-cert.ps1 -Remove

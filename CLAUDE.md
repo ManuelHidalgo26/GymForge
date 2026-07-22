@@ -180,7 +180,11 @@ dotnet ef database update --project src/GymForge.Infrastructure --startup-projec
       verificadas con la clave pública embebida en `LicenseService`; tier Free
       (1 sede / 50 socios) aplicado en alta de socio y de sede; activación en
       Config → Licencia; 15 días de gracia tras vencer y luego degrada a Free.
-      Emisión de claves: `dotnet run --project tools/GymForge.LicenseGen -- new --gym "..."`
+      Emisión de claves: `.\scripts\licencia.ps1` (asistente: gimnasio, plan, CUIT, meses;
+      copia la clave al portapapeles, deja el mensaje para el cliente y registra la venta
+      en `licencias-emitidas.csv`). Subcomandos: `list`, `renew` (encadena desde el
+      vencimiento anterior), `show <clave>` (verifica con el mismo LicenseService que la
+      app). Presets: Basico 1/300 · Pro 3/1000 · Ilimitado 99/100000.
       (la clave privada vive en `%LOCALAPPDATA%\GymForge\vendor\` — NO está en el
       repo; respaldarla. Si se pierde: `init-keys` + re-embeber la pública + rebuild).
 - [ ] Licenciamiento v2: validación/revocación online + venta vía Mercado Pago.

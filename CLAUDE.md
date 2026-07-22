@@ -164,7 +164,10 @@ dotnet ef database update --project src/GymForge.Infrastructure --startup-projec
 - [x] Ejecutable único autocontenido (`scripts/publish.ps1` → `dist/GymForge.exe`)
 - [x] Ícono de la app (.ico multi-resolución, regenerable con `scripts/make-icon.ps1`)
       + metadata del exe (GymForge v0.2.0, empresa, descripción) + ícono de ventana
-- [ ] Distribución: GitHub Releases primero; landing de descarga después
+- [x] Kit de instalación en pendrive: `scripts/make-usb.ps1 -Destino F:\` arma la carpeta
+      con Setup + `.cer` + `trust-cert.ps1` + instructivo + CHECKSUMS (y nunca copia el
+      `.pfx`; avisa si detecta una clave privada en el pendrive). Ver `docs/DISTRIBUCION.md`.
+- [ ] Distribución web: GitHub Releases (`vpk upload github`) primero; landing después
 - [x] Onboarding de primer arranque: en una instalación nueva la base queda limpia
       (solo la biblioteca global de ejercicios) y aparece un asistente (`OnboardingWindow`)
       que crea el gimnasio real (nombre+CUIT, sede, responsable+PIN, color, planes de
@@ -181,7 +184,14 @@ dotnet ef database update --project src/GymForge.Infrastructure --startup-projec
       (la clave privada vive en `%LOCALAPPDATA%\GymForge\vendor\` — NO está en el
       repo; respaldarla. Si se pierde: `init-keys` + re-embeber la pública + rebuild).
 - [ ] Licenciamiento v2: validación/revocación online + venta vía Mercado Pago.
-- [ ] Firma de código (certificado) para evitar el aviso de SmartScreen
+- [x] Firma de código v1 — **autofirmada (gratis)**: `scripts/sign-selfsigned.ps1` genera el
+      certificado (5 años, store del usuario, respaldo `.pfx` con `-BackupPfx`) y exporta el
+      `.cer` a `%LOCALAPPDATA%\GymForge\vendor\`. `pack.ps1` y `publish.ps1` firman si está
+      `GYMFORGE_SIGN_THUMBPRINT`. En la PC del gimnasio se corre `scripts/trust-cert.ps1`
+      (admin, una vez) y el instalador pasa a mostrar "GymForge" como editor verificado.
+      Instructivo para el cliente: `scripts/LEEME-certificado.txt`.
+- [ ] Firma de código v2: certificado de CA (Azure Trusted Signing ~USD 10/mes) para que no
+      haga falta instalar nada en PCs ajenas. Ver `docs/CODE-SIGNING.md`.
 
 > Nota (dev): `run.ps1`/`seed.ps1` setean `GYMFORGE_SEED_COMPANY=1`, así que siembran el
 > gimnasio demo (PIN admin **1234**, 2 sedes). Un `dotnet run` **sin** esa env var deja la

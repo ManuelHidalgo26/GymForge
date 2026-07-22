@@ -11,7 +11,7 @@ public class LicenseService : ILicenseService
     // Clave pública del vendedor (SPKI base64). La privada NO está en el repo:
     // vive en %LOCALAPPDATA%\GymForge\vendor\ y se administra con tools/GymForge.LicenseGen.
     public const string VendorPublicKey =
-        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEf/2mw9QXULo2MHg3qFl6pXwzNXlBx0VmJKUZhMTqiFIksXi2Kcc82gkD7ejYcnx92DZcA+hwcUAlZhJXoaIPMA==";
+        "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAElYRJMZQxlo01bM2zMoNVIct7Cp5c7piwwjJ5MJ8DZDrO5jXuBszP6f/wlNdaCkNZ1nW0ZgdWZ4v43r7oAnGGFQ==";
 
     private readonly string _publicKeySpki;
 

@@ -136,8 +136,9 @@ var settingsVm = new GymForge.Desktop.ViewModels.Settings.SettingsViewModel(
     mediator2, sp.GetRequiredService<ISiteRepository>(),
     sp.GetRequiredService<IMemberRepository>(), session,
     sp.GetRequiredService<GymForge.Application.UseCases.Access.GatekeeperConfig>(),
-    sp.GetRequiredService<GymForge.Application.UseCases.Licensing.CurrentLicense>());
-Capture("10-configuracion", new GymForge.Desktop.Views.Settings.SettingsView { DataContext = settingsVm }, 1180, 1560, outDir);
+    sp.GetRequiredService<GymForge.Application.UseCases.Licensing.CurrentLicense>(),
+    sp.GetRequiredService<IDataTransfer>());
+Capture("10-configuracion", new GymForge.Desktop.Views.Settings.SettingsView { DataContext = settingsVm }, 1180, 1820, outDir);
 
 // Clases v2: agenda semanal con un horario seleccionado y sus reservas
 var classesVm = new GymForge.Desktop.ViewModels.Classes.ClassesViewModel(

@@ -277,6 +277,48 @@
                     </StackPanel>
                 </Border>
 
+                <!-- ── Datos: copia de seguridad y migración ──────────────── -->
+                <Border Classes="Card" Padding="24">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="Copia de seguridad y migración" FontSize="15" FontWeight="SemiBold" />
+                        <TextBlock FontSize="12" Opacity="0.6" TextWrapping="Wrap"
+                                   Text="Exportar guarda en un solo archivo todo lo del gimnasio: socios, cobros, caja, rutinas, el logo y las fotos. Sirve de respaldo y para mudar los datos a otra PC." />
+
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Exportar datos" Command="{Binding ExportDataCommand}"
+                                    Classes="Primary" IsEnabled="{Binding !IsTransferBusy}" />
+                            <Button Content="Importar datos…" Command="{Binding ChooseImportFileCommand}"
+                                    IsEnabled="{Binding !IsTransferBusy}" />
+                        </StackPanel>
+
+                        <!-- Confirmación del import: resumen del paquete + PIN -->
+                        <Border IsVisible="{Binding IsImportPending}"
+                                Background="{DynamicResource WarningTintBrush}"
+                                BorderBrush="{DynamicResource WarningBrush}" BorderThickness="1"
+                                CornerRadius="8" Padding="16">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Vas a reemplazar todos los datos actuales"
+                                           FontSize="13" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding ImportSummary}" FontSize="12" TextWrapping="Wrap" />
+                                <TextBlock FontSize="12" Opacity="0.7" TextWrapping="Wrap"
+                                           Text="Se guarda una copia de los datos actuales antes de reemplazarlos. Al terminar, GymForge se reinicia." />
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBox Text="{Binding ImportPin}" PasswordChar="•"
+                                             Watermark="PIN de administrador" Width="200" />
+                                    <Button Content="Reemplazar datos" Command="{Binding ConfirmImportCommand}"
+                                            Classes="Primary" IsEnabled="{Binding !IsTransferBusy}" />
+                                    <Button Content="Cancelar" Command="{Binding CancelImportCommand}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock Text="{Binding DataMessage}" FontSize="12"
+                                   Foreground="{Binding DataOk, Converter={StaticResource ActiveColorBrushConverter}}"
+                                   IsVisible="{Binding DataMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                   TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
                 <!-- ── Info del sistema ───────────────────────────────────── -->
                 <Border Classes="Card" Padding="24">
                     <StackPanel Spacing="6">

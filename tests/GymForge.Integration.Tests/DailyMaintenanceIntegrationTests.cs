@@ -79,6 +79,12 @@ public class DailyMaintenanceIntegrationTests : IAsyncLifetime
         return ms;
     }
 
+    private const int FreezeDays = 10;
+
+    /// <summary>Congela <see cref="FreezeDays"/> días y deja el fin del congelamiento en <paramref name="freezeEnd"/>.</summary>
+    private static void FreezeUntil(Membership membership, DateOnly freezeEnd) =>
+        membership.Freeze(freezeEnd.AddDays(-FreezeDays), freezeEnd, "Viaje");
+
     private async Task<Charge> AddChargeAsync(Member member, int daysOverdue, decimal amount = 10_000m)
     {
         var charge = Charge.Create(_company.Id, member.SiteId, member.Id, null,
@@ -132,6 +138,149 @@ public class DailyMaintenanceIntegrationTests : IAsyncLifetime
         found.Select(m => m.Id).Should().BeEquivalentTo(new[] { expiredCentral.Id, expiredNorte.Id });
     }
 
+    // ── Reactivar congelamientos terminados ───────────────────────────────────
+
+    [Fact]
+    public async Task GetFreezeEnded_ReturnsOnlyTheFrozenWhoseFreezeEnded_OfTheWholeCompany()
+    {
+        var anaCentral = await AddMemberAsync(_site, "30111222");
+        var anaNorte = await AddMemberAsync(_secondSite, "30111333");
+        var endsToday = await AddMembershipAsync(anaCentral, Today.AddDays(60), m => FreezeUntil(m, Today));
+        var endedLongAgo = await AddMembershipAsync(anaNorte, Today.AddDays(60), m => FreezeUntil(m, Today.AddDays(-9)));
+        await AddMembershipAsync(anaCentral, Today.AddDays(60), m => FreezeUntil(m, Today.AddDays(1)));   // termina mañana
+        await AddMembershipAsync(anaCentral, Today.AddDays(60));                                          // nunca se congeló
+        await AddMembershipAsync(anaCentral, Today.AddDays(60), m =>
+        {
+            FreezeUntil(m, Today.AddDays(-2));
+            m.Cancel("Baja durante el freeze");
+        });
+
+        var otherCompany = Company.Create("Otro Gym", "30-98765432-1");
+        var otherSite = Site.Create(otherCompany.Id, "Otra", "Calle 1");
+        var otherMember = Member.Create(otherCompany.Id, otherSite.Id, "Zoe", "Paz", DocumentType.DNI, "40111222", Gender.Female);
+        var otherPlan = MembershipType.Create(otherCompany.Id, "Mensual", MembershipBasis.Renewal, 20_000m, 1, "Month");
+        var otherMembership = Membership.Create(
+            otherCompany.Id, otherSite.Id, otherMember.Id, otherPlan.Id, Today.AddMonths(-2), Today.AddDays(60));
+        otherMembership.Activate();
+        FreezeUntil(otherMembership, Today);
+        await _db.Companies.AddAsync(otherCompany);
+        await _db.Sites.AddAsync(otherSite);
+        await _db.Members.AddAsync(otherMember);
+        await _db.MembershipTypes.AddAsync(otherPlan);
+        await _db.Memberships.AddAsync(otherMembership);
+        await _db.SaveChangesAsync();
+
+        _tenant.Set(otherCompany.Id, otherSite.Id);   // aunque el tenant ambiente sea otro, manda el CompanyId
+        var found = await new MembershipRepository(_db).GetFreezeEndedAsync(_company.Id, Today);
+
+        found.Select(m => m.Id).Should().BeEquivalentTo(new[] { endsToday.Id, endedLongAgo.Id });
+    }
+
+    [Fact]
+    public async Task MaintenanceDay_ThawsTheMembership_AndKeepsItsExtendedEndDate()
+    {
+        var member = await AddMemberAsync(_site);
+        var frozen = await AddMembershipAsync(member, Today.AddDays(60), m => FreezeUntil(m, Today));
+        var endDateWhileFrozen = frozen.EndDate;
+
+        var result = await NewService().RunForCompanyDayAsync(_company, Today);
+
+        result.Unfrozen.Should().Be(1);
+        var reloaded = await ReloadAsync(frozen);
+        reloaded.Status.Should().Be(MembershipStatus.Active);
+        reloaded.FreezeStart.Should().BeNull();
+        reloaded.FreezeEnd.Should().BeNull();
+        reloaded.EndDate.Should().Be(endDateWhileFrozen);
+        reloaded.FreezeDaysUsedYear.Should().Be(FreezeDays);
+    }
+
+    [Fact]
+    public async Task MaintenanceDay_ThawedMembership_IsNotExpiredTheSameDay()
+    {
+        var member = await AddMemberAsync(_site);
+        // Habría vencido hace 5 días, pero los 10 días de freeze corrieron su vencimiento a 5 días en el futuro.
+        var frozen = await AddMembershipAsync(member, Today.AddDays(-5), m => FreezeUntil(m, Today));
+
+        var result = await NewService().RunForCompanyDayAsync(_company, Today);
+
+        result.Should().Be(default(MaintenanceDayResult) with { Unfrozen = 1 });
+        (await ReloadAsync(frozen)).Status.Should().Be(MembershipStatus.Active);
+    }
+
+    [Fact]
+    public async Task MaintenanceDay_FreezeStillRunning_StaysFrozen()
+    {
+        var member = await AddMemberAsync(_site);
+        var frozen = await AddMembershipAsync(member, Today.AddDays(60), m => FreezeUntil(m, Today.AddDays(1)));
+
+        var result = await NewService().RunForCompanyDayAsync(_company, Today);
+
+        result.Unfrozen.Should().Be(0);
+        (await ReloadAsync(frozen)).Status.Should().Be(MembershipStatus.Frozen);
+    }
+
+    [Fact]
+    public async Task MaintenanceDay_Thaw_IsIdempotent_AndDoesNotRewriteWhatDidNotChange()
+    {
+        var member = await AddMemberAsync(_site);
+        var frozen = await AddMembershipAsync(member, Today.AddDays(60), m => FreezeUntil(m, Today));
+        await NewService().RunForCompanyDayAsync(_company, Today);
+        var afterFirstRun = await ReloadAsync(frozen);
+
+        var second = await NewService().RunForCompanyDayAsync(_company, Today);
+
+        second.Should().Be(default(MaintenanceDayResult));
+        var afterSecondRun = await ReloadAsync(frozen);
+        afterSecondRun.Status.Should().Be(MembershipStatus.Active);
+        afterSecondRun.UpdatedAt.Should().Be(afterFirstRun.UpdatedAt);
+        afterSecondRun.FreezeDaysUsedYear.Should().Be(FreezeDays, "reprocesar el día no devuelve ni cobra cupo");
+    }
+
+    [Fact]
+    public async Task MaintenanceDay_Thaw_IsAuditedAsASystemOperation()
+    {
+        var member = await AddMemberAsync(_site);
+        var frozen = await AddMembershipAsync(member, Today.AddDays(60), m => FreezeUntil(m, Today));
+        _user.Set(null);
+
+        await NewService().RunForCompanyDayAsync(_company, Today);
+
+        var row = await _db.AuditLogs.IgnoreQueryFilters()
+            .SingleAsync(a => a.EntityType == nameof(Membership) && a.EntityId == frozen.Id && a.Action == "Update");
+        row.UserId.Should().BeNull();
+        row.DiffJson.Should().Contain("""{"old":"Frozen","new":"Active"}""");
+    }
+
+    [Fact]
+    public async Task Runner_ThawsOnTheLocalDay_NotOnTheUtcOne()
+    {
+        var member = await AddMemberAsync(_site);
+        var frozen = await AddMembershipAsync(member, Today.AddDays(60), m => FreezeUntil(m, Today));
+        var runner = NewRunner(new InMemoryMaintenanceCheckpoint(), dunningEnabled: false);
+
+        // 22:00 del día anterior en Argentina = 01:00 UTC de hoy: con la fecha UTC se reactivaría un día antes.
+        _clock.Now = FakeClock.At2200Argentina(Today.AddDays(-1)).Now;
+        await runner.RunPendingAsync();
+        (await ReloadAsync(frozen)).Status.Should().Be(MembershipStatus.Frozen);
+
+        _clock.Now = FakeClock.OnDay(Today).Now;
+        await runner.RunPendingAsync();
+        (await ReloadAsync(frozen)).Status.Should().Be(MembershipStatus.Active);
+    }
+
+    [Fact]
+    public async Task Runner_CatchUp_ThawsAFreezeThatEndedWhileTheAppWasClosed()
+    {
+        var member = await AddMemberAsync(_site);
+        var frozen = await AddMembershipAsync(member, Today.AddDays(60), m => FreezeUntil(m, Today.AddDays(-2)));
+        var checkpoint = new InMemoryMaintenanceCheckpoint { LastRun = Today.AddDays(-4) };
+
+        await NewRunner(checkpoint, dunningEnabled: false).RunPendingAsync();
+
+        (await ReloadAsync(frozen)).Status.Should().Be(MembershipStatus.Active);
+        checkpoint.LastRun.Should().Be(Today);
+    }
+
     // ── Flujo del día ─────────────────────────────────────────────────────────
 
     [Fact]
@@ -143,7 +292,7 @@ public class DailyMaintenanceIntegrationTests : IAsyncLifetime
 
         var result = await NewService().RunForCompanyDayAsync(_company, Today);
 
-        result.Should().Be(new MaintenanceDayResult(Expired: 1, MarkedOverdue: 1, DunningSent: 0, ArrearsCleared: 0));
+        result.Should().Be(new MaintenanceDayResult(Unfrozen: 0, Expired: 1, MarkedOverdue: 1, DunningSent: 0, ArrearsCleared: 0));
         (await ReloadAsync(membership)).Status.Should().Be(MembershipStatus.Expired);
         (await ReloadAsync(charge)).Status.Should().Be(ChargeStatus.Overdue);
         (await ReloadAsync(member)).Status.Should().Be(MemberStatus.Overdue);
@@ -175,7 +324,7 @@ public class DailyMaintenanceIntegrationTests : IAsyncLifetime
 
         var second = await NewService().RunForCompanyDayAsync(_company, Today);
 
-        second.Should().Be(new MaintenanceDayResult(0, 0, 0, 0));
+        second.Should().Be(default(MaintenanceDayResult));
         (await ReloadAsync(charge)).UpdatedAt.Should().Be(chargeAfterFirstRun.UpdatedAt);
         (await ReloadAsync(member)).UpdatedAt.Should().Be(memberAfterFirstRun.UpdatedAt);
     }
@@ -319,7 +468,7 @@ public class DailyMaintenanceIntegrationTests : IAsyncLifetime
 
         var second = await NewService().RunForCompanyDayAsync(_company, Today);
 
-        second.Should().Be(new MaintenanceDayResult(0, 0, 0, 0));
+        second.Should().Be(default(MaintenanceDayResult));
         (await ReloadAsync(member)).UpdatedAt.Should().Be(afterFirstRun.UpdatedAt);
     }
 

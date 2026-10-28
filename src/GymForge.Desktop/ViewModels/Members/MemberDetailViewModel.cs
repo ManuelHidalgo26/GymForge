@@ -24,6 +24,11 @@ public partial class MemberDetailViewModel : ObservableObject
 
     // Tab: Membresías
     [ObservableProperty] private ObservableCollection<MembershipDto> _memberships = [];
+    [ObservableProperty] private string? _membershipsMessage;
+    [ObservableProperty][NotifyPropertyChangedFor(nameof(IsFreezeModalOpen))]
+    private FreezeModalViewModel? _freezeModal;
+
+    public bool IsFreezeModalOpen => FreezeModal is not null;
 
     // Tab: Cobros — delegado a ChargesViewModel reutilizable
     [ObservableProperty] private ChargesViewModel _chargesVm = null!;
@@ -101,12 +106,48 @@ public partial class MemberDetailViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task FreezeMembershipAsync(MembershipDto ms)
+    private async Task OpenFreezeModalAsync(MembershipDto ms)
     {
-        // Abre modal → Sprint 2; por ahora congela 30 días directo
-        var today = DateOnly.FromDateTime(DateTime.Today);
-        await _mediator.Send(new FreezeMembershipCommand(
-            ms.Id, today, today.AddDays(30), "Congelamiento manual"));
+        MembershipsMessage = null;
+        FreezeQuotaDto quota;
+        try
+        {
+            quota = await _mediator.Send(new GetFreezeQuotaQuery(ms.Id));
+        }
+        catch (Exception ex)
+        {
+            MembershipsMessage = ex.Message;
+            return;
+        }
+
+        FreezeModal = CreateFreezeModal(ms, quota);
+    }
+
+    private FreezeModalViewModel CreateFreezeModal(MembershipDto ms, FreezeQuotaDto quota)
+    {
+        var modal = new FreezeModalViewModel(_mediator, ms, quota);
+        modal.MembershipFrozen += () =>
+        {
+            FreezeModal = null;
+            _ = LoadMembershipsAsync();
+        };
+        modal.Cancelled += () => FreezeModal = null;
+        return modal;
+    }
+
+    [RelayCommand]
+    private async Task ReactivateMembershipAsync(MembershipDto ms)
+    {
+        MembershipsMessage = null;
+        try
+        {
+            await _mediator.Send(new UnfreezeMembershipCommand(ms.Id));
+        }
+        catch (Exception ex)
+        {
+            MembershipsMessage = ex.Message;
+        }
+
         await LoadMembershipsAsync();
     }
 

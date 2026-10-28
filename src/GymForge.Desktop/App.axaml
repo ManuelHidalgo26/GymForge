@@ -50,6 +50,9 @@
         <DataTemplate DataType="vmMembers:CreateMemberViewModel">
             <vMembers:CreateMemberView />
         </DataTemplate>
+        <DataTemplate DataType="vmMembers:FreezeModalViewModel">
+            <vMembers:FreezeModalView />
+        </DataTemplate>
         <DataTemplate DataType="vmCheckin:CheckInKioskViewModel">
             <vCheckin:CheckInKioskView />
         </DataTemplate>

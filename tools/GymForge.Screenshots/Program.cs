@@ -216,6 +216,38 @@ var shellBrand = new GymForge.Desktop.Views.Shell.MainWindow
 CaptureWindow("17-marca-verde", shellBrand, outDir);
 GymForge.Desktop.App.ApplyBrandAccent("#6366F1");
 
+// Freeze: pestaña Membresías de la ficha, modal de congelamiento (normal y pasado del tope) y membresía congelada.
+var freezeMember = membersVm.Members.First(m => m.Status == MemberStatus.Active);
+var detailVm = sp.GetRequiredService<MemberDetailViewModel>();
+Pump(detailVm.LoadAsync(freezeMember));
+Pump(detailVm.SwitchTabCommand.ExecuteAsync(MemberDetailTab.Memberships));
+Capture("19-socio-membresias", new MemberDetailView { DataContext = detailVm }, 1180, 720, outDir);
+
+var activeMembership = detailVm.Memberships.First(m => m.Status == MembershipStatus.Active);
+Pump(detailVm.OpenFreezeModalCommand.ExecuteAsync(activeMembership));
+Capture("20-freeze-modal", new MemberDetailView { DataContext = detailVm }, 1180, 720, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+Capture("20-freeze-modal-dark", new MemberDetailView { DataContext = detailVm }, 1180, 720, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+
+var freezeModal = detailVm.FreezeModal!;
+freezeModal.ReactivationDate = freezeModal.StartDate.AddDays(freezeModal.Quota.RemainingDays + 1);
+Capture("21-freeze-modal-tope", new MemberDetailView { DataContext = detailVm }, 1180, 720, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+Capture("21-freeze-modal-tope-dark", new MemberDetailView { DataContext = detailVm }, 1180, 720, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+
+freezeModal.ReactivationDate = freezeModal.StartDate.AddDays(30);
+Pump(freezeModal.ConfirmCommand.ExecuteAsync(null));
+for (int i = 0; i < 15; i++) { Dispatcher.UIThread.RunJobs(); Thread.Sleep(10); }  // recarga de la lista tras congelar
+Capture("22-socio-membresia-congelada", new MemberDetailView { DataContext = detailVm }, 1180, 720, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+Capture("22-socio-membresia-congelada-dark", new MemberDetailView { DataContext = detailVm }, 1180, 720, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+
+Pump(detailVm.ReactivateMembershipCommand.ExecuteAsync(detailVm.Memberships.First(m => m.Status == MembershipStatus.Frozen)));
+Capture("23-socio-membresia-reactivada", new MemberDetailView { DataContext = detailVm }, 1180, 720, outDir);
+
 // Onboarding de primer arranque (asistente de configuración inicial).
 var onboardingVm = sp.GetRequiredService<GymForge.Desktop.ViewModels.Onboarding.OnboardingViewModel>();
 onboardingVm.GymName = "PowerGym";

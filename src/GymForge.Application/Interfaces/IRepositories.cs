@@ -36,6 +36,8 @@ public interface IMembershipRepository : IRepository<Membership>
     Task<IReadOnlyList<Membership>> GetExpiringAsync(Guid companyId, DateOnly from, DateOnly to, CancellationToken ct = default);
     /// <summary>Membresías activas de la empresa (todas las sedes) cuyo vencimiento ya pasó a la fecha dada.</summary>
     Task<IReadOnlyList<Membership>> GetActiveExpiredAsync(Guid companyId, DateOnly asOf, CancellationToken ct = default);
+    /// <summary>Membresías congeladas de la empresa (todas las sedes) cuyo congelamiento ya terminó a la fecha dada.</summary>
+    Task<IReadOnlyList<Membership>> GetFreezeEndedAsync(Guid companyId, DateOnly asOf, CancellationToken ct = default);
 }
 
 public interface IChargeRepository : IRepository<Charge>
@@ -146,7 +148,11 @@ public interface IShiftRepository
 public interface IAccessLogRepository
 {
     Task AppendAsync(AccessLog log, CancellationToken ct = default);
-    Task<AccessLog?> GetLastAsync(Guid memberId, int doorId, CancellationToken ct = default);
+    /// <summary>
+    /// Último acceso CONCEDIDO del socio en la puerta (base del anti-passback). Los denegados
+    /// se excluyen: quedan logueados como entradas pero nadie llegó a pasar.
+    /// </summary>
+    Task<AccessLog?> GetLastGrantedAsync(Guid memberId, int doorId, CancellationToken ct = default);
     Task<IReadOnlyList<AccessLog>> GetByMemberAsync(Guid memberId, int take = 50, CancellationToken ct = default);
     Task<IReadOnlyList<AccessLog>> GetBySiteAsync(Guid siteId, DateTime from, DateTime to, CancellationToken ct = default);
 }

@@ -81,7 +81,8 @@ public sealed partial class DailyMaintenanceRunner : IDailyMaintenanceRunner
                 var result = await _maintenance.RunForCompanyDayAsync(company, day, ct);
                 if (result != default)
                     LogDayProcessed(
-                        company.Id, day, result.Expired, result.MarkedOverdue, result.DunningSent, result.ArrearsCleared);
+                        company.Id, day, result.Unfrozen, result.Expired, result.MarkedOverdue,
+                        result.DunningSent, result.ArrearsCleared);
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
@@ -94,9 +95,9 @@ public sealed partial class DailyMaintenanceRunner : IDailyMaintenanceRunner
     }
 
     [LoggerMessage(Level = LogLevel.Information,
-        Message = "Mantenimiento diario {Day} (empresa {CompanyId}): {Expired} membresías vencidas, {MarkedOverdue} cargos en mora, {DunningSent} avisos, {ArrearsCleared} socios fuera de mora")]
+        Message = "Mantenimiento diario {Day} (empresa {CompanyId}): {Unfrozen} membresías reactivadas, {Expired} vencidas, {MarkedOverdue} cargos en mora, {DunningSent} avisos, {ArrearsCleared} socios fuera de mora")]
     private partial void LogDayProcessed(
-        Guid companyId, DateOnly day, int expired, int markedOverdue, int dunningSent, int arrearsCleared);
+        Guid companyId, DateOnly day, int unfrozen, int expired, int markedOverdue, int dunningSent, int arrearsCleared);
 
     [LoggerMessage(Level = LogLevel.Error,
         Message = "Mantenimiento diario {Day} (empresa {CompanyId}): falló; se reintenta en la próxima corrida")]

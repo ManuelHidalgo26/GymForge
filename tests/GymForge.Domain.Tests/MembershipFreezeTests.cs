@@ -116,6 +116,23 @@ public class MembershipFreezeTests
         ms.EndDate.Should().Be(new DateOnly(2027, 1, 30));
     }
 
+    [Fact]
+    public void FreezeDaysUsedIn_NeverFrozen_IsZero()
+    {
+        ActiveMembership().FreezeDaysUsedIn(2026).Should().Be(0);
+    }
+
+    [Fact]
+    public void FreezeDaysUsedIn_OnlyCountsTheYearOfTheQuotaInCourse()
+    {
+        var ms = ActiveMembership();
+        FreezeAndFinish(ms, new DateOnly(2026, 2, 1), 40);
+
+        ms.FreezeDaysUsedIn(2026).Should().Be(40);
+        ms.FreezeDaysUsedIn(2027).Should().Be(0, "el cupo se reinicia con el año calendario");
+        ms.FreezeDaysUsedIn(2025).Should().Be(0);
+    }
+
     // ── Descongelamiento ──────────────────────────────────────────────────────
 
     [Fact]

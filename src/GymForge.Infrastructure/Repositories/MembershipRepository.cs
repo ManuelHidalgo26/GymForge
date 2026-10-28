@@ -68,4 +68,16 @@ public class MembershipRepository : IMembershipRepository
                 m.EndDate != null &&
                 m.EndDate < asOf)
             .ToListAsync(ct);
+
+    // Congelamientos terminados de la empresa completa (todas las sedes); el límite de tenant es el CompanyId explícito.
+    public async Task<IReadOnlyList<Membership>> GetFreezeEndedAsync(
+        Guid companyId, DateOnly asOf, CancellationToken ct = default) =>
+        await _db.Memberships
+            .IgnoreQueryFilters()
+            .Where(m =>
+                m.CompanyId == companyId &&
+                m.Status == MembershipStatus.Frozen &&
+                m.FreezeEnd != null &&
+                m.FreezeEnd <= asOf)
+            .ToListAsync(ct);
 }

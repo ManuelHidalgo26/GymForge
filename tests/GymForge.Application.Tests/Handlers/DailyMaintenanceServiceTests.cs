@@ -8,7 +8,7 @@ using NSubstitute;
 
 namespace GymForge.Application.Tests.Handlers;
 
-/// <summary>Mantenimiento de UNA empresa en UN día local: vence, marca mora, dispara dunning y limpia la mora saldada.</summary>
+/// <summary>Mantenimiento de UNA empresa en UN día local: reactiva congelamientos, vence, marca mora, dispara dunning y limpia la mora saldada.</summary>
 public class DailyMaintenanceServiceTests
 {
     private static readonly DateOnly Day = new(2026, 7, 21);
@@ -28,12 +28,15 @@ public class DailyMaintenanceServiceTests
         _sender.SendAsync(Arg.Any<NotificationMessage>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(true))
             .AndDoes(_ => _calls.Add("dunning"));
+        _memberships.When(r => r.GetFreezeEndedAsync(_company.Id, Day, Arg.Any<CancellationToken>()))
+            .Do(_ => _calls.Add("thaw"));
         _memberships.When(r => r.GetActiveExpiredAsync(_company.Id, Day, Arg.Any<CancellationToken>()))
             .Do(_ => _calls.Add("expire"));
         _charges.When(r => r.GetOverdueAsync(_company.Id, Day, Arg.Any<CancellationToken>()))
             .Do(_ => _calls.Add("overdue"));
         _members.When(r => r.GetByStatusAsync(_company.Id, MemberStatus.Overdue, Arg.Any<CancellationToken>()))
             .Do(_ => _calls.Add("clear"));
+        HaveFreezeEnded();
         HaveExpired();
         HaveOverdue();
         HaveMembersInArrearsStatus();
@@ -43,6 +46,10 @@ public class DailyMaintenanceServiceTests
         _memberships, _charges, _members,
         new DunningService(_charges, _members, _sender, _tenant, new DunningConfig { Enabled = dunningEnabled }),
         _tenant);
+
+    private void HaveFreezeEnded(params Membership[] memberships) =>
+        _memberships.GetFreezeEndedAsync(_company.Id, Day, Arg.Any<CancellationToken>())
+            .Returns(memberships.ToList());
 
     private void HaveExpired(params Membership[] memberships) =>
         _memberships.GetActiveExpiredAsync(_company.Id, Day, Arg.Any<CancellationToken>())
@@ -62,6 +69,16 @@ public class DailyMaintenanceServiceTests
         var ms = Membership.Create(_company.Id, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             Day.AddMonths(-1).AddDays(-1), Day.AddDays(-1));
         ms.Activate();
+        return ms;
+    }
+
+    /// <summary>Membresía vigente seis meses más, congelada 10 días hasta <paramref name="freezeEnd"/>.</summary>
+    private Membership FrozenUntil(DateOnly freezeEnd)
+    {
+        var ms = Membership.Create(_company.Id, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+            Day.AddMonths(-2), Day.AddMonths(6));
+        ms.Activate();
+        ms.Freeze(freezeEnd.AddDays(-10), freezeEnd, "Viaje");
         return ms;
     }
 
@@ -88,7 +105,58 @@ public class DailyMaintenanceServiceTests
         return member;
     }
 
-    // ── a. Vencer membresías ──────────────────────────────────────────────────
+    // ── a. Reactivar congelamientos terminados ────────────────────────────────
+
+    [Fact]
+    public async Task ThawsTheMembershipWhoseFreezeEndsOnTheDay()
+    {
+        var ms = FrozenUntil(Day);
+        HaveFreezeEnded(ms);
+
+        var result = await Sut().RunForCompanyDayAsync(_company, Day);
+
+        ms.Status.Should().Be(MembershipStatus.Active);
+        ms.FreezeStart.Should().BeNull();
+        ms.FreezeEnd.Should().BeNull();
+        result.Unfrozen.Should().Be(1);
+        _memberships.Received(1).Update(ms);
+        await _memberships.Received().SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ThawsAFreezeThatEndedBeforeTheDay_BecauseTheAppWasClosed()
+    {
+        var ms = FrozenUntil(Day.AddDays(-3));
+        HaveFreezeEnded(ms);
+
+        var result = await Sut().RunForCompanyDayAsync(_company, Day);
+
+        ms.Status.Should().Be(MembershipStatus.Active);
+        result.Unfrozen.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Thawing_KeepsTheExtendedEndDate_AndTheQuotaConsumed()
+    {
+        var ms = FrozenUntil(Day);
+        var endDateWhileFrozen = ms.EndDate;
+        HaveFreezeEnded(ms);
+
+        await Sut().RunForCompanyDayAsync(_company, Day);
+
+        ms.EndDate.Should().Be(endDateWhileFrozen, "los 10 días congelados ya se consumieron: no hay nada que devolver");
+        ms.FreezeDaysUsedYear.Should().Be(10);
+    }
+
+    [Fact]
+    public async Task AsksForTheFreezesEndedAsOfTheMaintenanceDay()
+    {
+        await Sut().RunForCompanyDayAsync(_company, Day);
+
+        await _memberships.Received(1).GetFreezeEndedAsync(_company.Id, Day, Arg.Any<CancellationToken>());
+    }
+
+    // ── b. Vencer membresías ──────────────────────────────────────────────────
 
     [Fact]
     public async Task ExpiresTheActiveMembershipsThatEndedBeforeTheDay()
@@ -104,7 +172,7 @@ public class DailyMaintenanceServiceTests
         await _memberships.Received().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
-    // ── b. Marcar mora ────────────────────────────────────────────────────────
+    // ── c. Marcar mora ────────────────────────────────────────────────────────
 
     [Fact]
     public async Task MarksTheOutstandingChargeAndItsMemberOverdue()
@@ -178,7 +246,7 @@ public class DailyMaintenanceServiceTests
         member.Status.Should().Be(MemberStatus.Suspended);
     }
 
-    // ── c. Dunning ────────────────────────────────────────────────────────────
+    // ── d. Dunning ────────────────────────────────────────────────────────────
 
     [Fact]
     public async Task FiresTheDunningStageOfTheDay()
@@ -207,7 +275,7 @@ public class DailyMaintenanceServiceTests
         await _sender.DidNotReceive().SendAsync(Arg.Any<NotificationMessage>(), Arg.Any<CancellationToken>());
     }
 
-    // ── d. Limpiar la mora saldada ────────────────────────────────────────────
+    // ── e. Limpiar la mora saldada ────────────────────────────────────────────
 
     [Fact]
     public async Task ReturnsToActiveTheOverdueMemberThatNoLongerOwesAnOverdueCharge()
@@ -294,7 +362,7 @@ public class DailyMaintenanceServiceTests
     // ── Orden, tenant y resultado ─────────────────────────────────────────────
 
     [Fact]
-    public async Task RunsExpireThenOverdueThenDunningThenClearsTheArrears_InThatOrder()
+    public async Task RunsThawThenExpireThenOverdueThenDunningThenClearsTheArrears_InThatOrder()
     {
         var member = ActiveMember();
         member.UpdateContact(null, "+5491155550000");
@@ -304,7 +372,7 @@ public class DailyMaintenanceServiceTests
         await Sut(dunningEnabled: true).RunForCompanyDayAsync(_company, Day);
 
         // "overdue" aparece dos veces: una al marcar la mora y otra dentro del dunning (que lee el mismo listado).
-        _calls.Should().Equal("expire", "overdue", "overdue", "dunning", "clear");
+        _calls.Should().Equal("thaw", "expire", "overdue", "overdue", "dunning", "clear");
     }
 
     [Fact]
@@ -320,13 +388,14 @@ public class DailyMaintenanceServiceTests
     public async Task ReturnsTheCountsOfTheDay()
     {
         var member = ActiveMember();
+        HaveFreezeEnded(FrozenUntil(Day));
         HaveExpired(ActiveMembershipEndedYesterday(), ActiveMembershipEndedYesterday());
         HaveOverdue(ChargeDueDaysAgo(2, member), ChargeDueDaysAgo(9, member));
         HaveMembersInArrearsStatus(OverdueMember());
 
         var result = await Sut().RunForCompanyDayAsync(_company, Day);
 
-        result.Should().Be(new MaintenanceDayResult(Expired: 2, MarkedOverdue: 2, DunningSent: 0, ArrearsCleared: 1));
+        result.Should().Be(new MaintenanceDayResult(Unfrozen: 1, Expired: 2, MarkedOverdue: 2, DunningSent: 0, ArrearsCleared: 1));
     }
 
     [Fact]
@@ -334,7 +403,7 @@ public class DailyMaintenanceServiceTests
     {
         var result = await Sut().RunForCompanyDayAsync(_company, Day);
 
-        result.Should().Be(new MaintenanceDayResult(0, 0, 0, 0));
+        result.Should().Be(default(MaintenanceDayResult));
         await _memberships.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
         await _charges.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
         await _members.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());

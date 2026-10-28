@@ -1,0 +1,129 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:fa="using:FluentAvalonia.UI.Controls"
+             xmlns:vm="using:GymForge.Desktop.ViewModels.Members"
+             x:Class="GymForge.Desktop.Views.Members.FreezeModalView"
+             x:DataType="vm:FreezeModalViewModel"
+             KeyboardNavigation.TabNavigation="Cycle"
+             AutomationProperties.Name="Congelar membresía">
+
+    <!-- Si la ventana es baja (MinHeight 600) el modal scrollea en vez de cortar los botones.
+         Escape = "Cancelar" (IsCancel), Enter = "Congelar" (IsDefault), Tab cicla dentro del modal
+         y el foco inicial va a la fecha (ver code-behind). -->
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                  VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="16">
+
+            <!-- Header -->
+            <TextBlock Text="Congelar membresía"
+                       FontSize="18" FontWeight="SemiBold" />
+
+            <!-- Membresía + cupo anual: medidor + frase. El texto va en color secundario (no Opacity)
+                 para mantener contraste AA sobre el fondo tenue en light y dark. -->
+            <Border CornerRadius="8" Padding="12"
+                    Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+                <StackPanel Spacing="8">
+                    <TextBlock Text="{Binding MembershipTypeName}"
+                               FontWeight="SemiBold" FontSize="13" />
+                    <ProgressBar Minimum="0"
+                                 Maximum="{Binding Quota.MaxDays}"
+                                 Value="{Binding Quota.UsedDays}"
+                                 Height="6" CornerRadius="3"
+                                 Background="{DynamicResource NeutralTintBrush}"
+                                 AutomationProperties.Name="Días de congelamiento usados en el año" />
+                    <TextBlock Text="{Binding QuotaSummary}"
+                               Classes="FormLabel Numeric"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <!-- Desde: siempre hoy (día local de la empresa) -->
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="Se congela desde hoy" Classes="FormLabel"
+                           VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1"
+                           Text="{Binding StartDate, StringFormat={}{0:dd/MM/yyyy}}"
+                           FontSize="14" FontWeight="SemiBold" Classes="Numeric" />
+            </Grid>
+
+            <!-- Hasta: fecha en que se reactiva -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Se reactiva el *" Classes="FormLabel" />
+                <DatePicker x:Name="ReactivationPicker"
+                            HorizontalAlignment="Stretch"
+                            SelectedDate="{Binding ReactivationDate, Converter={StaticResource DateOnlyOffset}}"
+                            AutomationProperties.Name="Fecha en que se reactiva la membresía" />
+            </StackPanel>
+
+            <!-- Resultado en vivo: es lo que el cajero confirma, así que va destacado -->
+            <Border CornerRadius="8" Padding="12"
+                    Background="{DynamicResource AccentTintBrush}">
+                <Grid ColumnDefinitions="*,*">
+                    <StackPanel Spacing="2">
+                        <TextBlock Text="Días a congelar" Classes="FormLabel" />
+                        <TextBlock Text="{Binding RequestedDays}"
+                                   FontSize="18" FontWeight="SemiBold" Classes="Numeric" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Spacing="2">
+                        <TextBlock Text="Nuevo vencimiento" Classes="FormLabel" />
+                        <Panel>
+                            <TextBlock Text="{Binding NewEndDate, StringFormat={}{0:dd/MM/yyyy}}"
+                                       IsVisible="{Binding NewEndDate, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                       FontSize="18" FontWeight="SemiBold" Classes="Numeric" />
+                            <TextBlock Text="—"
+                                       IsVisible="{Binding NewEndDate, Converter={x:Static ObjectConverters.IsNull}}"
+                                       FontSize="18" FontWeight="SemiBold" />
+                        </Panel>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Motivo -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Motivo (opcional)" Classes="FormLabel" />
+                <TextBox Text="{Binding Reason}"
+                         MaxLength="200"
+                         Watermark="Viaje, lesión, licencia..."
+                         AutomationProperties.Name="Motivo del congelamiento (opcional)" />
+            </StackPanel>
+
+            <!-- Aviso en vivo (tope superado, fecha inválida): advertencia, no error. Se arregla
+                 cambiando la fecha; mientras esté abierto, "Congelar" queda deshabilitado. -->
+            <fa:InfoBar IsOpen="{Binding ValidationMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                        Severity="Warning"
+                        Title="Revisá antes de confirmar"
+                        Message="{Binding ValidationMessage}"
+                        IsClosable="False"
+                        AutomationProperties.LiveSetting="Polite" />
+
+            <!-- Error al guardar (p. ej. el dominio rechazó el pedido) -->
+            <fa:InfoBar IsOpen="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                        Severity="Error"
+                        Title="No se pudo congelar"
+                        Message="{Binding ErrorMessage}"
+                        IsClosable="False"
+                        AutomationProperties.LiveSetting="Assertive" />
+
+            <!-- Actions -->
+            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                <Button Content="Cancelar"
+                        Command="{Binding CancelCommand}"
+                        IsEnabled="{Binding !IsSaving}"
+                        Classes="Ghost"
+                        IsCancel="True" />
+                <Button Command="{Binding ConfirmCommand}"
+                        Classes="Primary"
+                        IsDefault="True"
+                        AutomationProperties.Name="Congelar membresía">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <fa:ProgressRing IsVisible="{Binding IsSaving}"
+                                         Width="16" Height="16" />
+                        <TextBlock Text="Congelar" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+
+</UserControl>

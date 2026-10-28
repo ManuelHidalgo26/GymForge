@@ -5,16 +5,18 @@ using GymForge.Domain.Enums;
 
 namespace GymForge.Application.UseCases.Maintenance;
 
+/// <param name="Unfrozen">Membresías que se reactivaron porque terminó su congelamiento.</param>
 /// <param name="Expired">Membresías que pasaron a vencidas.</param>
 /// <param name="MarkedOverdue">Cargos que entraron en mora ese día (los que ya lo estaban no cuentan).</param>
 /// <param name="DunningSent">Avisos de cobro enviados.</param>
 /// <param name="ArrearsCleared">Socios que salieron de mora porque ya no tenían cargos vencidos con saldo.</param>
-public readonly record struct MaintenanceDayResult(int Expired, int MarkedOverdue, int DunningSent, int ArrearsCleared);
+public readonly record struct MaintenanceDayResult(
+    int Unfrozen, int Expired, int MarkedOverdue, int DunningSent, int ArrearsCleared);
 
 /// <summary>
-/// Mantenimiento de UNA empresa en UN día local: vence membresías, marca mora, dispara dunning y limpia
-/// la mora saldada, en ese orden. Idempotente: cada paso mira el estado actual, así que repetir un día
-/// no duplica.
+/// Mantenimiento de UNA empresa en UN día local: reactiva los congelamientos terminados, vence membresías,
+/// marca mora, dispara dunning y limpia la mora saldada, en ese orden. Idempotente: cada paso mira el
+/// estado actual, así que repetir un día no duplica.
 /// </summary>
 public sealed class DailyMaintenanceService
 {
@@ -42,12 +44,34 @@ public sealed class DailyMaintenanceService
         // el scope sin sede cierra el filtro por defecto para cualquier otra consulta del flujo.
         using var tenantScope = _tenant.BeginScope(company.Id, Guid.Empty);
 
+        var unfrozen = await UnfreezeEndedFreezesAsync(company.Id, localDay, ct);
         var expired = await ExpireMembershipsAsync(company.Id, localDay, ct);
         var markedOverdue = await MarkOverdueAsync(company.Id, localDay, ct);
         var dunningSent = await _dunning.RunAsync(company.Id, localDay, company.LegalName, ct);
         var arrearsCleared = await ClearSettledArrearsAsync(company.Id, localDay, ct);
 
-        return new MaintenanceDayResult(expired, markedOverdue, dunningSent, arrearsCleared);
+        return new MaintenanceDayResult(unfrozen, expired, markedOverdue, dunningSent, arrearsCleared);
+    }
+
+    /// <summary>
+    /// Vuelve a Active las membresías cuyo congelamiento llegó a su fin. Va primero: una membresía reactivada
+    /// ya trae el vencimiento corrido por el congelamiento, así que no corresponde vencerla ese mismo día.
+    /// Reactiva con el día de mantenimiento (no con el reloj): al ser ese día igual o posterior al fin del
+    /// congelamiento no hay días sin usar que devolver.
+    /// </summary>
+    private async Task<int> UnfreezeEndedFreezesAsync(Guid companyId, DateOnly day, CancellationToken ct)
+    {
+        var ended = await _memberships.GetFreezeEndedAsync(companyId, day, ct);
+        if (ended.Count == 0) return 0;
+
+        foreach (var membership in ended)
+        {
+            membership.Unfreeze(day);
+            _memberships.Update(membership);
+        }
+
+        await _memberships.SaveChangesAsync(ct);
+        return ended.Count;
     }
 
     /// <summary>No toca el estado del socio: puede tener otra membresía activa.</summary>

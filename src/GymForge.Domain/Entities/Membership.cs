@@ -83,6 +83,9 @@ public class Membership : BaseEntity, ISiteScoped, IAuditable
         AddDomainEvent(new MembershipActivatedEvent(Id, MemberId));
     }
 
+    /// <summary>Días de congelamiento ya usados en el año calendario <paramref name="year"/> (el cupo se reinicia cada año).</summary>
+    public int FreezeDaysUsedIn(int year) => FreezeYear == year ? FreezeDaysUsedYear : 0;
+
     /// <summary>
     /// Congela la membresía y extiende el vencimiento por los días pedidos. El cupo es anual
     /// (año calendario de <paramref name="freezeStart"/>) y se acumula por membresía.
@@ -99,7 +102,7 @@ public class Membership : BaseEntity, ISiteScoped, IAuditable
             throw new ArgumentException("La fecha de fin del congelamiento debe ser posterior al inicio.");
 
         int year = freezeStart.Year;
-        int usedThisYear = FreezeYear == year ? FreezeDaysUsedYear : 0;
+        int usedThisYear = FreezeDaysUsedIn(year);
         if (usedThisYear + requestedDays > maxFreezeDaysPerYear)
             throw new InvalidOperationException(
                 $"Supera el tope de {maxFreezeDaysPerYear} días de congelamiento por año " +

@@ -134,6 +134,12 @@
     <Style Selector="Border.Pill.danger > TextBlock">
         <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
     </Style>
+    <Style Selector="Border.Pill.info">
+        <Setter Property="Background" Value="{DynamicResource InfoTintBrush}" />
+    </Style>
+    <Style Selector="Border.Pill.info > TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource InfoBrush}" />
+    </Style>
     <Style Selector="Border.Pill.neutral">
         <Setter Property="Background" Value="{DynamicResource NeutralTintBrush}" />
     </Style>

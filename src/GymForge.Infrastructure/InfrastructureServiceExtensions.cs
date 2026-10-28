@@ -28,9 +28,18 @@ public static class InfrastructureServiceExtensions
                     sql => sql.MigrationsAssembly(typeof(GymForgeDbContext).Assembly.GetName().Name))
                 .AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>()));
 
+        // Preferencias de ESTA PC (destino del backup externo, etc.): archivo local, no viaja con la base.
+        services.AddSingleton<ILocalSettings, LocalSettingsService>();
+
+        // Huella de ESTA PC para atar la licencia (la consume LicenseService; sin ella no se chequea el atado).
+        services.AddSingleton<IMachineFingerprint>(sp => new WindowsMachineFingerprint(
+            sp.GetRequiredService<ILogger<WindowsMachineFingerprint>>()));
+
         // Resguardo y recuperación de la base local (singleton: tiene la ruta de la DB).
         services.AddSingleton(sp => new DatabaseBackupService(
-            connectionString, sp.GetRequiredService<ILogger<DatabaseBackupService>>()));
+            connectionString,
+            sp.GetRequiredService<ILogger<DatabaseBackupService>>(),
+            sp.GetRequiredService<ILocalSettings>()));
         services.AddSingleton<IDatabaseBackup>(sp => sp.GetRequiredService<DatabaseBackupService>());
 
         // Migración de datos entre PCs (exportar/importar el gimnasio completo).

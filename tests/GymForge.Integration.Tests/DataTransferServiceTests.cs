@@ -39,6 +39,43 @@ public class DataTransferServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Export_DoesNotCarryFilesThatBelongToThisPc_SettingsBackupsVendorOrLogs()
+    {
+        // settings.json guarda el destino del backup externo (F:\ de ESTA PC): en otra PC apuntaría a otro disco.
+        var gym = NewInstall("Iron Temple", members: 1, payments: 0, withLogo: false);
+        File.WriteAllText(Path.Combine(gym.DataDir, "settings.json"), """{"OffsiteBackupDir":"F:\\Respaldos"}""");
+        foreach (var carpeta in new[] { "backups", "vendor", "logs", "recibos" })
+        {
+            Directory.CreateDirectory(Path.Combine(gym.DataDir, carpeta));
+            File.WriteAllText(Path.Combine(gym.DataDir, carpeta, "propio-de-esta-pc.txt"), "x");
+        }
+        var zip = Path.Combine(NewDir(), "export.zip");
+
+        await gym.Service.ExportAsync(zip);
+
+        using var archive = ZipFile.OpenRead(zip);
+        archive.Entries.Select(e => e.FullName).Should().NotContain(
+            name => name.Contains("settings.json") || name.Contains("propio-de-esta-pc"),
+            "solo viajan la base, el logo y las fotos");
+    }
+
+    [Fact]
+    public async Task Import_KeepsTheSettingsOfThePcItRunsOn()
+    {
+        var origen = NewInstall("Iron Temple", members: 1, payments: 0, withLogo: false);
+        var zip = Path.Combine(NewDir(), "mudanza.zip");
+        await origen.Service.ExportAsync(zip);
+
+        var destino = NewInstall("Otro Gym", members: 0, payments: 0, withLogo: false);
+        var settingsPath = Path.Combine(destino.DataDir, "settings.json");
+        File.WriteAllText(settingsPath, """{"OffsiteBackupDir":"G:\\Mi-Pendrive"}""");
+
+        await destino.Service.ImportAsync(zip);
+
+        File.ReadAllText(settingsPath).Should().Contain("G:\\\\Mi-Pendrive");
+    }
+
+    [Fact]
     public async Task ExportThenImport_OnAnotherInstall_RestoresDataAndRewritesPaths()
     {
         // PC vieja: 3 socios, uno con foto, y logo del gimnasio.

@@ -50,6 +50,7 @@ public class StartupSeedTests
             services.AddSingleton<ICurrentTenant, AmbientTenantProvider>();
             services.AddSingleton<ICurrentUser, AmbientCurrentUser>();
             services.AddInfrastructure($"Data Source={Path.Combine(dir, "gymforge.db")}");
+            services.AddSingleton<ILocalSettings>(new InMemoryLocalSettings());   // el arranque hace backup: no tocar el archivo real del usuario
             await using var provider = services.BuildServiceProvider();
 
             await provider.InitialiseDatabaseAsync();

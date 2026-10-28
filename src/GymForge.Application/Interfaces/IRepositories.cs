@@ -226,6 +226,22 @@ public interface IClock
 /// <summary>Resguardo de la base local. Best-effort: nunca lanza.</summary>
 public interface IDatabaseBackup
 {
-    /// <summary>Crea un backup ya (p. ej. al cerrar caja). El motivo va al log.</summary>
+    /// <summary>
+    /// Crea un backup ya (p. ej. al cerrar caja). El motivo va al log. Si hay un destino externo
+    /// configurado (<see cref="ILocalSettings.OffsiteBackupDir"/>) también lo copia ahí.
+    /// </summary>
     void BackupNow(string reason = "manual");
+
+    /// <summary>"Copiar ahora": crea un backup nuevo y lo copia ya al destino externo, informando cómo salió.</summary>
+    OffsiteBackupOutcome BackupOffsiteNow();
+}
+
+/// <summary>Resultado de la copia al destino externo (pendrive, red, carpeta sincronizada).</summary>
+public enum OffsiteBackupOutcome
+{
+    /// <summary>No hay carpeta de destino configurada: no hay nada que copiar.</summary>
+    NotConfigured,
+    Copied,
+    /// <summary>Destino no disponible (pendrive desenchufado, red caída, sin permisos) o backup local fallido.</summary>
+    Failed,
 }

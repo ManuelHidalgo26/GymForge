@@ -12,24 +12,23 @@ Deuda y tareas: `docs/TASKS.md`. Decisiones: `docs/adr/`. Historia por sprints y
 Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" con aspecto de sistema de US$100k.
 
 - Plan: 6 fases en ~8 sesiones.
-- Hito: **tras la sesión 3** se puede instalar y operar en el gimnasio piloto mientras se sigue puliendo. Condición: cerrar el bloqueador P-1 (freeze) al arrancar la sesión 3 (ver `docs/TASKS.md`).
+- Hito: **tras la sesión 3** se puede instalar y operar en el gimnasio piloto mientras se sigue puliendo. Condición: cerrar el bloqueador P-1 (freeze) al arrancar la sesión 3 (ver `docs/TASKS.md`). **Estado (2026-10-28): condición P-1 cumplida.** Para la puesta en marcha completa falta Fase 1.
 - Flujo por sesión: arqui (ADR) → dev (implementa) → qa (aprueba o veta).
 - Regla 6 de CLAUDE.md: `dotnet test` verde antes de cada commit.
 
-## Estado general (al 2026-10-27)
+## Estado general (al 2026-10-28)
 
-- Sesión 1: implementada, **sin commit** (todo en el working tree).
-- Sesión 2: implementada, **sin commit**. Los 4 puntos de ADR-003 y 3 blockers de piloto resueltos. ADR-003 sigue `Proposed` hasta el commit.
-- Tests: **451 verdes** (Domain 70 · Application 218 · Integration 163) al cierre de la sesión 2. Piso al empezar la sesión 2: 216. Cifra reportada por dev/qa; la sesión de notas no re-ejecutó `dotnet test`.
-- Working tree: S1 + S2 juntos, sin commitear. No usar `git add -A` (hay `GymForge-backup-licencias.lnk` en la raíz).
-- Abierto en `docs/TASKS.md`: **1 bloqueador de piloto** (P-1, freeze sin vuelta), 1 pieza de UI diferida (P-2), 2 tareas de commit (T-00, T-01) y 19 ítems de deuda (D1–D19).
+- Sesiones 1, 2 y 3 (incluye P-1 y Q1): **commiteadas** en `feat/sesion-3` (11 commits desde `master`). Sin merge a `master`, sin push. ADR-001, ADR-002 y ADR-003 en `Accepted`.
+- Tests: **504 verdes** (Domain 72 · Application 230 · Desktop 25 · Integration 177), cifra del orquestador tras Q1. Piso al cierre de la sesión 2: 451. La sesión de notas no re-ejecutó `dotnet test`.
+- Working tree: solo los docs de la sesión 3, pendientes de commit (lo hace el orquestador). `.gitignore` ya ignora `*.lnk` y `*.pfx`.
+- Abierto en `docs/TASKS.md`: **0 bloqueadores de piloto** (P-1 cerrado). Quedan: decisión Q2/D9, P-2 (UI diferida, no bloquea), 19 ítems de deuda (D1–D19), 7 de qa (Q3–Q9), 5 de UX (UX1–UX5) y las fases F1–F6.
 
 ## Roadmap por fases
 
 | Fase | Sesiones | Contenido | Estado |
 |---|---|---|---|
-| 0 — Bugs y reglas de negocio | 1-2 | Correctitud del core | S1 y S2 completadas, sin commit. Cierre pendiente: P-1 (UI de freeze y descongelado automático) antes del piloto |
-| 1 — Robustez de producción | 3 | Backup off-site, auto-update Velopack, licencia (CUIT + fingerprint), retención de logs | PENDIENTE |
+| 0 — Bugs y reglas de negocio | 1-2 (P-1 en 3) | Correctitud del core | **CERRADA.** S1, S2, P-1 (freeze) y Q1 commiteadas en `feat/sesion-3` |
+| 1 — Robustez de producción | 3 | Backup off-site, auto-update Velopack, licencia (CUIT + fingerprint), retención de logs | PENDIENTE: no arrancó en S3 (ver "Qué sigue") |
 | 2 — WhatsApp gratis + cobranzas | 4 | Pantalla de morosos, `WhatsAppLinkSender` (wa.me), `DunningConfig` en Configuración, `NotificationLog` | PENDIENTE |
 | 3 — Escáner HID + check-in premium | 5 | Lector keyboard-wedge en kiosk y POS, foto del socio, teclado numérico en pantalla, arquitectura de hardware | PENDIENTE |
 | 4 — Profundidad | 6-7 | Reportes reales (morosos, por plan/método/sede, retención; export Excel/PDF), editar socio desde la ficha, rutinas en la ficha, comisiones de staff | PENDIENTE |
@@ -38,14 +37,49 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 
 ## Qué sigue
 
-**Sesión 3 — arranca por el bloqueador P-1 (freeze) y después Fase 1.**
+**Próxima sesión: decidir Q2 y arrancar Fase 1 del roadmap.** P-1 está cerrado y el piloto no tiene bloqueadores abiertos.
 
-0. Antes de tocar código: decidir con el orquestador la estrategia de commit de S1 + S2 (T-00) y el `.gitignore` (T-01), para que P-1 entre en su propio commit.
-1. **P-1 (bloquea piloto), freeze sin vuelta.** `src/GymForge.Desktop/ViewModels/Members/MemberDetailViewModel.cs:104-111` congela 30 días fijos desde `DateTime.Today` y no atrapa el error del tope. Hay que: modal con fechas y días usados/restantes; botón "Reactivar" → `UnfreezeMembershipCommand`; auto-descongelado en `DailyMaintenanceService` al llegar `FreezeEnd`; fechas en día local con `ICompanyCalendar`. Detalle en `docs/TASKS.md`.
-2. Fase 1 (roadmap): backup off-site, auto-update Velopack, licencia (CUIT + fingerprint), retención de logs, fix "Sedes: 2 de 1".
-3. Fuera del bloqueador: P-2 (saldo a favor en la ficha) y D1 (cobros multi-sede) siguen abiertas.
+0. Decidir con el usuario Q2 / D9 (`AsNoTracking` antes de operar, o aceptar con reinicios diarios de la PC de recepción).
+1. Confirmar con el orquestador si Fase 1 queda como continuación de la Sesión 3 o pasa a la Sesión 4. El roadmap la numera Sesión 3, pero la Sesión 3 cierra sin ella.
+2. **Fase 1 (PENDIENTE, no arrancó):** backup off-site, auto-update Velopack, licencia (CUIT + fingerprint), retención de logs, fix "Sedes: 2 de 1". Antes de arrancar, verificar lo ya existente: backup local y recuperación (`src/GymForge.Infrastructure/Persistence/DatabaseBackupService.cs`, commit `eaad5bc`) e instalador Velopack (`scripts/pack.ps1`, commit `6b7ecdb`). F1 debe cubrir lo que falta, no rehacerlo.
+3. Fuera del piloto: P-2 (saldo a favor en la ficha) y D1 (cobros multi-sede) siguen abiertas. D7 y D11 esperan decisión del usuario. Q3–Q9 y UX1–UX5: ver `docs/TASKS.md`.
 
 Sesiones 4-8: ver tabla de fases arriba.
+
+---
+
+## [2026-10-28] Sesión 3
+
+**Hecho:**
+- **P-1 "freeze sin vuelta" cerrado y commiteado** (`b0caf77`). Era bloqueador de piloto.
+  - Lógica (dev): `GetFreezeQuotaQuery` (`FreezeQuotaDto`, día local con `ICompanyCalendar`). `FreezeModalViewModel` + `FreezeModalView`: fechas, días usados y restantes del año, tope. Si el dominio rechaza igual (pantalla desactualizada), muestra su mensaje en el modal. "Reactivar" → `UnfreezeMembershipCommand` desde la ficha; "Congelar" solo en `Active`, "Reactivar" solo en `Frozen`. Auto-descongelado idempotente como primer paso de `DailyMaintenanceService` (`GetFreezeEndedAsync`, company-wide, con catch-up); `MaintenanceDayResult.Unfrozen`. `Membership.FreezeDaysUsedIn(year)`. Verificado con grep: ya no queda `DateTime.Today` en `MemberDetailViewModel.cs`.
+  - Pulido (ux): medidor de cupo; bloque de resultado (días a congelar y nuevo vencimiento); tope y fecha en `InfoBar` Warning; Escape = Cancelar, Enter = Congelar, Tab cíclico, foco inicial en la fecha, nombres accesibles, scroll bajo 600 px. Ficha: insignia de estado en español con pill semántico (`StatusToneConverter`, recurso `StatusTone`); botones Congelar/Reactivar rotulados. Tokens nuevos: `InfoBrush` / `InfoTintBrush` (`Assets/Styles/Colors.axaml`), `Border.Pill.info` (`AppStyles.axaml`). Uso del converter: `Classes.success="{Binding Status, Converter={StaticResource StatusTone}, ConverterParameter=success}"`.
+  - qa: APROBADO CON OBSERVACIONES, sin bloqueantes. Build Debug y Release OK; render real de ficha, modal y `StatusTone` verificado (capturas 19-23 y 20-22 dark en `tools/GymForge.Screenshots`). qa agregó `FreezeAtTheDoorTests`.
+- **Q1 cerrado y commiteado** (`a07303f`). Preexistente de S1, expuesto por P-1: el anti-passback contaba swipes denegados, así que un socio regularizado recibía `AlreadyInside` dentro de 5 min. Fix en el repositorio (`GetLastGrantedAsync`), no en el use case, para no abrir un bypass. Con test-guardia.
+- **Pre-cierre T-00/T-01:** rama `feat/sesion-3` desde `master`; `.gitignore` (`/TASKS.md` para versionar `docs/TASKS.md`; `*.pfx`, `*.lnk`); ADR-002 y ADR-003 a **Accepted**.
+- **Commits: 11 en la rama.** Nueve de S1+S2 agrupados por feature (no un commit por punto, porque S1 y S2 compartían archivos como `ValidateSwipeUseCase.cs` y `ProcessPaymentCommand.cs`), más `b0caf77` y `a07303f`. Sin merge ni push.
+- **Tests: 504 verdes** (Domain 72 · Application 230 · Desktop 25 · Integration 177), re-ejecutados por el orquestador tras Q1. Cifras intermedias: 498 (dev) y 500 (qa, antes de Q1). Esta sesión de notas no re-ejecutó `dotnet test`.
+
+**En curso:**
+- Nada a medias en código.
+- **Q2 / D9:** decisión pendiente, sin cambios de código. Falta `AsNoTracking` en `src/GymForge.Infrastructure/Repositories/MembershipRepository.cs` (verificado: sin ocurrencias). El DbContext de vida larga se registra en `src/GymForge.Desktop/ServiceCollectionExtensions.cs`.
+- **Fase 1 (F1):** no arrancó. Sin archivos tocados.
+- **P-2** (saldo a favor en la ficha, `src/GymForge.Desktop/Views/Members/MemberDetailView.axaml`) y **D1** (`src/GymForge.Infrastructure/Repositories/ChargeRepository.cs:50`): abiertas, sin arrancar.
+- **CI de GitHub** (`.github/workflows/ci.yml`): sin ejecutar (no hubo push).
+
+**Blockers:** ninguno para el piloto (P-1 cerrado). Decisiones pendientes que no bloquean:
+- Q2 / D9: aceptable si la PC de recepción se reinicia seguido. Si queda prendida semanas, aplicar `AsNoTracking` antes de operar.
+- Usuario: política de datos personales en AuditLog (D11, con Q4: el motivo de freeze es texto libre) y DNI/licencia multi-sede (D7).
+
+**Próximo paso:** decidir Q2 con el usuario y confirmar si F1 arranca en S3 o pasa a S4 (el roadmap numera F1 = Sesión 3 y F2 = Sesión 4). Luego F1, empezando por backup off-site. Antes, verificar lo ya existente: `src/GymForge.Infrastructure/Persistence/DatabaseBackupService.cs` (backup local y recuperación) y el instalador Velopack (`scripts/pack.ps1`, `src/GymForge.Desktop/Program.cs`).
+
+**Tocado:**
+- Docs: `docs/PROGRESS.md`, `docs/TASKS.md`, `docs/adr/ADR-002-multi-tenant-y-correctitud-core.md`, `docs/adr/ADR-003-estado-automatico-auditoria-cuenta-corriente.md`, `.gitignore`.
+- Freeze (backend): `src/GymForge.Application/UseCases/Memberships/GetFreezeQuotaQuery.cs`, `src/GymForge.Application/UseCases/Maintenance/DailyMaintenanceService.cs`, `src/GymForge.Infrastructure/Repositories/MembershipRepository.cs`, `src/GymForge.Domain/Entities/Membership.cs` (`FreezeDaysUsedIn`, L87).
+- Freeze (Desktop): `src/GymForge.Desktop/ViewModels/Members/FreezeModalViewModel.cs`, `src/GymForge.Desktop/ViewModels/Members/MemberDetailViewModel.cs`, `src/GymForge.Desktop/Views/Members/FreezeModalView.axaml` (+ `.axaml.cs`), `src/GymForge.Desktop/Views/Members/MemberDetailView.axaml`, `src/GymForge.Desktop/Converters/StatusToneConverter.cs`, `src/GymForge.Desktop/Assets/Styles/Colors.axaml`, `src/GymForge.Desktop/Assets/Styles/AppStyles.axaml`.
+- Q1: `src/GymForge.Infrastructure/Repositories/AccessLogRepository.cs:19`, `src/GymForge.Application/Interfaces/IRepositories.cs:155`, `src/GymForge.Application/UseCases/Access/ValidateSwipeUseCase.cs:139`.
+- Tests: `tests/GymForge.Desktop.Tests/` (proyecto nuevo), `tests/GymForge.Integration.Tests/FreezeAtTheDoorTests.cs`.
+- Capturas: `tools/GymForge.Screenshots/Program.cs`.
 
 ---
 

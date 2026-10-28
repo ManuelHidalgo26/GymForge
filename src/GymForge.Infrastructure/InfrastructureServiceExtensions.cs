@@ -1,5 +1,7 @@
 using GymForge.Application.Interfaces;
+using GymForge.Application.UseCases.Maintenance;
 using GymForge.Infrastructure.Persistence;
+using GymForge.Infrastructure.Persistence.Interceptors;
 using GymForge.Infrastructure.Repositories;
 using GymForge.Infrastructure.Seed;
 using GymForge.Infrastructure.Services;
@@ -18,13 +20,26 @@ public static class InfrastructureServiceExtensions
         this IServiceCollection services,
         string connectionString)
     {
-        services.AddDbContext<GymForgeDbContext>(opts =>
+        // El interceptor de auditoría depende de ICurrentUser / ICurrentTenant (los registra el host antes
+        // de AddInfrastructure) y se resuelve por scope: de ahí el overload (sp, opts) de AddDbContext.
+        services.AddScoped<AuditSaveChangesInterceptor>();
+        services.AddDbContext<GymForgeDbContext>((sp, opts) =>
             opts.UseSqlite(connectionString,
-                sql => sql.MigrationsAssembly(typeof(GymForgeDbContext).Assembly.GetName().Name)));
+                    sql => sql.MigrationsAssembly(typeof(GymForgeDbContext).Assembly.GetName().Name))
+                .AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>()));
+
+        // Preferencias de ESTA PC (destino del backup externo, etc.): archivo local, no viaja con la base.
+        services.AddSingleton<ILocalSettings, LocalSettingsService>();
+
+        // Huella de ESTA PC para atar la licencia (la consume LicenseService; sin ella no se chequea el atado).
+        services.AddSingleton<IMachineFingerprint>(sp => new WindowsMachineFingerprint(
+            sp.GetRequiredService<ILogger<WindowsMachineFingerprint>>()));
 
         // Resguardo y recuperación de la base local (singleton: tiene la ruta de la DB).
         services.AddSingleton(sp => new DatabaseBackupService(
-            connectionString, sp.GetRequiredService<ILogger<DatabaseBackupService>>()));
+            connectionString,
+            sp.GetRequiredService<ILogger<DatabaseBackupService>>(),
+            sp.GetRequiredService<ILocalSettings>()));
         services.AddSingleton<IDatabaseBackup>(sp => sp.GetRequiredService<DatabaseBackupService>());
 
         // Migración de datos entre PCs (exportar/importar el gimnasio completo).
@@ -36,6 +51,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IMemberRepository, MemberRepository>();
         services.AddScoped<IMembershipRepository, MembershipRepository>();
         services.AddScoped<IChargeRepository, ChargeRepository>();
+        services.AddScoped<IMemberCreditRepository, MemberCreditRepository>();
         services.AddScoped<IAccessLogRepository, AccessLogRepository>();
         services.AddScoped<IStaffRepository, StaffRepository>();
         services.AddScoped<IShiftRepository, ShiftRepository>();
@@ -58,6 +74,12 @@ public static class InfrastructureServiceExtensions
         services.AddSingleton<INotificationSender, LogNotificationSender>();
         services.AddSingleton<GymForge.Application.UseCases.Dunning.DunningConfig>();
         services.AddScoped<GymForge.Application.UseCases.Dunning.DunningService>();
+
+        // Mantenimiento diario con catch-up: vence membresías, marca mora y dispara el dunning.
+        // El checkpoint es singleton: guarda en archivo el último día local procesado.
+        services.AddScoped<DailyMaintenanceService>();
+        services.AddScoped<IDailyMaintenanceRunner, DailyMaintenanceRunner>();
+        services.AddSingleton<IMaintenanceCheckpoint, FileMaintenanceCheckpoint>();
 
         services.AddScoped<DatabaseSeeder>();
 

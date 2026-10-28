@@ -2,7 +2,7 @@ using GymForge.Domain.Enums;
 
 namespace GymForge.Domain.Entities;
 
-public class BodyMeasurement : BaseEntity
+public class BodyMeasurement : BaseEntity, ITenantScoped
 {
     public Guid MemberId { get; private set; }
     public Guid CompanyId { get; private set; }

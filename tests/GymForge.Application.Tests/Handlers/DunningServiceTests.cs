@@ -12,16 +12,21 @@ public class DunningServiceTests
     private readonly IChargeRepository _charges = Substitute.For<IChargeRepository>();
     private readonly IMemberRepository _members = Substitute.For<IMemberRepository>();
     private readonly INotificationSender _sender = Substitute.For<INotificationSender>();
+    private readonly ICurrentTenant _tenant = Substitute.For<ICurrentTenant>();
+    private readonly IDisposable _tenantScope = Substitute.For<IDisposable>();
 
     private static readonly Guid CompanyId = Guid.NewGuid();
     private static readonly Guid SiteId = Guid.NewGuid();
     private static readonly DateOnly Today = new(2026, 7, 21);
 
-    public DunningServiceTests() =>
+    public DunningServiceTests()
+    {
         _sender.SendAsync(Arg.Any<NotificationMessage>(), Arg.Any<CancellationToken>()).Returns(true);
+        _tenant.BeginScope(Arg.Any<Guid>(), Arg.Any<Guid>()).Returns(_tenantScope);
+    }
 
     private DunningService NewService(bool enabled = true) =>
-        new(_charges, _members, _sender, new DunningConfig { Enabled = enabled });
+        new(_charges, _members, _sender, _tenant, new DunningConfig { Enabled = enabled });
 
     private void HaveOverdue(params Charge[] charges) =>
         _charges.GetOverdueAsync(CompanyId, Today, Arg.Any<CancellationToken>())
@@ -53,6 +58,24 @@ public class DunningServiceTests
         await _sender.Received(1).SendAsync(
             Arg.Is<NotificationMessage>(m => m.ToPhone == "+5491122334455" && m.Body.Contains("PowerGym")),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task LooksUpEachMemberInsideTheSiteOfTheirCharge()
+    {
+        // El job recorre la mora de TODAS las sedes; el socio vive en la sede de su cargo.
+        var otherSiteId = Guid.NewGuid();
+        var inSite = OverdueCharge(daysOverdue: 7);
+        var inOtherSite = Charge.Create(CompanyId, otherSiteId, Guid.NewGuid(), null,
+            ConceptType.MembershipFee, "Cuota mensual", 35_000m, Today.AddDays(-7));
+        HaveOverdue(inSite, inOtherSite);
+        MemberReturns("+5491122334455");
+
+        await NewService().RunAsync(CompanyId, Today, "PowerGym", CancellationToken.None);
+
+        _tenant.Received(1).BeginScope(CompanyId, SiteId);
+        _tenant.Received(1).BeginScope(CompanyId, otherSiteId);
+        _tenantScope.Received(2).Dispose();
     }
 
     [Fact]

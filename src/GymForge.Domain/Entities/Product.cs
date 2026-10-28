@@ -1,6 +1,6 @@
 namespace GymForge.Domain.Entities;
 
-public class Product : BaseEntity
+public class Product : BaseEntity, ITenantScoped, IAuditable
 {
     public Guid CompanyId { get; private set; }
     public string Sku { get; private set; } = string.Empty;
@@ -54,7 +54,7 @@ public class Product : BaseEntity
     }
 }
 
-public class StockBySite : BaseEntity
+public class StockBySite : BaseEntity, ISiteScoped, IAuditable
 {
     public Guid ProductId { get; private set; }
     public Guid SiteId { get; private set; }
@@ -86,7 +86,7 @@ public class StockBySite : BaseEntity
     }
 }
 
-public class Sale : BaseEntity
+public class Sale : BaseEntity, ISiteScoped, IAuditable
 {
     public Guid? MemberId { get; private set; }
     public Guid CashierId { get; private set; }

@@ -42,9 +42,11 @@ public class MembershipRepository : IMembershipRepository
             .OrderByDescending(m => m.StartDate)
             .ToListAsync(ct);
 
+    // Vencimientos de la empresa completa (todas las sedes); el límite de tenant es el CompanyId explícito.
     public async Task<IReadOnlyList<Membership>> GetExpiringAsync(
         Guid companyId, DateOnly from, DateOnly to, CancellationToken ct = default) =>
         await _db.Memberships
+            .IgnoreQueryFilters()
             .Include(m => m.Member)
             .Include(m => m.MembershipType)
             .Where(m =>
@@ -53,5 +55,29 @@ public class MembershipRepository : IMembershipRepository
                 m.EndDate >= from &&
                 m.EndDate <= to)
             .OrderBy(m => m.EndDate)
+            .ToListAsync(ct);
+
+    // Vencidas de la empresa completa (todas las sedes); el límite de tenant es el CompanyId explícito.
+    public async Task<IReadOnlyList<Membership>> GetActiveExpiredAsync(
+        Guid companyId, DateOnly asOf, CancellationToken ct = default) =>
+        await _db.Memberships
+            .IgnoreQueryFilters()
+            .Where(m =>
+                m.CompanyId == companyId &&
+                m.Status == MembershipStatus.Active &&
+                m.EndDate != null &&
+                m.EndDate < asOf)
+            .ToListAsync(ct);
+
+    // Congelamientos terminados de la empresa completa (todas las sedes); el límite de tenant es el CompanyId explícito.
+    public async Task<IReadOnlyList<Membership>> GetFreezeEndedAsync(
+        Guid companyId, DateOnly asOf, CancellationToken ct = default) =>
+        await _db.Memberships
+            .IgnoreQueryFilters()
+            .Where(m =>
+                m.CompanyId == companyId &&
+                m.Status == MembershipStatus.Frozen &&
+                m.FreezeEnd != null &&
+                m.FreezeEnd <= asOf)
             .ToListAsync(ct);
 }

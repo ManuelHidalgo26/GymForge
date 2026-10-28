@@ -2,7 +2,7 @@ using GymForge.Domain.Enums;
 
 namespace GymForge.Domain.Entities;
 
-public class Charge : BaseEntity
+public class Charge : BaseEntity, ISiteScoped, IAuditable
 {
     public Guid MemberId { get; private set; }
     public Guid? MembershipId { get; private set; }
@@ -71,10 +71,20 @@ public class Charge : BaseEntity
 
     public void MarkOverdue()
     {
-        if (Status is ChargeStatus.Paid or ChargeStatus.WrittenOff) return;
+        if (Status is ChargeStatus.Paid or ChargeStatus.WrittenOff or ChargeStatus.Refunded) return;
         Status = ChargeStatus.Overdue;
         UpdatedAt = DateTime.UtcNow;
     }
+
+    /// <summary>
+    /// Cargo vencido a la fecha dada y con saldo pendiente: lo único que mantiene a un socio en mora.
+    /// Se mira la fecha y el saldo, no <see cref="ChargeStatus.Overdue"/>: un pago parcial deja el
+    /// cargo en PartiallyPaid aunque siga vencido.
+    /// </summary>
+    public bool IsInArrears(DateOnly asOf) =>
+        DueDate < asOf
+        && AmountOutstanding > 0
+        && Status is not (ChargeStatus.Paid or ChargeStatus.WrittenOff or ChargeStatus.Refunded);
 
     public void WriteOff(string reason)
     {

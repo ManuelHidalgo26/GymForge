@@ -1,10 +1,12 @@
 using GymForge.Application;
+using GymForge.Application.Interfaces;
 using GymForge.Application.UseCases.Access;
 using GymForge.Desktop.ViewModels.Cash;
 using GymForge.Desktop.ViewModels.Charges;
 using GymForge.Desktop.ViewModels.Checkin;
 using GymForge.Desktop.ViewModels.Dashboard;
 using GymForge.Desktop.ViewModels.Members;
+using GymForge.Desktop.ViewModels.Shared;
 using GymForge.Desktop.Services;
 using GymForge.Desktop.Views.Shell;
 using GymForge.Infrastructure;
@@ -33,6 +35,10 @@ public static class ServiceCollectionExtensions
         // Conecta Microsoft.Extensions.Logging al Serilog estático (seeder, repos, etc.)
         services.AddLogging(builder => builder.AddSerilog(dispose: false));
         services.AddApplication();
+        // El DbContext filtra por empresa+sede (tenant de la sesión viva) y audita con el cajero logueado.
+        services.AddSingleton<ICurrentTenant, SessionTenantProvider>();
+        services.AddSingleton<SessionCurrentUser>();
+        services.AddSingleton<ICurrentUser>(sp => sp.GetRequiredService<SessionCurrentUser>());
         services.AddInfrastructure(connectionString);
 
         // Gatekeeper
@@ -43,6 +49,15 @@ public static class ServiceCollectionExtensions
         // ── Session ───────────────────────────────────────────────────────────
         // Singleton: tenant + sede activa + cajero + turno de caja en curso
         services.AddSingleton<SessionContext>();
+
+        // ── Mantenimiento diario ──────────────────────────────────────────────
+        // Singleton: lo arranca Program.cs y queda corriendo mientras la app esté abierta
+        services.AddSingleton<DailyMaintenanceHost>();
+
+        // ── Auto-actualización (Velopack) ─────────────────────────────────────
+        // Singleton: el shell muestra el aviso y Configuración la versión/búsqueda manual sobre el mismo estado
+        services.AddSingleton<IUpdateService, VelopackUpdateService>();
+        services.AddSingleton<UpdateViewModel>();
 
         // ── Recibos ───────────────────────────────────────────────────────────
         // Genera y abre el recibo PDF de cada cobro

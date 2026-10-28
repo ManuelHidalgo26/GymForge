@@ -36,7 +36,8 @@ public class DatabaseSeeder
 
     private async Task SeedExercisesAsync(CancellationToken ct)
     {
-        if (await _db.Exercises.AnyAsync(ct)) return;
+        // El seed corre en el arranque, antes de que exista un tenant: la comprobación ignora los filtros.
+        if (await _db.Exercises.IgnoreQueryFilters().AnyAsync(ct)) return;
 
         _logger.LogInformation("Seeding global exercise library...");
         var exercises = ExerciseSeed.GetGlobalExercises();

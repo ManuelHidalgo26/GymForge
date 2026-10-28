@@ -4,6 +4,8 @@
              xmlns:vm="using:GymForge.Desktop.ViewModels.Members"
              xmlns:vmCharges="using:GymForge.Desktop.ViewModels.Charges"
              xmlns:vCharges="using:GymForge.Desktop.Views.Charges"
+             xmlns:dto="using:GymForge.Application.DTOs"
+             xmlns:enums="using:GymForge.Domain.Enums"
              x:Class="GymForge.Desktop.Views.Members.MemberDetailView"
              x:DataType="vm:MemberDetailViewModel">
 
@@ -45,10 +47,25 @@
                                Text="{Binding Member.FirstName[0]}" />
                 </Border>
 
-                <!-- Name + meta -->
+                <!-- Name + status + meta -->
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Spacing="2">
-                    <TextBlock FontSize="18" FontWeight="Bold"
-                               Text="{Binding Member.FullName}" />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock FontSize="18" FontWeight="Bold" VerticalAlignment="Center"
+                                   Text="{Binding Member.FullName}" />
+
+                        <!-- Estado del socio: pill semántico (tokens light/dark, contraste AA) y en español.
+                             StatusTone enciende exactamente una clase de tono según el estado. -->
+                        <Border Classes="Pill" Padding="10,4"
+                                Classes.success="{Binding Member.Status, Converter={StaticResource StatusTone}, ConverterParameter=success}"
+                                Classes.warning="{Binding Member.Status, Converter={StaticResource StatusTone}, ConverterParameter=warning}"
+                                Classes.danger="{Binding Member.Status, Converter={StaticResource StatusTone}, ConverterParameter=danger}"
+                                Classes.info="{Binding Member.Status, Converter={StaticResource StatusTone}, ConverterParameter=info}"
+                                Classes.accent="{Binding Member.Status, Converter={StaticResource StatusTone}, ConverterParameter=accent}"
+                                Classes.neutral="{Binding Member.Status, Converter={StaticResource StatusTone}, ConverterParameter=neutral}">
+                            <TextBlock FontSize="12"
+                                       Text="{Binding Member.Status, Converter={StaticResource EnumEs}}" />
+                        </Border>
+                    </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="12">
                         <TextBlock FontSize="12" Opacity="0.6">
                             <Run Text="{Binding Member.DocumentType}" />
@@ -63,19 +80,6 @@
                                    Text="{Binding Member.Mobile}" />
                     </StackPanel>
                 </StackPanel>
-
-                <!-- Status badge -->
-                <Border DockPanel.Dock="Right" Classes="Pill" Padding="10,4" Margin="0,0,8,0">
-                    <Border.Background>
-                        <SolidColorBrush Color="{Binding Member.Status,
-                            Converter={StaticResource StatusColorConverter}}"
-                            Opacity="0.15" />
-                    </Border.Background>
-                    <TextBlock Text="{Binding Member.Status}"
-                               FontSize="12"
-                               Foreground="{Binding Member.Status,
-                                   Converter={StaticResource StatusColorConverter}}" />
-                </Border>
 
             </DockPanel>
         </Border>
@@ -204,9 +208,17 @@
             <Grid IsVisible="{Binding ActiveTab,
                 Converter={x:Static ObjectConverters.Equal},
                 ConverterParameter={x:Static vm:MemberDetailTab.Memberships}}"
-                  RowDefinitions="*,Auto">
+                  RowDefinitions="Auto,*,Auto">
 
-                <DataGrid Grid.Row="0"
+                <fa:InfoBar Grid.Row="0" Margin="16,12,16,0"
+                            IsOpen="{Binding MembershipsMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                            Severity="Error"
+                            Title="No se pudo completar la operación"
+                            Message="{Binding MembershipsMessage}"
+                            IsClosable="False"
+                            AutomationProperties.LiveSetting="Assertive" />
+
+                <DataGrid Grid.Row="1"
                           ItemsSource="{Binding Memberships}"
                           IsReadOnly="True"
                           AutoGenerateColumns="False">
@@ -217,22 +229,62 @@
                                             Binding="{Binding StartDate}" Width="100" />
                         <DataGridTextColumn Header="Fin"
                                             Binding="{Binding EndDate, TargetNullValue='Abierta'}" Width="100" />
-                        <DataGridTextColumn Header="Estado"
-                                            Binding="{Binding Status}" Width="110" />
+                        <!-- Estado: pill semántico (mismo lenguaje que el encabezado de la ficha) -->
+                        <DataGridTemplateColumn Header="Estado" Width="120">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate x:DataType="dto:MembershipDto">
+                                    <Border Classes="Pill" Margin="4,0"
+                                            Classes.success="{Binding Status, Converter={StaticResource StatusTone}, ConverterParameter=success}"
+                                            Classes.warning="{Binding Status, Converter={StaticResource StatusTone}, ConverterParameter=warning}"
+                                            Classes.danger="{Binding Status, Converter={StaticResource StatusTone}, ConverterParameter=danger}"
+                                            Classes.info="{Binding Status, Converter={StaticResource StatusTone}, ConverterParameter=info}"
+                                            Classes.accent="{Binding Status, Converter={StaticResource StatusTone}, ConverterParameter=accent}"
+                                            Classes.neutral="{Binding Status, Converter={StaticResource StatusTone}, ConverterParameter=neutral}">
+                                        <TextBlock Text="{Binding Status, Converter={StaticResource EnumEs}}" />
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="Se reactiva"
+                                            Binding="{Binding FreezeEnd, TargetNullValue='—'}" Width="110" />
                         <DataGridTextColumn Header="Visitas"
                                             Binding="{Binding VisitsRemaining, TargetNullValue='∞'}" Width="80" />
-                        <DataGridTemplateColumn Header="Acciones" Width="140">
+                        <DataGridTemplateColumn Header="Acciones" Width="170">
                             <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" Spacing="4">
-                                        <Button Classes="IconButton"
-                                                ToolTip.Tip="Congelar"
+                                <DataTemplate x:DataType="dto:MembershipDto">
+                                    <StackPanel Orientation="Horizontal" Spacing="4"
+                                                Margin="4,0" VerticalAlignment="Center">
+                                        <!-- Congelar: solo en Active. Con texto: un ícono de pausa solo no dice qué hace. -->
+                                        <Button Classes="Ghost"
+                                                ToolTip.Tip="Congelar: pausa la membresía y corre el vencimiento"
+                                                AutomationProperties.Name="Congelar membresía"
+                                                IsVisible="{Binding Status,
+                                                    Converter={x:Static ObjectConverters.Equal},
+                                                    ConverterParameter={x:Static enums:MembershipStatus.Active}}"
                                                 CommandParameter="{Binding}"
-                                                Command="{Binding $parent[UserControl].((vm:MemberDetailViewModel)DataContext).FreezeMembershipCommand}">
-                                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Pause}" FontSize="14" />
+                                                Command="{Binding $parent[UserControl].((vm:MemberDetailViewModel)DataContext).OpenFreezeModalCommand}">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Pause}" FontSize="14" />
+                                                <TextBlock Text="Congelar" FontSize="12" />
+                                            </StackPanel>
+                                        </Button>
+                                        <!-- Reactivar: solo en Frozen. Es la salida del congelamiento, así que va rotulado. -->
+                                        <Button Classes="Ghost"
+                                                ToolTip.Tip="Reactivar ahora (los días no usados vuelven al cupo del año)"
+                                                AutomationProperties.Name="Reactivar membresía"
+                                                IsVisible="{Binding Status,
+                                                    Converter={x:Static ObjectConverters.Equal},
+                                                    ConverterParameter={x:Static enums:MembershipStatus.Frozen}}"
+                                                CommandParameter="{Binding}"
+                                                Command="{Binding $parent[UserControl].((vm:MemberDetailViewModel)DataContext).ReactivateMembershipCommand}">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Play}" FontSize="14" />
+                                                <TextBlock Text="Reactivar" FontSize="12" />
+                                            </StackPanel>
                                         </Button>
                                         <Button Classes="IconButton"
-                                                ToolTip.Tip="Cancelar"
+                                                ToolTip.Tip="Cancelar membresía"
+                                                AutomationProperties.Name="Cancelar membresía"
                                                 CommandParameter="{Binding}"
                                                 Command="{Binding $parent[UserControl].((vm:MemberDetailViewModel)DataContext).CancelMembershipCommand}">
                                             <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Delete}" FontSize="14" />
@@ -244,7 +296,7 @@
                     </DataGrid.Columns>
                 </DataGrid>
 
-                <Border Grid.Row="1" Padding="16,8"
+                <Border Grid.Row="2" Padding="16,8"
                         Background="{DynamicResource SubtleFillColorSecondaryBrush}">
                     <TextBlock FontSize="12" Opacity="0.6"
                                Text="{Binding Memberships.Count, StringFormat={}{0} membresía(s)}" />
@@ -303,6 +355,22 @@
                 </StackPanel>
             </Grid>
 
+        </Grid>
+
+        <!-- ── Modal: congelar membresía ───────────────────────────────────── -->
+        <Grid Grid.Row="0" Grid.RowSpan="3"
+              IsVisible="{Binding IsFreezeModalOpen}"
+              Background="#80000000"
+              ZIndex="100">
+            <Border MaxWidth="440"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    CornerRadius="12"
+                    Padding="24"
+                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                    BoxShadow="0 8 32 0 #44000000">
+                <ContentControl Content="{Binding FreezeModal}" />
+            </Border>
         </Grid>
 
     </Grid>

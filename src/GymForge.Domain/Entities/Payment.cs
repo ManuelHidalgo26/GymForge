@@ -2,7 +2,7 @@ using GymForge.Domain.Enums;
 
 namespace GymForge.Domain.Entities;
 
-public class Payment : BaseEntity
+public class Payment : BaseEntity, ISiteScoped, IAuditable
 {
     // Nullable: una venta a consumidor final (no socio) genera un pago sin socio.
     public Guid? MemberId { get; private set; }

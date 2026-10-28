@@ -44,7 +44,7 @@ namespace GymForge.Infrastructure.Migrations
                     b.Property<int>("DoorId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<Guid>("MemberId")
+                    b.Property<Guid?>("MemberId")
                         .HasColumnType("TEXT");
 
                     b.Property<Guid?>("MembershipId")
@@ -621,6 +621,10 @@ namespace GymForge.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("MaxFreezeDaysPerYear")
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(90);
+
                     b.Property<string>("PrimaryLanguage")
                         .IsRequired()
                         .HasMaxLength(10)
@@ -873,6 +877,53 @@ namespace GymForge.Infrastructure.Migrations
                     b.ToTable("Members", (string)null);
                 });
 
+            modelBuilder.Entity("GymForge.Domain.Entities.MemberCreditMovement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("DECIMAL(18,2)");
+
+                    b.Property<Guid?>("ChargeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("PaymentId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("SiteId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MemberId", "CompanyId")
+                        .HasDatabaseName("IX_MemberCredit_Member");
+
+                    b.ToTable("MemberCreditMovements", (string)null);
+                });
+
             modelBuilder.Entity("GymForge.Domain.Entities.Membership", b =>
                 {
                     b.Property<Guid>("Id")
@@ -911,6 +962,9 @@ namespace GymForge.Infrastructure.Migrations
                     b.Property<int>("FreezeCountUsed")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("FreezeDaysUsedYear")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateOnly?>("FreezeEnd")
                         .HasColumnType("TEXT");
 
@@ -920,6 +974,9 @@ namespace GymForge.Infrastructure.Migrations
 
                     b.Property<DateOnly?>("FreezeStart")
                         .HasColumnType("TEXT");
+
+                    b.Property<int>("FreezeYear")
+                        .HasColumnType("INTEGER");
 
                     b.Property<Guid>("MemberId")
                         .HasColumnType("TEXT");
@@ -1843,8 +1900,7 @@ namespace GymForge.Infrastructure.Migrations
                     b.HasOne("GymForge.Domain.Entities.Member", "Member")
                         .WithMany("AccessLogs")
                         .HasForeignKey("MemberId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Member");
                 });

@@ -2,7 +2,7 @@ using GymForge.Domain.Enums;
 
 namespace GymForge.Domain.Entities;
 
-public class MembershipType : BaseEntity
+public class MembershipType : BaseEntity, ITenantScoped, IAuditable
 {
     public Guid CompanyId { get; private set; }
     public string Name { get; private set; } = string.Empty;
@@ -59,6 +59,14 @@ public class MembershipType : BaseEntity
             DurationUnit = durationUnit
         };
     }
+
+    /// <summary>Vencimiento = inicio + duración del plan. Una unidad desconocida cuenta como meses.</summary>
+    public DateOnly? CalculateEndDate(DateOnly start) => DurationUnit switch
+    {
+        "Day" => start.AddDays(DurationValue),
+        "Year" => start.AddYears(DurationValue),
+        _ => start.AddMonths(DurationValue),
+    };
 
     public bool IsTimeAllowed(DateTime localTime, string timezone)
     {

@@ -1,6 +1,6 @@
 namespace GymForge.Domain.Entities;
 
-public class Site : BaseEntity
+public class Site : BaseEntity, ITenantScoped, IAuditable
 {
     public Guid CompanyId { get; private set; }
     public string Name { get; private set; } = string.Empty;

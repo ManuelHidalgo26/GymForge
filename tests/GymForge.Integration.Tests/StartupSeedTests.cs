@@ -1,8 +1,13 @@
 using FluentAssertions;
+using GymForge.Application;
+using GymForge.Application.Interfaces;
+using GymForge.Infrastructure;
 using GymForge.Infrastructure.Persistence;
 using GymForge.Infrastructure.Seed;
 using GymForge.Infrastructure.Services;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace GymForge.Integration.Tests;
@@ -14,24 +19,12 @@ namespace GymForge.Integration.Tests;
 /// </summary>
 public class StartupSeedTests
 {
-    private static async Task<GymForgeDbContext> NewInMemoryDbAsync()
-    {
-        var opts = new DbContextOptionsBuilder<GymForgeDbContext>()
-            .UseSqlite("Data Source=:memory:")
-            .Options;
-
-        var db = new GymForgeDbContext(opts);
-        await db.Database.OpenConnectionAsync();
-        await db.Database.EnsureCreatedAsync();
-        return db;
-    }
-
     [Fact]
     public async Task Seed_WithoutDemoFlag_SeedsCatalogButLeavesTenantEmpty()
     {
         Environment.SetEnvironmentVariable("GYMFORGE_SEED_COMPANY", null);
 
-        await using var db = await NewInMemoryDbAsync();
+        await using var db = TestDb.Create(out _);
         var seeder = new DatabaseSeeder(db, NullLogger<DatabaseSeeder>.Instance, new Pbkdf2PinHasher());
         await seeder.SeedAsync();
 
@@ -41,22 +34,68 @@ public class StartupSeedTests
     }
 
     [Fact]
+    public async Task InitialiseDatabase_WithDemoData_SeedsEverythingBeforeAnyTenantIsSet()
+    {
+        Environment.SetEnvironmentVariable("GYMFORGE_SEED_COMPANY", "1");
+        Environment.SetEnvironmentVariable("GYMFORGE_SEED_DEMO", "1");
+        var dir = Path.Combine(Path.GetTempPath(), "gymforge_startup_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+
+        try
+        {
+            // Mismo arranque que el escritorio: migrar + sembrar con el tenant todavía vacío.
+            var services = new ServiceCollection();
+            services.AddLogging();
+            services.AddApplication();
+            services.AddSingleton<ICurrentTenant, AmbientTenantProvider>();
+            services.AddSingleton<ICurrentUser, AmbientCurrentUser>();
+            services.AddInfrastructure($"Data Source={Path.Combine(dir, "gymforge.db")}");
+            services.AddSingleton<ILocalSettings>(new InMemoryLocalSettings());   // el arranque hace backup: no tocar el archivo real del usuario
+            await using var provider = services.BuildServiceProvider();
+
+            await provider.InitialiseDatabaseAsync();
+            // Idempotente: un segundo arranque no duplica el demo.
+            await provider.InitialiseDatabaseAsync();
+
+            using var scope = provider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<GymForgeDbContext>();
+            (await db.Members.IgnoreQueryFilters().CountAsync()).Should().Be(2);
+            (await db.Memberships.IgnoreQueryFilters().CountAsync()).Should().Be(2);
+            (await db.ClassSchedules.IgnoreQueryFilters().CountAsync()).Should().Be(1);
+            (await db.Routines.IgnoreQueryFilters().CountAsync()).Should().Be(1);
+
+            // El interceptor de auditoría quedó enganchado por DI: el seed dejó rastro, sin usuario (sistema).
+            var seededAudit = await db.AuditLogs.IgnoreQueryFilters().ToListAsync();
+            seededAudit.Should().Contain(a => a.EntityType == "Site" && a.Action == "Insert");
+            seededAudit.Should().OnlyContain(a => a.UserId == null);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("GYMFORGE_SEED_COMPANY", null);
+            Environment.SetEnvironmentVariable("GYMFORGE_SEED_DEMO", null);
+            SqliteConnection.ClearAllPools();
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task Seed_WithDemoFlag_PopulatesDefaultTenantAndCatalog_Idempotently()
     {
         Environment.SetEnvironmentVariable("GYMFORGE_SEED_COMPANY", "1");
         try
         {
-            await using var db = await NewInMemoryDbAsync();
+            // El seed corre en el arranque, antes de conocer el tenant: no hay tenant fijado.
+            await using var db = TestDb.Create(out _);
             var seeder = new DatabaseSeeder(db, NullLogger<DatabaseSeeder>.Instance, new Pbkdf2PinHasher());
             await seeder.SeedAsync();
             // Idempotencia: correrlo dos veces no duplica.
             await seeder.SeedAsync();
 
             (await db.Companies.CountAsync()).Should().Be(1);
-            (await db.Sites.CountAsync()).Should().BeGreaterThanOrEqualTo(1);
-            (await db.Staff.CountAsync()).Should().BeGreaterThanOrEqualTo(1);
-            (await db.MembershipTypes.CountAsync()).Should().Be(5);
-            (await db.Exercises.CountAsync()).Should().BeGreaterThan(0);
+            (await db.Sites.IgnoreQueryFilters().CountAsync()).Should().BeGreaterThanOrEqualTo(1);
+            (await db.Staff.IgnoreQueryFilters().CountAsync()).Should().BeGreaterThanOrEqualTo(1);
+            (await db.MembershipTypes.IgnoreQueryFilters().CountAsync()).Should().Be(5);
+            (await db.Exercises.IgnoreQueryFilters().CountAsync()).Should().BeGreaterThan(0);
         }
         finally
         {

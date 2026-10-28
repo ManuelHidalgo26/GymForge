@@ -1,6 +1,7 @@
 # Emisión de licencias de GymForge (uso interno del vendedor).
 #
-#   .\scripts\licencia.ps1              -> asistente: pregunta gimnasio, plan, CUIT y meses
+#   .\scripts\licencia.ps1              -> asistente: pregunta gimnasio, plan, CUIT, meses y (opcional) código de PC
+#   .\scripts\licencia.ps1 new --gym "X" --machine A1B2-C3D4-E5F6-0718  -> clave atada a una PC (sin --machine: portable)
 #   .\scripts\licencia.ps1 list         -> licencias emitidas, con vencimiento y estado
 #   .\scripts\licencia.ps1 renew        -> renovar a un cliente del registro
 #   .\scripts\licencia.ps1 show GYMF... -> verificar una clave que reporta un cliente

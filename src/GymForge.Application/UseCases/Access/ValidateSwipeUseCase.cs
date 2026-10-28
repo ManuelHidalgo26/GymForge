@@ -1,4 +1,5 @@
 using GymForge.Application.Interfaces;
+using GymForge.Application.Services;
 using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
 using GymForge.Domain.Events;
@@ -44,6 +45,8 @@ public class ValidateSwipeUseCase : IValidateSwipeUseCase
     private readonly IAccessLogRepository _accessLogRepo;
     private readonly IEventBus _eventBus;
     private readonly IClock _clock;
+    private readonly ICompanyCalendar _calendar;
+    private readonly ICurrentTenant _tenant;
     private readonly GatekeeperConfig _config;
 
     public ValidateSwipeUseCase(
@@ -53,6 +56,8 @@ public class ValidateSwipeUseCase : IValidateSwipeUseCase
         IAccessLogRepository accessLogRepo,
         IEventBus eventBus,
         IClock clock,
+        ICompanyCalendar calendar,
+        ICurrentTenant tenant,
         GatekeeperConfig config)
     {
         _memberRepo = memberRepo;
@@ -61,11 +66,17 @@ public class ValidateSwipeUseCase : IValidateSwipeUseCase
         _accessLogRepo = accessLogRepo;
         _eventBus = eventBus;
         _clock = clock;
+        _calendar = calendar;
+        _tenant = tenant;
         _config = config;
     }
 
     public async Task<AccessDecision> ValidateSwipeAsync(ValidateSwipeRequest request, CancellationToken ct = default)
     {
+        // El tenant efectivo es el de la puerta: socio, membresía, deuda y anti-passback
+        // se resuelven SOLO en esa empresa+sede (los query filters toman este scope).
+        using var tenantScope = _tenant.BeginScope(request.CompanyId, request.SiteId);
+
         // 1. Resolver credencial → Member. La carga manual y el teclado son DNI;
         //    el resto de los métodos resuelven por tag físico.
         Member? member = request.Method switch
@@ -77,7 +88,7 @@ public class ValidateSwipeUseCase : IValidateSwipeUseCase
 
         if (member is null)
         {
-            await AppendDenied(request, null, null, AccessDenialReason.TagUnknown, ct);
+            await AppendDenied(request, null, AccessDenialReason.TagUnknown, ct);
             return Deny(Guid.Empty, string.Empty, null, AccessDenialReason.TagUnknown);
         }
 
@@ -85,13 +96,13 @@ public class ValidateSwipeUseCase : IValidateSwipeUseCase
         var membership = await _membershipRepo.GetCurrentActiveAsync(member.Id, ct);
         if (membership is null)
         {
-            await AppendDenied(request, member.Id, null, AccessDenialReason.IncompleteMembership, ct);
+            await AppendDenied(request, member.Id, AccessDenialReason.IncompleteMembership, ct);
             return Deny(member.Id, member.FullName, member.PhotoUrl, AccessDenialReason.IncompleteMembership);
         }
 
-        if (membership.EndDate.HasValue && membership.EndDate.Value < _clock.Today)
+        if (await IsPastEndDateAsync(membership, request.CompanyId, ct))
         {
-            await AppendDenied(request, member.Id, membership.Id, AccessDenialReason.Expired, ct);
+            await AppendDenied(request, member.Id, AccessDenialReason.Expired, ct);
             return Deny(member.Id, member.FullName, member.PhotoUrl, AccessDenialReason.Expired);
         }
 
@@ -99,7 +110,7 @@ public class ValidateSwipeUseCase : IValidateSwipeUseCase
         var owing = await _chargeRepo.SumOutstandingAsync(member.Id, ct);
         if (owing > _config.StopOnOweAmount)
         {
-            await AppendDenied(request, member.Id, membership.Id, AccessDenialReason.Owing, ct);
+            await AppendDenied(request, member.Id, AccessDenialReason.Owing, ct);
             return Deny(member.Id, member.FullName, member.PhotoUrl, AccessDenialReason.Owing, owing);
         }
 
@@ -112,7 +123,7 @@ public class ValidateSwipeUseCase : IValidateSwipeUseCase
 
         if (!membership.MembershipType.IsTimeAllowed(localNow, _config.Timezone))
         {
-            await AppendDenied(request, member.Id, membership.Id, AccessDenialReason.OutOfHours, ct);
+            await AppendDenied(request, member.Id, AccessDenialReason.OutOfHours, ct);
             return Deny(member.Id, member.FullName, member.PhotoUrl, AccessDenialReason.OutOfHours, owing);
         }
 
@@ -120,27 +131,34 @@ public class ValidateSwipeUseCase : IValidateSwipeUseCase
         if (membership.MembershipType.AllowedDoorIds.Count > 0 &&
             !membership.MembershipType.AllowedDoorIds.Contains(request.DoorId))
         {
-            await AppendDenied(request, member.Id, membership.Id, AccessDenialReason.DoorNotAllowed, ct);
+            await AppendDenied(request, member.Id, AccessDenialReason.DoorNotAllowed, ct);
             return Deny(member.Id, member.FullName, member.PhotoUrl, AccessDenialReason.DoorNotAllowed, owing);
         }
 
         // 6. Anti-passback
-        var last = await _accessLogRepo.GetLastAsync(member.Id, request.DoorId, ct);
+        var last = await _accessLogRepo.GetLastGrantedAsync(member.Id, request.DoorId, ct);
         if (last is { Direction: AccessDirection.In } &&
             last.SwipedAt > _clock.Now.AddMinutes(-_config.AntiPassbackMinutes))
         {
-            await AppendDenied(request, member.Id, membership.Id, AccessDenialReason.AlreadyInside, ct);
+            await AppendDenied(request, member.Id, AccessDenialReason.AlreadyInside, ct);
             return Deny(member.Id, member.FullName, member.PhotoUrl, AccessDenialReason.AlreadyInside, owing);
         }
 
         // 7. Visitas restantes (pack)
         if (membership.VisitsRemaining is 0)
         {
-            await AppendDenied(request, member.Id, membership.Id, AccessDenialReason.NoVisitsLeft, ct);
+            await AppendDenied(request, member.Id, AccessDenialReason.NoVisitsLeft, ct);
             return Deny(member.Id, member.FullName, member.PhotoUrl, AccessDenialReason.NoVisitsLeft, owing);
         }
 
-        // ALLOW — escribir log y publicar evento
+        // ALLOW — decrementar la visita ANTES de persistir: el SaveChanges de AppendAsync
+        // (mismo DbContext scoped) confirma el log y el decremento en una sola transacción.
+        if (membership.VisitsRemaining > 0)
+        {
+            membership.DecrementVisit();
+            _membershipRepo.Update(membership);
+        }
+
         var log = AccessLog.Granted(
             request.CompanyId, request.SiteId,
             member.Id, membership.Id,
@@ -148,9 +166,6 @@ public class ValidateSwipeUseCase : IValidateSwipeUseCase
             AccessDirection.In, request.Credential);
 
         await _accessLogRepo.AppendAsync(log, ct);
-
-        if (membership.VisitsRemaining > 0)
-            membership.DecrementVisit();
 
         await _eventBus.PublishAsync(new MemberCheckedIn(member.Id, warn, owing), ct);
 
@@ -165,6 +180,17 @@ public class ValidateSwipeUseCase : IValidateSwipeUseCase
             MembershipStatus: membership.Status);
     }
 
+    /// <summary>
+    /// La vigencia se compara contra el "hoy" local de la empresa, no el UTC: de 21:00 a 24:00 en
+    /// Argentina la fecha UTC ya es la del día siguiente y el último día figuraría vencido.
+    /// </summary>
+    private async Task<bool> IsPastEndDateAsync(Membership membership, Guid companyId, CancellationToken ct)
+    {
+        if (membership.EndDate is null) return false;
+
+        return membership.IsExpired(await _calendar.TodayAsync(companyId, ct));
+    }
+
     private static AccessDecision Deny(
         Guid memberId,
         string fullName,
@@ -176,17 +202,19 @@ public class ValidateSwipeUseCase : IValidateSwipeUseCase
     private async Task AppendDenied(
         ValidateSwipeRequest request,
         Guid? memberId,
-        Guid? membershipId,
         AccessDenialReason reason,
         CancellationToken ct)
     {
-        if (!memberId.HasValue) return;
-
-        var log = AccessLog.Denied(
-            request.CompanyId, request.SiteId,
-            memberId.Value, request.DoorId,
-            request.Method, reason,
-            request.Credential);
+        var log = memberId.HasValue
+            ? AccessLog.Denied(
+                request.CompanyId, request.SiteId,
+                memberId.Value, request.DoorId,
+                request.Method, reason,
+                request.Credential)
+            : AccessLog.DeniedUnknown(
+                request.CompanyId, request.SiteId,
+                request.DoorId, request.Method, reason,
+                request.Credential);
 
         await _accessLogRepo.AppendAsync(log, ct);
     }

@@ -16,9 +16,9 @@ public class AccessLogRepository : IAccessLogRepository
         await _db.SaveChangesAsync(ct);
     }
 
-    public async Task<AccessLog?> GetLastAsync(Guid memberId, int doorId, CancellationToken ct = default) =>
+    public async Task<AccessLog?> GetLastGrantedAsync(Guid memberId, int doorId, CancellationToken ct = default) =>
         await _db.AccessLogs
-            .Where(a => a.MemberId == memberId && a.DoorId == doorId)
+            .Where(a => a.MemberId == memberId && a.DoorId == doorId && a.AccessGranted)
             .OrderByDescending(a => a.SwipedAt)
             .FirstOrDefaultAsync(ct);
 

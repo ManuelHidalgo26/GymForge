@@ -3,8 +3,36 @@
              xmlns:fa="using:FluentAvalonia.UI.Controls"
              xmlns:vm="using:GymForge.Desktop.ViewModels.Settings"
              xmlns:set="using:GymForge.Application.UseCases.Settings"
+             xmlns:lic="using:GymForge.Application.UseCases.Licensing"
              x:Class="GymForge.Desktop.Views.Settings.SettingsView"
              x:DataType="vm:SettingsViewModel">
+
+    <UserControl.Resources>
+        <!-- Medidor de uso del plan (Socios / Sedes). Dentro del tope: barra de acento; si se pasa:
+             cifra y barra en tono de aviso + pill "Excede el plan" (no depende solo del color).
+             La barra se llena hasta el máximo y no más, así que 60 de 50 se ve completa. -->
+        <DataTemplate x:Key="UsageMeter" x:DataType="lic:LicenseUsageLine">
+            <StackPanel Spacing="6">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="{Binding Label}" Classes="FormLabel" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="1" FontSize="13" FontWeight="SemiBold" Classes="Numeric"
+                               Classes.warning="{Binding OverLimit}">
+                        <Run Text="{Binding Used}" /><Run Text=" de " /><Run Text="{Binding Max}" />
+                    </TextBlock>
+                </Grid>
+                <ProgressBar Minimum="0"
+                             Maximum="{Binding Max}"
+                             Value="{Binding Used}"
+                             Height="6" CornerRadius="3"
+                             Background="{DynamicResource NeutralTintBrush}"
+                             Classes.warning="{Binding OverLimit}"
+                             AutomationProperties.Name="{Binding Label, StringFormat='Uso de {0} dentro del plan'}" />
+                <Border Classes="Pill warning" IsVisible="{Binding OverLimit}">
+                    <TextBlock Text="Excede el plan" />
+                </Border>
+            </StackPanel>
+        </DataTemplate>
+    </UserControl.Resources>
 
     <Grid RowDefinitions="Auto,*">
 
@@ -33,10 +61,11 @@
                                 <TextBox Text="{Binding TaxId}" Watermark="30-12345678-9" Width="180" />
                             </StackPanel>
                         </StackPanel>
-                        <TextBlock Text="{Binding CompanyMessage}" FontSize="12"
-                                   Foreground="{Binding CompanySaved, Converter={StaticResource ActiveColorBrushConverter}}"
+                        <TextBlock Text="{Binding CompanyMessage}" Classes="Feedback"
+                                   Classes.success="{Binding CompanySaved}"
+                                   Classes.danger="{Binding !CompanySaved}"
                                    IsVisible="{Binding CompanyMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                   TextWrapping="Wrap" />
+                                   AutomationProperties.LiveSetting="Polite" />
                         <Button Content="Guardar cambios" Command="{Binding SaveCompanyCommand}" Classes="Primary"
                                 HorizontalAlignment="Left" />
                     </StackPanel>
@@ -70,10 +99,11 @@
                                 <TextBox Text="{Binding NewPinConfirm}" PasswordChar="●" MaxLength="8" Width="140" />
                             </StackPanel>
                         </StackPanel>
-                        <TextBlock Text="{Binding PinMessage}" FontSize="12"
-                                   Foreground="{Binding PinSaved, Converter={StaticResource ActiveColorBrushConverter}}"
+                        <TextBlock Text="{Binding PinMessage}" Classes="Feedback"
+                                   Classes.success="{Binding PinSaved}"
+                                   Classes.danger="{Binding !PinSaved}"
                                    IsVisible="{Binding PinMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                   TextWrapping="Wrap" />
+                                   AutomationProperties.LiveSetting="Polite" />
                         <Button Content="Cambiar PIN" Command="{Binding ChangePinCommand}" Classes="Primary"
                                 HorizontalAlignment="Left" />
                     </StackPanel>
@@ -144,10 +174,11 @@
                             </StackPanel>
                         </StackPanel>
 
-                        <TextBlock Text="{Binding BrandMessage}" FontSize="12"
-                                   Foreground="{Binding BrandSaved, Converter={StaticResource ActiveColorBrushConverter}}"
+                        <TextBlock Text="{Binding BrandMessage}" Classes="Feedback"
+                                   Classes.success="{Binding BrandSaved}"
+                                   Classes.danger="{Binding !BrandSaved}"
                                    IsVisible="{Binding BrandMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                   TextWrapping="Wrap" />
+                                   AutomationProperties.LiveSetting="Polite" />
                         <Button Content="Guardar marca" Command="{Binding SaveBrandingCommand}" Classes="Primary"
                                 HorizontalAlignment="Left" />
                     </StackPanel>
@@ -200,7 +231,7 @@
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
 
-                        <Border Height="1" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
+                        <Border Classes="Divider" />
 
                         <TextBlock Text="{Binding SiteFormTitle}" FontSize="13" FontWeight="SemiBold" />
                         <StackPanel Orientation="Horizontal" Spacing="8">
@@ -217,10 +248,11 @@
                                     IsVisible="{Binding IsEditingSite}"
                                     Command="{Binding CancelSiteEditCommand}" />
                         </StackPanel>
-                        <TextBlock Text="{Binding SiteMessage}" FontSize="12"
-                                   Foreground="{Binding SiteSaved, Converter={StaticResource ActiveColorBrushConverter}}"
+                        <TextBlock Text="{Binding SiteMessage}" Classes="Feedback"
+                                   Classes.success="{Binding SiteSaved}"
+                                   Classes.danger="{Binding !SiteSaved}"
                                    IsVisible="{Binding SiteMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                   TextWrapping="Wrap" />
+                                   AutomationProperties.LiveSetting="Polite" />
                     </StackPanel>
                 </Border>
 
@@ -247,10 +279,11 @@
                                                Increment="1" Width="130" />
                             </StackPanel>
                         </StackPanel>
-                        <TextBlock Text="{Binding AccessMessage}" FontSize="12"
-                                   Foreground="{Binding AccessSaved, Converter={StaticResource ActiveColorBrushConverter}}"
+                        <TextBlock Text="{Binding AccessMessage}" Classes="Feedback"
+                                   Classes.success="{Binding AccessSaved}"
+                                   Classes.danger="{Binding !AccessSaved}"
                                    IsVisible="{Binding AccessMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                   TextWrapping="Wrap" />
+                                   AutomationProperties.LiveSetting="Polite" />
                         <Button Content="Guardar reglas" Command="{Binding SaveAccessCommand}" Classes="Primary"
                                 HorizontalAlignment="Left" />
                     </StackPanel>
@@ -258,22 +291,82 @@
 
                 <!-- ── Licencia ───────────────────────────────────────────── -->
                 <Border Classes="Card" Padding="24">
-                    <StackPanel Spacing="12">
-                        <TextBlock Text="Licencia" FontSize="15" FontWeight="SemiBold" />
+                    <StackPanel Spacing="16">
+
+                        <!-- Plan vigente + uso contra los topes. Dentro del plan: barra de acento. Si se pasa
+                             (sedes o socios previos a un cambio de plan): cifra, barra y pill de aviso. -->
                         <StackPanel Spacing="4">
-                            <TextBlock Text="{Binding LicensePlanDisplay}" FontSize="13" FontWeight="SemiBold" />
-                            <TextBlock Text="{Binding LicenseUsageDisplay}" Classes="FormLabel" />
+                            <TextBlock Text="Licencia" FontSize="15" FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding LicensePlanDisplay}" FontSize="13" FontWeight="SemiBold"
+                                       TextWrapping="Wrap" />
                         </StackPanel>
-                        <TextBlock FontSize="12" Opacity="0.6" TextWrapping="Wrap"
-                                   Text="El plan Free permite 1 sede y 50 socios. Para ampliar los límites, pegá la clave de licencia que recibiste al comprar tu plan." />
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBox Text="{Binding LicenseKeyInput}" Watermark="GYMF.…" Width="430" />
-                            <Button Content="Activar" Command="{Binding ActivateLicenseCommand}" Classes="Primary" />
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="24">
+                            <ContentControl Grid.Column="0" Content="{Binding MembersUsage}"
+                                            ContentTemplate="{StaticResource UsageMeter}"
+                                            HorizontalContentAlignment="Stretch" />
+                            <ContentControl Grid.Column="1" Content="{Binding SitesUsage}"
+                                            ContentTemplate="{StaticResource UsageMeter}"
+                                            HorizontalContentAlignment="Stretch" />
+                        </Grid>
+
+                        <!-- La clave está atada a otra PC: solo avisa, el sistema sigue funcionando igual.
+                             Apunta al bloque "Código de esta PC" (más abajo), que es lo que hay que pasarle al proveedor. -->
+                        <fa:InfoBar IsOpen="{Binding LicenseMachineMismatch}"
+                                    Severity="Warning"
+                                    IsClosable="False"
+                                    Title="Esta licencia fue emitida para otra PC"
+                                    Message="Seguís operando con normalidad. Para que te la vuelvan a emitir para esta PC, pasale a tu proveedor el código de esta PC (más abajo)."
+                                    AutomationProperties.LiveSetting="Polite" />
+
+                        <Border Classes="Divider" />
+
+                        <!-- Activar / renovar: el resultado (o el error, p. ej. clave de otro CUIT) queda justo debajo -->
+                        <StackPanel Spacing="8">
+                            <StackPanel Spacing="3">
+                                <TextBlock Text="Activar o renovar licencia" FontSize="13" FontWeight="SemiBold" />
+                                <TextBlock Classes="FormLabel" TextWrapping="Wrap"
+                                           Text="Pegá la clave de licencia que recibiste al comprar o renovar tu plan." />
+                            </StackPanel>
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                <TextBox Grid.Column="0" Text="{Binding LicenseKeyInput}" Watermark="GYMF.…"
+                                         VerticalAlignment="Center"
+                                         AutomationProperties.Name="Clave de licencia" />
+                                <Button Grid.Column="1" Content="Activar" Command="{Binding ActivateLicenseCommand}"
+                                        Classes="Primary" VerticalAlignment="Center"
+                                        AutomationProperties.Name="Activar licencia" />
+                            </Grid>
+                            <!-- También lo usa "Copiar" del código de esta PC ("Código de esta PC copiado.") -->
+                            <TextBlock Text="{Binding LicenseMessage}" Classes="Feedback"
+                                       Classes.success="{Binding LicenseSaved}"
+                                       Classes.danger="{Binding !LicenseSaved}"
+                                       IsVisible="{Binding LicenseMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                       AutomationProperties.LiveSetting="Polite" />
                         </StackPanel>
-                        <TextBlock Text="{Binding LicenseMessage}" FontSize="12"
-                                   Foreground="{Binding LicenseSaved, Converter={StaticResource ActiveColorBrushConverter}}"
-                                   IsVisible="{Binding LicenseMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                   TextWrapping="Wrap" />
+
+                        <Border Classes="Divider" />
+
+                        <!-- Para licencias atadas a una PC: el gimnasio le dicta este código al proveedor -->
+                        <StackPanel Spacing="8">
+                            <StackPanel Spacing="3">
+                                <TextBlock Text="Código de esta PC" FontSize="13" FontWeight="SemiBold" />
+                                <TextBlock Classes="FormLabel" TextWrapping="Wrap"
+                                           Text="Si querés que tu licencia quede atada a esta PC, pasale este código a tu proveedor al pedirla." />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBox Text="{Binding ThisPcCodeDisplay, Mode=OneWay}" IsReadOnly="True" Width="260"
+                                         FontFamily="Consolas,Cascadia Mono,Courier New" FontSize="14"
+                                         VerticalAlignment="Center"
+                                         AutomationProperties.Name="Código de esta PC" />
+                                <Button Command="{Binding CopyThisPcCodeCommand}" VerticalAlignment="Center"
+                                        AutomationProperties.Name="Copiar el código de esta PC">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Copy}" FontSize="14" />
+                                        <TextBlock Text="Copiar" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 
@@ -312,10 +405,141 @@
                             </StackPanel>
                         </Border>
 
-                        <TextBlock Text="{Binding DataMessage}" FontSize="12"
-                                   Foreground="{Binding DataOk, Converter={StaticResource ActiveColorBrushConverter}}"
+                        <TextBlock Text="{Binding DataMessage}" Classes="Feedback"
+                                   Classes.success="{Binding DataOk}"
+                                   Classes.danger="{Binding !DataOk}"
                                    IsVisible="{Binding DataMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                   TextWrapping="Wrap" />
+                                   AutomationProperties.LiveSetting="Polite" />
+
+                        <Border Classes="Divider" />
+
+                        <!-- Copia de seguridad externa: pendrive, carpeta de red o carpeta sincronizada.
+                             Carpeta (campo de solo lectura, enfocable y copiable) → estado (pill + detalle) → acción. -->
+                        <StackPanel Spacing="12">
+                            <StackPanel Spacing="3">
+                                <TextBlock Text="Copia de seguridad externa" FontSize="13" FontWeight="SemiBold" />
+                                <TextBlock Classes="FormLabel" TextWrapping="Wrap"
+                                           Text="Cada resguardo que hace GymForge (al abrir el día y al cerrar caja) también se copia a esta carpeta, así los datos sobreviven a que se rompa el disco de esta PC. Puede ser un pendrive, una carpeta de red o la carpeta local de Dropbox/OneDrive." />
+                            </StackPanel>
+
+                            <!-- Carpeta de destino. El TextBox muestra la ruta completa (scrollea) y el tooltip la repite. -->
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                <TextBox Grid.Column="0"
+                                         Text="{Binding OffsiteBackupDir, Mode=OneWay}" IsReadOnly="True"
+                                         Watermark="Sin carpeta elegida"
+                                         VerticalAlignment="Center"
+                                         ToolTip.Tip="{Binding OffsiteBackupDirDisplay}"
+                                         AutomationProperties.Name="Carpeta de la copia de seguridad externa" />
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8"
+                                            VerticalAlignment="Center">
+                                    <Button Command="{Binding PickOffsiteFolderCommand}"
+                                            AutomationProperties.Name="Elegir carpeta para la copia de seguridad externa">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Folder}" FontSize="14" />
+                                            <TextBlock Text="Elegir carpeta…" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button Content="Quitar" Classes="Ghost" Command="{Binding ClearOffsiteCommand}"
+                                            IsVisible="{Binding HasOffsiteBackupDir}"
+                                            AutomationProperties.Name="Quitar la carpeta de la copia de seguridad externa" />
+                                </StackPanel>
+                            </Grid>
+
+                            <!-- Estado: pill con tono + detalle (último resguardo / qué falla).
+                                 Sin carpeta = neutral; con carpeta = "Al día" o "Requiere atención".
+                                 Los dos últimos se anidan en un contenedor visible solo con carpeta elegida. -->
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                <Panel Grid.Column="0" VerticalAlignment="Top">
+                                    <Border Classes="Pill neutral" IsVisible="{Binding !HasOffsiteBackupDir}">
+                                        <TextBlock Text="Sin configurar" />
+                                    </Border>
+                                    <StackPanel IsVisible="{Binding HasOffsiteBackupDir}">
+                                        <Border Classes="Pill warning" IsVisible="{Binding OffsiteNeedsAttention}">
+                                            <TextBlock Text="Requiere atención" />
+                                        </Border>
+                                        <Border Classes="Pill success" IsVisible="{Binding !OffsiteNeedsAttention}">
+                                            <TextBlock Text="Al día" />
+                                        </Border>
+                                    </StackPanel>
+                                </Panel>
+                                <TextBlock Grid.Column="1" Text="{Binding OffsiteStatusDisplay}"
+                                           Classes="FormLabel Numeric" TextWrapping="Wrap" Margin="0,3,0,0" />
+                            </Grid>
+
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <Button Command="{Binding BackupOffsiteNowCommand}" Classes="Secondary"
+                                        AutomationProperties.Name="Copiar ahora el resguardo a la carpeta externa">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Sync}" FontSize="14" />
+                                        <TextBlock Text="Copiar ahora" />
+                                    </StackPanel>
+                                </Button>
+                                <!-- Mientras copia (un pendrive o una red lenta puede tardar): fuera del botón,
+                                     que queda deshabilitado, para que el aviso se lea con contraste pleno. -->
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center"
+                                            IsVisible="{Binding BackupOffsiteNowCommand.IsRunning}">
+                                    <fa:ProgressRing Width="16" Height="16" />
+                                    <TextBlock Text="Copiando…" Classes="FormLabel" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <TextBlock Text="{Binding OffsiteMessage}" Classes="Feedback"
+                                       Classes.success="{Binding OffsiteOk}"
+                                       Classes.danger="{Binding !OffsiteOk}"
+                                       IsVisible="{Binding OffsiteMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                       AutomationProperties.LiveSetting="Polite" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- ── Versión y actualizaciones ──────────────────────────── -->
+                <Border Classes="Card" Padding="24">
+                    <StackPanel Spacing="16">
+                        <TextBlock Text="Versión y actualizaciones" FontSize="15" FontWeight="SemiBold" />
+
+                        <!-- Versión instalada. El pill aparece cuando ya hay una versión nueva descargada
+                             (sigue visible aunque se haya elegido "Después" en el aviso del shell). -->
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="Versión instalada" Classes="FormLabel" />
+                                <TextBlock Text="{Binding Updates.CurrentVersion}"
+                                           FontSize="18" FontWeight="SemiBold" Classes="Numeric" />
+                            </StackPanel>
+                            <Border Grid.Column="1" Classes="Pill info"
+                                    IsVisible="{Binding Updates.IsUpdateReady}">
+                                <TextBlock Text="Actualización lista" />
+                            </Border>
+                        </Grid>
+
+                        <StackPanel Spacing="8">
+                            <Button Command="{Binding Updates.CheckCommand}" Classes="Secondary"
+                                    HorizontalAlignment="Left"
+                                    IsEnabled="{Binding !Updates.IsChecking}"
+                                    AutomationProperties.Name="Buscar actualizaciones">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <fa:ProgressRing IsVisible="{Binding Updates.IsChecking}" Width="16" Height="16" />
+                                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Sync}" FontSize="14"
+                                                   IsVisible="{Binding !Updates.IsChecking}" />
+                                    <TextBlock Text="Buscar actualizaciones" />
+                                </StackPanel>
+                            </Button>
+
+                            <TextBlock Text="{Binding Updates.StatusMessage}" Classes="FormLabel" TextWrapping="Wrap"
+                                       IsVisible="{Binding Updates.StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                                       AutomationProperties.LiveSetting="Polite" />
+                        </StackPanel>
+
+                        <Border Classes="Divider" />
+
+                        <!-- Origen: solo lectura. Hoy lo define la instalación (settings.json de esta PC). -->
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Origen de las actualizaciones" Classes="FormLabel" />
+                            <TextBox Text="{Binding UpdateFeedDisplay, Mode=OneWay}" IsReadOnly="True"
+                                     FontFamily="Consolas,Cascadia Mono,Courier New" FontSize="12"
+                                     AutomationProperties.Name="Origen de las actualizaciones" />
+                            <TextBlock Classes="FormLabel" TextWrapping="Wrap"
+                                       Text="Lo define la instalación de GymForge en esta PC; no se cambia desde acá." />
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 

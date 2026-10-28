@@ -1,4 +1,5 @@
 using GymForge.Application.Interfaces;
+using GymForge.Domain.Entities;
 
 namespace GymForge.Application.UseCases.Dunning;
 
@@ -13,15 +14,17 @@ public class DunningService
     private readonly IChargeRepository _charges;
     private readonly IMemberRepository _members;
     private readonly INotificationSender _sender;
+    private readonly ICurrentTenant _tenant;
     private readonly DunningConfig _config;
 
     public DunningService(
         IChargeRepository charges, IMemberRepository members,
-        INotificationSender sender, DunningConfig config)
+        INotificationSender sender, ICurrentTenant tenant, DunningConfig config)
     {
         _charges = charges;
         _members = members;
         _sender = sender;
+        _tenant = tenant;
         _config = config;
     }
 
@@ -41,7 +44,7 @@ public class DunningService
             var stage = _config.Stages.FirstOrDefault(s => s.DaysOverdue == daysOverdue);
             if (stage is null) continue;
 
-            var member = await _members.GetByIdAsync(charge.MemberId, ct);
+            var member = await FindMemberInChargeSiteAsync(charge, ct);
             if (member is null || string.IsNullOrWhiteSpace(member.Mobile)) continue;
 
             var body = DunningTemplates.Build(stage, member.FirstName, charge.AmountOutstanding, charge.DueDate, gymName);
@@ -50,5 +53,12 @@ public class DunningService
         }
 
         return sent;
+    }
+
+    /// <summary>La mora se recorre de todas las sedes, pero cada socio vive en la sede de su cargo.</summary>
+    private async Task<Member?> FindMemberInChargeSiteAsync(Charge charge, CancellationToken ct)
+    {
+        using var tenantScope = _tenant.BeginScope(charge.CompanyId, charge.SiteId);
+        return await _members.GetByIdAsync(charge.MemberId, ct);
     }
 }

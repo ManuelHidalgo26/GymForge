@@ -15,16 +15,12 @@ public class OnboardingFlowIntegrationTests : IAsyncLifetime
 {
     private const string ValidCuit = "20-12345678-6";
     private GymForgeDbContext _db = null!;
+    private AmbientTenantProvider _tenant = null!;
 
-    public async Task InitializeAsync()
+    public Task InitializeAsync()
     {
-        var opts = new DbContextOptionsBuilder<GymForgeDbContext>()
-            .UseSqlite("Data Source=:memory:")
-            .Options;
-
-        _db = new GymForgeDbContext(opts);
-        await _db.Database.OpenConnectionAsync();
-        await _db.Database.EnsureCreatedAsync();
+        _db = TestDb.Create(out _tenant);
+        return Task.CompletedTask;
     }
 
     public async Task DisposeAsync()
@@ -36,6 +32,13 @@ public class OnboardingFlowIntegrationTests : IAsyncLifetime
     private CompleteOnboardingCommandHandler NewHandler() => new(
         new SiteRepository(_db), new MembershipTypeRepository(_db), new Pbkdf2PinHasher());
 
+    /// <summary>Igual que SessionContext tras el onboarding: toma la empresa creada y su primera sede.</summary>
+    private async Task AdoptTenantAsync(Guid companyId)
+    {
+        var site = await _db.Sites.IgnoreQueryFilters().FirstAsync(s => s.CompanyId == companyId);
+        _tenant.Set(companyId, site.Id);
+    }
+
     [Fact]
     public async Task Complete_CreatesGymSiteAdminAndSamplePlans()
     {
@@ -43,6 +46,7 @@ public class OnboardingFlowIntegrationTests : IAsyncLifetime
             "PowerGym", ValidCuit, "Sede Central", "Av. Test 123",
             "Lucía", "Fernández", "4321", "#059669", CreateSamplePlans: true),
             CancellationToken.None);
+        await AdoptTenantAsync(companyId);
 
         var company = await _db.Companies.FindAsync(companyId);
         company.Should().NotBeNull();
@@ -66,6 +70,7 @@ public class OnboardingFlowIntegrationTests : IAsyncLifetime
             "MiniGym", ValidCuit, "Central", "Calle 1",
             "Juan", "Pérez", "1111", "#6366F1", CreateSamplePlans: false),
             CancellationToken.None);
+        await AdoptTenantAsync(companyId);
 
         (await _db.MembershipTypes.CountAsync(m => m.CompanyId == companyId)).Should().Be(0);
     }

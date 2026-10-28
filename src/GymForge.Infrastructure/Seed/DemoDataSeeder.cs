@@ -1,3 +1,4 @@
+using GymForge.Application.Interfaces;
 using GymForge.Application.UseCases.Classes;
 using GymForge.Application.UseCases.Exercises;
 using GymForge.Application.UseCases.Members;
@@ -26,18 +27,28 @@ public static class DemoDataSeeder
         var mediator = sp.GetRequiredService<IMediator>();
         var logger = sp.GetRequiredService<ILogger<DatabaseSeeder>>();
 
+        // Corre en el arranque, antes de que exista un tenant activo: las lecturas ignoran los filtros.
         // Idempotente: el seed base no crea socios, así que si ya hay alguno, no re-sembrar.
-        if (await db.Members.AnyAsync(ct)) return;
+        if (await db.Members.IgnoreQueryFilters().AnyAsync(ct)) return;
 
         var company = await db.Companies.FirstOrDefaultAsync(ct);
-        var site = await db.Sites.OrderBy(s => s.CreatedAt).FirstOrDefaultAsync(ct);
-        var admin = await db.Staff.FirstOrDefaultAsync(ct);
+        if (company is null) return;
+
+        var site = await db.Sites.IgnoreQueryFilters()
+            .Where(s => s.CompanyId == company.Id)
+            .OrderBy(s => s.CreatedAt)
+            .FirstOrDefaultAsync(ct);
+        var admin = await db.Staff.IgnoreQueryFilters().FirstOrDefaultAsync(s => s.CompanyId == company.Id, ct);
         // SQLite no soporta ORDER BY decimal: ordenar en memoria (plan más barato).
-        var plan = (await db.MembershipTypes.Where(m => m.Price > 0).ToListAsync(ct))
+        var plan = (await db.MembershipTypes.IgnoreQueryFilters()
+                .Where(m => m.CompanyId == company.Id && m.Price > 0).ToListAsync(ct))
             .OrderBy(m => m.Price).FirstOrDefault();
-        if (company is null || site is null || admin is null || plan is null) return;
+        if (site is null || admin is null || plan is null) return;
 
         logger.LogInformation("Seeding demo data (socios, clase, rutina)...");
+
+        // Los handlers de abajo leen con filtros: que operen en la empresa+sede de la demo.
+        using var tenantScope = sp.GetRequiredService<ICurrentTenant>().BeginScope(company.Id, site.Id);
 
         // Socios de ejemplo (DNIs ficticios) + el propio si está GYMFORGE_DEMO_DNI.
         var people = new List<(string First, string Last, string Doc, Gender G)>

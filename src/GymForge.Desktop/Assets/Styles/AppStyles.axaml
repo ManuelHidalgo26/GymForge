@@ -50,6 +50,12 @@
         <Setter Property="BorderThickness" Value="0,1,0,0" />
     </Style>
 
+    <!-- Divisor horizontal de 1 px dentro de una card (separa bloques de una misma sección) -->
+    <Style Selector="Border.Divider">
+        <Setter Property="Height" Value="1" />
+        <Setter Property="Background" Value="{DynamicResource SurfaceBorderBrush}" />
+    </Style>
+
     <!-- Chip cuadrado con tinte para el ícono de un KPI o sección -->
     <Style Selector="Border.IconChip">
         <Setter Property="Width" Value="38" />
@@ -105,6 +111,29 @@
         <Setter Property="FontFeatures" Value="+tnum" />
     </Style>
 
+    <!-- Texto con tono semántico sobre card (light y dark, contraste AA). Se prende con
+         Classes.success / Classes.warning / Classes.danger. Van DESPUÉS de FormLabel a propósito:
+         a igual especificidad gana el último, así que el tono pisa el color secundario.
+         No usar colores literales ni Opacity para esto. -->
+    <Style Selector="TextBlock.success">
+        <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+    </Style>
+    <Style Selector="TextBlock.warning">
+        <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.danger">
+        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+    </Style>
+
+    <!-- Resultado de una acción bajo un formulario ("Datos guardados.", "PIN incorrecto.").
+         Éxito = success, error = danger. Reemplaza al verde/rojo literal de ActiveColorBrushConverter
+         (#3F9C49 / #E05252: ~3,5:1, no llega a AA ni en light ni en dark). -->
+    <Style Selector="TextBlock.Feedback">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
     <!-- ── Pills de estado ── -->
     <Style Selector="Border.Pill">
         <Setter Property="CornerRadius" Value="99" />
@@ -134,6 +163,12 @@
     <Style Selector="Border.Pill.danger > TextBlock">
         <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
     </Style>
+    <Style Selector="Border.Pill.info">
+        <Setter Property="Background" Value="{DynamicResource InfoTintBrush}" />
+    </Style>
+    <Style Selector="Border.Pill.info > TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource InfoBrush}" />
+    </Style>
     <Style Selector="Border.Pill.neutral">
         <Setter Property="Background" Value="{DynamicResource NeutralTintBrush}" />
     </Style>
@@ -157,6 +192,11 @@
     <Style Selector="Border.CountBadge > TextBlock">
         <Setter Property="FontSize" Value="12" />
         <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- Medidor de uso (cupo del plan, días de congelamiento). "warning" = se pasó del tope -->
+    <Style Selector="ProgressBar.warning">
+        <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
     </Style>
 
     <!-- ── Botones ── -->

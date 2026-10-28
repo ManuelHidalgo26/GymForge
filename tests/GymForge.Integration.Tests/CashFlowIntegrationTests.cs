@@ -25,13 +25,7 @@ public class CashFlowIntegrationTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        var opts = new DbContextOptionsBuilder<GymForgeDbContext>()
-            .UseSqlite("Data Source=:memory:")
-            .Options;
-
-        _db = new GymForgeDbContext(opts);
-        await _db.Database.OpenConnectionAsync();
-        await _db.Database.EnsureCreatedAsync();
+        _db = TestDb.Create(out var tenant);
 
         var company = Company.Create("Test Gym", "30-12345678-9");
         await _db.Companies.AddAsync(company);
@@ -41,6 +35,7 @@ public class CashFlowIntegrationTests : IAsyncLifetime
 
         _companyId = company.Id;
         _siteId = site.Id;
+        tenant.Set(company.Id, site.Id);
         _shiftRepo = new ShiftRepository(_db);
     }
 

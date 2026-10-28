@@ -68,7 +68,7 @@ public class MembershipStateMachineTests
             DateOnly.FromDateTime(DateTime.Today.AddDays(11)),
             "Test");
 
-        ms.Unfreeze();
+        ms.Unfreeze(DateOnly.FromDateTime(DateTime.Today));
         ms.Status.Should().Be(MembershipStatus.Active);
         ms.FreezeStart.Should().BeNull();
     }

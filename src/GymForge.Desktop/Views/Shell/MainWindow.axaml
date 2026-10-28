@@ -226,7 +226,7 @@
         </Border>
 
         <!-- ═══ MAIN CONTENT ═══════════════════════════════════════════════════ -->
-        <Grid Grid.Column="1" RowDefinitions="48,*">
+        <Grid Grid.Column="1" RowDefinitions="48,Auto,*">
 
             <!-- Topbar -->
             <Border Grid.Row="0" Padding="16,0"
@@ -284,10 +284,38 @@
                 </DockPanel>
             </Border>
 
+            <!-- Actualización descargada y lista. No interrumpe: "Reiniciar ahora" la instala ya; "Después"
+                 la deja programada para cuando se cierre la app. Oculto mientras no haya nada para instalar.
+                 El Border lleva el lienzo (ContentBackground) y el margen: así el aviso flota como las cards
+                 en light y dark, y mientras está cerrado la fila Auto mide 0 (no queda ni el relleno).
+                 Ocupa todo el ancho de la columna de contenido, así que no depende de la sidebar
+                 (expandida o colapsada); si no entra en una línea, el InfoBar apila texto y botones. -->
+            <Border Grid.Row="1"
+                    IsVisible="{Binding Update.IsBannerVisible}"
+                    Background="{DynamicResource ContentBackground}"
+                    Padding="16,12">
+                <fa:InfoBar IsOpen="{Binding Update.IsBannerVisible}"
+                            Severity="Informational"
+                            IsClosable="False"
+                            Title="{Binding Update.UpdateVersion, StringFormat='Hay una actualización lista (v{0})'}"
+                            Message="Reiniciá cuando puedas; si no, se instala sola al cerrar GymForge."
+                            AutomationProperties.LiveSetting="Polite">
+                    <fa:InfoBar.ActionButton>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Reiniciar ahora" Command="{Binding Update.RestartNowCommand}"
+                                    Classes="Primary"
+                                    AutomationProperties.Name="Reiniciar ahora e instalar la actualización" />
+                            <Button Content="Después" Command="{Binding Update.LaterCommand}"
+                                    AutomationProperties.Name="Después: instalar al cerrar GymForge" />
+                        </StackPanel>
+                    </fa:InfoBar.ActionButton>
+                </fa:InfoBar>
+            </Border>
+
             <!-- Content router — DataTemplates in App.axaml resolve the correct View.
                  Lienzo gris: las cards de cada vista flotan sobre este fondo.
                  Cross-fade sutil al navegar entre secciones. -->
-            <Border Grid.Row="1" Background="{DynamicResource ContentBackground}">
+            <Border Grid.Row="2" Background="{DynamicResource ContentBackground}">
                 <TransitioningContentControl Name="ContentArea"
                                              Content="{Binding CurrentViewModel}">
                     <TransitioningContentControl.PageTransition>

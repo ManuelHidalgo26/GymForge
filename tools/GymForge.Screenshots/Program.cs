@@ -21,8 +21,10 @@ using GymForge.Desktop.Views.Dashboard;
 using GymForge.Desktop.Views.Members;
 using GymForge.Domain.Enums;
 using GymForge.Infrastructure;
+using GymForge.Infrastructure.Services;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 
 // Renderiza vistas reales de la app (Avalonia headless + Skia) a PNG, con datos
 // de ejemplo en una DB temporal. Permite revisar el UI sin abrir la ventana.
@@ -40,6 +42,13 @@ var conn = $"Data Source={tempDb};Mode=ReadWriteCreate;Cache=Shared";
 
 var services = new ServiceCollection();
 services.AddGymForgeDesktop(conn);
+// Settings de la PC en un archivo temporal: las capturas no dependen de (ni escriben en) la config real del dev.
+services.AddSingleton<ILocalSettings>(new LocalSettingsService(
+    NullLogger<LocalSettingsService>.Instance,
+    Path.Combine(Path.GetTempPath(), $"gymforge_shots_{Guid.NewGuid():N}_settings.json")));
+// Origen de actualizaciones simulado: las capturas no tocan la red ni dependen de una instalación.
+services.AddSingleton<SampleUpdateService>();
+services.AddSingleton<IUpdateService>(provider => provider.GetRequiredService<SampleUpdateService>());
 var sp = services.BuildServiceProvider();
 
 await sp.InitialiseDatabaseAsync();
@@ -132,13 +141,25 @@ var reportsVm = new GymForge.Desktop.ViewModels.Reports.ReportsViewModel(
 Capture("09-reportes", new GymForge.Desktop.Views.Reports.ReportsView { DataContext = reportsVm }, 1180, 760, outDir);
 
 // Configuración: datos del gimnasio + sedes
-var settingsVm = new GymForge.Desktop.ViewModels.Settings.SettingsViewModel(
+GymForge.Desktop.ViewModels.Settings.SettingsViewModel NewSettingsViewModel() => new(
     mediator2, sp.GetRequiredService<ISiteRepository>(),
     sp.GetRequiredService<IMemberRepository>(), session,
     sp.GetRequiredService<GymForge.Application.UseCases.Access.GatekeeperConfig>(),
-    sp.GetRequiredService<GymForge.Application.UseCases.Licensing.CurrentLicense>(),
-    sp.GetRequiredService<IDataTransfer>());
-Capture("10-configuracion", new GymForge.Desktop.Views.Settings.SettingsView { DataContext = settingsVm }, 1180, 1820, outDir);
+    sp.GetRequiredService<CurrentLicense>(),
+    sp.GetRequiredService<IDataTransfer>(), sp.GetRequiredService<IDatabaseBackup>(),
+    sp.GetRequiredService<ILocalSettings>(), sp.GetRequiredService<IMachineFingerprint>(),
+    sp.GetRequiredService<GymForge.Desktop.ViewModels.Shared.UpdateViewModel>());
+
+Capture("10-configuracion", new GymForge.Desktop.Views.Settings.SettingsView { DataContext = NewSettingsViewModel() }, 1180, 2500, outDir);
+
+// Licencia emitida para otra PC: solo avisa, el plan sigue activo (se restablece el estado después).
+var liveLicense = sp.GetRequiredService<CurrentLicense>();
+var licenseBeforeMismatch = liveLicense.State;
+liveLicense.State = new LicenseState(
+    LicenseStatus.Active, "Pro", 3, 1000, DateOnly.FromDateTime(DateTime.Today).AddMonths(6),
+    "Gimnasio Demo", MachineMismatch: true);
+Capture("10b-configuracion-licencia-otra-pc", new GymForge.Desktop.Views.Settings.SettingsView { DataContext = NewSettingsViewModel() }, 1180, 2500, outDir);
+liveLicense.State = licenseBeforeMismatch;
 
 // Clases v2: agenda semanal con un horario seleccionado y sus reservas
 var classesVm = new GymForge.Desktop.ViewModels.Classes.ClassesViewModel(
@@ -215,6 +236,50 @@ var shellBrand = new GymForge.Desktop.Views.Shell.MainWindow
 };
 CaptureWindow("17-marca-verde", shellBrand, outDir);
 GymForge.Desktop.App.ApplyBrandAccent("#6366F1");
+
+// Auto-actualización: el origen simulado pasa a ofrecer una versión nueva y el shell muestra el aviso.
+// La ventana ya busca sola al abrirse; acá se fuerza la búsqueda para dejar el estado "lista" listo antes.
+sp.GetRequiredService<SampleUpdateService>().NextCheck = UpdateCheckResult.Found(new AvailableUpdate("0.4.0"));
+Pump(sp.GetRequiredService<GymForge.Desktop.ViewModels.Shared.UpdateViewModel>().CheckAsync());
+var shellUpdate = new GymForge.Desktop.Views.Shell.MainWindow
+{
+    DataContext = sp.GetRequiredService<GymForge.Desktop.Views.Shell.MainWindowViewModel>(),
+    Width = 1366,
+    Height = 800,
+};
+CaptureWindow("24-shell-actualizacion-lista", shellUpdate, outDir);
+
+// Freeze: pestaña Membresías de la ficha, modal de congelamiento (normal y pasado del tope) y membresía congelada.
+var freezeMember = membersVm.Members.First(m => m.Status == MemberStatus.Active);
+var detailVm = sp.GetRequiredService<MemberDetailViewModel>();
+Pump(detailVm.LoadAsync(freezeMember));
+Pump(detailVm.SwitchTabCommand.ExecuteAsync(MemberDetailTab.Memberships));
+Capture("19-socio-membresias", new MemberDetailView { DataContext = detailVm }, 1180, 720, outDir);
+
+var activeMembership = detailVm.Memberships.First(m => m.Status == MembershipStatus.Active);
+Pump(detailVm.OpenFreezeModalCommand.ExecuteAsync(activeMembership));
+Capture("20-freeze-modal", new MemberDetailView { DataContext = detailVm }, 1180, 720, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+Capture("20-freeze-modal-dark", new MemberDetailView { DataContext = detailVm }, 1180, 720, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+
+var freezeModal = detailVm.FreezeModal!;
+freezeModal.ReactivationDate = freezeModal.StartDate.AddDays(freezeModal.Quota.RemainingDays + 1);
+Capture("21-freeze-modal-tope", new MemberDetailView { DataContext = detailVm }, 1180, 720, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+Capture("21-freeze-modal-tope-dark", new MemberDetailView { DataContext = detailVm }, 1180, 720, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+
+freezeModal.ReactivationDate = freezeModal.StartDate.AddDays(30);
+Pump(freezeModal.ConfirmCommand.ExecuteAsync(null));
+for (int i = 0; i < 15; i++) { Dispatcher.UIThread.RunJobs(); Thread.Sleep(10); }  // recarga de la lista tras congelar
+Capture("22-socio-membresia-congelada", new MemberDetailView { DataContext = detailVm }, 1180, 720, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+Capture("22-socio-membresia-congelada-dark", new MemberDetailView { DataContext = detailVm }, 1180, 720, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+
+Pump(detailVm.ReactivateMembershipCommand.ExecuteAsync(detailVm.Memberships.First(m => m.Status == MembershipStatus.Frozen)));
+Capture("23-socio-membresia-reactivada", new MemberDetailView { DataContext = detailVm }, 1180, 720, outDir);
 
 // Onboarding de primer arranque (asistente de configuración inicial).
 var onboardingVm = sp.GetRequiredService<GymForge.Desktop.ViewModels.Onboarding.OnboardingViewModel>();
@@ -394,4 +459,20 @@ static async Task<Guid?> SeedSampleMembersAsync(IServiceProvider sp, SessionCont
     }
 
     return lastPaymentId;
+}
+
+/// <summary>Origen de actualizaciones de mentira: responde lo que se le indique, sin red.</summary>
+sealed class SampleUpdateService : IUpdateService
+{
+    public UpdateCheckResult NextCheck { get; set; } = UpdateCheckResult.UpToDate;
+
+    public string CurrentVersion => "0.3.0";
+
+    public Task<UpdateCheckResult> CheckAsync() => Task.FromResult(NextCheck);
+
+    public Task<bool> DownloadAsync(AvailableUpdate update) => Task.FromResult(true);
+
+    public void ApplyAndRestart(AvailableUpdate update) { }
+
+    public void ApplyOnExit(AvailableUpdate update) { }
 }

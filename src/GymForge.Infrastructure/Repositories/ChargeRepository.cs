@@ -11,8 +11,9 @@ public class ChargeRepository : IChargeRepository
     private readonly GymForgeDbContext _db;
     public ChargeRepository(GymForgeDbContext db) => _db = db;
 
+    // No usar FindAsync: busca por PK e ignora los query filters del tenant.
     public async Task<Charge?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
-        await _db.Charges.FindAsync([id], ct);
+        await _db.Charges.FirstOrDefaultAsync(c => c.Id == id, ct);
 
     public async Task<IReadOnlyList<Charge>> GetAllAsync(CancellationToken ct = default) =>
         await _db.Charges.ToListAsync(ct);
@@ -45,15 +46,18 @@ public class ChargeRepository : IChargeRepository
             .OrderBy(c => c.DueDate)
             .ToListAsync(ct);
 
+    // Mora de la empresa completa (todas las sedes); el límite de tenant es el CompanyId explícito.
     public async Task<IReadOnlyList<Charge>> GetOverdueAsync(
         Guid companyId, DateOnly asOf, CancellationToken ct = default) =>
         await _db.Charges
+            .IgnoreQueryFilters()
             .Include(c => c.Member)
             .Where(c =>
                 c.CompanyId == companyId &&
                 c.DueDate < asOf &&
                 c.Status != ChargeStatus.Paid &&
-                c.Status != ChargeStatus.WrittenOff)
+                c.Status != ChargeStatus.WrittenOff &&
+                c.Status != ChargeStatus.Refunded)
             .OrderBy(c => c.DueDate)
             .ToListAsync(ct);
 }

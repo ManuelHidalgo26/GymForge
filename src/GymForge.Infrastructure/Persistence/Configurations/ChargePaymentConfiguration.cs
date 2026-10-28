@@ -92,3 +92,18 @@ public class PaymentAllocationConfiguration : IEntityTypeConfiguration<PaymentAl
         builder.ToTable("PaymentAllocations");
     }
 }
+
+public class MemberCreditMovementConfiguration : IEntityTypeConfiguration<MemberCreditMovement>
+{
+    public void Configure(EntityTypeBuilder<MemberCreditMovement> builder)
+    {
+        builder.HasKey(m => m.Id);
+        builder.Property(m => m.Amount).HasColumnType("DECIMAL(18,2)");
+        builder.Property(m => m.Type).HasConversion<string>().HasMaxLength(20);
+        builder.Property(m => m.Note).HasMaxLength(300);
+
+        builder.HasIndex(m => new { m.MemberId, m.CompanyId }).HasDatabaseName("IX_MemberCredit_Member");
+
+        builder.ToTable("MemberCreditMovements");
+    }
+}

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Security.Cryptography;
 using GymForge.Application.UseCases.Licensing;
+using GymForge.Domain.ValueObjects;
 
 // Herramienta del VENDEDOR (no se distribuye con la app): emite claves de
 // licencia firmadas con ECDSA P-256. La clave privada vive FUERA del repo, en
@@ -113,19 +114,23 @@ void Asistente()
 
     var cuit = PreguntarTexto("CUIT (enter para omitir)") ?? string.Empty;
     var meses = PreguntarNumero("Meses de vigencia", 12, 1, 120);
+    var machineId = PreguntarCodigoDePc();
 
     Console.WriteLine();
-    Emitir(gym, cuit, plan, meses, DateOnly.FromDateTime(DateTime.Today));
+    Emitir(gym, cuit, plan, meses, DateOnly.FromDateTime(DateTime.Today), machineId);
 }
 
 // Emite, firma, muestra y deja registro. 'desde' permite encadenar renovaciones
-// sin regalar ni perder días respecto del vencimiento anterior.
-void Emitir(string gym, string cuit, Plan plan, int meses, DateOnly desde)
+// sin regalar ni perder días respecto del vencimiento anterior. 'machineId' (ya normalizado)
+// ata la clave a una PC; null la deja portable.
+void Emitir(string gym, string cuit, Plan plan, int meses, DateOnly desde, string? machineId = null)
 {
     var hoy = DateOnly.FromDateTime(DateTime.Today);
     var payload = new LicensePayload(
         Guid.NewGuid(), gym.Trim(), cuit.Trim(), plan.Tier,
-        plan.Sedes, plan.Socios, hoy, desde.AddMonths(meses));
+        plan.Sedes, plan.Socios, hoy, desde.AddMonths(meses), machineId);
+
+    AdvertirSiElCuitNoSeraComparable(payload.Cuit);
 
     WithPrivateKey(ecdsa =>
     {
@@ -133,6 +138,7 @@ void Emitir(string gym, string cuit, Plan plan, int meses, DateOnly desde)
 
         Console.WriteLine($"Licencia {payload.Tier} para {payload.Gym}");
         Console.WriteLine($"  {plan.Describir()} · vence {payload.ExpiresOn:dd/MM/yyyy}");
+        Console.WriteLine($"  {DescribirAtado(payload.MachineId)}");
         Console.WriteLine();
         Console.WriteLine(clave);
         Console.WriteLine();
@@ -164,8 +170,9 @@ void GenerateLicense(string[] a)
         int.Parse(Opt("max-sites") ?? basePlan.Sedes.ToString()),
         int.Parse(Opt("max-members") ?? basePlan.Socios.ToString()));
 
+    var machineId = NormalizarCodigoDePc(Opt("machine"));
     Emitir(gym, Opt("cuit") ?? string.Empty, plan,
-        int.Parse(Opt("months") ?? "12"), DateOnly.FromDateTime(DateTime.Today));
+        int.Parse(Opt("months") ?? "12"), DateOnly.FromDateTime(DateTime.Today), machineId);
 }
 
 // ---------------------------------------------------------------- registro
@@ -175,10 +182,10 @@ void GuardarEnRegistro(LicensePayload p, string clave)
     Directory.CreateDirectory(keyDir);
     var nuevo = !File.Exists(registroPath);
     using var w = new StreamWriter(registroPath, append: true, Encoding.UTF8);
-    if (nuevo) w.WriteLine("Emitida;LicenseId;Gimnasio;Cuit;Plan;Sedes;Socios;Vence;Clave");
+    if (nuevo) w.WriteLine("Emitida;LicenseId;Gimnasio;Cuit;Plan;Sedes;Socios;Vence;Clave;PC");
     w.WriteLine(string.Join(';',
         DateTime.Now.ToString("yyyy-MM-dd HH:mm"), p.LicenseId, Csv(p.Gym), Csv(p.Cuit),
-        p.Tier, p.MaxSites, p.MaxMembers, p.ExpiresOn.ToString("yyyy-MM-dd"), clave));
+        p.Tier, p.MaxSites, p.MaxMembers, p.ExpiresOn.ToString("yyyy-MM-dd"), clave, p.MachineId));
 }
 
 List<Emitida> LeerRegistro()
@@ -195,7 +202,8 @@ List<Emitida> LeerRegistro()
             int.TryParse(c[5], out var s) ? s : 0,
             int.TryParse(c[6], out var m) ? m : 0,
             DateOnly.TryParse(c[7], out var v) ? v : default,
-            c[8]))
+            c[8],
+            c.Length > 9 && c[9].Length > 0 ? c[9] : null))
         .ToList();
 }
 
@@ -247,7 +255,8 @@ void Renovar()
         Console.WriteLine($"La licencia vigente vence el {elegido.Vence:dd/MM/yyyy}: se encadena desde esa fecha.");
 
     Console.WriteLine();
-    Emitir(elegido.Gym, elegido.Cuit, new Plan(elegido.Tier, elegido.Sedes, elegido.Socios), meses, desde);
+    Emitir(elegido.Gym, elegido.Cuit, new Plan(elegido.Tier, elegido.Sedes, elegido.Socios), meses, desde,
+        elegido.MachineId);
 }
 
 // ---------------------------------------------------------------- inspección
@@ -323,6 +332,7 @@ string GuardarMensaje(LicensePayload p, Plan plan, string clave)
 
         Para activarla: abrí GymForge → Configuración → Licencia, pegá la clave y tocá
         Activar. Queda guardada en la PC, no hay que repetirlo.
+        {NotaDeAtado(p.MachineId)}
         """, Encoding.UTF8);
     return archivo;
 }
@@ -366,6 +376,52 @@ int PreguntarNumero(string etiqueta, int porDefecto, int min, int max)
         Console.WriteLine($"  (un número entre {min} y {max})");
     }
 }
+
+// Código de la PC a la que se ata la clave (Config → Licencia → "Código de esta PC").
+// Enter = sin atar: la clave queda portable. Un código mal copiado se vuelve a pedir.
+string? PreguntarCodigoDePc()
+{
+    while (true)
+    {
+        var texto = PreguntarTexto("Código de la PC para atar la clave (enter = clave portable)");
+        if (texto is null) return null;
+        if (MachineCode.TryNormalize(texto, out var codigo)) return codigo;
+        Console.WriteLine("  (son 16 dígitos hexadecimales, tipo A1B2-C3D4-E5F6-0718)");
+    }
+}
+
+// Opción --machine de 'new': sin ella la clave es portable; con un código inválido no se emite
+// (una clave atada a un código mal copiado nunca coincidiría con ninguna PC).
+static string? NormalizarCodigoDePc(string? texto)
+{
+    if (texto is null) return null;
+    if (MachineCode.TryNormalize(texto, out var codigo)) return codigo;
+
+    Console.WriteLine($"El código de PC '{texto}' no es válido: son 16 dígitos hexadecimales (A1B2-C3D4-E5F6-0718).");
+    Environment.Exit(1);
+    return null;
+}
+
+// La app bloquea al activar solo si puede interpretar ambos CUIT; uno mal tipeado deja pasar la clave.
+static void AdvertirSiElCuitNoSeraComparable(string cuit)
+{
+    if (cuit.Length == 0)
+        Console.WriteLine("⚠ La clave no lleva CUIT: la app no verifica a qué gimnasio pertenece.");
+    else if (!Cuit.TryParse(cuit, out _))
+        Console.WriteLine($"⚠ El CUIT '{cuit}' no es válido (dígito verificador): la app no podrá compararlo al activar.");
+}
+
+static string DescribirAtado(string? machineId) =>
+    machineId is null ? "Portable (activa en cualquier PC)" : $"Atada a la PC {machineId}";
+
+static string NotaDeAtado(string? machineId) =>
+    machineId is null
+        ? string.Empty
+        : $"""
+
+        Esta clave está atada a la PC con código {machineId}. Si cambiás de PC o reinstalás
+        Windows, avisanos y te emitimos una nueva (mientras tanto el sistema sigue funcionando).
+        """;
 
 // Al pegar desde Excel/WhatsApp vienen BOM (U+FEFF) y caracteres de control
 // invisibles; sin limpiarlos quedarían firmados dentro de la licencia, o harían
@@ -433,7 +489,7 @@ static void PrintHelp()
           .\scripts\licencia.ps1
 
         Comandos:
-          (ninguno)     Asistente: pregunta gimnasio, plan, CUIT y meses.
+          (ninguno)     Asistente: pregunta gimnasio, plan, CUIT, meses y (opcional) código de PC.
           list          Licencias emitidas, con vencimiento y estado.
           renew         Renueva a un cliente del registro (encadena desde su vencimiento).
           show <clave>  Verifica una clave y muestra qué ve la app.
@@ -441,11 +497,15 @@ static void PrintHelp()
           public-key    Vuelve a mostrar la clave pública.
           new           Emite sin preguntar (para scripts):
                           --gym "Iron Temple SRL"   (sin esto, abre el asistente)
-                          --cuit 30-71234567-8
+                          --cuit 30-71234567-1
                           --tier Basico|Pro|Ilimitado   (default: Pro)
                           --max-sites 3             (default: según el plan)
                           --max-members 1000        (default: según el plan)
                           --months 12               (default: 12)
+                          --machine A1B2-C3D4-E5F6-0718
+                                                    (opcional) ata la clave a una PC. El código está en
+                                                    Config -> Licencia -> "Código de esta PC".
+                                                    Sin esta opción la clave es portable.
 
         Planes: Basico 1 sede/300 socios · Pro 3 sedes/1000 socios · Ilimitado 99/100000
         """);
@@ -459,4 +519,5 @@ sealed record Plan(string Tier, int Sedes, int Socios)
 }
 
 /// <summary>Fila del registro de licencias emitidas.</summary>
-sealed record Emitida(string Gym, string Cuit, string Tier, int Sedes, int Socios, DateOnly Vence, string Clave);
+sealed record Emitida(
+    string Gym, string Cuit, string Tier, int Sedes, int Socios, DateOnly Vence, string Clave, string? MachineId);

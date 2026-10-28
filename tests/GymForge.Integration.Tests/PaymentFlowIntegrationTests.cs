@@ -6,6 +6,7 @@ using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
 using GymForge.Infrastructure.Persistence;
 using GymForge.Infrastructure.Repositories;
+using GymForge.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymForge.Integration.Tests;
@@ -22,13 +23,7 @@ public class PaymentFlowIntegrationTests : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        var opts = new DbContextOptionsBuilder<GymForgeDbContext>()
-            .UseSqlite("Data Source=:memory:")
-            .Options;
-
-        _db = new GymForgeDbContext(opts);
-        await _db.Database.OpenConnectionAsync();
-        await _db.Database.EnsureCreatedAsync();
+        _db = TestDb.Create(out var tenant);
 
         var company = Company.Create("Test Gym", "30-12345678-9");
         await _db.Companies.AddAsync(company);
@@ -38,6 +33,7 @@ public class PaymentFlowIntegrationTests : IAsyncLifetime
 
         _companyId = company.Id;
         _site = site;
+        tenant.Set(company.Id, site.Id);
     }
 
     public async Task DisposeAsync()
@@ -78,7 +74,9 @@ public class PaymentFlowIntegrationTests : IAsyncLifetime
         var handler = new ProcessPaymentCommandHandler(
             new ChargeRepository(_db),
             new PaymentRepository(_db),
-            new CashRegister(new ShiftRepository(_db)));
+            new CashRegister(new ShiftRepository(_db)),
+            new MemberCreditRepository(_db),
+            TestServices.ArrearsRelief(_db, new SystemClock()));
 
         await handler.Handle(new ProcessPaymentCommand(
             _companyId, _site.Id, member.Id, Guid.NewGuid(),

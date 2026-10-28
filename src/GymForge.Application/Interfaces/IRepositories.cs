@@ -23,6 +23,8 @@ public interface IMemberRepository : IRepository<Member>
     Task<int> CountAsync(Guid companyId, Guid siteId, MemberStatus? status = null, CancellationToken ct = default);
     /// <summary>Total de socios de la empresa (todas las sedes) — para el límite de licencia.</summary>
     Task<int> CountByCompanyAsync(Guid companyId, CancellationToken ct = default);
+    /// <summary>Socios de la empresa (todas las sedes) en un estado dado — para el mantenimiento diario.</summary>
+    Task<IReadOnlyList<Member>> GetByStatusAsync(Guid companyId, MemberStatus status, CancellationToken ct = default);
     /// <summary>True si el socio tiene movimientos (membresías, cobros, pagos o accesos).</summary>
     Task<bool> HasActivityAsync(Guid memberId, CancellationToken ct = default);
 }
@@ -32,6 +34,10 @@ public interface IMembershipRepository : IRepository<Membership>
     Task<Membership?> GetCurrentActiveAsync(Guid memberId, CancellationToken ct = default);
     Task<IReadOnlyList<Membership>> GetByMemberAsync(Guid memberId, CancellationToken ct = default);
     Task<IReadOnlyList<Membership>> GetExpiringAsync(Guid companyId, DateOnly from, DateOnly to, CancellationToken ct = default);
+    /// <summary>Membresías activas de la empresa (todas las sedes) cuyo vencimiento ya pasó a la fecha dada.</summary>
+    Task<IReadOnlyList<Membership>> GetActiveExpiredAsync(Guid companyId, DateOnly asOf, CancellationToken ct = default);
+    /// <summary>Membresías congeladas de la empresa (todas las sedes) cuyo congelamiento ya terminó a la fecha dada.</summary>
+    Task<IReadOnlyList<Membership>> GetFreezeEndedAsync(Guid companyId, DateOnly asOf, CancellationToken ct = default);
 }
 
 public interface IChargeRepository : IRepository<Charge>
@@ -49,6 +55,20 @@ public interface IPaymentRepository
     Task<decimal> SumReceivedAsync(Guid companyId, Guid siteId, DateTime from, DateTime to, CancellationToken ct = default);
     /// <summary>Pagos completados del período, con el socio cargado, más recientes primero.</summary>
     Task<IReadOnlyList<Payment>> GetByPeriodAsync(Guid companyId, Guid siteId, DateTime from, DateTime to, CancellationToken ct = default);
+    Task<int> SaveChangesAsync(CancellationToken ct = default);
+}
+
+/// <summary>
+/// Cuenta corriente del socio (libro mayor append-only): solo se agregan movimientos, nunca se
+/// modifican ni se borran. El saldo es la suma de los montos.
+/// </summary>
+public interface IMemberCreditRepository
+{
+    Task AddAsync(MemberCreditMovement movement, CancellationToken ct = default);
+    /// <summary>Saldo a favor del socio = suma de sus movimientos (filtrado por tenant). Se espera >= 0.</summary>
+    Task<decimal> GetBalanceAsync(Guid memberId, CancellationToken ct = default);
+    /// <summary>Movimientos del socio, del más reciente al más antiguo.</summary>
+    Task<IReadOnlyList<MemberCreditMovement>> GetByMemberAsync(Guid memberId, CancellationToken ct = default);
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
 
@@ -128,7 +148,11 @@ public interface IShiftRepository
 public interface IAccessLogRepository
 {
     Task AppendAsync(AccessLog log, CancellationToken ct = default);
-    Task<AccessLog?> GetLastAsync(Guid memberId, int doorId, CancellationToken ct = default);
+    /// <summary>
+    /// Último acceso CONCEDIDO del socio en la puerta (base del anti-passback). Los denegados
+    /// se excluyen: quedan logueados como entradas pero nadie llegó a pasar.
+    /// </summary>
+    Task<AccessLog?> GetLastGrantedAsync(Guid memberId, int doorId, CancellationToken ct = default);
     Task<IReadOnlyList<AccessLog>> GetByMemberAsync(Guid memberId, int take = 50, CancellationToken ct = default);
     Task<IReadOnlyList<AccessLog>> GetBySiteAsync(Guid siteId, DateTime from, DateTime to, CancellationToken ct = default);
 }
@@ -191,12 +215,33 @@ public interface IEventBus
 public interface IClock
 {
     DateTime Now { get; }
+
+    /// <summary>
+    /// Fecha UTC. NO es el "hoy" del negocio: para vigencias, vencimientos o mora usar
+    /// <see cref="Services.ICompanyCalendar"/>, que respeta la zona horaria de la empresa.
+    /// </summary>
     DateOnly Today { get; }
 }
 
 /// <summary>Resguardo de la base local. Best-effort: nunca lanza.</summary>
 public interface IDatabaseBackup
 {
-    /// <summary>Crea un backup ya (p. ej. al cerrar caja). El motivo va al log.</summary>
+    /// <summary>
+    /// Crea un backup ya (p. ej. al cerrar caja). El motivo va al log. Si hay un destino externo
+    /// configurado (<see cref="ILocalSettings.OffsiteBackupDir"/>) también lo copia ahí.
+    /// </summary>
     void BackupNow(string reason = "manual");
+
+    /// <summary>"Copiar ahora": crea un backup nuevo y lo copia ya al destino externo, informando cómo salió.</summary>
+    OffsiteBackupOutcome BackupOffsiteNow();
+}
+
+/// <summary>Resultado de la copia al destino externo (pendrive, red, carpeta sincronizada).</summary>
+public enum OffsiteBackupOutcome
+{
+    /// <summary>No hay carpeta de destino configurada: no hay nada que copiar.</summary>
+    NotConfigured,
+    Copied,
+    /// <summary>Destino no disponible (pendrive desenchufado, red caída, sin permisos) o backup local fallido.</summary>
+    Failed,
 }

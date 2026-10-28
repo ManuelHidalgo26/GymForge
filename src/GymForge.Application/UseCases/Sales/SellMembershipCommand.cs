@@ -86,7 +86,7 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
         // Membresía activa según la duración del plan.
         var membership = Membership.Create(
             cmd.CompanyId, cmd.SiteId, cmd.MemberId, plan.Id,
-            today, CalculateEnd(today, plan), soldByStaffId: cmd.CashierId);
+            today, plan.CalculateEndDate(today), soldByStaffId: cmd.CashierId);
         membership.Activate();
 
         // El socio pasa a Activo (deja de ser prospecto / vencido).
@@ -105,11 +105,4 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
         await _chargeRepo.SaveChangesAsync(ct);
         return PaymentDto.FromEntity(payment);
     }
-
-    private static DateOnly? CalculateEnd(DateOnly start, MembershipType plan) => plan.DurationUnit switch
-    {
-        "Day" => start.AddDays(plan.DurationValue),
-        "Year" => start.AddYears(plan.DurationValue),
-        _ => start.AddMonths(plan.DurationValue),
-    };
 }

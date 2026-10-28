@@ -3,7 +3,7 @@ using GymForge.Domain.Events;
 
 namespace GymForge.Domain.Entities;
 
-public class Member : BaseEntity
+public class Member : BaseEntity, ISiteScoped, IAuditable
 {
     public Guid SiteId { get; private set; }
     public Guid CompanyId { get; private set; }
@@ -154,6 +154,18 @@ public class Member : BaseEntity
             Status = MemberStatus.Overdue;
             UpdatedAt = DateTime.UtcNow;
         }
+    }
+
+    /// <summary>
+    /// Sale de mora: solo Overdue vuelve a Active. Idempotente y sin evento de alta, porque el socio
+    /// ya ingresó antes (a diferencia de <see cref="Activate"/>). Cualquier otro estado no se toca.
+    /// </summary>
+    public void ClearArrears()
+    {
+        if (Status != MemberStatus.Overdue) return;
+
+        Status = MemberStatus.Active;
+        UpdatedAt = DateTime.UtcNow;
     }
 
     public void Suspend()

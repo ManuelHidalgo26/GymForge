@@ -30,7 +30,8 @@ Log.Logger = new LoggerConfiguration()
     // EF Core loguea cada comando SQL en Information: lo bajamos a Warning.
     .MinimumLevel.Override("Microsoft.EntityFrameworkCore", Serilog.Events.LogEventLevel.Warning)
     .WriteTo.Console()
-    .WriteTo.File(Path.Combine(logDir, "gymforge-.log"), rollingInterval: RollingInterval.Day)
+    .WriteTo.File(Path.Combine(logDir, "gymforge-.log"), rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 30)   // ~1 mes de diagnóstico; los diarios más viejos se borran solos
     .CreateLogger();
 
 // Red de seguridad: una excepción no controlada en un hilo de fondo o una tarea

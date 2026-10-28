@@ -9,9 +9,16 @@ using GymForge.Infrastructure;
 using GymForge.Infrastructure.Persistence;
 using Serilog;
 
+// Mismo directorio que el escritorio (%LOCALAPPDATA%\GymForge\logs): una ruta relativa
+// dependería del directorio de trabajo con el que se lance la API.
+var logDir = Path.Combine(
+    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+    "GymForge", "logs");
+
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
-    .WriteTo.File("logs/api-.log", rollingInterval: RollingInterval.Day)
+    .WriteTo.File(Path.Combine(logDir, "api-.log"), rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 30)   // ~1 mes de diagnóstico; los diarios más viejos se borran solos
     .CreateLogger();
 
 try

@@ -35,6 +35,9 @@ public partial class MainWindowViewModel : ObservableObject
 
     public SessionContext Session => _session;
 
+    /// <summary>Aviso de "actualización lista"; la búsqueda la dispara la ventana al abrirse.</summary>
+    public UpdateViewModel Update { get; }
+
     // Singleton cache per top-level section
     private readonly Dictionary<NavSection, object> _vmCache = new();
 
@@ -45,6 +48,7 @@ public partial class MainWindowViewModel : ObservableObject
     {
         _sp = sp;
         _session = sp.GetRequiredService<SessionContext>();
+        Update = sp.GetRequiredService<UpdateViewModel>();
         GymName = _session.GymName;
         CurrentSiteName = _session.CurrentSite?.Name ?? "—";
         _session.PropertyChanged += OnSessionChanged;

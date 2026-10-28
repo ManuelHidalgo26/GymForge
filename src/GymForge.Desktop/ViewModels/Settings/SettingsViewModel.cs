@@ -1,22 +1,25 @@
 using System.Collections.ObjectModel;
 using System.IO;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Input.Platform;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using FluentValidation;
 using GymForge.Application.Interfaces;
+using GymForge.Application.Services;
 using GymForge.Application.UseCases.Access;
 using GymForge.Application.UseCases.Licensing;
 using GymForge.Application.UseCases.Settings;
 using GymForge.Application.UseCases.Staff;
 using GymForge.Desktop.Services;
+using GymForge.Desktop.ViewModels.Shared;
 using MediatR;
 
 namespace GymForge.Desktop.ViewModels.Settings;
 
-/// <summary>Configuración: datos del gimnasio, sedes (ABM) y reglas de acceso.</summary>
+/// <summary>Configuración: datos del gimnasio, sedes (ABM), reglas de acceso, licencia y datos (backup/migración).</summary>
 public partial class SettingsViewModel : ObservableObject
 {
     private readonly IMediator _mediator;
@@ -26,6 +29,9 @@ public partial class SettingsViewModel : ObservableObject
     private readonly GatekeeperConfig _gatekeeper;
     private readonly CurrentLicense _license;
     private readonly IDataTransfer _dataTransfer;
+    private readonly IDatabaseBackup _backup;
+    private readonly ILocalSettings _localSettings;
+    private readonly IMachineFingerprint _fingerprint;
     private Guid? _editingSiteId;   // null = agregando
 
     // Datos del gimnasio
@@ -71,10 +77,23 @@ public partial class SettingsViewModel : ObservableObject
 
     // Licencia
     [ObservableProperty] private string _licensePlanDisplay = string.Empty;
-    [ObservableProperty] private string _licenseUsageDisplay = string.Empty;
+    [ObservableProperty] private LicenseUsageLine _membersUsage = LicenseUsage.Members(0, LicenseState.Free);
+    [ObservableProperty] private LicenseUsageLine _sitesUsage = LicenseUsage.Sites(0, LicenseState.Free);
     [ObservableProperty] private string _licenseKeyInput = string.Empty;
     [ObservableProperty] private string? _licenseMessage;
     [ObservableProperty] private bool _licenseSaved;
+    // Código de ESTA PC (para que el gimnasio lo dicte al proveedor) y aviso si la clave es de otra PC.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasThisPcCode), nameof(ThisPcCodeDisplay))]
+    [NotifyCanExecuteChangedFor(nameof(CopyThisPcCodeCommand))]
+    private string _thisPcCode = string.Empty;
+    [ObservableProperty] private bool _licenseMachineMismatch;
+    public bool HasThisPcCode => !string.IsNullOrEmpty(ThisPcCode);
+    public string ThisPcCodeDisplay => HasThisPcCode ? ThisPcCode : "No disponible";
+
+    // Versión y actualizaciones: el estado vive en UpdateViewModel (compartido con el aviso del shell).
+    public UpdateViewModel Updates { get; }
+    [ObservableProperty] private string _updateFeedDisplay = string.Empty;
 
     // Datos — exportar / importar (migración a otra PC)
     [ObservableProperty] private string? _dataMessage;
@@ -85,10 +104,23 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private string _importPin = string.Empty;
     private string? _pendingImportPath;   // paquete validado, esperando confirmación
 
+    // Datos — copia de seguridad externa (pendrive / red / carpeta sincronizada)
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasOffsiteBackupDir), nameof(OffsiteBackupDirDisplay))]
+    [NotifyCanExecuteChangedFor(nameof(BackupOffsiteNowCommand))]
+    private string? _offsiteBackupDir;
+    [ObservableProperty] private string _offsiteStatusDisplay = string.Empty;
+    [ObservableProperty] private bool _offsiteNeedsAttention;
+    [ObservableProperty] private string? _offsiteMessage;
+    [ObservableProperty] private bool _offsiteOk;
+    public bool HasOffsiteBackupDir => !string.IsNullOrWhiteSpace(OffsiteBackupDir);
+    public string OffsiteBackupDirDisplay => OffsiteBackupDir ?? "Sin carpeta elegida";
+
     public SettingsViewModel(
         IMediator mediator, ISiteRepository siteRepo, IMemberRepository memberRepo,
         SessionContext session, GatekeeperConfig gatekeeper, CurrentLicense license,
-        IDataTransfer dataTransfer)
+        IDataTransfer dataTransfer, IDatabaseBackup backup, ILocalSettings localSettings,
+        IMachineFingerprint fingerprint, UpdateViewModel updates)
     {
         _mediator = mediator;
         _siteRepo = siteRepo;
@@ -97,6 +129,10 @@ public partial class SettingsViewModel : ObservableObject
         _gatekeeper = gatekeeper;
         _license = license;
         _dataTransfer = dataTransfer;
+        _backup = backup;
+        _localSettings = localSettings;
+        _fingerprint = fingerprint;
+        Updates = updates;
     }
 
     [RelayCommand]
@@ -124,6 +160,11 @@ public partial class SettingsViewModel : ObservableObject
 
         IsDefaultPinInUse = await _mediator.Send(new CheckDefaultPinQuery(_session.CompanyId), ct);
 
+        UpdateFeedDisplay = string.IsNullOrWhiteSpace(_localSettings.UpdateFeedUrl)
+            ? "sin configurar"
+            : _localSettings.UpdateFeedUrl;
+
+        await RefreshOffsiteStatusAsync();
         await RefreshLicenseAsync(ct);
     }
 
@@ -141,7 +182,11 @@ public partial class SettingsViewModel : ObservableObject
 
         var members = await _memberRepo.CountByCompanyAsync(_session.CompanyId, ct);
         var sites = await _siteRepo.CountActiveSitesAsync(_session.CompanyId, ct);
-        LicenseUsageDisplay = $"Socios: {members} de {state.MaxMembers} · Sedes: {sites} de {state.MaxSites}";
+        MembersUsage = LicenseUsage.Members(members, state);
+        SitesUsage = LicenseUsage.Sites(sites, state);
+
+        ThisPcCode = _fingerprint.Current();
+        LicenseMachineMismatch = state.MachineMismatch;
     }
 
     // ── Datos del gimnasio ──────────────────────────────────────────────────
@@ -171,8 +216,7 @@ public partial class SettingsViewModel : ObservableObject
     private async Task PickLogoAsync()
     {
         BrandMessage = null;
-        var top = (Avalonia.Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
-        if (top?.StorageProvider is not { } storage) return;
+        if (MainStorage() is not { } storage) return;
 
         var files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
         {
@@ -395,6 +439,16 @@ public partial class SettingsViewModel : ObservableObject
         catch (Exception ex) { LicenseMessage = ex.Message; }
     }
 
+    [RelayCommand(CanExecute = nameof(HasThisPcCode))]
+    private async Task CopyThisPcCodeAsync()
+    {
+        if (MainClipboard() is not { } clipboard) return;
+
+        await clipboard.SetTextAsync(ThisPcCode);
+        LicenseSaved = true;
+        LicenseMessage = "Código de esta PC copiado.";
+    }
+
     // ── Datos: exportar / importar ──────────────────────────────────────────
 
     /// <summary>
@@ -407,8 +461,7 @@ public partial class SettingsViewModel : ObservableObject
         DataMessage = null;
         DataOk = false;
 
-        var top = (Avalonia.Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
-        if (top?.StorageProvider is not { } storage) return;
+        if (MainStorage() is not { } storage) return;
 
         var file = await storage.SaveFilePickerAsync(new FilePickerSaveOptions
         {
@@ -439,8 +492,7 @@ public partial class SettingsViewModel : ObservableObject
         DataOk = false;
         ImportPin = string.Empty;
 
-        var top = (Avalonia.Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
-        if (top?.StorageProvider is not { } storage) return;
+        if (MainStorage() is not { } storage) return;
 
         var files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
         {
@@ -517,6 +569,81 @@ public partial class SettingsViewModel : ObservableObject
 
         (Avalonia.Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.Shutdown();
     }
+
+    // ── Datos: copia de seguridad externa ───────────────────────────────────
+
+    [RelayCommand]
+    private async Task PickOffsiteFolderAsync()
+    {
+        OffsiteMessage = null;
+        if (MainStorage() is not { } storage) return;
+
+        var folders = await storage.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = "Elegí la carpeta de la copia de seguridad externa",
+            AllowMultiple = false,
+        });
+
+        if (folders.FirstOrDefault()?.TryGetLocalPath() is not { } path) return;
+
+        // La fecha del último resguardo era de otro destino: no se arrastra a la carpeta nueva.
+        if (!string.Equals(path, _localSettings.OffsiteBackupDir, StringComparison.OrdinalIgnoreCase))
+            _localSettings.LastOffsiteBackupUtc = null;
+
+        _localSettings.OffsiteBackupDir = path;
+        _localSettings.Save();
+        await RefreshOffsiteStatusAsync();
+    }
+
+    [RelayCommand]
+    private async Task ClearOffsiteAsync()
+    {
+        OffsiteMessage = null;
+        _localSettings.OffsiteBackupDir = null;
+        _localSettings.LastOffsiteBackupUtc = null;
+        _localSettings.Save();
+        await RefreshOffsiteStatusAsync();
+    }
+
+    /// <summary>
+    /// "Copiar ahora": hace un backup nuevo y lo copia al destino externo. Va en un hilo aparte porque
+    /// un pendrive o una carpeta de red puede tardar y no debe congelar la ventana.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(HasOffsiteBackupDir))]
+    private async Task BackupOffsiteNowAsync()
+    {
+        var outcome = await Task.Run(_backup.BackupOffsiteNow);
+
+        OffsiteOk = outcome == OffsiteBackupOutcome.Copied;
+        OffsiteMessage = outcome switch
+        {
+            OffsiteBackupOutcome.Copied => "Copia externa lista.",
+            OffsiteBackupOutcome.NotConfigured => "Elegí primero la carpeta de destino.",
+            _ => "No se pudo copiar. Revisá que el pendrive o la carpeta estén disponibles; el resguardo en esta PC sí quedó hecho.",
+        };
+        await RefreshOffsiteStatusAsync();
+    }
+
+    private async Task RefreshOffsiteStatusAsync()
+    {
+        var dir = _localSettings.OffsiteBackupDir;
+        OffsiteBackupDir = string.IsNullOrWhiteSpace(dir) ? null : dir;
+
+        // Fuera del hilo de UI: preguntar por una carpeta de red caída puede tardar en responder.
+        var available = !string.IsNullOrWhiteSpace(dir) && await Task.Run(() => Directory.Exists(dir));
+        var status = OffsiteBackupStatus.Evaluate(
+            dir, _localSettings.LastOffsiteBackupUtc?.ToLocalTime(), available, DateTime.Now);
+        OffsiteStatusDisplay = status.Display;
+        OffsiteNeedsAttention = status.NeedsAttention;
+    }
+
+    private static IStorageProvider? MainStorage() =>
+        (Avalonia.Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
+            ?.MainWindow?.StorageProvider;
+
+    private static IClipboard? MainClipboard() =>
+        (Avalonia.Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)
+            ?.MainWindow?.Clipboard;
 
     // ── Reglas de acceso ────────────────────────────────────────────────────
 

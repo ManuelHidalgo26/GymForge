@@ -213,7 +213,7 @@ public async Task<AccessDecision> ValidateSwipeAsync(ValidateSwipeRequest reques
 ```
 
 Con el scope activo, `FindByTagSerialAsync`, `FindByDocumentAsync`, `GetCurrentActiveAsync`, `SumOutstandingAsync`
-y `GetLastAsync` (anti-passback) quedan **automáticamente** filtrados por `CompanyId + SiteId` sin cambiar sus
+y `GetLastGrantedAsync` (anti-passback) quedan **automáticamente** filtrados por `CompanyId + SiteId` sin cambiar sus
 firmas. Un socio de otra sede deja de resolver en la puerta. (No hace falta hilar `SiteId` a mano por repo.)
 
 ### 3.5 Bypass legítimo (`IgnoreQueryFilters`)

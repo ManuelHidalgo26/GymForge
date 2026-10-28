@@ -146,6 +146,65 @@ public class GatekeeperIntegrationTests : IAsyncLifetime
         (await _db.AccessLogs.IgnoreQueryFilters().CountAsync(a => a.AccessGranted)).Should().Be(1);
     }
 
+    // ── Anti-passback: solo cuenta la última entrada CONCEDIDA ────────────────
+
+    [Fact]
+    public async Task AntiPassback_SecondSwipeInsideTheWindow_IsDeniedAsAlreadyInside()
+    {
+        await SeedMemberWithVisitPackAsync("TAG-PACK", visits: 10, _siteId);
+        await CreateGatekeeper().ValidateSwipeAsync(TagSwipe("TAG-PACK"));
+
+        var result = await CreateGatekeeper().ValidateSwipeAsync(TagSwipe("TAG-PACK"));
+
+        result.Granted.Should().BeFalse();
+        result.DenialReason.Should().Be(AccessDenialReason.AlreadyInside);
+    }
+
+    [Fact]
+    public async Task AntiPassback_RepeatedSwipesInsideTheWindow_NeverSlipThrough()
+    {
+        // La entrada concedida manda: los AlreadyInside que genera quien insiste con la tarjeta
+        // quedan logueados como "In" denegados y no pueden "limpiar" el anti-passback.
+        await SeedMemberWithVisitPackAsync("TAG-PACK", visits: 10, _siteId);
+        await CreateGatekeeper().ValidateSwipeAsync(TagSwipe("TAG-PACK"));
+        await CreateGatekeeper().ValidateSwipeAsync(TagSwipe("TAG-PACK"));
+
+        var third = await CreateGatekeeper().ValidateSwipeAsync(TagSwipe("TAG-PACK"));
+
+        third.Granted.Should().BeFalse();
+        third.DenialReason.Should().Be(AccessDenialReason.AlreadyInside);
+    }
+
+    [Fact]
+    public async Task AntiPassback_IgnoresADeniedSwipe_SoThePaidMemberEntersRightAway()
+    {
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        await SeedMemberWithMembershipEndingAsync("TAG-DEBT", today.AddMonths(1));
+        var debt = await SeedDebtAsync(15_000m, today);   // > StopOnOweAmount (10_000)
+        (await CreateGatekeeper().ValidateSwipeAsync(TagSwipe("TAG-DEBT")))
+            .DenialReason.Should().Be(AccessDenialReason.Owing);
+        await PayAsync(debt);
+
+        var result = await CreateGatekeeper().ValidateSwipeAsync(TagSwipe("TAG-DEBT"));
+
+        result.Granted.Should().BeTrue("el swipe denegado por deuda no cuenta como una entrada");
+    }
+
+    private async Task<Charge> SeedDebtAsync(decimal amount, DateOnly dueDate)
+    {
+        var member = await _db.Members.IgnoreQueryFilters().SingleAsync();
+        var charge = Charge.Create(_companyId, _siteId, member.Id, null, ConceptType.MembershipFee, "Cuota", amount, dueDate);
+        await _db.Charges.AddAsync(charge);
+        await _db.SaveChangesAsync();
+        return charge;
+    }
+
+    private async Task PayAsync(Charge charge)
+    {
+        charge.ApplyPayment(charge.TotalAmount);
+        await _db.SaveChangesAsync();
+    }
+
     [Fact]
     public async Task UnknownTag_PersistsADeniedLogWithoutMember()
     {

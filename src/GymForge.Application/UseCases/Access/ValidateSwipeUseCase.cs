@@ -136,7 +136,7 @@ public class ValidateSwipeUseCase : IValidateSwipeUseCase
         }
 
         // 6. Anti-passback
-        var last = await _accessLogRepo.GetLastAsync(member.Id, request.DoorId, ct);
+        var last = await _accessLogRepo.GetLastGrantedAsync(member.Id, request.DoorId, ct);
         if (last is { Direction: AccessDirection.In } &&
             last.SwipedAt > _clock.Now.AddMinutes(-_config.AntiPassbackMinutes))
         {

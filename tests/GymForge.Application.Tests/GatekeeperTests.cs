@@ -94,7 +94,7 @@ public class GatekeeperTests
             .Returns(membership);
         _chargeRepo.SumOutstandingAsync(member.Id, Arg.Any<CancellationToken>())
             .Returns(0m);
-        _accessLogRepo.GetLastAsync(member.Id, 1, Arg.Any<CancellationToken>())
+        _accessLogRepo.GetLastGrantedAsync(member.Id, 1, Arg.Any<CancellationToken>())
             .ReturnsNull();
 
         var sut = CreateSut();
@@ -125,7 +125,7 @@ public class GatekeeperTests
             .Returns(membership);
         _chargeRepo.SumOutstandingAsync(member.Id, Arg.Any<CancellationToken>())
             .Returns(0m);
-        _accessLogRepo.GetLastAsync(member.Id, 1, Arg.Any<CancellationToken>())
+        _accessLogRepo.GetLastGrantedAsync(member.Id, 1, Arg.Any<CancellationToken>())
             .ReturnsNull();
 
         var result = await CreateSut().ValidateSwipeAsync(
@@ -192,7 +192,7 @@ public class GatekeeperTests
             .Returns(membership);
         _chargeRepo.SumOutstandingAsync(member.Id, Arg.Any<CancellationToken>())
             .Returns(0m);
-        _accessLogRepo.GetLastAsync(member.Id, 1, Arg.Any<CancellationToken>())
+        _accessLogRepo.GetLastGrantedAsync(member.Id, 1, Arg.Any<CancellationToken>())
             .ReturnsNull();
     }
 
@@ -368,7 +368,7 @@ public class GatekeeperTests
             .Returns(membership);
         _chargeRepo.SumOutstandingAsync(member.Id, Arg.Any<CancellationToken>())
             .Returns(0m);
-        _accessLogRepo.GetLastAsync(member.Id, 1, Arg.Any<CancellationToken>())
+        _accessLogRepo.GetLastGrantedAsync(member.Id, 1, Arg.Any<CancellationToken>())
             .Returns(lastLog);  // Entered 0 min ago → within AntiPassbackMinutes=5
 
         var result = await CreateSut().ValidateSwipeAsync(
@@ -393,7 +393,7 @@ public class GatekeeperTests
             .Returns(membership);
         _chargeRepo.SumOutstandingAsync(member.Id, Arg.Any<CancellationToken>())
             .Returns(7_000m);  // > WarnOnOweAmount (5_000) but < StopOnOweAmount (10_000)
-        _accessLogRepo.GetLastAsync(Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+        _accessLogRepo.GetLastGrantedAsync(Arg.Any<Guid>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
             .ReturnsNull();
 
         var result = await CreateSut().ValidateSwipeAsync(

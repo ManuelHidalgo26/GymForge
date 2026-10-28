@@ -18,9 +18,9 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 
 ## Estado general (al 2026-10-28)
 
-- Sesiones 1, 2, 3 y Fase 1: **commiteadas** en `feat/sesion-3` (18 commits desde `master`: 12 previos + 6 de F1). Sin merge a `master`, sin push. ADR-001 a ADR-004 en `Accepted`.
+- Sesiones 1, 2, 3 y Fase 1: **mergeadas a `master`** (merge `--no-ff` `33ba4ec`; 19 commits de `feat/sesion-3`). Local: `origin/master` quedó atrás, **sin push**. La rama `feat/sesion-3` sigue existiendo. ADR-001 a ADR-004 en `Accepted`.
 - Tests: **646 verdes** (Domain 83 · Application 288 · Desktop 54 · Integration 221), cifra de qa tras Fase 1. Antes de F1: 504 (cifra del orquestador tras Q1). La sesión de notas no re-ejecutó `dotnet test`.
-- Working tree: solo los docs de cierre de Fase 1 (`docs/PROGRESS.md`, `docs/TASKS.md`, `docs/adr/README.md`), pendientes de commit (lo hace el orquestador). `.gitignore` ya ignora `*.lnk` y `*.pfx`.
+- Working tree **limpio**: todo commiteado y en `master`. `.gitignore` ya ignora `*.lnk` y `*.pfx`.
 - Abierto en `docs/TASKS.md`: **0 bloqueadores de piloto**. Quedan: decisiones del usuario (UX11, Q2/D9, D7, D11/Q4, F1-D8, F1-D11), P-2, D1–D19, F1-D1 a F1-D11, Q3–Q9, UX1–UX12 y las fases F2–F6.
 
 ## Roadmap por fases
@@ -37,7 +37,7 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 
 ## Qué sigue
 
-**Próxima sesión (4): Fase 2, WhatsApp gratis + cobranzas.** Empezar por la pantalla de morosos, `WhatsAppLinkSender` (wa.me), `DunningConfig` y `NotificationLog`. F1 está cerrada; quedan solo sus deudas F1-D1 a F1-D11 en TASKS (ninguna bloquea el piloto con las condiciones de uso).
+**Arranque de mañana:** abrir con `/equipo`. Salvo que el usuario priorice otra cosa, arrancar la **Fase 2 (Sesión 4): WhatsApp gratis + cobranzas** — pantalla de morosos, `WhatsAppLinkSender` (wa.me), `DunningConfig` y `NotificationLog`. Alternativa antes de Fase 2: cerrar alguna decisión abierta de abajo (sobre todo UX11 + F1-D3/F1-D7 si se quiere activar el auto-update). F1 está cerrada; sus deudas F1-D1 a F1-D11 no bloquean el piloto con las 2 condiciones de uso.
 
 Decisiones del usuario abiertas (ninguna bloquea el piloto con las 2 condiciones de uso):
 0. **UX11 + F1-D7:** origen de las actualizaciones (hoy vacío = inactivo) y `https://` obligatorio. Junto con F1-D3, bloquea activar el auto-update en campo.
@@ -47,7 +47,7 @@ Decisiones del usuario abiertas (ninguna bloquea el piloto con las 2 condiciones
 4. **F1-D8:** el CUIT de la empresa se edita sin PIN; decidir si se pide PIN de admin para cambiarlo.
 5. **F1-D11 (verificación):** antes de emitir claves con la versión nueva, `.\scripts\licencia.ps1 show <clave ya entregada>` debe seguir mostrándolas válidas.
 6. **F1-D1 / D2 / D3:** resolver antes de escalar. F1-D3 antes de activar el auto-update.
-7. Pendiente operativo: merge de `feat/sesion-3` a `master`, push y CI. Lo decide el usuario.
+7. Pendiente operativo: **push de `master` a `origin` y CI** (sin hacer; el merge local ya está hecho en `33ba4ec`). Lo decide el usuario. La rama `feat/sesion-3` se puede borrar tras el push.
 
 Fuera del piloto: P-2 (saldo a favor en la ficha) y D1 (cobros multi-sede) siguen abiertas. Resto de deuda (D1–D19, F1-D4 a F1-D10, Q3–Q9, UX1–UX12): ver `docs/TASKS.md`.
 

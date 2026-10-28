@@ -6,6 +6,7 @@ using GymForge.Desktop.ViewModels.Charges;
 using GymForge.Desktop.ViewModels.Checkin;
 using GymForge.Desktop.ViewModels.Dashboard;
 using GymForge.Desktop.ViewModels.Members;
+using GymForge.Desktop.ViewModels.Shared;
 using GymForge.Desktop.Services;
 using GymForge.Desktop.Views.Shell;
 using GymForge.Infrastructure;
@@ -52,6 +53,11 @@ public static class ServiceCollectionExtensions
         // ── Mantenimiento diario ──────────────────────────────────────────────
         // Singleton: lo arranca Program.cs y queda corriendo mientras la app esté abierta
         services.AddSingleton<DailyMaintenanceHost>();
+
+        // ── Auto-actualización (Velopack) ─────────────────────────────────────
+        // Singleton: el shell muestra el aviso y Configuración la versión/búsqueda manual sobre el mismo estado
+        services.AddSingleton<IUpdateService, VelopackUpdateService>();
+        services.AddSingleton<UpdateViewModel>();
 
         // ── Recibos ───────────────────────────────────────────────────────────
         // Genera y abre el recibo PDF de cada cobro

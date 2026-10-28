@@ -12,23 +12,23 @@ Deuda y tareas: `docs/TASKS.md`. Decisiones: `docs/adr/`. Historia por sprints y
 Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" con aspecto de sistema de US$100k.
 
 - Plan: 6 fases en ~8 sesiones.
-- Hito: **tras la sesión 3** se puede instalar y operar en el gimnasio piloto mientras se sigue puliendo. Condición: cerrar el bloqueador P-1 (freeze) al arrancar la sesión 3 (ver `docs/TASKS.md`). **Estado (2026-10-28): condición P-1 cumplida.** Para la puesta en marcha completa falta Fase 1.
+- Hito: **tras la sesión 3** se puede instalar y operar en el gimnasio piloto mientras se sigue puliendo. Condición: cerrar el bloqueador P-1 (freeze) al arrancar la sesión 3 (ver `docs/TASKS.md`). **Estado (2026-10-28): condición P-1 cumplida y Fase 1 cerrada.** Piloto habilitado con 2 condiciones de uso (ver la entrada "Fase 1 cerrada").
 - Flujo por sesión: arqui (ADR) → dev (implementa) → qa (aprueba o veta).
 - Regla 6 de CLAUDE.md: `dotnet test` verde antes de cada commit.
 
 ## Estado general (al 2026-10-28)
 
-- Sesiones 1, 2 y 3 (incluye P-1 y Q1): **commiteadas** en `feat/sesion-3` (11 commits desde `master`). Sin merge a `master`, sin push. ADR-001, ADR-002 y ADR-003 en `Accepted`.
-- Tests: **504 verdes** (Domain 72 · Application 230 · Desktop 25 · Integration 177), cifra del orquestador tras Q1. Piso al cierre de la sesión 2: 451. La sesión de notas no re-ejecutó `dotnet test`.
-- Working tree: solo los docs de la sesión 3, pendientes de commit (lo hace el orquestador). `.gitignore` ya ignora `*.lnk` y `*.pfx`.
-- Abierto en `docs/TASKS.md`: **0 bloqueadores de piloto** (P-1 cerrado). Quedan: decisión Q2/D9, P-2 (UI diferida, no bloquea), 19 ítems de deuda (D1–D19), 7 de qa (Q3–Q9), 5 de UX (UX1–UX5) y las fases F1–F6.
+- Sesiones 1, 2, 3 y Fase 1: **commiteadas** en `feat/sesion-3` (18 commits desde `master`: 12 previos + 6 de F1). Sin merge a `master`, sin push. ADR-001 a ADR-004 en `Accepted`.
+- Tests: **646 verdes** (Domain 83 · Application 288 · Desktop 54 · Integration 221), cifra de qa tras Fase 1. Antes de F1: 504 (cifra del orquestador tras Q1). La sesión de notas no re-ejecutó `dotnet test`.
+- Working tree: solo los docs de cierre de Fase 1 (`docs/PROGRESS.md`, `docs/TASKS.md`, `docs/adr/README.md`), pendientes de commit (lo hace el orquestador). `.gitignore` ya ignora `*.lnk` y `*.pfx`.
+- Abierto en `docs/TASKS.md`: **0 bloqueadores de piloto**. Quedan: decisiones del usuario (UX11, Q2/D9, D7, D11/Q4, F1-D8, F1-D11), P-2, D1–D19, F1-D1 a F1-D11, Q3–Q9, UX1–UX12 y las fases F2–F6.
 
 ## Roadmap por fases
 
 | Fase | Sesiones | Contenido | Estado |
 |---|---|---|---|
 | 0 — Bugs y reglas de negocio | 1-2 (P-1 en 3) | Correctitud del core | **CERRADA.** S1, S2, P-1 (freeze) y Q1 commiteadas en `feat/sesion-3` |
-| 1 — Robustez de producción | 3 | Backup off-site, auto-update Velopack, licencia (CUIT + fingerprint), retención de logs | PENDIENTE: no arrancó en S3 (ver "Qué sigue") |
+| 1 — Robustez de producción | 3 (continuación) | Backup off-site, auto-update Velopack, licencia (CUIT + fingerprint), retención de logs, fix "Sedes: 2 de 1" | **CERRADA (2026-10-28).** F1-1 a F1-5 commiteadas; qa aprobó con observaciones. Deuda en TASKS (F1-D1 a F1-D11) |
 | 2 — WhatsApp gratis + cobranzas | 4 | Pantalla de morosos, `WhatsAppLinkSender` (wa.me), `DunningConfig` en Configuración, `NotificationLog` | PENDIENTE |
 | 3 — Escáner HID + check-in premium | 5 | Lector keyboard-wedge en kiosk y POS, foto del socio, teclado numérico en pantalla, arquitectura de hardware | PENDIENTE |
 | 4 — Profundidad | 6-7 | Reportes reales (morosos, por plan/método/sede, retención; export Excel/PDF), editar socio desde la ficha, rutinas en la ficha, comisiones de staff | PENDIENTE |
@@ -37,14 +37,77 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 
 ## Qué sigue
 
-**Próxima sesión: decidir Q2 y arrancar Fase 1 del roadmap.** P-1 está cerrado y el piloto no tiene bloqueadores abiertos.
+**Próxima sesión (4): Fase 2, WhatsApp gratis + cobranzas.** Empezar por la pantalla de morosos, `WhatsAppLinkSender` (wa.me), `DunningConfig` y `NotificationLog`. F1 está cerrada; quedan solo sus deudas F1-D1 a F1-D11 en TASKS (ninguna bloquea el piloto con las condiciones de uso).
 
-0. Decidir con el usuario Q2 / D9 (`AsNoTracking` antes de operar, o aceptar con reinicios diarios de la PC de recepción).
-1. Confirmar con el orquestador si Fase 1 queda como continuación de la Sesión 3 o pasa a la Sesión 4. El roadmap la numera Sesión 3, pero la Sesión 3 cierra sin ella.
-2. **Fase 1 (PENDIENTE, no arrancó):** backup off-site, auto-update Velopack, licencia (CUIT + fingerprint), retención de logs, fix "Sedes: 2 de 1". Antes de arrancar, verificar lo ya existente: backup local y recuperación (`src/GymForge.Infrastructure/Persistence/DatabaseBackupService.cs`, commit `eaad5bc`) e instalador Velopack (`scripts/pack.ps1`, commit `6b7ecdb`). F1 debe cubrir lo que falta, no rehacerlo.
-3. Fuera del piloto: P-2 (saldo a favor en la ficha) y D1 (cobros multi-sede) siguen abiertas. D7 y D11 esperan decisión del usuario. Q3–Q9 y UX1–UX5: ver `docs/TASKS.md`.
+Decisiones del usuario abiertas (ninguna bloquea el piloto con las 2 condiciones de uso):
+0. **UX11 + F1-D7:** origen de las actualizaciones (hoy vacío = inactivo) y `https://` obligatorio. Junto con F1-D3, bloquea activar el auto-update en campo.
+1. **Q2 / D9:** `AsNoTracking` antes de operar, o aceptar reinicios diarios de la PC de recepción.
+2. **D11 + Q4:** política de datos personales en AuditLog (el motivo de freeze es dato de salud).
+3. **D7:** DNI y licencia en multi-sede.
+4. **F1-D8:** el CUIT de la empresa se edita sin PIN; decidir si se pide PIN de admin para cambiarlo.
+5. **F1-D11 (verificación):** antes de emitir claves con la versión nueva, `.\scripts\licencia.ps1 show <clave ya entregada>` debe seguir mostrándolas válidas.
+6. **F1-D1 / D2 / D3:** resolver antes de escalar. F1-D3 antes de activar el auto-update.
+7. Pendiente operativo: merge de `feat/sesion-3` a `master`, push y CI. Lo decide el usuario.
+
+Fuera del piloto: P-2 (saldo a favor en la ficha) y D1 (cobros multi-sede) siguen abiertas. Resto de deuda (D1–D19, F1-D4 a F1-D10, Q3–Q9, UX1–UX12): ver `docs/TASKS.md`.
 
 Sesiones 4-8: ver tabla de fases arriba.
+
+---
+
+## [2026-10-28] Sesión 3 (continuación) — Fase 1 cerrada
+
+**Hecho:**
+- **Fase 1 "Robustez de producción" cerrada** según ADR-004 (`Accepted`). Seis commits de feature sobre `feat/sesion-3`:
+  - **F1-1 Retención de logs** (`0f37c63`): `retainedFileCountLimit: 30` en Desktop y API. La API loguea ahora en `%LOCALAPPDATA%\GymForge\logs\`.
+  - **F1-2 Fix "Sedes: 2 de 1"** (`4b6e8ec`): helper puro `LicenseUsage` + medidor `UsageMeter`. El excedente se muestra "(excede el plan)" con texto, color y pill. No toca sedes ni socios preexistentes.
+  - **F1-3 Backup off-site** (`b257ce1`): `ILocalSettings` (JSON en `%LOCALAPPDATA%\GymForge\settings.json`, no viaja en el export). Copia del último backup a carpeta configurable, rotación 10 en destino, best-effort (nunca tira, no crea la carpeta padre). UI en Config → Datos.
+  - **F1-4 Licencia CUIT + fingerprint** (`ba30ea4`): el CUIT bloquea al activar (clave sin CUIT activa igual; CUIT no parseable = warning). Fingerprint `MachineGuid` con fallback: avisa, no bloquea. `MachineId` opcional en el payload firmado (claves viejas verifican; vector fijo en tests). `LicenseGen --machine`. UI en Config → Licencia.
+  - **F1-5 Auto-update Velopack** (`2440c08`): `IUpdateService` / `VelopackUpdateService`. **No-op si `UpdateFeedUrl` está vacío** (hoy inactivo). Banner "actualización lista" con "Reiniciar ahora" / "Después".
+  - **Pulido de UI de Config y shell** (`2bd7f78`): ux sobre las 4 superficies. `NeutralBrush` a AA; estilos `TextBlock.success|warning|danger|Feedback`; `ProgressBar.warning`; `Border.Divider`.
+- **Verificación (qa, APROBADO CON OBSERVACIONES, sin bloqueantes):** build Debug y Release 0 errores. **646 tests verdes** (Domain 83 · Application 288 · Desktop 54 · Integration 221), cifra de qa, no re-ejecutada en esta nota. Qa agregó 2 regresiones en `tests/GymForge.Integration.Tests/DataTransferServiceTests.cs` (`settings.json` no viaja en el export ni se pisa al importar). XAML verificado en runtime con `tools/GymForge.Screenshots`.
+- **`docs/adr/README.md`:** ADR-004 figuraba como `Proposed`; corregido a `Accepted`.
+- **TASKS consolidado sin duplicar:** F1-1 a F1-5 y F1-D12 (housekeeping) pasan a DONE. F1-D1 a F1-D11 y UX6 a UX12 quedan en TODO con las entradas que cargaron qa y ux, sin repetirlas. Solo se ajustó lo que cambió: F1-D3 de MEDIA-BAJA a MEDIA (decisión de cierre); F1-D1 y F1-D2 con la referencia a la UI que recomienda carpeta de red o Dropbox/OneDrive; F1-D3 y F1-D7 con la marca de prerequisito para activar el auto-update; UX11 con el bloqueo; la intro de UX cita "4 superficies", no "5 piezas".
+- **Commits:** 18 desde `master` = 12 previos (9 de S1+S2, `b0caf77`, `a07303f` y el docs `77eaaa4`) + 6 de F1. La cifra "11" de la Sesión 3 no contaba `77eaaa4`. El commit de este cierre lo hace el orquestador.
+
+**Condiciones de uso del piloto** (de uso, no de código):
+1. **Backup externo: pendrive LOCAL, no carpeta de red.** La copia off-site es síncrona en el arranque (`src/GymForge.Desktop/Program.cs:57` → `InitialiseDatabaseAsync` → `InfrastructureServiceExtensions.cs:109`) y en el cierre de caja (`CashCommands.cs:120`). Con red caída puede colgar (F1-D1). Config todavía ofrece "pendrive, carpeta de red o carpeta de Dropbox/OneDrive" (`SettingsView.axaml:416-422`). Una carpeta sincronizada sube el backup sin cifrar a la nube (F1-D2).
+2. **Auto-update INACTIVO** hasta configurar el origen (`settings.json` → `UpdateFeedUrl`; UX11). Sin origen no hace nada ("sin configurar"). Antes de activarlo en campo: F1-D3 (backup previo a migraciones) y F1-D7 (`https://`).
+
+**En curso:** nada a medias en código. Esta sesión solo tocó docs.
+
+**Blockers:** ninguno para el piloto con las 2 condiciones de uso. Activar el auto-update en campo queda bloqueado por UX11, F1-D3 y F1-D7.
+
+**Desvíos detectados al cerrar** (no corregidos en código; ADR-004 no se editó):
+- ADR-004 pieza 2 pide la constante `DefaultFeedUrl = https://github.com/ManuelHidalgo26/GymForge`. El código no la tiene (`src/GymForge.Desktop/Services/VelopackUpdateService.cs:12`: "no hay ningún repositorio fijo"). Es la decisión que deja abierta UX11.
+- ADR-004 pieza 2 define `CheckAsync` devolviendo `UpdateInfo?`. La firma real es `UpdateCheckResult CheckAsync()`, con `DownloadAsync`, `ApplyAndRestart` y `ApplyOnExit`. Los tests del banner están en `tests/GymForge.Desktop.Tests/UpdateViewModelTests.cs` (el ADR decía `UpdateBannerTests.cs`).
+- `VelopackUpdateService.IsGitHubRepository` solo mira el host: un `http://` pasa (F1-D7 confirmado en `VelopackUpdateService.cs:106-113`).
+
+**Próximo paso:**
+1. El orquestador commitea los docs de cierre. El mensaje debe decir que el auto-update queda inactivo hasta resolver UX11.
+2. Usuario: decidir UX11 y Q2/D9 (ver "Qué sigue").
+3. Sesión 4: arrancar Fase 2 por la pantalla de morosos (`DunningConfig`, `WhatsAppLinkSender`, `NotificationLog`).
+
+**Tocado:**
+- Docs de cierre: `docs/PROGRESS.md`, `docs/TASKS.md`, `docs/adr/README.md`. Sin cambios de código.
+- Fase 1 (referencia, no tocada aquí): `src/GymForge.Infrastructure/Persistence/DatabaseBackupService.cs`, `src/GymForge.Infrastructure/Services/LocalSettingsService.cs`, `src/GymForge.Desktop/Services/VelopackUpdateService.cs`, `src/GymForge.Desktop/ViewModels/Settings/SettingsViewModel.cs`, `src/GymForge.Desktop/Views/Settings/SettingsView.axaml`, `src/GymForge.Api/Program.cs`, `src/GymForge.Desktop/Program.cs`, `tests/GymForge.Application.Tests/Licensing/LicenseUsageTests.cs`, `tests/GymForge.Integration.Tests/DataTransferServiceTests.cs`, `docs/adr/ADR-004-robustez-de-produccion.md`.
+
+---
+
+## [2026-10-28] Sesión 3 (continuación) — Fase 1: pulido de UI (ux)
+
+**Hecho (sin build ni tests: ux no tiene shell; falta la validación de qa):**
+- Pulidas las 4 superficies de F1 sin tocar ViewModels ni lógica: Config → Datos ("Copia de seguridad externa"), Config → Licencia (uso Socios/Sedes, aviso de otra PC, código de esta PC), Config → "Versión y actualizaciones" y el aviso de update del shell (`src/GymForge.Desktop/Views/Settings/SettingsView.axaml`, `src/GymForge.Desktop/Views/Shell/MainWindow.axaml`). Bindings, commands y `x:DataType` intactos.
+- Copia externa: campo de ruta de solo lectura (enfocable), pill de estado ("Sin configurar" neutral / "Al día" success / "Requiere atención" warning) + detalle, "Copiar ahora" con anillo mientras copia. Licencia: medidor por uso con barra y pill "Excede el plan" (el exceso ya no depende solo del color). Update: versión en grande, pill "Actualización lista", botón con anillo, origen de solo lectura. Shell: el aviso vive en un `Border` con el lienzo (`ContentBackground`) y margen, y la fila Auto mide 0 con el aviso cerrado.
+- Todos los mensajes de resultado de Config pasaron de `ActiveColorBrushConverter` (≈3,5:1) a `TextBlock.Feedback` + `success`/`danger`, con `LiveSetting`.
+
+**Registro de componentes y tokens (design system):**
+- Nuevos en `Assets/Styles/AppStyles.axaml`: `Border.Divider` (hairline en cards), `TextBlock.success|warning|danger` (texto con tono, tokens AA; antes `warning` era local de SettingsView), `TextBlock.Feedback` (resultado de acción), `ProgressBar.warning` (medidor pasado del tope).
+- Cambiado en `Assets/Styles/Colors.axaml`: `NeutralBrush` light `#6B7280`→`#4B5563`, dark `#9CA3AF`→`#D1D5DB` (el pill neutral daba ≈4,1:1 y ≈3,5:1; ahora ≈6:1). Solo lo usa `Border.Pill.neutral`.
+- Patrón nuevo en `SettingsView.axaml`: `DataTemplate` `UsageMeter` (`LicenseUsageLine`) reutilizado para Socios y Sedes.
+- Para uso de dev: tono encendido con `Classes.success="{Binding Ok}" Classes.danger="{Binding !Ok}"` sobre `Classes="Feedback"`.
+
+**Pendiente / abierto:** UX6–UX12 en `docs/TASKS.md` (tokens de tono sin AA, `ActiveColorBrushConverter` en el dashboard, hints con `Opacity`, aviso de PIN, feedback inline de "Copiar", **UX11 decisión del usuario: origen de updates editable o con valor por defecto**, "Reiniciar ahora" tras "Después"). Capturas a revisar por qa: `10-configuracion`, `10b-configuracion-licencia-otra-pc`, `24-shell-actualizacion-lista` (falta dark, sidebar colapsada, uso excedido y backup con atención).
 
 ---
 

@@ -3,7 +3,7 @@ using GymForge.Domain.Events;
 
 namespace GymForge.Domain.Entities;
 
-public class Membership : BaseEntity
+public class Membership : BaseEntity, ISiteScoped, IAuditable
 {
     public Guid MemberId { get; private set; }
     public Guid MembershipTypeId { get; private set; }
@@ -18,7 +18,12 @@ public class Membership : BaseEntity
     public DateOnly? FreezeStart { get; private set; }
     public DateOnly? FreezeEnd { get; private set; }
     public string? FreezeReason { get; private set; }
+    /// <summary>Acumulado histórico de días congelados (informativo; no se reinicia).</summary>
     public int FreezeCountUsed { get; private set; }
+    /// <summary>Días congelados en el año calendario <see cref="FreezeYear"/>; es lo que topea el cupo anual.</summary>
+    public int FreezeDaysUsedYear { get; private set; }
+    /// <summary>Año calendario del cupo en curso (0 = nunca se congeló).</summary>
+    public int FreezeYear { get; private set; }
 
     // Billing
     public DateOnly? NextBillingDate { get; private set; }
@@ -78,7 +83,13 @@ public class Membership : BaseEntity
         AddDomainEvent(new MembershipActivatedEvent(Id, MemberId));
     }
 
-    public void Freeze(DateOnly freezeStart, DateOnly freezeEnd, string reason, int maxFreezeDaysPerYear = 90)
+    /// <summary>
+    /// Congela la membresía y extiende el vencimiento por los días pedidos. El cupo es anual
+    /// (año calendario de <paramref name="freezeStart"/>) y se acumula por membresía.
+    /// </summary>
+    public void Freeze(
+        DateOnly freezeStart, DateOnly freezeEnd, string reason,
+        int maxFreezeDaysPerYear = Company.DefaultMaxFreezeDaysPerYear)
     {
         if (Status != MembershipStatus.Active)
             throw new InvalidOperationException("Solo se pueden congelar membresías activas.");
@@ -87,10 +98,19 @@ public class Membership : BaseEntity
         if (requestedDays <= 0)
             throw new ArgumentException("La fecha de fin del congelamiento debe ser posterior al inicio.");
 
+        int year = freezeStart.Year;
+        int usedThisYear = FreezeYear == year ? FreezeDaysUsedYear : 0;
+        if (usedThisYear + requestedDays > maxFreezeDaysPerYear)
+            throw new InvalidOperationException(
+                $"Supera el tope de {maxFreezeDaysPerYear} días de congelamiento por año " +
+                $"(usados {usedThisYear}, solicitados {requestedDays}).");
+
         Status = MembershipStatus.Frozen;
         FreezeStart = freezeStart;
         FreezeEnd = freezeEnd;
         FreezeReason = reason;
+        FreezeYear = year;
+        FreezeDaysUsedYear = usedThisYear + requestedDays;
         FreezeCountUsed += requestedDays;
 
         if (EndDate.HasValue)
@@ -100,15 +120,37 @@ public class Membership : BaseEntity
         AddDomainEvent(new MembershipFrozenEvent(Id, MemberId, freezeStart, freezeEnd));
     }
 
-    public void Unfreeze()
+    /// <summary>
+    /// Reactiva la membresía. Si se descongela antes de <see cref="FreezeEnd"/>, deshace la extensión
+    /// del vencimiento por los días que no se consumieron y devuelve ese cupo.
+    /// </summary>
+    public void Unfreeze(DateOnly today)
     {
         if (Status != MembershipStatus.Frozen)
             throw new InvalidOperationException("La membresía no está congelada.");
 
+        if (FreezeStart is { } start && FreezeEnd is { } end && today < end)
+        {
+            // Si el freeze todavía no empezó no se consumió nada: se devuelve el período completo.
+            var consumedUntil = today > start ? today : start;
+            ReleaseUnusedFreezeDays(consumedUntil, end);
+        }
+
         Status = MembershipStatus.Active;
         FreezeStart = null;
         FreezeEnd = null;
+        FreezeReason = null;
         UpdatedAt = DateTime.UtcNow;
+    }
+
+    private void ReleaseUnusedFreezeDays(DateOnly consumedUntil, DateOnly freezeEnd)
+    {
+        int unusedDays = freezeEnd.DayNumber - consumedUntil.DayNumber;
+        if (EndDate.HasValue)
+            EndDate = EndDate.Value.AddDays(-unusedDays);
+
+        FreezeDaysUsedYear = Math.Max(0, FreezeDaysUsedYear - unusedDays);
+        FreezeCountUsed = Math.Max(0, FreezeCountUsed - unusedDays);
     }
 
     public void Cancel(string reason)

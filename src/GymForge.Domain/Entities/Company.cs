@@ -2,6 +2,8 @@ namespace GymForge.Domain.Entities;
 
 public class Company : BaseEntity
 {
+    public const int DefaultMaxFreezeDaysPerYear = 90;
+
     public string LegalName { get; private set; } = string.Empty;
     public string TaxId { get; private set; } = string.Empty;
     public string? LogoUrl { get; private set; }
@@ -14,6 +16,8 @@ public class Company : BaseEntity
     /// <summary>Clave de licencia firmada (null = tier Free).</summary>
     public string? LicenseKey { get; private set; }
     public string BrandColorHex { get; private set; } = "#6366F1";
+    /// <summary>Tope de días de congelamiento de membresía por año calendario.</summary>
+    public int MaxFreezeDaysPerYear { get; private set; } = DefaultMaxFreezeDaysPerYear;
     public bool IsActive { get; private set; } = true;
 
     public ICollection<Site> Sites { get; private set; } = [];
@@ -59,6 +63,15 @@ public class Company : BaseEntity
     public void SetFiscalConfig(string fiscalConfigJson)
     {
         FiscalConfigJson = fiscalConfigJson;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void SetFreezePolicy(int maxFreezeDaysPerYear)
+    {
+        if (maxFreezeDaysPerYear < 0)
+            throw new ArgumentException("El tope no puede ser negativo.", nameof(maxFreezeDaysPerYear));
+
+        MaxFreezeDaysPerYear = maxFreezeDaysPerYear;
         UpdatedAt = DateTime.UtcNow;
     }
 

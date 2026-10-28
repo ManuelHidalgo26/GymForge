@@ -2,7 +2,7 @@ using GymForge.Domain.Enums;
 
 namespace GymForge.Domain.Entities;
 
-public class Staff : BaseEntity
+public class Staff : BaseEntity, ITenantScoped, IAuditable
 {
     public Guid CompanyId { get; private set; }
     public string SiteIdsJson { get; private set; } = "[]";

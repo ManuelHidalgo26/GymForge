@@ -1,4 +1,5 @@
 using GymForge.Application;
+using GymForge.Application.Interfaces;
 using GymForge.Application.UseCases.Access;
 using GymForge.Desktop.ViewModels.Cash;
 using GymForge.Desktop.ViewModels.Charges;
@@ -33,6 +34,10 @@ public static class ServiceCollectionExtensions
         // Conecta Microsoft.Extensions.Logging al Serilog estático (seeder, repos, etc.)
         services.AddLogging(builder => builder.AddSerilog(dispose: false));
         services.AddApplication();
+        // El DbContext filtra por empresa+sede (tenant de la sesión viva) y audita con el cajero logueado.
+        services.AddSingleton<ICurrentTenant, SessionTenantProvider>();
+        services.AddSingleton<SessionCurrentUser>();
+        services.AddSingleton<ICurrentUser>(sp => sp.GetRequiredService<SessionCurrentUser>());
         services.AddInfrastructure(connectionString);
 
         // Gatekeeper
@@ -43,6 +48,10 @@ public static class ServiceCollectionExtensions
         // ── Session ───────────────────────────────────────────────────────────
         // Singleton: tenant + sede activa + cajero + turno de caja en curso
         services.AddSingleton<SessionContext>();
+
+        // ── Mantenimiento diario ──────────────────────────────────────────────
+        // Singleton: lo arranca Program.cs y queda corriendo mientras la app esté abierta
+        services.AddSingleton<DailyMaintenanceHost>();
 
         // ── Recibos ───────────────────────────────────────────────────────────
         // Genera y abre el recibo PDF de cada cobro

@@ -16,6 +16,11 @@ public class CompanyConfiguration : IEntityTypeConfiguration<Company>
         builder.Property(c => c.Timezone).HasMaxLength(50);
         builder.Property(c => c.BrandColorHex).HasMaxLength(10);
         builder.Property(c => c.LogoUrl).HasMaxLength(500);
+        // El default de la columna cubre las filas previas a la migración; ValueGeneratedNever evita que
+        // EF trate un tope explícito de 0 (freeze deshabilitado) como "sin valor" y lo pise con el default.
+        builder.Property(c => c.MaxFreezeDaysPerYear)
+            .HasDefaultValue(Company.DefaultMaxFreezeDaysPerYear)
+            .ValueGeneratedNever();
 
         builder.HasMany(c => c.Sites)
             .WithOne(s => s.Company)

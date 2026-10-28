@@ -2,7 +2,7 @@ using GymForge.Domain.Enums;
 
 namespace GymForge.Domain.Entities;
 
-public class ClassDescription : BaseEntity
+public class ClassDescription : BaseEntity, ITenantScoped
 {
     public Guid CompanyId { get; private set; }
     public string Name { get; private set; } = string.Empty;
@@ -22,7 +22,7 @@ public class ClassDescription : BaseEntity
         new() { CompanyId = companyId, Name = name, DefaultDurationMin = durationMin, DefaultCapacity = capacity };
 }
 
-public class ClassSchedule : BaseEntity
+public class ClassSchedule : BaseEntity, ISiteScoped
 {
     public Guid ClassDescriptionId { get; private set; }
     public Guid? InstructorId { get; private set; }
@@ -74,7 +74,7 @@ public class ClassSchedule : BaseEntity
         };
 }
 
-public class Booking : BaseEntity
+public class Booking : BaseEntity, ITenantScoped, IAuditable
 {
     public Guid MemberId { get; private set; }
     public Guid ClassScheduleId { get; private set; }

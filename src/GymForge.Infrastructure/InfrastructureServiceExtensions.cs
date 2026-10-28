@@ -1,5 +1,7 @@
 using GymForge.Application.Interfaces;
+using GymForge.Application.UseCases.Maintenance;
 using GymForge.Infrastructure.Persistence;
+using GymForge.Infrastructure.Persistence.Interceptors;
 using GymForge.Infrastructure.Repositories;
 using GymForge.Infrastructure.Seed;
 using GymForge.Infrastructure.Services;
@@ -18,9 +20,13 @@ public static class InfrastructureServiceExtensions
         this IServiceCollection services,
         string connectionString)
     {
-        services.AddDbContext<GymForgeDbContext>(opts =>
+        // El interceptor de auditoría depende de ICurrentUser / ICurrentTenant (los registra el host antes
+        // de AddInfrastructure) y se resuelve por scope: de ahí el overload (sp, opts) de AddDbContext.
+        services.AddScoped<AuditSaveChangesInterceptor>();
+        services.AddDbContext<GymForgeDbContext>((sp, opts) =>
             opts.UseSqlite(connectionString,
-                sql => sql.MigrationsAssembly(typeof(GymForgeDbContext).Assembly.GetName().Name)));
+                    sql => sql.MigrationsAssembly(typeof(GymForgeDbContext).Assembly.GetName().Name))
+                .AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>()));
 
         // Resguardo y recuperación de la base local (singleton: tiene la ruta de la DB).
         services.AddSingleton(sp => new DatabaseBackupService(
@@ -36,6 +42,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IMemberRepository, MemberRepository>();
         services.AddScoped<IMembershipRepository, MembershipRepository>();
         services.AddScoped<IChargeRepository, ChargeRepository>();
+        services.AddScoped<IMemberCreditRepository, MemberCreditRepository>();
         services.AddScoped<IAccessLogRepository, AccessLogRepository>();
         services.AddScoped<IStaffRepository, StaffRepository>();
         services.AddScoped<IShiftRepository, ShiftRepository>();
@@ -58,6 +65,12 @@ public static class InfrastructureServiceExtensions
         services.AddSingleton<INotificationSender, LogNotificationSender>();
         services.AddSingleton<GymForge.Application.UseCases.Dunning.DunningConfig>();
         services.AddScoped<GymForge.Application.UseCases.Dunning.DunningService>();
+
+        // Mantenimiento diario con catch-up: vence membresías, marca mora y dispara el dunning.
+        // El checkpoint es singleton: guarda en archivo el último día local procesado.
+        services.AddScoped<DailyMaintenanceService>();
+        services.AddScoped<IDailyMaintenanceRunner, DailyMaintenanceRunner>();
+        services.AddSingleton<IMaintenanceCheckpoint, FileMaintenanceCheckpoint>();
 
         services.AddScoped<DatabaseSeeder>();
 

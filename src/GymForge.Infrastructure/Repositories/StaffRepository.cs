@@ -13,8 +13,10 @@ public class StaffRepository : IStaffRepository
     public async Task<Staff?> GetByIdAsync(Guid id, CancellationToken ct = default) =>
         await _db.Staff.FirstOrDefaultAsync(s => s.Id == id, ct);
 
+    // Participa del bootstrap/login (SessionContext y PIN): corre antes de que haya un tenant activo.
     public async Task<IReadOnlyList<Staff>> GetActiveByCompanyAsync(Guid companyId, CancellationToken ct = default) =>
         await _db.Staff
+            .IgnoreQueryFilters()
             .Where(s => s.CompanyId == companyId && s.IsActive)
             .ToListAsync(ct);
 

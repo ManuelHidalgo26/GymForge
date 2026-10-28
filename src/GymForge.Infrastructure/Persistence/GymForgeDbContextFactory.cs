@@ -10,6 +10,6 @@ public class GymForgeDbContextFactory : IDesignTimeDbContextFactory<GymForgeDbCo
     {
         var optionsBuilder = new DbContextOptionsBuilder<GymForgeDbContext>();
         optionsBuilder.UseSqlite("Data Source=gymforge_design.db");
-        return new GymForgeDbContext(optionsBuilder.Options);
+        return new GymForgeDbContext(optionsBuilder.Options, new AmbientTenantProvider());
     }
 }

@@ -5,6 +5,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GymForge.Infrastructure.Repositories;
 
+/// <summary>
+/// Resolución del tenant (empresas y sedes): corre ANTES de que haya un tenant activo, y
+/// SiteHasDataAsync inspecciona sedes que no son la activa. Por eso sus lecturas de entidades
+/// filtradas usan IgnoreQueryFilters; el límite de empresa lo marcan los predicados explícitos.
+/// </summary>
 public class SiteRepository : ISiteRepository
 {
     private readonly GymForgeDbContext _db;
@@ -15,6 +20,7 @@ public class SiteRepository : ISiteRepository
 
     public async Task<IReadOnlyList<Site>> GetByCompanyAsync(Guid companyId, CancellationToken ct = default) =>
         await _db.Sites
+            .IgnoreQueryFilters()
             .Where(s => s.CompanyId == companyId && s.IsActive)
             .OrderBy(s => s.Name)
             .ToListAsync(ct);
@@ -23,17 +29,17 @@ public class SiteRepository : ISiteRepository
         await _db.Companies.FirstOrDefaultAsync(c => c.Id == companyId, ct);
 
     public async Task<Site?> GetSiteAsync(Guid siteId, CancellationToken ct = default) =>
-        await _db.Sites.FirstOrDefaultAsync(s => s.Id == siteId, ct);
+        await _db.Sites.IgnoreQueryFilters().FirstOrDefaultAsync(s => s.Id == siteId, ct);
 
     public void RemoveSite(Site site) => _db.Sites.Remove(site);
 
     public async Task<bool> SiteHasDataAsync(Guid siteId, CancellationToken ct = default) =>
-        await _db.Members.AnyAsync(m => m.SiteId == siteId, ct) ||
-        await _db.Shifts.AnyAsync(s => s.SiteId == siteId, ct) ||
-        await _db.Payments.AnyAsync(p => p.SiteId == siteId, ct);
+        await _db.Members.IgnoreQueryFilters().AnyAsync(m => m.SiteId == siteId, ct) ||
+        await _db.Shifts.IgnoreQueryFilters().AnyAsync(s => s.SiteId == siteId, ct) ||
+        await _db.Payments.IgnoreQueryFilters().AnyAsync(p => p.SiteId == siteId, ct);
 
     public async Task<int> CountActiveSitesAsync(Guid companyId, CancellationToken ct = default) =>
-        await _db.Sites.CountAsync(s => s.CompanyId == companyId && s.IsActive, ct);
+        await _db.Sites.IgnoreQueryFilters().CountAsync(s => s.CompanyId == companyId && s.IsActive, ct);
 
     public async Task AddCompanyAsync(Company company, CancellationToken ct = default) =>
         await _db.Companies.AddAsync(company, ct);

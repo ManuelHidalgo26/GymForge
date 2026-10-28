@@ -2,7 +2,7 @@ using GymForge.Domain.Enums;
 
 namespace GymForge.Domain.Entities;
 
-public class Shift : BaseEntity
+public class Shift : BaseEntity, ISiteScoped, IAuditable
 {
     public Guid? RegisterId { get; private set; }
     public Guid CashierId { get; private set; }
@@ -66,7 +66,7 @@ public class Shift : BaseEntity
     }
 }
 
-public class CashMovement : BaseEntity
+public class CashMovement : BaseEntity, IAuditable
 {
     public Guid ShiftId { get; private set; }
     public CashMovementType Type { get; private set; }

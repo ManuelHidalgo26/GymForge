@@ -1,3 +1,5 @@
+using System.Reflection;
+using GymForge.Application.Interfaces;
 using GymForge.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -5,7 +7,11 @@ namespace GymForge.Infrastructure.Persistence;
 
 public class GymForgeDbContext : DbContext
 {
-    public GymForgeDbContext(DbContextOptions<GymForgeDbContext> options) : base(options) { }
+    // Tenant vivo para los query filters: EF lo lee en cada ejecución (no queda fijo en el modelo cacheado).
+    private readonly ICurrentTenant _tenant;
+
+    public GymForgeDbContext(DbContextOptions<GymForgeDbContext> options, ICurrentTenant tenant)
+        : base(options) => _tenant = tenant;
 
     // Multi-tenancy
     public DbSet<Company> Companies => Set<Company>();
@@ -21,6 +27,7 @@ public class GymForgeDbContext : DbContext
     public DbSet<Charge> Charges => Set<Charge>();
     public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<PaymentAllocation> PaymentAllocations => Set<PaymentAllocation>();
+    public DbSet<MemberCreditMovement> MemberCreditMovements => Set<MemberCreditMovement>();
 
     // Classes
     public DbSet<ClassDescription> ClassDescriptions => Set<ClassDescription>();
@@ -57,6 +64,8 @@ public class GymForgeDbContext : DbContext
         // Apply all configurations in this assembly
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(GymForgeDbContext).Assembly);
 
+        ApplyTenantFilters(modelBuilder);
+
         // SQLite: use TEXT for DateOnly
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
@@ -67,6 +76,44 @@ public class GymForgeDbContext : DbContext
             }
         }
     }
+
+    /// <summary>
+    /// Aislamiento multi-tenant por defecto: toda lectura LINQ se filtra por el tenant activo según el
+    /// marker de la entidad (ISiteScoped = empresa+sede, ITenantScoped = empresa). Company, los hijos sin
+    /// CompanyId (se alcanzan por su padre ya filtrado) y las escrituras no se filtran. Para una lectura
+    /// cross-tenant legítima hay que pedir IgnoreQueryFilters() de forma explícita.
+    /// Al crear el modelo EF avisa (PossibleIncorrectRequiredNavigationWithQueryFilterInteractionWarning)
+    /// de esos hijos sin filtro propio; es esperado: nunca existen fuera de un padre del mismo tenant.
+    /// </summary>
+    private void ApplyTenantFilters(ModelBuilder modelBuilder)
+    {
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes().ToList())
+        {
+            var clrType = entityType.ClrType;
+            if (typeof(ISiteScoped).IsAssignableFrom(clrType))
+                InvokeFilter(nameof(ApplySiteFilter), clrType, modelBuilder);
+            else if (typeof(ITenantScoped).IsAssignableFrom(clrType))
+                InvokeFilter(nameof(ApplyCompanyFilter), clrType, modelBuilder);
+        }
+
+        // Ejercicios: biblioteca global (sin tenant) + los propios de la empresa.
+        modelBuilder.Entity<Exercise>()
+            .HasQueryFilter(e => e.TenantId == null || e.TenantId == _tenant.CompanyId);
+    }
+
+    private void InvokeFilter(string filterMethodName, Type entityClrType, ModelBuilder modelBuilder) =>
+        typeof(GymForgeDbContext)
+            .GetMethod(filterMethodName, BindingFlags.NonPublic | BindingFlags.Instance)!
+            .MakeGenericMethod(entityClrType)
+            .Invoke(this, [modelBuilder]);
+
+    // Los filtros leen _tenant (miembro de instancia): EF lo parametriza por ejecución y cachea un único modelo.
+    private void ApplyCompanyFilter<T>(ModelBuilder modelBuilder) where T : class, ITenantScoped =>
+        modelBuilder.Entity<T>().HasQueryFilter(e => e.CompanyId == _tenant.CompanyId);
+
+    private void ApplySiteFilter<T>(ModelBuilder modelBuilder) where T : class, ISiteScoped =>
+        modelBuilder.Entity<T>().HasQueryFilter(
+            e => e.CompanyId == _tenant.CompanyId && e.SiteId == _tenant.SiteId);
 
     public override int SaveChanges()
     {

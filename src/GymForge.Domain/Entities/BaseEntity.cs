@@ -12,9 +12,3 @@ public abstract class BaseEntity
     protected void AddDomainEvent(object domainEvent) => _domainEvents.Add(domainEvent);
     public void ClearDomainEvents() => _domainEvents.Clear();
 }
-
-public abstract class TenantEntity : BaseEntity
-{
-    public Guid CompanyId { get; protected set; }
-    public Guid SiteId { get; protected set; }
-}

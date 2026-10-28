@@ -2,7 +2,7 @@ using GymForge.Domain.Enums;
 
 namespace GymForge.Domain.Entities;
 
-public class Routine : BaseEntity
+public class Routine : BaseEntity, ITenantScoped
 {
     public Guid MemberId { get; private set; }
     public Guid? TrainerId { get; private set; }

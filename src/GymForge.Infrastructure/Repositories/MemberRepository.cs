@@ -94,6 +94,15 @@ public class MemberRepository : IMemberRepository
         return await query.CountAsync(ct);
     }
 
+    // El límite de licencia es por empresa (todas las sedes): no se filtra por la sede activa.
     public async Task<int> CountByCompanyAsync(Guid companyId, CancellationToken ct = default) =>
-        await _db.Members.CountAsync(m => m.CompanyId == companyId, ct);
+        await _db.Members.IgnoreQueryFilters().CountAsync(m => m.CompanyId == companyId, ct);
+
+    // Lectura company-wide (todas las sedes); el límite de tenant es el CompanyId explícito.
+    public async Task<IReadOnlyList<Member>> GetByStatusAsync(
+        Guid companyId, MemberStatus status, CancellationToken ct = default) =>
+        await _db.Members
+            .IgnoreQueryFilters()
+            .Where(m => m.CompanyId == companyId && m.Status == status)
+            .ToListAsync(ct);
 }

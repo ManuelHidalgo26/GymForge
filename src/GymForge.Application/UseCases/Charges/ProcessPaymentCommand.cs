@@ -71,13 +71,19 @@ public class ProcessPaymentCommandHandler : IRequestHandler<ProcessPaymentComman
     private readonly IChargeRepository _chargeRepo;
     private readonly IPaymentRepository _paymentRepo;
     private readonly ICashRegister _cashRegister;
+    private readonly IMemberCreditRepository _memberCreditRepo;
+    private readonly IArrearsRelief _arrearsRelief;
 
     public ProcessPaymentCommandHandler(
-        IChargeRepository chargeRepo, IPaymentRepository paymentRepo, ICashRegister cashRegister)
+        IChargeRepository chargeRepo, IPaymentRepository paymentRepo,
+        ICashRegister cashRegister, IMemberCreditRepository memberCreditRepo,
+        IArrearsRelief arrearsRelief)
     {
         _chargeRepo = chargeRepo;
         _paymentRepo = paymentRepo;
         _cashRegister = cashRegister;
+        _memberCreditRepo = memberCreditRepo;
+        _arrearsRelief = arrearsRelief;
     }
 
     public async Task<PaymentDto> Handle(ProcessPaymentCommand cmd, CancellationToken ct)
@@ -87,11 +93,8 @@ public class ProcessPaymentCommandHandler : IRequestHandler<ProcessPaymentComman
             cmd.CashierId, cmd.Amount, cmd.Method,
             cmd.ShiftId, cmd.CardLast4, cmd.CardBrand, cmd.ProcessorTxId);
 
-        // Get pending charges to allocate to
-        var pendingCharges = cmd.ChargeIds?.Any() == true
-            ? (await Task.WhenAll(cmd.ChargeIds.Select(id => _chargeRepo.GetByIdAsync(id, ct))))
-                .Where(c => c is not null).Cast<Charge>().ToList()
-            : (await _chargeRepo.GetPendingAsync(cmd.MemberId, ct)).ToList();
+        var pendingCharges = await ChargeSelection.LoadAsync(
+            _chargeRepo, cmd.CompanyId, cmd.MemberId, cmd.ChargeIds, ct);
 
         // Allocate payment oldest-first
         decimal remaining = cmd.Amount;
@@ -113,8 +116,26 @@ public class ProcessPaymentCommandHandler : IRequestHandler<ProcessPaymentComman
         await _paymentRepo.AddAsync(payment, ct);
         await _cashRegister.PostIfCashAsync(
             cmd.Method, cmd.ShiftId, CashMovementCategory.Membership, cmd.Amount, payment.Id, ct);
+        await CreditOverpaymentAsync(cmd, payment.Id, remaining, ct);
+
+        // Si saldó su última deuda vencida, el socio sale de mora en la misma transacción del cobro.
+        await _arrearsRelief.ClearIfSettledAsync(cmd.CompanyId, cmd.MemberId, ct);
 
         await _chargeRepo.SaveChangesAsync(ct);
         return PaymentDto.FromEntity(payment);
+    }
+
+    /// <summary>
+    /// El excedente no se pierde: queda como saldo a favor del socio. Se agrega al mismo DbContext que el
+    /// pago, así que un único SaveChanges los persiste en una transacción.
+    /// </summary>
+    private async Task CreditOverpaymentAsync(
+        ProcessPaymentCommand cmd, Guid paymentId, decimal overpayment, CancellationToken ct)
+    {
+        if (overpayment <= 0) return;
+
+        var credit = MemberCreditMovement.CreditFromOverpayment(
+            cmd.CompanyId, cmd.SiteId, cmd.MemberId, overpayment, paymentId);
+        await _memberCreditRepo.AddAsync(credit, ct);
     }
 }

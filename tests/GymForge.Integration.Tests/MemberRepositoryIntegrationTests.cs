@@ -14,19 +14,14 @@ namespace GymForge.Integration.Tests;
 public class MemberRepositoryIntegrationTests : IAsyncLifetime
 {
     private GymForgeDbContext _db = null!;
+    private AmbientTenantProvider _tenant = null!;
     private MemberRepository _repo = null!;
     private Guid _companyId;
     private Site _site = null!;
 
     public async Task InitializeAsync()
     {
-        var opts = new DbContextOptionsBuilder<GymForgeDbContext>()
-            .UseSqlite("Data Source=:memory:")
-            .Options;
-
-        _db = new GymForgeDbContext(opts);
-        await _db.Database.OpenConnectionAsync();
-        await _db.Database.EnsureCreatedAsync();
+        _db = TestDb.Create(out _tenant);
         _repo = new MemberRepository(_db);
 
         // Tenant raíz: Company + Site. Member.SiteId → Site y Site.CompanyId → Company son FK
@@ -39,6 +34,7 @@ public class MemberRepositoryIntegrationTests : IAsyncLifetime
 
         _companyId = company.Id;
         _site = site;
+        _tenant.Set(company.Id, site.Id);
     }
 
     public async Task DisposeAsync()
@@ -147,9 +143,12 @@ public class MemberRepositoryIntegrationTests : IAsyncLifetime
         await _db.Members.AddAsync(m2);
         await _db.SaveChangesAsync();
 
-        // Cada tenant resuelve su propio socio aunque el tag colisione.
-        var fromTenant1 = await _repo.FindByTagSerialAsync("SHARED-TAG", _companyId);
-        var fromTenant2 = await _repo.FindByTagSerialAsync("SHARED-TAG", otherCompany.Id);
+        // Cada tenant resuelve su propio socio aunque el tag colisione: el scope fija cuál es el activo.
+        Member? fromTenant1, fromTenant2;
+        using (_tenant.BeginScope(_companyId, _site.Id))
+            fromTenant1 = await _repo.FindByTagSerialAsync("SHARED-TAG", _companyId);
+        using (_tenant.BeginScope(otherCompany.Id, otherSite.Id))
+            fromTenant2 = await _repo.FindByTagSerialAsync("SHARED-TAG", otherCompany.Id);
 
         fromTenant1!.LastName.Should().Be("Uno");
         fromTenant2!.LastName.Should().Be("Dos");
@@ -157,5 +156,22 @@ public class MemberRepositoryIntegrationTests : IAsyncLifetime
         // El listado del tenant 1 nunca incluye socios de otro tenant.
         var page = await _repo.GetPagedAsync(_companyId, _site.Id, 1, 50);
         page.Should().OnlyContain(m => m.CompanyId == _companyId);
+    }
+
+    [Fact]
+    public async Task GlobalFilter_ShowsOnlyTheActiveTenant_WithoutAnExplicitWhere()
+    {
+        await _repo.AddAsync(Member.Create(_companyId, _site.Id, "Tenant", "Uno",
+            DocumentType.DNI, "40000001", Gender.Male));
+        var otherCompany = Company.Create("Otra Empresa", "30-99999999-7");
+        var otherSite = Site.Create(otherCompany.Id, "Otra Sede", "Calle 2");
+        await _db.Companies.AddAsync(otherCompany);
+        await _db.Sites.AddAsync(otherSite);
+        await _db.Members.AddAsync(Member.Create(otherCompany.Id, otherSite.Id, "Tenant", "Dos",
+            DocumentType.DNI, "40000002", Gender.Male));
+        await _db.SaveChangesAsync();
+
+        using (_tenant.BeginScope(_companyId, _site.Id))
+            (await _db.Members.ToListAsync()).Should().ContainSingle().Which.CompanyId.Should().Be(_companyId);
     }
 }

@@ -14,15 +14,12 @@ namespace GymForge.Integration.Tests;
 public class CatalogRepositoryTests : IAsyncLifetime
 {
     private GymForgeDbContext _db = null!;
+    private AmbientTenantProvider _tenant = null!;
 
-    public async Task InitializeAsync()
+    public Task InitializeAsync()
     {
-        var opts = new DbContextOptionsBuilder<GymForgeDbContext>()
-            .UseSqlite("Data Source=:memory:")
-            .Options;
-        _db = new GymForgeDbContext(opts);
-        await _db.Database.OpenConnectionAsync();
-        await _db.Database.EnsureCreatedAsync();
+        _db = TestDb.Create(out _tenant);
+        return Task.CompletedTask;
     }
 
     public async Task DisposeAsync()
@@ -35,6 +32,7 @@ public class CatalogRepositoryTests : IAsyncLifetime
     public async Task GetMembershipTypes_OrdersByPrice_WithoutSqliteError()
     {
         var companyId = Guid.NewGuid();
+        _tenant.Set(companyId, Guid.NewGuid());
         await _db.MembershipTypes.AddRangeAsync(
             MembershipType.Create(companyId, "Anual", MembershipBasis.Renewal, 320_000m, 12, "Month"),
             MembershipType.Create(companyId, "Mensual", MembershipBasis.Renewal, 35_000m, 1, "Month"),

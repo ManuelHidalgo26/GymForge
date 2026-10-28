@@ -19,9 +19,11 @@ public class AccessLogConfiguration : IEntityTypeConfiguration<AccessLog>
         builder.HasIndex(a => new { a.SiteId, a.SwipedAt }).HasDatabaseName("IX_AccessLogs_SiteSwipedAt");
         builder.HasIndex(a => a.TagSerial).HasDatabaseName("IX_AccessLogs_TagSerial");
 
+        // FK opcional: un swipe de credencial desconocida queda registrado sin socio.
         builder.HasOne(a => a.Member)
             .WithMany(m => m.AccessLogs)
             .HasForeignKey(a => a.MemberId)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.ToTable("AccessLogs");

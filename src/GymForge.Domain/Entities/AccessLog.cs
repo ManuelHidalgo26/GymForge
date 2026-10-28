@@ -3,9 +3,10 @@ using GymForge.Domain.Enums;
 namespace GymForge.Domain.Entities;
 
 /// <summary>Append-only. Never update or delete rows.</summary>
-public class AccessLog : BaseEntity
+public class AccessLog : BaseEntity, ISiteScoped
 {
-    public Guid MemberId { get; private set; }
+    /// <summary>Null cuando la credencial no corresponde a ningún socio (ver <see cref="DeniedUnknown"/>).</summary>
+    public Guid? MemberId { get; private set; }
     public Guid? MembershipId { get; private set; }
     public int DoorId { get; private set; }
     public Guid SiteId { get; private set; }
@@ -18,7 +19,7 @@ public class AccessLog : BaseEntity
     public AccessDirection Direction { get; private set; }
 
     // Navigation (no delete cascade — access logs outlive members)
-    public Member Member { get; private set; } = null!;
+    public Member? Member { get; private set; }
 
     private AccessLog() { }
 
@@ -61,6 +62,30 @@ public class AccessLog : BaseEntity
             CompanyId = companyId,
             SiteId = siteId,
             MemberId = memberId,
+            DoorId = doorId,
+            Method = method,
+            Direction = AccessDirection.In,
+            TagSerial = tagSerial,
+            AccessGranted = false,
+            DenialReason = reason,
+            SwipedAt = DateTime.UtcNow
+        };
+    }
+
+    /// <summary>Acceso denegado por credencial no reconocida (sin socio asociado). Append-only.</summary>
+    public static AccessLog DeniedUnknown(
+        Guid companyId,
+        Guid siteId,
+        int doorId,
+        AccessMethod method,
+        AccessDenialReason reason,
+        string? tagSerial = null)
+    {
+        return new AccessLog
+        {
+            CompanyId = companyId,
+            SiteId = siteId,
+            MemberId = null,
             DoorId = doorId,
             Method = method,
             Direction = AccessDirection.In,

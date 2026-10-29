@@ -83,7 +83,8 @@ public class MemberRepository : IMemberRepository
         await _db.Memberships.AnyAsync(m => m.MemberId == memberId, ct) ||
         await _db.Charges.AnyAsync(c => c.MemberId == memberId, ct) ||
         await _db.Payments.AnyAsync(p => p.MemberId == memberId, ct) ||
-        await _db.AccessLogs.AnyAsync(a => a.MemberId == memberId, ct);
+        await _db.AccessLogs.AnyAsync(a => a.MemberId == memberId, ct) ||
+        await _db.NotificationLogs.AnyAsync(n => n.MemberId == memberId, ct);
 
     public async Task<int> CountAsync(
         Guid companyId, Guid siteId, MemberStatus? status = null, CancellationToken ct = default)

@@ -50,7 +50,7 @@ public class DailyMaintenanceRunnerTests
     {
         var dunning = new DunningService(
             _charges, _members, Substitute.For<INotificationSender>(),
-            _tenant, new DunningConfig { Enabled = false });
+            Substitute.For<INotificationLogRepository>(), _tenant, new DunningConfig { Enabled = false });
         var service = new DailyMaintenanceService(_memberships, _charges, _members, dunning, _tenant);
         var calendar = new CompanyCalendar(_clock, _sites, _calendarLog);
         return new DailyMaintenanceRunner(_sites, service, _checkpoint, calendar, _log);

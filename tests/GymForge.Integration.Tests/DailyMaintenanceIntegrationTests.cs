@@ -54,7 +54,7 @@ public class DailyMaintenanceIntegrationTests : IAsyncLifetime
     private DailyMaintenanceService NewService(bool dunningEnabled = false) => new(
         new MembershipRepository(_db), new ChargeRepository(_db), new MemberRepository(_db),
         new DunningService(
-            new ChargeRepository(_db), new MemberRepository(_db), _sender, _tenant,
+            new ChargeRepository(_db), new MemberRepository(_db), _sender, new NotificationLogRepository(_db), _tenant,
             new DunningConfig { Enabled = dunningEnabled }),
         _tenant);
 
@@ -511,6 +511,28 @@ public class DailyMaintenanceIntegrationTests : IAsyncLifetime
         await runner.RunPendingAsync();
 
         _sender.Messages.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task MaintenanceDay_ReprocessingTheSameDay_DoesNotResendTheReminder_AndLogsItOnce()
+    {
+        // El checkpoint puede obligar a repetir un día: el NotificationLog evita el aviso duplicado.
+        var member = await AddMemberAsync(_site, mobile: "+5491155550000");
+        var charge = await AddChargeAsync(member, daysOverdue: 7);
+
+        var first = await NewService(dunningEnabled: true).RunForCompanyDayAsync(_company, Today);
+        var second = await NewService(dunningEnabled: true).RunForCompanyDayAsync(_company, Today);
+
+        first.DunningSent.Should().Be(1);
+        second.DunningSent.Should().Be(0);
+        _sender.Messages.Should().ContainSingle();
+
+        _db.ChangeTracker.Clear();
+        var log = await _db.NotificationLogs.IgnoreQueryFilters().SingleAsync();
+        log.ChargeId.Should().Be(charge.Id);
+        log.SiteId.Should().Be(_site.Id);
+        log.StageDaysOverdue.Should().Be(7);
+        log.Trigger.Should().Be(NotificationTrigger.Automatic);
     }
 
     private DailyMaintenanceRunner NewRunner(IMaintenanceCheckpoint checkpoint, bool dunningEnabled) => new(

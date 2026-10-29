@@ -218,7 +218,7 @@ public class TenantAdversarialIntegrationTests : IAsyncLifetime
         var sender = Substitute.For<INotificationSender>();
         sender.SendAsync(Arg.Any<NotificationMessage>(), Arg.Any<CancellationToken>()).Returns(true);
         var service = new DunningService(
-            new ChargeRepository(_db), new MemberRepository(_db), sender, _tenant,
+            new ChargeRepository(_db), new MemberRepository(_db), sender, new NotificationLogRepository(_db), _tenant,
             new DunningConfig { Enabled = true });
 
         var sent = await service.RunAsync(_companyA.Id, AsOf, "Gym A");

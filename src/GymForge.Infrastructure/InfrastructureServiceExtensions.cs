@@ -53,6 +53,7 @@ public static class InfrastructureServiceExtensions
         services.AddScoped<IChargeRepository, ChargeRepository>();
         services.AddScoped<IMemberCreditRepository, MemberCreditRepository>();
         services.AddScoped<IAccessLogRepository, AccessLogRepository>();
+        services.AddScoped<INotificationLogRepository, NotificationLogRepository>();
         services.AddScoped<IStaffRepository, StaffRepository>();
         services.AddScoped<IShiftRepository, ShiftRepository>();
         services.AddScoped<ISiteRepository, SiteRepository>();

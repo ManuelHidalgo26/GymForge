@@ -53,6 +53,7 @@ public class GymForgeDbContext : DbContext
     public DbSet<AccessLog> AccessLogs => Set<AccessLog>();
     public DbSet<Shift> Shifts => Set<Shift>();
     public DbSet<CashMovement> CashMovements => Set<CashMovement>();
+    public DbSet<NotificationLog> NotificationLogs => Set<NotificationLog>();
 
     // Audit
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();

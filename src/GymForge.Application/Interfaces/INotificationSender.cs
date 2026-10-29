@@ -1,6 +1,6 @@
-namespace GymForge.Application.Interfaces;
+using GymForge.Domain.Enums;
 
-public enum NotificationChannel { WhatsApp, Sms }
+namespace GymForge.Application.Interfaces;
 
 /// <summary>Mensaje saliente a un socio (recordatorio de cobro/vencimiento).</summary>
 public record NotificationMessage(

@@ -44,7 +44,9 @@ public class DailyMaintenanceServiceTests
 
     private DailyMaintenanceService Sut(bool dunningEnabled = false) => new(
         _memberships, _charges, _members,
-        new DunningService(_charges, _members, _sender, _tenant, new DunningConfig { Enabled = dunningEnabled }),
+        new DunningService(
+            _charges, _members, _sender, Substitute.For<INotificationLogRepository>(), _tenant,
+            new DunningConfig { Enabled = dunningEnabled }),
         _tenant);
 
     private void HaveFreezeEnded(params Membership[] memberships) =>

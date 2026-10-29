@@ -1,12 +1,16 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
+using Avalonia.Input;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using GymForge.Application.Interfaces;
 using GymForge.Application.UseCases.Access;
 using GymForge.Application.UseCases.Cash;
 using GymForge.Application.UseCases.Catalog;
 using GymForge.Application.UseCases.Charges;
+using GymForge.Application.UseCases.Dunning;
 using GymForge.Application.UseCases.Licensing;
 using GymForge.Application.UseCases.Members;
 using GymForge.Application.UseCases.Sales;
@@ -14,9 +18,11 @@ using GymForge.Application.UseCases.Staff;
 using GymForge.Desktop;
 using GymForge.Desktop.Services;
 using GymForge.Desktop.ViewModels.Cash;
+using GymForge.Desktop.ViewModels.Collections;
 using GymForge.Desktop.ViewModels.Dashboard;
 using GymForge.Desktop.ViewModels.Members;
 using GymForge.Desktop.Views.Cash;
+using GymForge.Desktop.Views.Collections;
 using GymForge.Desktop.Views.Dashboard;
 using GymForge.Desktop.Views.Members;
 using GymForge.Domain.Enums;
@@ -58,6 +64,7 @@ await session.InitializeAsync();
 var samplePaymentId = await SeedSampleMembersAsync(sp, session);
 var sampleScheduleId = await SeedSampleClassesAsync(sp, session);
 var sampleRoutineMemberId = await SeedSampleRoutineAsync(sp, session);
+await SeedSampleDebtorsAsync(sp, session);
 
 // Con una clave real en el entorno, Configuración se captura en estado licenciado
 // (prueba de punta a punta de la clave pública embebida en LicenseService).
@@ -148,9 +155,18 @@ GymForge.Desktop.ViewModels.Settings.SettingsViewModel NewSettingsViewModel() =>
     sp.GetRequiredService<CurrentLicense>(),
     sp.GetRequiredService<IDataTransfer>(), sp.GetRequiredService<IDatabaseBackup>(),
     sp.GetRequiredService<ILocalSettings>(), sp.GetRequiredService<IMachineFingerprint>(),
-    sp.GetRequiredService<GymForge.Desktop.ViewModels.Shared.UpdateViewModel>());
+    sp.GetRequiredService<GymForge.Desktop.ViewModels.Shared.UpdateViewModel>(),
+    sp.GetRequiredService<DunningConfig>());
 
-Capture("10-configuracion", new GymForge.Desktop.Views.Settings.SettingsView { DataContext = NewSettingsViewModel() }, 1180, 2500, outDir);
+Capture("10-configuracion", new GymForge.Desktop.Views.Settings.SettingsView { DataContext = NewSettingsViewModel() }, 1180, 3300, outDir);
+
+// Config en dark, con un error de Cobranzas visible (el danger global ahora usa DangerTextBrush).
+var settingsWithError = NewSettingsViewModel();
+settingsWithError.DunningMessage = "Los días de vencido no se pueden repetir entre etapas.";
+settingsWithError.DunningSaved = false;
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+Capture("10-configuracion-dark", new GymForge.Desktop.Views.Settings.SettingsView { DataContext = settingsWithError }, 1180, 3300, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
 
 // Licencia emitida para otra PC: solo avisa, el plan sigue activo (se restablece el estado después).
 var liveLicense = sp.GetRequiredService<CurrentLicense>();
@@ -158,7 +174,7 @@ var licenseBeforeMismatch = liveLicense.State;
 liveLicense.State = new LicenseState(
     LicenseStatus.Active, "Pro", 3, 1000, DateOnly.FromDateTime(DateTime.Today).AddMonths(6),
     "Gimnasio Demo", MachineMismatch: true);
-Capture("10b-configuracion-licencia-otra-pc", new GymForge.Desktop.Views.Settings.SettingsView { DataContext = NewSettingsViewModel() }, 1180, 2500, outDir);
+Capture("10b-configuracion-licencia-otra-pc", new GymForge.Desktop.Views.Settings.SettingsView { DataContext = NewSettingsViewModel() }, 1180, 3300, outDir);
 liveLicense.State = licenseBeforeMismatch;
 
 // Clases v2: agenda semanal con un horario seleccionado y sus reservas
@@ -203,6 +219,79 @@ Pump(kioskVm.ProcessCredentialAsync("33444555", AccessMethod.Manual));  // sin m
 Pump(kioskVm.ProcessCredentialAsync("31222333", AccessMethod.Manual));  // permitido
 Pump(kioskVm.ProcessCredentialAsync("30111222", AccessMethod.Manual));  // permitido (queda en pantalla)
 Capture("13-checkin-aprobado", new GymForge.Desktop.Views.Checkin.CheckInKioskView { DataContext = kioskVm }, 1180, 760, outDir);
+
+// Morosos: deudores de la sede (con un recordatorio ya enviado a uno) y el cobro con el modal de pago.
+var collectionsVm = sp.GetRequiredService<CollectionsViewModel>();
+Pump(collectionsVm.LoadCommand.ExecuteAsync(null));
+Capture("25-morosos", new CollectionsView { DataContext = collectionsVm }, 1180, 720, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+Capture("25-morosos-dark", new CollectionsView { DataContext = collectionsVm }, 1180, 720, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+collectionsVm.ChargeCommand.Execute(collectionsVm.Rows.First());
+Capture("26-morosos-cobrar", new CollectionsView { DataContext = collectionsVm }, 1180, 720, outDir);
+collectionsVm.PaymentModal!.CancelCommand.Execute(null);
+
+// Morosos con la caja cerrada + intento de cobro: los dos avisos apilados. A 1126 px (1366 con sidebar) y con
+// un nombre de etapa de 40 caracteres. La vista recarga (y limpia el mensaje) al recibir el DataContext,
+// así que el cobro se intenta recién cuando terminó de cargar.
+var dunningConfig = sp.GetRequiredService<DunningConfig>();
+var stagesBefore = dunningConfig.Stages;
+dunningConfig.Stages = stagesBefore
+    .Select(s => s.DaysOverdue == 15 ? s with { Label = "Etapa con nombre muy largo de 40 chars!!" } : s)
+    .ToList();
+session.SetOpenShift(null);
+
+CollectionsView NewViewWithBlockedCharge()
+{
+    var vm = sp.GetRequiredService<CollectionsViewModel>();
+    var view = new CollectionsView { DataContext = vm };
+    for (int i = 0; i < 25; i++) { Dispatcher.UIThread.RunJobs(); Thread.Sleep(10); }
+    vm.ChargeCommand.Execute(vm.Rows.First());
+    return view;
+}
+
+Capture("25c-morosos-avisos-apilados-1126", NewViewWithBlockedCharge(), 1126, 720, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+Capture("25c-morosos-avisos-apilados-1126-dark", NewViewWithBlockedCharge(), 1126, 720, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+dunningConfig.Stages = stagesBefore;
+
+// Morosos sin turno de caja (InfoBar informativo) y sede sin deudores (estado vacío, sin total), en light y dark.
+// Cambiar de sede cierra la referencia al turno: hay que reabrirlo al volver a la sede principal.
+var mainSite = session.CurrentSite;
+session.CurrentSite = session.Sites[1];
+var emptyCollectionsVm = sp.GetRequiredService<CollectionsViewModel>();
+Pump(emptyCollectionsVm.LoadCommand.ExecuteAsync(null));
+Capture("25b-morosos-vacio-caja-cerrada", new CollectionsView { DataContext = emptyCollectionsVm }, 1180, 720, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+Capture("25b-morosos-vacio-caja-cerrada-dark", new CollectionsView { DataContext = emptyCollectionsVm }, 1180, 720, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+session.CurrentSite = mainSite;
+session.SetOpenShift(shift.Id);
+
+// Morosos ordenado desde el encabezado: clic en "Deuda" (SortMemberPath anidado "Dto.TotalOutstanding" sobre una
+// columna de plantilla). Orden esperado de menor a mayor: Carlos ($28.000), Diego ($35.000), Sofía ($70.000).
+var sortVm = sp.GetRequiredService<CollectionsViewModel>();
+var sortWindow = new Window
+{
+    Width = 1180, Height = 720, SystemDecorations = SystemDecorations.None,
+    Content = new CollectionsView { DataContext = sortVm },
+};
+sortWindow.Show();
+for (int i = 0; i < 25; i++) { Dispatcher.UIThread.RunJobs(); Thread.Sleep(10); }
+var deudaHeader = sortWindow.GetVisualDescendants().OfType<DataGridColumnHeader>().First(h => h.Content as string == "Deuda");
+var headerCenter = deudaHeader.TranslatePoint(new Point(deudaHeader.Bounds.Width / 2, deudaHeader.Bounds.Height / 2), sortWindow)!.Value;
+sortWindow.MouseDown(headerCenter, MouseButton.Left);
+sortWindow.MouseUp(headerCenter, MouseButton.Left);
+for (int i = 0; i < 25; i++) { Dispatcher.UIThread.RunJobs(); Thread.Sleep(10); }
+CaptureWindow("25d-morosos-orden-por-deuda", sortWindow, outDir);
+
+// Cobros: el saldo total pasó a DangerTextBrush; se revisa en light y dark junto con Morosos.
+var chargesVm = sp.GetRequiredService<GymForge.Desktop.ViewModels.Charges.ChargesViewModel>();
+Capture("27-cobros", new GymForge.Desktop.Views.Charges.ChargesView { DataContext = chargesVm }, 1180, 720, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+Capture("27-cobros-dark", new GymForge.Desktop.Views.Charges.ChargesView { DataContext = chargesVm }, 1180, 720, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
 
 // Dashboard premium: KPIs con tendencia + gráfico 30 días + actividad del día
 Pump(dashboardVm.LoadCommand.ExecuteAsync(null));
@@ -390,6 +479,33 @@ static async Task<Guid> SeedSampleRoutineAsync(IServiceProvider sp, SessionConte
     }
 
     return member.Id;
+}
+
+/// <summary>Cuotas vencidas para la pantalla de morosos: dos socios con celular y uno sin, y un recordatorio ya enviado.</summary>
+static async Task SeedSampleDebtorsAsync(IServiceProvider sp, SessionContext session)
+{
+    var mediator = sp.GetRequiredService<IMediator>();
+    var memberRepo = sp.GetRequiredService<IMemberRepository>();
+    var today = DateOnly.FromDateTime(DateTime.Today);
+
+    var members = await memberRepo.GetPagedAsync(session.CompanyId, session.SiteId, 1, 10);
+    var sofia = members.First(m => m.DocumentNumber == "33444555");
+    var diego = members.First(m => m.DocumentNumber == "34555666");
+    var carlos = await mediator.Send(new CreateMemberCommand(
+        session.CompanyId, session.SiteId, "Carlos", "Suárez",
+        DocumentType.DNI, "35666777", Gender.Male, null, null, new DateOnly(1990, 3, 2)));
+
+    async Task OweAsync(Guid memberId, int daysOverdue, decimal amount) =>
+        await mediator.Send(new CreateChargeCommand(
+            session.CompanyId, session.SiteId, memberId, null, ConceptType.MembershipFee,
+            "Cuota mensual", amount, today.AddDays(-daysOverdue)));
+
+    await OweAsync(sofia.Id, 12, 35_000m);
+    await OweAsync(sofia.Id, 42, 35_000m);
+    await OweAsync(diego.Id, 4, 35_000m);
+    await OweAsync(carlos.Id, 20, 28_000m);
+
+    await mediator.Send(new SendWhatsAppReminderCommand(session.CompanyId, session.SiteId, sofia.Id));
 }
 
 static async Task<Guid> SeedSampleClassesAsync(IServiceProvider sp, SessionContext session)

@@ -10,6 +10,7 @@ using FluentValidation;
 using GymForge.Application.Interfaces;
 using GymForge.Application.Services;
 using GymForge.Application.UseCases.Access;
+using GymForge.Application.UseCases.Dunning;
 using GymForge.Application.UseCases.Licensing;
 using GymForge.Application.UseCases.Settings;
 using GymForge.Application.UseCases.Staff;
@@ -19,7 +20,7 @@ using MediatR;
 
 namespace GymForge.Desktop.ViewModels.Settings;
 
-/// <summary>Configuración: datos del gimnasio, sedes (ABM), reglas de acceso, licencia y datos (backup/migración).</summary>
+/// <summary>Configuración: datos del gimnasio, sedes (ABM), reglas de acceso, cobranzas, licencia y datos (backup/migración).</summary>
 public partial class SettingsViewModel : ObservableObject
 {
     private readonly IMediator _mediator;
@@ -27,6 +28,7 @@ public partial class SettingsViewModel : ObservableObject
     private readonly IMemberRepository _memberRepo;
     private readonly SessionContext _session;
     private readonly GatekeeperConfig _gatekeeper;
+    private readonly DunningConfig _dunning;
     private readonly CurrentLicense _license;
     private readonly IDataTransfer _dataTransfer;
     private readonly IDatabaseBackup _backup;
@@ -66,6 +68,12 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private int _antiPassbackMinutes;
     [ObservableProperty] private string? _accessMessage;
     [ObservableProperty] private bool _accessSaved;
+
+    // Cobranzas y recordatorios: cobro automático + las 5 etapas (días, nombre y mensaje)
+    [ObservableProperty] private bool _dunningEnabled;
+    [ObservableProperty] private ObservableCollection<DunningStageEditor> _dunningStages = [];
+    [ObservableProperty] private string? _dunningMessage;
+    [ObservableProperty] private bool _dunningSaved;
 
     // Seguridad — PIN del cajero/admin
     [ObservableProperty] private string _currentPin = string.Empty;
@@ -120,7 +128,7 @@ public partial class SettingsViewModel : ObservableObject
         IMediator mediator, ISiteRepository siteRepo, IMemberRepository memberRepo,
         SessionContext session, GatekeeperConfig gatekeeper, CurrentLicense license,
         IDataTransfer dataTransfer, IDatabaseBackup backup, ILocalSettings localSettings,
-        IMachineFingerprint fingerprint, UpdateViewModel updates)
+        IMachineFingerprint fingerprint, UpdateViewModel updates, DunningConfig dunning)
     {
         _mediator = mediator;
         _siteRepo = siteRepo;
@@ -133,6 +141,7 @@ public partial class SettingsViewModel : ObservableObject
         _localSettings = localSettings;
         _fingerprint = fingerprint;
         Updates = updates;
+        _dunning = dunning;
     }
 
     [RelayCommand]
@@ -157,6 +166,10 @@ public partial class SettingsViewModel : ObservableObject
         StopOnOweAmount = _gatekeeper.StopOnOweAmount;
         WarnOnOweAmount = _gatekeeper.WarnOnOweAmount;
         AntiPassbackMinutes = _gatekeeper.AntiPassbackMinutes;
+
+        DunningEnabled = _dunning.Enabled;
+        DunningStages = new ObservableCollection<DunningStageEditor>(
+            _dunning.Stages.OrderBy(s => s.DaysOverdue).Select(s => new DunningStageEditor(s)));
 
         IsDefaultPinInUse = await _mediator.Send(new CheckDefaultPinQuery(_session.CompanyId), ct);
 
@@ -664,5 +677,28 @@ public partial class SettingsViewModel : ObservableObject
             AccessMessage = string.Join("\n", vex.Errors.Select(e => e.ErrorMessage));
         }
         catch (Exception ex) { AccessMessage = ex.Message; }
+    }
+
+    // ── Cobranzas y recordatorios ───────────────────────────────────────────
+
+    [RelayCommand]
+    private async Task SaveDunningAsync()
+    {
+        DunningMessage = null;
+        DunningSaved = false;
+        try
+        {
+            var stages = DunningStages
+                .Select(s => new DunningStageInput(s.DaysOverdue, s.Label, s.Template))
+                .ToList();
+            await _mediator.Send(new UpdateDunningSettingsCommand(_session.CompanyId, DunningEnabled, stages));
+            DunningSaved = true;
+            DunningMessage = "Cobranzas guardadas.";
+        }
+        catch (ValidationException vex)
+        {
+            DunningMessage = string.Join("\n", vex.Errors.Select(e => e.ErrorMessage));
+        }
+        catch (Exception ex) { DunningMessage = ex.Message; }
     }
 }

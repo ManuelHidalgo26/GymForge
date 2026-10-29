@@ -27,6 +27,9 @@
             <SolidColorBrush x:Key="WarningTintBrush" Color="#24F59E0B" />
             <SolidColorBrush x:Key="DangerBrush" Color="#DC2626" />
             <SolidColorBrush x:Key="DangerTintBrush" Color="#24EF4444" />
+            <!-- Danger como TEXTO sobre card/inset (montos en mora, mensajes de error). DangerBrush (#DC2626)
+                 da ≈4,8:1 sobre blanco pero queda justo; #B91C1C ≈ 6,5:1 sobre la card y ≈ 5,9:1 sobre el inset. -->
+            <SolidColorBrush x:Key="DangerTextBrush" Color="#B91C1C" />
             <!-- Info (azul): estados "en pausa" como Congelado. Texto #1D4ED8 sobre su tinte ≈ 5.7:1 -->
             <SolidColorBrush x:Key="InfoBrush" Color="#1D4ED8" />
             <SolidColorBrush x:Key="InfoTintBrush" Color="#243B82F6" />
@@ -51,6 +54,8 @@
             <SolidColorBrush x:Key="WarningTintBrush" Color="#26F59E0B" />
             <SolidColorBrush x:Key="DangerBrush" Color="#F87171" />
             <SolidColorBrush x:Key="DangerTintBrush" Color="#26EF4444" />
+            <!-- #F87171 sobre la card oscura (#3A3A3C) da ≈4,1:1 (< AA); #FCA5A5 ≈ 6,0:1 sobre la card y ≈ 5,0:1 sobre el inset -->
+            <SolidColorBrush x:Key="DangerTextBrush" Color="#FCA5A5" />
             <SolidColorBrush x:Key="InfoBrush" Color="#93C5FD" />
             <SolidColorBrush x:Key="InfoTintBrush" Color="#263B82F6" />
             <!-- Neutral: #9CA3AF sobre su tinte en una card oscura daba ~3,5:1; #D1D5DB ≈ 6:1 -->

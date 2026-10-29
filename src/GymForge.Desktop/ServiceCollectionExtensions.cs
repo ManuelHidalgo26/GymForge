@@ -63,6 +63,10 @@ public static class ServiceCollectionExtensions
         // Genera y abre el recibo PDF de cada cobro
         services.AddSingleton<ReceiptService>();
 
+        // ── WhatsApp ──────────────────────────────────────────────────────────
+        // Abre los links wa.me de los recordatorios de cobranza (el handler arma el link, la UI lo abre)
+        services.AddSingleton<IWhatsAppLinkSender, WhatsAppLinkSender>();
+
         // ── Onboarding (primer arranque) ──────────────────────────────────────
         services.AddTransient<ViewModels.Onboarding.OnboardingViewModel>();
 
@@ -91,6 +95,9 @@ public static class ServiceCollectionExtensions
 
         // ── Cash register ─────────────────────────────────────────────────────
         services.AddTransient<CashViewModel>();
+
+        // ── Collections (morosos) ─────────────────────────────────────────────
+        services.AddTransient<ViewModels.Collections.CollectionsViewModel>();
 
         // ── Plans ─────────────────────────────────────────────────────────────
         services.AddTransient<ViewModels.Plans.PlansViewModel>();

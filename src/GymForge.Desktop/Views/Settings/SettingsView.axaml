@@ -289,6 +289,107 @@
                     </StackPanel>
                 </Border>
 
+                <!-- ── Cobranzas y recordatorios ──────────────────────────── -->
+                <Border Classes="Card" Padding="24">
+                    <StackPanel Spacing="16">
+
+                        <StackPanel Spacing="3">
+                            <TextBlock Text="Cobranzas y recordatorios" FontSize="15" FontWeight="SemiBold" />
+                            <TextBlock Classes="FormLabel" TextWrapping="Wrap"
+                                       Text="Cómo les avisás a los socios que tienen cuotas vencidas." />
+                        </StackPanel>
+
+                        <!-- Aviso automático. La aclaración de que hoy NO envía va en un InfoBar (no en texto
+                             tenue): es lo que más se puede malinterpretar al prender el interruptor. -->
+                        <StackPanel Spacing="8">
+                            <ToggleSwitch IsChecked="{Binding DunningEnabled}"
+                                          OnContent="Aviso automático encendido"
+                                          OffContent="Aviso automático apagado"
+                                          AutomationProperties.Name="Aviso automático de cobranzas" />
+                            <fa:InfoBar IsOpen="True"
+                                        IsClosable="False"
+                                        Severity="Informational"
+                                        Title="Hoy el aviso automático no envía mensajes"
+                                        Message="Solo deja registro de lo que enviaría. Para avisar por WhatsApp usá el botón Recordar de la pantalla Morosos: funciona siempre, con el aviso automático encendido o apagado." />
+                        </StackPanel>
+
+                        <Border Classes="Divider" />
+
+                        <!-- Mensajes por etapa. Orden de tabulación = orden visual: días → nombre → mensaje, etapa por etapa. -->
+                        <StackPanel Spacing="12">
+                            <StackPanel Spacing="3">
+                                <TextBlock Text="Mensajes por etapa" FontSize="13" FontWeight="SemiBold" />
+                                <TextBlock Classes="FormLabel" TextWrapping="Wrap"
+                                           Text="Son los mismos para el aviso automático y para el botón Recordar de Morosos. Cada etapa se usa a partir de los días de vencido que indiques." />
+                            </StackPanel>
+
+                            <!-- Ayuda de datos: lista de dos columnas (dato en monoespaciado + qué es). -->
+                            <Border Classes="Inset">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Datos que podés usar en el mensaje" FontSize="12" FontWeight="SemiBold" />
+                                    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+                                          ColumnSpacing="16" RowSpacing="4">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Classes="Mono" FontSize="12" FontWeight="SemiBold" Text="{}{nombre}" />
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Classes="FormLabel" Text="Nombre del socio" />
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Classes="Mono" FontSize="12" FontWeight="SemiBold" Text="{}{gimnasio}" />
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Classes="FormLabel" Text="Nombre del gimnasio" />
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Classes="Mono" FontSize="12" FontWeight="SemiBold" Text="{}{monto}" />
+                                        <TextBlock Grid.Row="2" Grid.Column="1" Classes="FormLabel" Text="Saldo adeudado" />
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Classes="Mono" FontSize="12" FontWeight="SemiBold" Text="{}{vencimiento}" />
+                                        <TextBlock Grid.Row="3" Grid.Column="1" Classes="FormLabel" Text="Fecha de vencimiento" />
+                                        <TextBlock Grid.Row="4" Grid.Column="0" Classes="Mono" FontSize="12" FontWeight="SemiBold" Text="{}{dias}" />
+                                        <TextBlock Grid.Row="4" Grid.Column="1" Classes="FormLabel" Text="Días de atraso" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <ItemsControl ItemsSource="{Binding DunningStages}"
+                                          AutomationProperties.Name="Etapas de recordatorio">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Spacing="12" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:DunningStageEditor">
+                                        <Border Classes="Inset">
+                                            <StackPanel Spacing="10">
+                                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                                    <StackPanel Spacing="4">
+                                                        <TextBlock Text="Días de vencido" Classes="FormLabel" />
+                                                        <NumericUpDown Value="{Binding DaysOverdue}" Minimum="1" Maximum="365"
+                                                                       Increment="1" Width="130"
+                                                                       AutomationProperties.Name="{Binding Label, StringFormat='Días de vencido de la etapa {0}'}" />
+                                                    </StackPanel>
+                                                    <StackPanel Spacing="4">
+                                                        <TextBlock Text="Nombre de la etapa" Classes="FormLabel" />
+                                                        <TextBox Text="{Binding Label}" MaxLength="40" Width="240"
+                                                                 AutomationProperties.Name="Nombre de la etapa" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                                <StackPanel Spacing="4">
+                                                    <TextBlock Text="Mensaje" Classes="FormLabel" />
+                                                    <TextBox Text="{Binding Template}" MaxLength="1000"
+                                                             AcceptsReturn="True" TextWrapping="Wrap" MinHeight="72"
+                                                             AutomationProperties.Name="{Binding Label, StringFormat='Mensaje de la etapa {0}'}" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+
+                        <TextBlock Text="{Binding DunningMessage}" Classes="Feedback"
+                                   Classes.success="{Binding DunningSaved}"
+                                   Classes.danger="{Binding !DunningSaved}"
+                                   IsVisible="{Binding DunningMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                   AutomationProperties.LiveSetting="Polite" />
+                        <Button Content="Guardar cobranzas" Command="{Binding SaveDunningCommand}" Classes="Primary"
+                                HorizontalAlignment="Left" />
+                    </StackPanel>
+                </Border>
+
                 <!-- ── Licencia ───────────────────────────────────────────── -->
                 <Border Classes="Card" Padding="24">
                     <StackPanel Spacing="16">

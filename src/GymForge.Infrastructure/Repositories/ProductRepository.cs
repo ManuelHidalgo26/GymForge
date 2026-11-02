@@ -30,6 +30,12 @@ public class ProductRepository : IProductRepository
         await _db.Products.FirstOrDefaultAsync(
             p => p.CompanyId == companyId && p.Sku == sku, ct);
 
+    public async Task<Product?> GetByBarcodeAsync(Guid companyId, string barcode, CancellationToken ct = default) =>
+        await _db.Products
+            .Where(p => p.CompanyId == companyId && p.IsActive && p.Barcode == barcode)
+            .OrderBy(p => p.Name)
+            .FirstOrDefaultAsync(ct);
+
     public async Task<StockBySite?> GetStockAsync(Guid productId, Guid siteId, CancellationToken ct = default) =>
         await _db.StockBySite.FirstOrDefaultAsync(s => s.ProductId == productId && s.SiteId == siteId, ct);
 

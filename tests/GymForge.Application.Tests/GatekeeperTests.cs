@@ -137,6 +137,112 @@ public class GatekeeperTests
             .FindByTagSerialAsync(Arg.Any<string>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
+    // ── Lector de códigos (AccessMethod.Barcode): tag del gimnasio, y si no hay, DNI ──────────
+
+    private static ValidateSwipeRequest BarcodeSwipe(string code) =>
+        new(code, AccessMethod.Barcode, 1, Guid.NewGuid(), Guid.NewGuid());
+
+    private async Task AssertNoDocumentLookupAsync() =>
+        await _memberRepo.DidNotReceive().FindByDocumentAsync(
+            Arg.Any<DocumentType>(), Arg.Any<string>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+
+    [Fact]
+    public async Task Barcode_ResolvesByTagSerial_AndLogsTheBarcodeMethod()
+    {
+        var member = MakeActiveMember();
+        ArrangeGrantableSwipe(member, MakeActiveMembership(member.Id));   // TAG001 → member
+
+        var result = await CreateSut().ValidateSwipeAsync(BarcodeSwipe("TAG001"));
+
+        result.Granted.Should().BeTrue();
+        result.MemberFullName.Should().Be("Juan Pérez");
+        await AssertNoDocumentLookupAsync();
+        await _accessLogRepo.Received(1).AppendAsync(
+            Arg.Is<AccessLog>(a => a.AccessGranted && a.Method == AccessMethod.Barcode && a.TagSerial == "TAG001"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Barcode_TagMatchWinsOverDni_EvenIfTheCodeLooksLikeOne()
+    {
+        var tagOwner = MakeActiveMember();
+        _memberRepo.FindByTagSerialAsync("12345678", Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns(tagOwner);
+        ArrangeGrantableSwipe(tagOwner, MakeActiveMembership(tagOwner.Id));
+
+        var result = await CreateSut().ValidateSwipeAsync(BarcodeSwipe("12345678"));
+
+        result.Granted.Should().BeTrue();
+        result.MemberId.Should().Be(tagOwner.Id);
+        await AssertNoDocumentLookupAsync();
+    }
+
+    [Fact]
+    public async Task Barcode_WithoutTag_FallsBackToDniWhenTheCodeLooksLikeOne()
+    {
+        var member = MakeActiveMember();   // DNI 12345678
+        ArrangeGrantableSwipe(member, MakeActiveMembership(member.Id));
+        var request = BarcodeSwipe("12345678");
+        _memberRepo.FindByTagSerialAsync("12345678", request.CompanyId, Arg.Any<CancellationToken>()).ReturnsNull();
+        _memberRepo.FindByDocumentAsync(DocumentType.DNI, "12345678", request.CompanyId, Arg.Any<CancellationToken>())
+            .Returns(member);
+
+        var result = await CreateSut().ValidateSwipeAsync(request);
+
+        result.Granted.Should().BeTrue();
+        result.MemberFullName.Should().Be("Juan Pérez");
+        await _accessLogRepo.Received(1).AppendAsync(
+            Arg.Is<AccessLog>(a => a.AccessGranted && a.Method == AccessMethod.Barcode),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Barcode_WithoutTag_NotDniShaped_DeniesAsTagUnknown_AndLogsIt()
+    {
+        _memberRepo.FindByTagSerialAsync("CARNET-X", Arg.Any<Guid>(), Arg.Any<CancellationToken>()).ReturnsNull();
+        var request = BarcodeSwipe("CARNET-X");
+
+        var result = await CreateSut().ValidateSwipeAsync(request);
+
+        result.Granted.Should().BeFalse();
+        result.DenialReason.Should().Be(AccessDenialReason.TagUnknown);
+        await AssertNoDocumentLookupAsync();
+        await _accessLogRepo.Received(1).AppendAsync(
+            Arg.Is<AccessLog>(a =>
+                !a.AccessGranted &&
+                a.MemberId == null &&
+                a.Method == AccessMethod.Barcode &&
+                a.DenialReason == AccessDenialReason.TagUnknown &&
+                a.TagSerial == "CARNET-X"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Barcode_DniShapedCodeThatIsNobodys_DeniesAsTagUnknown()
+    {
+        _memberRepo.FindByTagSerialAsync("99999999", Arg.Any<Guid>(), Arg.Any<CancellationToken>()).ReturnsNull();
+        _memberRepo.FindByDocumentAsync(DocumentType.DNI, "99999999", Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .ReturnsNull();
+
+        var result = await CreateSut().ValidateSwipeAsync(BarcodeSwipe("99999999"));
+
+        result.Granted.Should().BeFalse();
+        result.DenialReason.Should().Be(AccessDenialReason.TagUnknown);
+    }
+
+    [Fact]
+    public async Task RfidCard_WithDniShapedCode_DoesNotFallBackToDni()
+    {
+        _memberRepo.FindByTagSerialAsync("12345678", Arg.Any<Guid>(), Arg.Any<CancellationToken>()).ReturnsNull();
+
+        var result = await CreateSut().ValidateSwipeAsync(
+            new ValidateSwipeRequest("12345678", AccessMethod.RfidCard, 1, Guid.NewGuid(), Guid.NewGuid()));
+
+        result.Granted.Should().BeFalse();
+        result.DenialReason.Should().Be(AccessDenialReason.TagUnknown);
+        await AssertNoDocumentLookupAsync();
+    }
+
     // ── Tenant de la puerta ───────────────────────────────────────────────────
 
     [Fact]

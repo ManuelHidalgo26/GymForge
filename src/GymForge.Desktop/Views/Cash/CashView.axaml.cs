@@ -8,6 +8,7 @@ public partial class CashView : UserControl
     public CashView()
     {
         InitializeComponent();
+        PinKeypad.Entered += (_, _) => (DataContext as CashViewModel)?.LoginCommand.Execute(null);
     }
 
     protected override void OnDataContextChanged(EventArgs e)

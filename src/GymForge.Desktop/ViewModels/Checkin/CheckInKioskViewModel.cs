@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Avalonia.Media.Imaging;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GymForge.Application.UseCases.Access;
@@ -18,9 +19,11 @@ public partial class CheckInKioskViewModel : ObservableObject
     private const int DefaultDoorId = 1;
     private Timer? _autoCloseTimer;
 
-    [ObservableProperty] private KioskState _state = KioskState.Idle;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsGranted), nameof(IsDenied), nameof(IsIdle))]
+    private KioskState _state = KioskState.Idle;
     [ObservableProperty] private string _memberName = string.Empty;
-    [ObservableProperty] private string? _memberPhotoUrl;
+    [ObservableProperty] private Bitmap? _memberPhoto;
     [ObservableProperty] private string? _denialMessage;
     [ObservableProperty] private bool _hasDebtWarning;
     [ObservableProperty] private decimal _outstandingAmount;
@@ -78,7 +81,7 @@ public partial class CheckInKioskViewModel : ObservableObject
                 new ValidateSwipeRequest(credential, method, DefaultDoorId, _session.SiteId, _session.CompanyId));
 
             MemberName = decision.MemberFullName;
-            MemberPhotoUrl = decision.PhotoUrl;
+            MemberPhoto = PhotoBitmap.TryLoad(decision.PhotoUrl);
             HasDebtWarning = decision.HasDebtWarning;
             OutstandingAmount = decision.OutstandingAmount;
             LastAccessTime = DateTime.Now.ToString("HH:mm:ss");
@@ -97,6 +100,12 @@ public partial class CheckInKioskViewModel : ObservableObject
             StartCountdown();
         }
     }
+
+    /// <summary>
+    /// Un escaneo del lector de códigos: entra por el mismo Gatekeeper que la carga manual, con
+    /// <see cref="AccessMethod.Barcode"/>, que resuelve el código por credencial del gimnasio o por DNI.
+    /// </summary>
+    public Task ProcessScanAsync(string code) => ProcessCredentialAsync(code, AccessMethod.Barcode);
 
     private void AddHistoryRow(AccessDecision decision)
     {
@@ -121,7 +130,7 @@ public partial class CheckInKioskViewModel : ObservableObject
         _autoCloseTimer?.Dispose();
         State = KioskState.Idle;
         MemberName = string.Empty;
-        MemberPhotoUrl = null;
+        MemberPhoto = null;
         DenialMessage = null;
         HasDebtWarning = false;
         OutstandingAmount = 0;

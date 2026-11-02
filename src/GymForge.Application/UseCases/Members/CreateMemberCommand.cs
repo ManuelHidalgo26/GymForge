@@ -21,7 +21,8 @@ public record CreateMemberCommand(
     MemberSource Source = MemberSource.WalkIn,
     Guid? SalesRepId = null,
     bool MarketingConsent = false,
-    bool ActivateImmediately = false) : IRequest<MemberDto>;
+    bool ActivateImmediately = false,
+    string? TagSerial = null) : IRequest<MemberDto>;
 
 public class CreateMemberCommandValidator : AbstractValidator<CreateMemberCommand>
 {
@@ -32,6 +33,7 @@ public class CreateMemberCommandValidator : AbstractValidator<CreateMemberComman
         RuleFor(x => x.DocumentNumber).NotEmpty().MaximumLength(20);
         RuleFor(x => x.Email).EmailAddress().When(x => !string.IsNullOrEmpty(x.Email));
         RuleFor(x => x.Mobile).MaximumLength(30);
+        RuleFor(x => x.TagSerial).MaximumLength(CredentialEnrollment.MaxLength);
         RuleFor(x => x.BirthDate)
             .Must(d => !d.HasValue || d.Value <= DateOnly.FromDateTime(DateTime.Today.AddYears(-5)))
             .WithMessage("La fecha de nacimiento parece incorrecta.");
@@ -57,6 +59,11 @@ public class CreateMemberCommandHandler : IRequestHandler<CreateMemberCommand, M
                 $"Alcanzaste el límite de {_license.State.MaxMembers} socios del plan " +
                 $"{_license.State.Tier}. Activá una licencia en Configuración → Licencia.");
 
+        // Antes de crear nada: si la credencial ya es de otro socio, el alta no se hace.
+        var tagSerial = string.IsNullOrWhiteSpace(cmd.TagSerial) ? null : cmd.TagSerial.Trim();
+        if (tagSerial is not null)
+            await CredentialEnrollment.EnsureAvailableAsync(_repo, cmd.CompanyId, tagSerial, null, ct);
+
         var member = Member.Create(
             cmd.CompanyId,
             cmd.SiteId,
@@ -68,6 +75,8 @@ public class CreateMemberCommandHandler : IRequestHandler<CreateMemberCommand, M
 
         member.UpdateContact(cmd.Email, cmd.Mobile);
         member.CompleteProfile(cmd.BirthDate, cmd.Source, cmd.SalesRepId, cmd.MarketingConsent);
+        if (tagSerial is not null)
+            member.EnrollTag(tagSerial);
 
         // Alta directa como socio activo (mostrador); sin esto queda Prospecto
         // hasta que compre una membresía.

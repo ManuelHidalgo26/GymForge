@@ -5,6 +5,7 @@ using FluentValidation;
 using GymForge.Application.DTOs;
 using GymForge.Application.Interfaces;
 using GymForge.Application.UseCases.Catalog;
+using GymForge.Application.UseCases.Members;
 using GymForge.Application.UseCases.Sales;
 using GymForge.Desktop.Services;
 using GymForge.Domain.Enums;
@@ -45,6 +46,9 @@ public partial class RegisterSaleViewModel : ObservableObject
     [ObservableProperty] private string? _cardLast4;
     [ObservableProperty] private string? _errorMessage;
     [ObservableProperty] private bool _isSaving;
+
+    // Aviso de lo que hizo el último escaneo (producto elegido, socio elegido).
+    [ObservableProperty] private string? _scanMessage;
 
     public IReadOnlyList<PaymentMethod> Methods { get; } = Enum.GetValues<PaymentMethod>().ToList();
 
@@ -92,6 +96,72 @@ public partial class RegisterSaleViewModel : ObservableObject
             await _mediator.Send(new GetMembershipTypesQuery(_session.CompanyId), ct));
         Products = new ObservableCollection<ProductDto>(
             await _mediator.Send(new GetProductsQuery(_session.CompanyId), ct));
+    }
+
+    /// <summary>
+    /// Un escaneo del lector de códigos: primero se busca un producto por código de barras y, si no hay,
+    /// un socio (credencial del gimnasio o DNI). Nunca lanza: lo que sale mal queda en <see cref="ErrorMessage"/>.
+    /// </summary>
+    public async Task ScanAsync(string code, CancellationToken ct = default)
+    {
+        if (IsSaving || string.IsNullOrWhiteSpace(code)) return;
+
+        ErrorMessage = null;
+        ScanMessage = null;
+        try
+        {
+            if (await _mediator.Send(new FindProductByBarcodeQuery(_session.CompanyId, code), ct) is { } product)
+                SelectScannedProduct(product);
+            else if (await _mediator.Send(new FindMemberByCredentialQuery(_session.CompanyId, code), ct) is { } member)
+                SelectScannedMember(member);
+            else
+                ErrorMessage = $"No se reconoce el código {code}: no es de un producto ni de un socio.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+    }
+
+    // Escanear de nuevo el producto ya elegido suma una unidad; uno distinto arranca en 1.
+    private void SelectScannedProduct(ProductDto scanned)
+    {
+        Concept = SaleConcept.Product;
+
+        var product = Products.FirstOrDefault(p => p.Id == scanned.Id);
+        if (product is null)
+        {
+            product = scanned;
+            Products.Add(product);
+        }
+
+        if (SelectedProduct?.Id == product.Id)
+        {
+            Quantity += 1;
+        }
+        else
+        {
+            SelectedProduct = product;
+            Quantity = 1;
+        }
+
+        ScanMessage = $"Producto: {product.Name}";
+    }
+
+    private void SelectScannedMember(MemberDto scanned)
+    {
+        IsWalkIn = false;
+
+        // La lista trae solo los primeros 500 socios de la sede: el escaneado puede no estar.
+        var member = Members.FirstOrDefault(m => m.Id == scanned.Id);
+        if (member is null)
+        {
+            member = scanned;
+            Members.Add(member);
+        }
+
+        SelectedMember = member;
+        ScanMessage = $"Socio: {member.FullName}";
     }
 
     partial void OnConceptChanged(SaleConcept value)

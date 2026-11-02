@@ -871,8 +871,10 @@ namespace GymForge.Infrastructure.Migrations
 
                     b.HasIndex("SiteId");
 
-                    b.HasIndex("TagSerial")
-                        .HasDatabaseName("IX_Members_TagSerial");
+                    b.HasIndex("CompanyId", "TagSerial")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Members_CompanyTagSerial")
+                        .HasFilter("\"TagSerial\" IS NOT NULL AND \"TagSerial\" <> ''");
 
                     b.HasIndex("CompanyId", "SiteId", "Status")
                         .HasDatabaseName("IX_Members_CompanySiteStatus");

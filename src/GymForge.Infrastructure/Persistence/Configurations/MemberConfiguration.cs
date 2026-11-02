@@ -47,7 +47,12 @@ public class MemberConfiguration : IEntityTypeConfiguration<Member>
         builder.HasIndex(m => m.DocumentNumber).HasDatabaseName("IX_Members_Document");
         builder.HasIndex(m => m.Email).HasDatabaseName("IX_Members_Email");
         builder.HasIndex(m => new { m.CompanyId, m.SiteId, m.Status }).HasDatabaseName("IX_Members_CompanySiteStatus");
-        builder.HasIndex(m => m.TagSerial).HasDatabaseName("IX_Members_TagSerial");
+        // Credencial única por empresa (cualquier sede). El filtro deja afuera a los socios sin credencial
+        // (NULL o vacía), que son la mayoría; también sirve de índice para la búsqueda del scanner.
+        builder.HasIndex(m => new { m.CompanyId, m.TagSerial })
+            .IsUnique()
+            .HasFilter("\"TagSerial\" IS NOT NULL AND \"TagSerial\" <> ''")
+            .HasDatabaseName("UX_Members_CompanyTagSerial");
 
         builder.HasOne(m => m.Site)
             .WithMany(s => s.Members)

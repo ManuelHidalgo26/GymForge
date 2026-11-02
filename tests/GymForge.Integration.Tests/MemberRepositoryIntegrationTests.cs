@@ -1,4 +1,5 @@
 using FluentAssertions;
+using GymForge.Application.UseCases.Members;
 using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
 using GymForge.Infrastructure.Persistence;
@@ -156,6 +157,110 @@ public class MemberRepositoryIntegrationTests : IAsyncLifetime
         // El listado del tenant 1 nunca incluye socios de otro tenant.
         var page = await _repo.GetPagedAsync(_companyId, _site.Id, 1, 50);
         page.Should().OnlyContain(m => m.CompanyId == _companyId);
+    }
+
+    // ── Credencial única por empresa ──────────────────────────────────────────
+
+    private Member NewMember(string firstName, string dni, string? tag = null, Site? site = null, Guid? companyId = null)
+    {
+        var member = Member.Create(companyId ?? _companyId, (site ?? _site).Id, firstName, "Test",
+            DocumentType.DNI, dni, Gender.Female);
+        if (tag is not null) member.EnrollTag(tag);
+        return member;
+    }
+
+    private async Task<Site> AddSecondSiteAsync()
+    {
+        var site = Site.Create(_companyId, "Sede Norte", "Av. Test 456");
+        await _db.Sites.AddAsync(site);
+        await _db.SaveChangesAsync();
+        return site;
+    }
+
+    [Fact]
+    public async Task TagSerial_RepeatedInTheSameCompany_IsRejectedByTheUniqueIndex_EvenAcrossSites()
+    {
+        var otherSite = await AddSecondSiteAsync();
+        await _repo.AddAsync(NewMember("Ana", "50000001", tag: "CARNET-1"));
+        await _repo.AddAsync(NewMember("Beto", "50000002", tag: "CARNET-1", site: otherSite));
+
+        var act = () => _repo.SaveChangesAsync();
+
+        await act.Should().ThrowAsync<DbUpdateException>();
+    }
+
+    [Fact]
+    public async Task TagSerial_RepeatedInAnotherCompany_IsAllowed()
+    {
+        var otherCompany = Company.Create("Otra Empresa", "30-99999999-7");
+        var otherSite = Site.Create(otherCompany.Id, "Otra Sede", "Calle 2");
+        await _db.Companies.AddAsync(otherCompany);
+        await _db.Sites.AddAsync(otherSite);
+        await _repo.AddAsync(NewMember("Ana", "50000001", tag: "CARNET-1"));
+        await _db.Members.AddAsync(NewMember("Beto", "50000002", tag: "CARNET-1", site: otherSite, companyId: otherCompany.Id));
+
+        var act = () => _repo.SaveChangesAsync();
+
+        await act.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public async Task TagSerial_NullOrEmpty_IsNotSubjectToTheUniqueIndex()
+    {
+        await _repo.AddAsync(NewMember("Sin1", "50000001"));
+        await _repo.AddAsync(NewMember("Sin2", "50000002"));
+        await _repo.AddAsync(NewMember("Vacio1", "50000003", tag: ""));
+        await _repo.AddAsync(NewMember("Vacio2", "50000004", tag: ""));
+
+        var act = () => _repo.SaveChangesAsync();
+
+        await act.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public async Task IsTagSerialInUse_SeesAnotherSiteOfTheCompany_ButNeverAnotherCompany()
+    {
+        var otherSite = await AddSecondSiteAsync();
+        var otherCompany = Company.Create("Otra Empresa", "30-99999999-7");
+        var foreignSite = Site.Create(otherCompany.Id, "Otra Sede", "Calle 2");
+        await _db.Companies.AddAsync(otherCompany);
+        await _db.Sites.AddAsync(foreignSite);
+        await _repo.AddAsync(NewMember("Ana", "50000001", tag: "EN-OTRA-SEDE", site: otherSite));
+        await _db.Members.AddAsync(NewMember("Beto", "50000002", tag: "DE-OTRA-EMPRESA", site: foreignSite, companyId: otherCompany.Id));
+        await _db.SaveChangesAsync();
+
+        (await _repo.IsTagSerialInUseAsync(_companyId, "EN-OTRA-SEDE")).Should().BeTrue("la unicidad es por empresa, no por sede");
+        (await _repo.IsTagSerialInUseAsync(_companyId, "DE-OTRA-EMPRESA")).Should().BeFalse();
+        (await _repo.IsTagSerialInUseAsync(_companyId, "NO-EXISTE")).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task IsTagSerialInUse_CanExcludeTheMemberItself()
+    {
+        var ana = NewMember("Ana", "50000001", tag: "CARNET-1");
+        await _repo.AddAsync(ana);
+        await _repo.SaveChangesAsync();
+
+        (await _repo.IsTagSerialInUseAsync(_companyId, "CARNET-1", exceptMemberId: ana.Id)).Should().BeFalse();
+        (await _repo.IsTagSerialInUseAsync(_companyId, "CARNET-1", exceptMemberId: Guid.NewGuid())).Should().BeTrue();
+        (await _repo.IsTagSerialInUseAsync(_companyId, "CARNET-1")).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task AssignCredential_OfACredentialAlreadyTaken_IsRejectedBeforeReachingTheIndex()
+    {
+        var ana = NewMember("Ana", "50000001", tag: "CARNET-1");
+        var beto = NewMember("Beto", "50000002");
+        await _repo.AddAsync(ana);
+        await _repo.AddAsync(beto);
+        await _repo.SaveChangesAsync();
+        var handler = new AssignCredentialCommandHandler(_repo);
+
+        var act = () => handler.Handle(new AssignCredentialCommand(_companyId, beto.Id, "CARNET-1"), CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*otro socio*");
+        _db.ChangeTracker.Clear();
+        (await _db.Members.AsNoTracking().SingleAsync(m => m.Id == beto.Id)).TagSerial.Should().BeNull();
     }
 
     [Fact]

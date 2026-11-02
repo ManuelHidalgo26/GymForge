@@ -67,6 +67,11 @@ public static class ServiceCollectionExtensions
         // Abre los links wa.me de los recordatorios de cobranza (el handler arma el link, la UI lo abre)
         services.AddSingleton<IWhatsAppLinkSender, WhatsAppLinkSender>();
 
+        // ── Fotos de socios ───────────────────────────────────────────────────
+        // De dónde sale la imagen (archivo / portapapeles) y dónde se guarda: %LOCALAPPDATA%\GymForge\fotos
+        services.AddSingleton<IImagePicker, AvaloniaImagePicker>();
+        services.AddSingleton<IMemberPhotoStore>(_ => new MemberPhotoStore(MemberPhotoStore.DefaultDirectory()));
+
         // ── Onboarding (primer arranque) ──────────────────────────────────────
         services.AddTransient<ViewModels.Onboarding.OnboardingViewModel>();
 

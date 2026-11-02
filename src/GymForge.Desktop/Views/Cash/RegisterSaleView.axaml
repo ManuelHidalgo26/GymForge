@@ -11,6 +11,22 @@
 
         <TextBlock Text="Registrar cobro / venta" FontSize="18" FontWeight="SemiBold" />
 
+        <!-- Lector de códigos: la vista escucha los escaneos (WedgeKeyboardListener) y elige producto o socio.
+             Un solo lugar para el lector: la pista mientras no hay escaneo y, apenas llega uno, el resultado ("Código
+             leído · Producto: …" / "Socio: …") en el mismo sitio y con alto parecido, para que el formulario de abajo no
+             salte. Si el código no resuelve, no se pierde: el aviso rojo queda arriba de los botones (ErrorMessage). -->
+        <Border Classes="Inset" Padding="12,10"
+                IsVisible="{Binding ScanMessage, Converter={x:Static ObjectConverters.IsNull}}">
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Scan}" FontSize="18" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="1" Classes="FormLabel" TextWrapping="Wrap" VerticalAlignment="Center"
+                           Text="Escaneá el código de un producto o la credencial de un socio para elegirlo." />
+            </Grid>
+        </Border>
+        <fa:InfoBar IsOpen="{Binding ScanMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                    Severity="Success" Title="Código leído" Message="{Binding ScanMessage}" IsClosable="False"
+                    AutomationProperties.LiveSetting="Polite" />
+
         <!-- Concepto -->
         <StackPanel Orientation="Horizontal" Spacing="16">
             <RadioButton GroupName="concepto" Content="Membresía" IsChecked="{Binding IsMembership}" />
@@ -67,6 +83,8 @@
             <TextBlock Text="Cantidad" Classes="FormLabel" Margin="0,6,0,0" />
             <NumericUpDown Value="{Binding Quantity}" Minimum="1" Increment="1"
                            Width="140" HorizontalAlignment="Left" />
+            <TextBlock Classes="FormLabel" TextWrapping="Wrap"
+                       Text="Escanear otra vez el mismo producto suma una unidad." />
         </StackPanel>
 
         <!-- Método -->
@@ -101,7 +119,8 @@
 
         <!-- Error -->
         <fa:InfoBar IsOpen="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
-                    Severity="Error" Title="Error" Message="{Binding ErrorMessage}" IsClosable="False" />
+                    Severity="Error" Title="Error" Message="{Binding ErrorMessage}" IsClosable="False"
+                    AutomationProperties.LiveSetting="Assertive" />
 
         <!-- Acciones -->
         <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">

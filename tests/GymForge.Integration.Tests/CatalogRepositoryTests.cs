@@ -44,4 +44,32 @@ public class CatalogRepositoryTests : IAsyncLifetime
         result.Should().HaveCount(3);
         result.Select(m => m.Price).Should().BeInAscendingOrder();
     }
+
+    private static Product ProductWithBarcode(Guid companyId, string sku, string barcode)
+    {
+        var product = Product.Create(companyId, sku, $"Producto {sku}", 1_500m);
+        product.Update(product.Name, product.SalePrice, product.CostPrice, barcode);
+        return product;
+    }
+
+    [Fact]
+    public async Task GetByBarcode_FindsOnlyActiveProductsOfTheCompany()
+    {
+        var companyId = Guid.NewGuid();
+        var otherCompanyId = Guid.NewGuid();
+        _tenant.Set(companyId, Guid.NewGuid());
+        var active = ProductWithBarcode(companyId, "AGUA", "7791234567890");
+        var inactive = ProductWithBarcode(companyId, "VIEJO", "7790000000001");
+        inactive.Deactivate();
+        var foreign = ProductWithBarcode(otherCompanyId, "AJENO", "7790000000002");
+        await _db.Products.AddRangeAsync(active, inactive, foreign);
+        await _db.SaveChangesAsync();
+        var repo = new ProductRepository(_db);
+
+        (await repo.GetByBarcodeAsync(companyId, "7791234567890"))!.Id.Should().Be(active.Id);
+        (await repo.GetByBarcodeAsync(companyId, "7790000000001")).Should().BeNull("está dado de baja");
+        (await repo.GetByBarcodeAsync(companyId, "7790000000002")).Should().BeNull("es de otra empresa");
+        (await repo.GetByBarcodeAsync(otherCompanyId, "7790000000002")).Should().BeNull("el filtro de tenant también lo esconde");
+        (await repo.GetByBarcodeAsync(companyId, "0000")).Should().BeNull();
+    }
 }

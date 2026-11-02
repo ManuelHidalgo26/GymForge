@@ -1,0 +1,62 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:fa="using:FluentAvalonia.UI.Controls"
+             x:Class="GymForge.Desktop.Controls.NumericKeypad"
+             AutomationProperties.Name="Teclado numérico">
+
+    <!-- Teclado numérico táctil: control de presentación sin lógica de negocio (la edición vive en el code-behind).
+         Hereda el tema de donde se use (card clara u oscura): solo usa tokens del design system, sin colores literales.
+         · Visor: Border#KeypadDisplay > TextBlock#Display. Con Classes="NoDisplay" (AppStyles) se oculta cuando el campo
+           de texto que edita ya está al lado y muestra el valor (kiosk). Con Mask muestra un punto por dígito.
+         · Teclas de 84x56: objetivo táctil holgado (> 44 px). No toman el foco: tocar una tecla no le saca el foco al campo
+           que se está editando, así el Enter del teclado físico sigue confirmando ahí y no "repite" la última tecla.
+         · "Aceptar" (✓) lleva el verde de éxito para distinguirlo de los dígitos sin usar el acento (el acento es del CTA
+           de la pantalla: "Ingresar"). -->
+    <UserControl.Styles>
+        <Style Selector="Button.Key">
+            <Setter Property="Width" Value="84" />
+            <Setter Property="Height" Value="56" />
+            <Setter Property="Margin" Value="3" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="FontSize" Value="24" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+    </UserControl.Styles>
+
+    <StackPanel Spacing="10" HorizontalAlignment="Center">
+
+        <!-- Visor: cifras tabulares y un poco de aire entre caracteres (los puntos del PIN respiran) -->
+        <Border x:Name="KeypadDisplay" Classes="Inset" MinHeight="56" Padding="12,6">
+            <TextBlock x:Name="Display" FontSize="26" FontWeight="SemiBold" LetterSpacing="3"
+                       TextAlignment="Center" VerticalAlignment="Center"
+                       TextElement.FontFeatures="+tnum" AutomationProperties.Name="Valor ingresado" />
+        </Border>
+
+        <!-- Bandeja hundida: las teclas se despegan del fondo tanto en card clara como en kiosk oscuro -->
+        <Border Classes="Inset" CornerRadius="16" Padding="6">
+            <UniformGrid Columns="3" Rows="4">
+                <Button Classes="Key" Content="1" Tag="1" Click="OnDigitClick" />
+                <Button Classes="Key" Content="2" Tag="2" Click="OnDigitClick" />
+                <Button Classes="Key" Content="3" Tag="3" Click="OnDigitClick" />
+                <Button Classes="Key" Content="4" Tag="4" Click="OnDigitClick" />
+                <Button Classes="Key" Content="5" Tag="5" Click="OnDigitClick" />
+                <Button Classes="Key" Content="6" Tag="6" Click="OnDigitClick" />
+                <Button Classes="Key" Content="7" Tag="7" Click="OnDigitClick" />
+                <Button Classes="Key" Content="8" Tag="8" Click="OnDigitClick" />
+                <Button Classes="Key" Content="9" Tag="9" Click="OnDigitClick" />
+                <Button Classes="Key" Content="⌫" Click="OnBackspaceClick" AutomationProperties.Name="Borrar" />
+                <Button Classes="Key" Content="0" Tag="0" Click="OnDigitClick" />
+                <Button Classes="Key" Click="OnEnterClick" AutomationProperties.Name="Aceptar">
+                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Accept}" FontSize="24"
+                                   Foreground="{DynamicResource SuccessBrush}" />
+                </Button>
+            </UniformGrid>
+        </Border>
+
+    </StackPanel>
+
+</UserControl>

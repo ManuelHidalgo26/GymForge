@@ -16,6 +16,7 @@ public partial class CreateMemberViewModel : ObservableObject
     private readonly IMediator _mediator;
     private readonly SessionContext _session;
     private readonly ReceiptService _receipts;
+    private readonly IMemberPhotoStore _photoStore;
 
     // Si el alta ya pasó pero el cobro falló, el reintento de Guardar
     // solo repite el cobro (evita duplicar al socio).
@@ -39,6 +40,12 @@ public partial class CreateMemberViewModel : ObservableObject
     [ObservableProperty] private MemberSource _source = MemberSource.WalkIn;
     [ObservableProperty] private bool _marketingConsent;
     [ObservableProperty] private bool _activateImmediately = true;
+
+    // Credencial de acceso (carnet o llavero): opcional, se carga a mano o con el lector de códigos.
+    [ObservableProperty] private string? _tagSerial;
+
+    /// <summary>El code-behind enfoca el campo de credencial cuando se dispara (botón "Escanear").</summary>
+    public event Action? CredentialFocusRequested;
 
     // Cobro inicial (alta + primera cuota en un solo paso)
     [ObservableProperty][NotifyCanExecuteChangedFor(nameof(SaveCommand))]
@@ -70,7 +77,9 @@ public partial class CreateMemberViewModel : ObservableObject
     [ObservableProperty] private bool _isSaving;
     [ObservableProperty] private string? _errorMessage;
     [ObservableProperty] private bool _hasFingerprint;
-    [ObservableProperty] private string? _photoUrl;
+
+    /// <summary>La foto: se elige acá y se guarda cuando el socio ya existe (necesita su Id).</summary>
+    public PhotoPickerViewModel Photo { get; }
 
     // Enums for UI binding
     public IReadOnlyList<DocumentType> DocumentTypes { get; } =
@@ -83,11 +92,15 @@ public partial class CreateMemberViewModel : ObservableObject
     public event Action<MemberDto>? MemberCreated;
     public event Action? Cancelled;
 
-    public CreateMemberViewModel(IMediator mediator, SessionContext session, ReceiptService receipts)
+    public CreateMemberViewModel(
+        IMediator mediator, SessionContext session, ReceiptService receipts,
+        IImagePicker imagePicker, IMemberPhotoStore photoStore)
     {
         _mediator = mediator;
         _session = session;
         _receipts = receipts;
+        _photoStore = photoStore;
+        Photo = new PhotoPickerViewModel(imagePicker);
     }
 
     private bool CanSave => !IsSaving
@@ -119,7 +132,10 @@ public partial class CreateMemberViewModel : ObservableObject
                 Gender, Email?.Trim(), Mobile?.Trim(),
                 BirthDate, Source,
                 MarketingConsent: MarketingConsent,
-                ActivateImmediately: ActivateImmediately), ct);
+                ActivateImmediately: ActivateImmediately,
+                TagSerial: TagSerial), ct);
+
+            if (!await TrySavePhotoAsync(_createdMember.Id, ct)) return;
 
             if (ChargeNow && SelectedPlan is not null)
             {
@@ -164,12 +180,31 @@ public partial class CreateMemberViewModel : ObservableObject
     [RelayCommand]
     private void Cancel() => Cancelled?.Invoke();
 
-    [RelayCommand]
-    private void CapturePhoto()
+    /// <summary>
+    /// Guarda la foto elegida, ahora que el socio ya existe. Si falla, el socio queda creado y se avisa para
+    /// reintentar con Guardar, quitar la foto o cargarla después desde la ficha: no se pierde en silencio.
+    /// </summary>
+    private async Task<bool> TrySavePhotoAsync(Guid memberId, CancellationToken ct)
     {
-        // Sprint 1: placeholder — Sprint 2 wires webcam via AForge.NET or MediaCapture
-        PhotoUrl = null;
+        if (Photo.PendingImage is not { } image) return true;
+
+        try
+        {
+            var path = _photoStore.Save(memberId, image);
+            await _mediator.Send(new UpdateMemberPhotoCommand(_session.CompanyId, memberId, path), ct);
+            Photo.MarkSaved();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"El socio se guardó, pero la foto no: {ex.Message} " +
+                           "Reintentá con Guardar, quitá la foto o cargala después desde su ficha.";
+            return false;
+        }
     }
+
+    [RelayCommand]
+    private void ScanCredential() => CredentialFocusRequested?.Invoke();
 
     [RelayCommand]
     private void EnrollFingerprint()

@@ -16,13 +16,14 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 - Flujo por sesión: arqui (ADR) → dev (implementa) → qa (aprueba o veta).
 - Regla 6 de CLAUDE.md: `dotnet test` verde antes de cada commit.
 
-## Estado general (al 2026-10-29)
+## Estado general (al 2026-11-02)
 
 - Sesiones 1, 2, 3 y Fase 1: **mergeadas a `master`** (merge `--no-ff` `33ba4ec`; 19 commits de `feat/sesion-3`). Local: `origin/master` quedó atrás, **sin push**. La rama `feat/sesion-3` sigue existiendo. ADR-001 a ADR-004 en `Accepted`.
-- **Fase 2 (Sesión 4): implementada y aprobada por qa con observaciones. NADA COMMITEADO.** Los cambios están en el working tree. ADR-005 queda en `Proposed` hasta el commit. El commit lo coordina el orquestador y lo decide el usuario.
-- Tests: **862 verdes** (Domain 86 · Application 394 · Desktop 135 · Integration 247), cifra de qa tras Fase 2 (dev reportó 809; qa sumó 53). La sesión de notas no re-ejecutó `dotnet test`.
-- Working tree **con cambios sin commitear de Fase 2** (no está limpio). `.gitignore` ya ignora `*.lnk` y `*.pfx`.
-- Abierto en `docs/TASKS.md`: **0 bloqueadores de piloto**. Quedan: decisiones del usuario (UX11, Q2/D9, D7, D11/Q4, F1-D8, F1-D11 y las de F2 en "Qué sigue"), P-2, D1–D19, F1-D1 a F1-D11, F2-D1 a F2-D8, Q3–Q9, UX1–UX17 y las fases F3–F6.
+- **Fase 2 (Sesión 4): COMMITEADA en la rama `feat/sesion-4`** — 3 commits: `9894c8f` (backend), `c11770f` (UI), `fc140c0` (docs). ADR-005 en `Accepted`. **Sin push** (origin sigue atrás). qa había aprobado con observaciones.
+- **Fase 3 (Sesión 5): CERRADA (2026-11-02).** ADR-006 `Accepted` (addendum: foto solo por archivo, sin FlashCap). Los 6 pasos, el pulido de ux y el veto de qa (APROBADO CON OBSERVACIONES) están hechos. **Falta solo el commit** en `feat/sesion-5` (desde `fc140c0`), a cargo del orquestador. Sin commitear. Ver la entrada de cierre arriba de todo.
+- Tests: **1071 verdes al cierre de F3** (Domain 86 · Application 453 · Desktop 274 · Integration 258), `dotnet test` exit 0 (qa, 2026-11-02). Referencias: piso tras Fase 2 = 862; dev reportó 1067 antes de los fixes de qa.
+- Rama de trabajo: `feat/sesion-5` (desde `fc140c0`, tip de F2). **Fase 3 sin commitear** en el working tree (commit del orquestador). `.gitignore` ignora `*.lnk` y `*.pfx`.
+- Abierto en `docs/TASKS.md`: **0 bloqueadores de piloto**. Quedan: decisiones del usuario (UX11, Q2/D9, D7, D11/Q4, F1-D8, F1-D11 y las de F2 en "Qué sigue"), P-2, D1–D19, F1-D1 a F1-D11, F2-D1 a F2-D8, F3-D1 a F3-D7, Q3–Q9, UX1–UX24 y las fases F4–F6.
 
 ## Roadmap por fases
 
@@ -30,15 +31,23 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 |---|---|---|---|
 | 0 — Bugs y reglas de negocio | 1-2 (P-1 en 3) | Correctitud del core | **CERRADA.** S1, S2, P-1 (freeze) y Q1 commiteadas en `feat/sesion-3` |
 | 1 — Robustez de producción | 3 (continuación) | Backup off-site, auto-update Velopack, licencia (CUIT + fingerprint), retención de logs, fix "Sedes: 2 de 1" | **CERRADA (2026-10-28).** F1-1 a F1-5 commiteadas; qa aprobó con observaciones. Deuda en TASKS (F1-D1 a F1-D11) |
-| 2 — WhatsApp gratis + cobranzas | 4 | Pantalla de morosos, `WhatsAppLinkSender` (wa.me), `DunningConfig` en Configuración, `NotificationLog` | **CERRADA (2026-10-29), sin commit.** F2-1 a F2-7 implementados; qa aprobó con observaciones. ADR-005 (Proposed hasta el commit). Deuda en TASKS (F2-D1 a F2-D8, UX13 a UX17) |
-| 3 — Escáner HID + check-in premium | 5 | Lector keyboard-wedge en kiosk y POS, foto del socio, teclado numérico en pantalla, arquitectura de hardware | PENDIENTE |
+| 2 — WhatsApp gratis + cobranzas | 4 | Pantalla de morosos, `WhatsAppLinkSender` (wa.me), `DunningConfig` en Configuración, `NotificationLog` | **CERRADA y COMMITEADA (2026-10-29)** en `feat/sesion-4` (3 commits). ADR-005 Accepted. Sin push. Deuda en TASKS (F2-D1 a F2-D8, UX13 a UX17) |
+| 3 — Escáner HID + check-in premium | 5 | Lector keyboard-wedge en kiosk y POS, foto del socio, teclado numérico en pantalla, arquitectura de hardware | **CERRADA (2026-11-02).** ADR-006 `Accepted`. 1071 tests verdes; qa aprobó con observaciones. **Commit pendiente** en `feat/sesion-5`. Deuda en TASKS (F3-D1 a F3-D7, UX18 a UX24) |
 | 4 — Profundidad | 6-7 | Reportes reales (morosos, por plan/método/sede, retención; export Excel/PDF), editar socio desde la ficha, rutinas en la ficha, comisiones de staff | PENDIENTE |
 | 5 — Pulido US$100k | 8 | Command palette (Ctrl+K), fix branding (AccentTintBrush derivado), micro-interacciones, dashboard con ejes/hover, calendario semanal, limpieza de tokens, accesibilidad + i18n es-AR | PENDIENTE |
 | 6 — AFIP + hardware físico | +3-5 (opcional) | WSFE/WSAA/CAE, sidecars reales ZKTeco | OPCIONAL |
 
 ## Qué sigue
 
-**Próxima sesión (Sesión 5, Fase 3 "Escáner HID + check-in premium"):** abrir con `/equipo`. Antes de arrancarla: (a) el commit de Fase 2 (ver "Próximo paso" de la Sesión 4) y (b) las decisiones de F2 de abajo, sobre todo F2-D1. Flujo por sesión: arqui (ADR de F3, siguiente número en `docs/adr/`) → dev → ux → qa. Si el usuario prioriza otra cosa, alternativa: cerrar alguna decisión abierta de abajo (sobre todo UX11 + F1-D3/F1-D7 si quiere activar el auto-update). F1 y F2 están cerradas; sus deudas no bloquean el piloto con las 2 condiciones de uso.
+**Próximo paso (cierre de F3, 2026-11-02):**
+1. **Orquestador:** commit de F3 en `feat/sesion-5` (desde `fc140c0`), con `dotnet test` en verde (1071) antes del commit. ADR-006 ya está `Accepted`.
+2. **Usuario:** decidir (a) commit/push de F2 (commiteada en `feat/sesion-4`, sin push), (b) push de `feat/sesion-5` y (c) merge a `master` (ver ítem 8 abajo).
+3. **Sesión 6, Fase 4 "Profundidad" (PENDIENTE):** arqui escribe el ADR de F4 antes de que dev implemente (flujo del equipo). Conviene decidir antes si entran primero UX18 (login de caja: el PIN no se limpia tras error; Enter no ingresa) y F3-D2 / UX19 (el primer carácter del lector cae en el campo con foco). Son MEDIA y de uso diario en recepción; qa no los marcó como bloqueantes.
+4. **Verificación en hardware real** (no se pudo en esta sesión): lector USB wedge real con layout es-AR, supresión de WM_CHAR en Windows, portapapeles y diálogo nativo, táctil, DPI alto y `scripts/publish.ps1` single-file. Con F3-D1 abierto (checks de teclado fuera de CI), todo cambio en kiosk o POS se prueba también con `tools/GymForge.Screenshots`.
+
+Piloto: sin bloqueadores nuevos de F3; siguen las 2 condiciones de uso de F1.
+
+Decisiones de F3 **ya tomadas por el usuario** (no re-preguntar): credencial = `TagSerial` con fallback a DNI (no PDF417); foto = **solo archivo/pegar, SIN FlashCap** ni dependencias nuevas; índice único de credencial = **SÍ**; barcode de producto en POS = **SÍ**; umbrales del detector = default. Alternativa si el usuario prioriza otra cosa: cerrar decisiones abiertas de abajo (UX11 + F1-D3/F1-D7 para el auto-update). F1 y F2 están cerradas; sus deudas no bloquean el piloto con las 2 condiciones de uso.
 
 Decisiones del usuario abiertas (ninguna bloquea el piloto con las 2 condiciones de uso):
 0. **UX11 + F1-D7:** origen de las actualizaciones (hoy vacío = inactivo) y `https://` obligatorio. Junto con F1-D3, bloquea activar el auto-update en campo.
@@ -54,6 +63,95 @@ Decisiones del usuario abiertas (ninguna bloquea el piloto con las 2 condiciones
 Fuera del piloto: P-2 (saldo a favor en la ficha) y D1 (cobros multi-sede) siguen abiertas. Resto de deuda (D1–D19, F1-D4 a F1-D10, F2-D1 a F2-D8, Q3–Q9, UX1–UX17): ver `docs/TASKS.md`.
 
 Sesiones 5-8: ver tabla de fases arriba.
+
+---
+
+## [2026-11-02] Sesión 5 (Fase 3) — CERRADA: Escáner HID + check-in premium
+
+**Hecho:**
+- **Fase 3 cerrada.** Flujo: arqui (ADR-006) → dev (6 pasos) → ux (pulido) → qa (veto: **APROBADO CON OBSERVACIONES**, sin bloqueantes abiertos) → orquestador (commit pendiente). ADR-006 pasó a `Accepted` con addendum.
+- **Tests:** `dotnet test` exit 0, **1071 verdes** (Domain 86 · Application 453 · Desktop 274 · Integration 258). Piso tras F2 = 862; dev reportó 1067 y qa sumó 4 al cerrar bloqueantes. Build Debug y Release: 0 errores (warning preexistente CS8604 en `App.axaml.cs:46`). Sin `PackageReference` nuevo. Migración `AddMemberTagSerialUniqueIndex` verificada Up/Down; `migrations has-pending-model-changes` sin cambios.
+- **Entregado (dev):** (1) `KeyboardWedgeDetector` (scan vs tecleo por timing; 50/300 ms, 3-64 caracteres); (2) credencial: `AccessMethod.Barcode`, `CredentialMatch` (TagSerial con fallback a DNI), `FindMemberByCredentialQuery`, sin migración; (3) `TagSerial` en el alta, `AssignCredentialCommand` con unicidad por empresa e índice único filtrado; (4) `WedgeKeyboardListener` en kiosk y POS, y `FindProductByBarcodeQuery` (producto por barcode en POS; socio si no matchea); (5) `NumericKeypad` en kiosk y login de caja; (6) foto por archivo/pegar (`MemberPhotoStore`, `IImagePicker`/`AvaloniaImagePicker`, `UpdateMemberPhotoCommand`, `PhotoPickerViewModel`), **sin FlashCap ni dependencias nuevas**.
+- **Pulido de UI (ux):** kiosk, login de caja, POS, alta, ficha, `NumericKeypad` y `PhotoPickerView`. Detalle en la entrada de pulido de abajo (2026-11-02).
+- **3 bloqueantes de runtime que qa encontró y cerró** (los 1071 tests no los veían): (1) el kiosk grababa una carga manual "Desconocido" además de cada escaneo (AccessLog append-only); Enter pasa a handler de túnel. (2) El POS no oía al lector con el foco fuera del modal; `WedgeKeyboardListener.ForWindowOf` escucha la ventana. (3) Fuga de memoria con fotos en el kiosk (≈48 MB por foto de 12 MP; 60 ingresos: 3008 MB); `Bitmap.DecodeToWidth(480)` (mismo recorrido: 318 MB). Extra: `PhotoImage.ReadCappedAsync` corta la lectura a 10 MB al pegar.
+- **Verificación:** runtime con `tools/GymForge.Screenshots` (13 checks `[OK]`, con control negativo) y un harness propio de teclado real sobre Avalonia.Headless (fuera de `dotnet test`, ver F3-D1).
+
+**No verificado (requiere Windows o hardware real, qa):** lector USB wedge real con layout es-AR; supresión de WM_CHAR en Windows; portapapeles y diálogo nativo; táctil; DPI alto; `scripts/publish.ps1` single-file.
+
+**En curso:** nada a medias en código. Falta solo el **commit de F3** (orquestador) en `feat/sesion-5` desde `fc140c0`; el working tree está sin commitear. ADR-006 y `docs/adr/README.md` los actualizó el orquestador.
+
+**Blockers:** técnicos, ninguno (1071 verdes; qa sin bloqueantes). Operativos: el commit de F3 y las decisiones del usuario sobre push de `feat/sesion-4` (F2), push de `feat/sesion-5` y merge a `master`. Piloto: sin bloqueadores nuevos; siguen las 2 condiciones de uso de F1.
+
+**Próximo paso:**
+1. Orquestador: commit de F3 en `feat/sesion-5` (ADR-006 ya `Accepted`).
+2. Usuario: decidir commit/push de F2 (en `feat/sesion-4`, sin push), push de `feat/sesion-5` y merge a `master`.
+3. Sesión 6, Fase 4 "Profundidad" (PENDIENTE): arqui escribe el ADR de F4 antes de que dev implemente. Conviene decidir antes si entran primero UX18 (login de caja: el PIN no se limpia tras error y Enter no ingresa) y F3-D2 / UX19 (el primer carácter del lector cae en el campo con foco). Son MEDIA y de uso diario en recepción; qa no los marcó como bloqueantes.
+4. Validar en la PC de recepción lo listado en "No verificado". Con F3-D1 abierto (checks de teclado fuera de CI), todo cambio en kiosk o POS se prueba también con `tools/GymForge.Screenshots`.
+
+**Tocado:**
+- Docs: `docs/PROGRESS.md`, `docs/TASKS.md`.
+- Desktop: `src/GymForge.Desktop/Services/{KeyboardWedgeDetector,WedgeKeyboardListener,MemberPhotoStore,IImagePicker,AvaloniaImagePicker,PhotoBitmap,PhotoImage}.cs`; `Controls/NumericKeypad.axaml`; `Views/Checkin/CheckInKioskView.axaml(.cs)`; `Views/Cash/{CashView,RegisterSaleView}.axaml(.cs)`; `Views/Members/{CreateMemberView,MemberDetailView,PhotoPickerView}.axaml(.cs)`; `ViewModels/Members/PhotoPickerViewModel.cs`; `Assets/Styles/AppStyles.axaml`.
+- Application: `UseCases/Access/{ValidateSwipeUseCase,CredentialMatch}.cs`; `UseCases/Members/{AssignCredentialCommand,CredentialEnrollment,FindMemberByCredentialQuery,UpdateMemberPhotoCommand,CreateMemberCommand}.cs`; `UseCases/Catalog/FindProductByBarcodeQuery.cs`.
+- Infra: migración `20261029180013_AddMemberTagSerialUniqueIndex` (+ snapshot), `Persistence/Configurations/MemberConfiguration.cs`, `Repositories/MemberRepository.cs`, `Repositories/ProductRepository.cs`.
+- Tests: `tests/GymForge.Desktop.Tests/{MemberPhotoStoreTests,WedgeKeyboardListenerTests}.cs` y los de los otros proyectos (ver TASKS, F3).
+- Herramienta de capturas y checks: `tools/GymForge.Screenshots/Program.cs`.
+
+---
+
+## [2026-11-02] Sesión 5 (Fase 3) — pulido de UI (ux)
+
+**Hecho (sin build ni tests: ux no tiene shell; falta la validación de qa en runtime):** pulido solo visual/UX de las 4 superficies de F3, sin tocar ViewModels, commands ni `x:DataType`, y sin cambiar bindings de datos o comandos. Única excepción de presentación: en la ficha, `Classes.ok="{Binding CredentialAssigned}"` pasó a `Classes.success` / `Classes.danger` sobre la misma propiedad (mismo criterio que Config en F1).
+- **Teclado numérico** (`Controls/NumericKeypad.axaml`): teclas de 84×56 sobre una bandeja hundida (`Border.Inset`), visor con cifras tabulares (muestra `●●●●` con `Mask`), ✓ en verde de éxito (no usa el acento, que es del CTA de cada pantalla). Las teclas **no toman el foco** (como un teclado en pantalla): tocar una no le saca el foco al campo y el Enter físico sigue confirmando ahí en vez de "repetir" la última tecla. Solo tokens, sin colores literales: sirve en card clara y oscura.
+- **Kiosk** (`CheckInKioskView.axaml`): el kiosk es una superficie oscura fija con colores literales; en tema claro el campo, los botones y el teclado salían claros (y el visor del teclado, ilegible). Ahora va dentro de `ThemeVariantScope RequestedThemeVariant="Dark"`. Reposo compacto (tarjeta/DNI en un renglón + campo + "Ingresar" + teclado, ≈ 500 px de alto; antes ≈ 680 y se cortaba en 1366×768) y `ScrollViewer` de reserva; la tarjeta tiene `MinHeight` para no saltar de alto entre reposo, verificando y resultado. Denegado muestra la **foto del socio** (aro rojo + insignia ✗) cuando el código lo identificó, y solo la cruz si no es de nadie. Contraste: "ACCESO PERMITIDO" y el aviso de deuda llevan texto oscuro (blanco daba ≈2,3:1 y ≈2,1:1), y los grises literales (`#555`/`#777`/`#444`, entre ≈2,0 y ≈3,9:1) pasaron a `TextFillColorSecondary/Tertiary`. "Reiniciar" usa `Button.Ghost` y "Ingresar" `Button.Primary`.
+- **Login de caja** (`CashView.axaml`): dos columnas (PIN por teclado + "Ingresar" | teclado numérico con visor enmascarado); el aviso "PIN incorrecto." pasó a `DangerTextBrush` + `LiveSetting`; los textos con `Opacity` de la pantalla pasaron a tokens; el overlay del modal de venta tiene `ScrollViewer` de reserva (ventanas bajas).
+- **POS** (`RegisterSaleView.axaml`): un solo lugar para el lector: pista (`Border.Inset` + ícono, sin `Opacity`) mientras no hay escaneo, y el `InfoBar` "Código leído · Producto/Socio" en el mismo sitio y con alto parecido; hint "Escanear otra vez el mismo producto suma una unidad" bajo Cantidad; avisos con `LiveSetting`. Un código que no resuelve sigue en el aviso rojo sobre los botones (`ErrorMessage`).
+- **Alta** (`CreateMemberView.axaml`): campo "Credencial / N° de tarjeta" con pista, "Escanear" (misma altura que el campo) y confirmación "Credencial lista" con tilde verde; las etiquetas de campo dejaron `Opacity 0.65` (≈3,7:1) por el color secundario del tema; "(disponible en Sprint 2)" de la huella pasó a "Disponible próximamente".
+- **Ficha** (`MemberDetailView.axaml` + `.axaml.cs`): Datos en cards (Datos personales | Foto + Credencial lado a lado); credencial actual en `Border.Inset` + `Mono`, "Escanear" (deja el foco en el campo; un `Click` en el code-behind) y "Asignar"; **el avatar del encabezado muestra la foto** (`Photo.Preview`); se quitaron los estilos locales `TextBlock.Feedback`/`.ok` que pisaban los del design system con `DangerBrush` (no AA en dark); etiquetas y meta del encabezado sin `Opacity`.
+- **Foto del socio**: el mock se reemplazó por un componente compartido, `Views/Members/PhotoPickerView` (alta y ficha).
+
+**Registro de componentes y tokens (design system):**
+- **Componente nuevo `PhotoPickerView`** (`Views/Members/PhotoPickerView.axaml` + `.axaml.cs`, `x:DataType="PhotoPickerViewModel"`): se usa como `<views:PhotoPickerView DataContext="{Binding Photo}" />`. Estados: vacío (`StackPanel.EmptyState` + "Sin foto" + "JPG o PNG, hasta 10 MB"), con vista previa, "Pendiente de guardar" (`Border.Pill.info`, visible con `HasPendingImage`) y error (`TextBlock.Feedback.danger`). Botones "Elegir archivo" / "Pegar imagen" (`Secondary`) y "Quitar foto" (`Ghost`, solo con imagen pendiente).
+- **`NumericKeypad`**: API sin cambios (`Text` two-way, `MaxLength`, `Mask`, `Entered`). Nuevo `Classes="NoDisplay"` (regla en `AppStyles.axaml`: `ctl|NumericKeypad.NoDisplay Border#KeypadDisplay`, que oculta el visor cuando el campo de texto de al lado ya lo muestra; lo usa el kiosk). Nombres que dependen los tests: `x:Name="Display"` (`TextBlock`). Nuevo `xmlns:ctl` en `AppStyles.axaml`.
+- **Sin tokens de color nuevos** en `Colors.axaml`.
+- **Patrones para reusar:** (1) superficie oscura fija ⇒ `ThemeVariantScope RequestedThemeVariant="Dark"` + tokens `TextFillColor*`; (2) texto sobre un relleno sólido verde/ámbar va oscuro (`#052E16` sobre `#22C55E` ≈6,5:1; `#1C1100` sobre `#F59E0B` ≈8,7:1); (3) overlay de modal con `ScrollViewer` de reserva; (4) fuera de una card (el alta va sobre el lienzo gris) el tono verde lo lleva el ícono y el texto queda en `FormLabel`; (5) un teclado en pantalla no toma el foco del campo que edita.
+- **Contraste (calculado con los valores Fluent y de `Colors.axaml`; no medido en captura):** `FormLabel` (secundario) ≈6,2:1 sobre card y ≈5,9:1 sobre el lienzo en light, ≈7:1 en dark; `TextFillColorTertiary` en el kiosk ≈5,6-5,9:1; `DangerTextBrush` sobre `DangerTint` ≈4,8:1 (light) y ≈6,4:1 (dark); pill `info` sobre el lienzo ≈5,2:1.
+
+**Pendiente / abierto (ux no lo puede resolver con XAML; en `docs/TASKS.md`):** UX18 (login de caja: "PIN incorrecto." no limpia el PIN, Enter en el campo PIN no ingresa, "admin de ejemplo: 1234" visible en instalaciones reales), UX19 (el primer carácter de la ráfaga cae en el campo con foco), UX20 (ficha: "Huella digital" muestra `False`), UX21 (contraste del DS fuera de cards), UX22 (kiosk: huecos que dependen del VM), UX23 (foto: encuadre, arrastrar y soltar). UX2 actualizada (scroll de reserva del modal de venta).
+
+**Capturas que qa debe mirar** (`tools/GymForge.Screenshots`, light y dark): `29-checkin-teclado` y `-dark` (deben verse idénticas: el kiosk es oscuro siempre), `30-checkin-escaneo-aprobado-foto`, un denegado con foto (nueva), `31` y `32` (POS: escaneo de producto, código desconocido), `04-caja-login` (dos columnas), `28-ficha-datos-foto-credencial`, `03-socio-alta`.
+
+---
+
+## [2026-10-29] Sesión 5 (Fase 3) — PAUSADA, handoff para el sábado 2026-10-31
+
+**Contexto:** el usuario pidió cerrar y continuar el sábado. La Fase 3 quedó **implementada y en verde, pero sin pulir (ux), sin revisar (qa) y sin commitear.**
+
+**Hecho:**
+- **arqui:** ADR-006 (`docs/adr/ADR-006-escaner-hid-y-checkin-premium.md`, `Proposed`) + fila en `docs/adr/README.md` + Fase 3 a DOING en `docs/TASKS.md`.
+- **dev:** los **6 pasos** del ADR-006, en el working tree **sobre `feat/sesion-4`**. El orquestador re-corrió `dotnet test GymForge.sln` tras frenar a dev: **1067 verdes** (Domain 86 · Application 453 · Desktop 270 · Integration 258), exit 0.
+  1. `KeyboardWedgeDetector` puro (scan vs tecleo por timing; 50/300 ms, mín 3 / máx 64 chars).
+  2. Resolución de credencial: `AccessMethod.Barcode` (**sin migración**), rama aditiva en el Gatekeeper (`TagSerial` → fallback DNI vía `CredentialMatch`), `FindMemberByCredentialQuery`.
+  3. Enrolar credencial: `TagSerial` en `CreateMemberCommand` + `AssignCredentialCommand` (unicidad por empresa) + migración `20261029180013_AddMemberTagSerialUniqueIndex`.
+  4. Glue del scanner (`WedgeKeyboardListener`) en kiosk y POS; en POS `FindProductByBarcodeQuery` (producto; si no matchea, socio).
+  5. Teclado numérico en pantalla (`src/GymForge.Desktop/Controls/`), integrado en kiosk y login de caja por PIN.
+  6. Foto del socio por **archivo/pegar** (`MemberPhotoStore`, `IImagePicker`/`AvaloniaImagePicker`, `UpdateMemberPhotoCommand`, `PhotoPickerViewModel`), **SIN FlashCap** ni dependencias nuevas; integrada en alta y ficha reemplazando el mock.
+- **Decisiones del usuario (esta sesión):** credencial `TagSerial`+DNI (no PDF417); foto solo archivo (sin FlashCap); índice único de credencial = sí; barcode de producto en POS = sí; umbrales del detector = default.
+- El orquestador **commiteó la Fase 2** en `feat/sesion-4` (3 commits: `9894c8f`/`c11770f`/`fc140c0`) y pasó ADR-005 a `Accepted` (ver Sesión 4).
+
+**En curso / falta para cerrar F3:** pulido de **ux** (kiosk, POS, teclado); veto de **qa**; **commit** de F3 (idealmente rama propia `feat/sesion-5` desde `fc140c0`); ADR-006 pasa a `Accepted` al commitear.
+
+**Blockers:** ninguno técnico (tests verdes). Falta ux + qa + commit.
+
+**Nota de proceso:** se frenó a dev justo cuando iba a autoverificar (tests/capturas); el orquestador re-corrió la suite (verde) para dejar un punto de reanudación confiable. La implementación de F3 quedó sobre la rama de F2 (`feat/sesion-4`); al commitear conviene separarla a `feat/sesion-5`.
+
+**Próximo paso:** ver "Qué sigue" arriba (sábado): ux → qa → commit F3 (ADR-006 a Accepted) → decidir commit/push de F2.
+
+**Tocado (Fase 3, sin commitear sobre `feat/sesion-4`):**
+- Application (nuevos): `UseCases/Access/CredentialMatch.cs`, `UseCases/Catalog/FindProductByBarcodeQuery.cs`, `UseCases/Members/{AssignCredentialCommand,CredentialEnrollment,FindMemberByCredentialQuery,UpdateMemberPhotoCommand}.cs`.
+- Desktop (nuevos): `Services/{KeyboardWedgeDetector,WedgeKeyboardListener,MemberPhotoStore,IImagePicker,AvaloniaImagePicker,PhotoBitmap,PhotoImage}.cs`, `Controls/` (teclado numérico), `ViewModels/Members/PhotoPickerViewModel.cs`.
+- Infra (nuevo): migración `20261029180013_AddMemberTagSerialUniqueIndex` (+ snapshot).
+- Modificados: `ValidateSwipeUseCase.cs`, `CreateMemberCommand.cs`, `AccessEnums.cs` (step 1-2), kiosk/POS/alta/ficha (views + VM: `CheckInKioskView(Model)`, `RegisterSaleView(Model)`, `CashView`, `CreateMemberView(Model)`, `MemberDetailView(Model)`), `MemberConfiguration.cs`, `MemberRepository.cs`, `ProductRepository.cs`, `IRepositories.cs`, `ServiceCollectionExtensions.cs`, `tools/GymForge.Screenshots/Program.cs`; + tests nuevos en los 4 proyectos.
+- Docs: `docs/adr/ADR-006-...md`, `docs/adr/README.md`, `docs/TASKS.md`. Esta entrada de `PROGRESS.md` la escribió el orquestador (notas no corrió en esta pausa).
 
 ---
 

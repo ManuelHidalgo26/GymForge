@@ -52,6 +52,9 @@ services.AddGymForgeDesktop(conn);
 services.AddSingleton<ILocalSettings>(new LocalSettingsService(
     NullLogger<LocalSettingsService>.Instance,
     Path.Combine(Path.GetTempPath(), $"gymforge_shots_{Guid.NewGuid():N}_settings.json")));
+// Las fotos de las capturas van a una carpeta temporal: no ensucian %LOCALAPPDATA%\GymForge\fotos del dev.
+services.AddSingleton<IMemberPhotoStore>(
+    new MemberPhotoStore(Path.Combine(Path.GetTempPath(), $"gymforge_shots_{Guid.NewGuid():N}_fotos")));
 // Origen de actualizaciones simulado: las capturas no tocan la red ni dependen de una instalación.
 services.AddSingleton<SampleUpdateService>();
 services.AddSingleton<IUpdateService>(provider => provider.GetRequiredService<SampleUpdateService>());
@@ -219,6 +222,112 @@ Pump(kioskVm.ProcessCredentialAsync("33444555", AccessMethod.Manual));  // sin m
 Pump(kioskVm.ProcessCredentialAsync("31222333", AccessMethod.Manual));  // permitido
 Pump(kioskVm.ProcessCredentialAsync("30111222", AccessMethod.Manual));  // permitido (queda en pantalla)
 Capture("13-checkin-aprobado", new GymForge.Desktop.Views.Checkin.CheckInKioskView { DataContext = kioskVm }, 1180, 760, outDir);
+
+// ── Fase 3: lector de códigos (keyboard-wedge), teclado numérico y foto por archivo ───────────────────────
+// Lucas recibe una credencial y una foto real (un PNG generado); la ficha las muestra.
+var lucas = membersVm.Members.First(m => m.DocumentNumber == "32333444");
+WaitFor(mediator2.Send(new AssignCredentialCommand(session.CompanyId, lucas.Id, "CARNET-77")));
+var photoPath = sp.GetRequiredService<IMemberPhotoStore>().Save(lucas.Id, SamplePhotoPng());
+var lucasWithPhoto = WaitFor(mediator2.Send(new UpdateMemberPhotoCommand(session.CompanyId, lucas.Id, photoPath)));
+
+var fichaVm = sp.GetRequiredService<MemberDetailViewModel>();
+Pump(fichaVm.LoadAsync(lucasWithPhoto));
+Capture("28-ficha-datos-foto-credencial", new MemberDetailView { DataContext = fichaVm }, 1180, 900, outDir);
+
+// Regresión (qa): una foto de celular (12 MP) se decodifica a lo sumo a PhotoBitmap.DecodeWidth px de ancho. Entera eran
+// ~48 MB por ingreso al kiosk: 60 ingresos seguidos llevaron el proceso de 260 MB a 3 GB.
+var bigPhoto = PhotoBitmap.TryDecode(BigPhotoPng());
+Check("foto: una de 12 MP se decodifica reducida y con su proporción",
+    bigPhoto is { PixelSize: { Width: PhotoBitmap.DecodeWidth, Height: 360 } });
+
+// Kiosk en reposo con el teclado numérico (táctil).
+var idleKioskVm = new GymForge.Desktop.ViewModels.Checkin.CheckInKioskViewModel(
+    sp.GetRequiredService<ValidateSwipeUseCase>(), mediator2, session);
+Capture("29-checkin-teclado", new GymForge.Desktop.Views.Checkin.CheckInKioskView { DataContext = idleKioskVm }, 1180, 900, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+Capture("29-checkin-teclado-dark", new GymForge.Desktop.Views.Checkin.CheckInKioskView { DataContext = idleKioskVm }, 1180, 900, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+
+// Escaneo de punta a punta: teclas reales a la ventana del kiosk (vista + listener + Gatekeeper + base).
+var scanKioskVm = new GymForge.Desktop.ViewModels.Checkin.CheckInKioskViewModel(
+    sp.GetRequiredService<ValidateSwipeUseCase>(), mediator2, session);
+var scanWindow = new Window
+{
+    Width = 1180, Height = 900, SystemDecorations = SystemDecorations.None,
+    Content = new GymForge.Desktop.Views.Checkin.CheckInKioskView { DataContext = scanKioskVm },
+};
+scanWindow.Show();
+for (int i = 0; i < 25; i++) { Dispatcher.UIThread.RunJobs(); Thread.Sleep(10); }
+
+var rowsBeforeScan = scanKioskVm.TodaysAccess.Count;
+TypeLikeAScanner(scanWindow, "CARNET-77");   // credencial del gimnasio → permitido (con su foto)
+WaitUntil(() => scanKioskVm.State != GymForge.Desktop.ViewModels.Checkin.KioskState.Idle);
+Check("scanner: credencial del carnet -> permitido", scanKioskVm.IsGranted && scanKioskVm.MemberName == "Lucas Fernández");
+Check("scanner: el campo de DNI queda vacío", scanKioskVm.CredentialInput.Length == 0);
+// Regresión (qa): el 1er carácter del lector llega al campo de DNI y el Enter final no debe disparar además una carga
+// manual con ese carácter (quedaba una fila "Desconocido" por cada escaneo en el AccessLog, que es append-only).
+Check("scanner: un escaneo deja UNA sola fila (sin carga manual espuria)",
+    scanKioskVm.TodaysAccess.Count == rowsBeforeScan + 1 && scanKioskVm.TodaysAccess[0].MemberName == "Lucas Fernández");
+SaveFrame("30-checkin-escaneo-aprobado-foto", scanWindow, outDir);
+
+TypeLikeAScanner(scanWindow, "34555666");    // DNI de un socio sin membresía → lo identifica y lo rechaza
+WaitUntil(() => scanKioskVm.MemberName == "Diego Ramírez");
+Check("scanner: DNI sin credencial -> resuelve al socio por DNI", scanKioskVm.IsDenied && scanKioskVm.MemberName == "Diego Ramírez");
+
+TypeLikeAScanner(scanWindow, "99999999");    // nadie
+WaitUntil(() => scanKioskVm.DenialMessage == "Credencial no reconocida");
+Check("scanner: código desconocido -> credencial no reconocida", scanKioskVm.IsDenied && scanKioskVm.MemberName.Length == 0);
+
+scanKioskVm.ResetCommand.Execute(null);      // vuelve a reposo; ahora tecleo humano (lento): no se traga
+foreach (var digit in "32333")
+{
+    scanWindow.KeyPress(Key.None, RawInputModifiers.None, PhysicalKey.None, digit.ToString());
+    scanWindow.KeyTextInput(digit.ToString());
+    Thread.Sleep(90);
+}
+Check("tecleo manual: llega al campo de DNI sin tragarse", scanKioskVm.CredentialInput == "32333");
+foreach (var digit in "444")
+{
+    scanWindow.KeyPress(Key.None, RawInputModifiers.None, PhysicalKey.None, digit.ToString());
+    scanWindow.KeyTextInput(digit.ToString());
+    Thread.Sleep(90);
+}
+scanWindow.KeyPress(Key.Enter, RawInputModifiers.None);   // Enter a mano en el campo de DNI = Ingresar (carga manual)
+WaitUntil(() => scanKioskVm.State != GymForge.Desktop.ViewModels.Checkin.KioskState.Idle);
+Check("tecleo manual + Enter -> ingresa por DNI", scanKioskVm.MemberName == "Lucas Fernández");
+scanWindow.Close();
+
+// Regresión (qa): con teclas reales y el foco en el botón que abrió el modal (que NO es hijo del modal), el escaneo igual
+// llega. Un listener colgado de la vista del modal no oía nada: la tecla solo viaja por los ancestros del control enfocado.
+var posSale = cashVm.SaleModal!;
+var posWindow = new Window
+{
+    Width = 1180, Height = 1000, SystemDecorations = SystemDecorations.None,
+    Content = new CashView { DataContext = cashVm },
+};
+posWindow.Show();
+for (int i = 0; i < 25; i++) { Dispatcher.UIThread.RunJobs(); Thread.Sleep(10); }
+posWindow.GetVisualDescendants().OfType<Button>().First(b => b.Command == cashVm.OpenSaleModalCommand).Focus();
+TypeLikeAScanner(posWindow, "7791234567890");
+WaitUntil(() => posSale.SelectedProduct is not null);
+Check("POS (teclas reales, foco fuera del modal): código de barras -> producto elegido, modal abierto",
+    posSale.SelectedProduct?.Sku == "TOAL-GF" && cashVm.IsSaleModalOpen);
+posWindow.Close();
+posSale.SelectedProduct = null;   // los checks de abajo parten de "sin producto"
+posSale.Quantity = 1;
+
+// Caja: un código escaneado elige producto (el de la toalla, creado después de abrir el modal) o socio.
+var sale = cashVm.SaleModal!;
+Pump(sale.ScanAsync("7791234567890"));
+Check("POS: código de barras -> producto elegido", sale.IsProduct && sale.SelectedProduct?.Sku == "TOAL-GF");
+Pump(sale.ScanAsync("7791234567890"));
+Check("POS: el mismo producto otra vez suma una unidad", sale.Quantity == 2);
+Capture("31-caja-escaneo-producto", new CashView { DataContext = cashVm }, 1180, 1000, outDir);
+Pump(sale.ScanAsync("CARNET-77"));
+Check("POS: credencial -> socio elegido", sale.SelectedMember?.FullName == "Lucas Fernández" && !sale.IsWalkIn);
+Pump(sale.ScanAsync("0000"));
+Check("POS: código desconocido -> aviso", sale.ErrorMessage is not null);
+Capture("32-caja-escaneo-socio-desconocido", new CashView { DataContext = cashVm }, 1180, 1000, outDir);
 
 // Morosos: deudores de la sede (con un recordatorio ya enviado a uno) y el cobro con el modal de pago.
 var collectionsVm = sp.GetRequiredService<CollectionsViewModel>();
@@ -408,6 +517,70 @@ static void Pump(Task task)
     task.GetAwaiter().GetResult();
 }
 
+static void WaitUntil(Func<bool> condition)
+{
+    for (var i = 0; i < 400 && !condition(); i++)
+    {
+        Dispatcher.UIThread.RunJobs();
+        Thread.Sleep(5);
+    }
+}
+
+static void Check(string what, bool ok)
+{
+    Console.WriteLine($"  [{(ok ? "OK" : "FALLA")}] {what}");
+    if (!ok) Environment.ExitCode = 1;
+}
+
+// Un lector keyboard-wedge: todos los caracteres pegados (sin pausas) y un Enter al final. Como en Windows, la tecla
+// que el listener deja pasar (la primera) además escribe su carácter en el campo con foco; las tragadas no.
+static void TypeLikeAScanner(Window window, string code)
+{
+    for (var i = 0; i < code.Length; i++)
+    {
+        window.KeyPress(Key.None, RawInputModifiers.None, PhysicalKey.None, code[i].ToString());
+        if (i == 0) window.KeyTextInput(code[i].ToString());
+    }
+    window.KeyPress(Key.Enter, RawInputModifiers.None);
+}
+
+// Una foto del tamaño de las de un celular (4000x3000, 12 MP): un PNG liso, que pesa poco pero decodificado es enorme.
+static byte[] BigPhotoPng()
+{
+    var face = new Border { Width = 4000, Height = 3000, Background = Avalonia.Media.Brushes.SteelBlue };
+    face.Measure(new Size(4000, 3000));
+    face.Arrange(new Rect(0, 0, 4000, 3000));
+
+    using var bitmap = new Avalonia.Media.Imaging.RenderTargetBitmap(new PixelSize(4000, 3000), new Vector(96, 96));
+    bitmap.Render(face);
+    using var stream = new MemoryStream();
+    bitmap.Save(stream);
+    return stream.ToArray();
+}
+
+// Una foto de muestra (PNG de verdad) para la ficha y el kiosk.
+static byte[] SamplePhotoPng()
+{
+    var face = new Border
+    {
+        Width = 240, Height = 280, Background = Avalonia.Media.Brushes.SteelBlue,
+        Child = new TextBlock
+        {
+            Text = "LF", FontSize = 96, Foreground = Avalonia.Media.Brushes.White,
+            HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+            VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center,
+        },
+    };
+    face.Measure(new Size(240, 280));
+    face.Arrange(new Rect(0, 0, 240, 280));
+
+    using var bitmap = new Avalonia.Media.Imaging.RenderTargetBitmap(new PixelSize(240, 280), new Vector(96, 96));
+    bitmap.Render(face);
+    using var stream = new MemoryStream();
+    bitmap.Save(stream);
+    return stream.ToArray();
+}
+
 static void Capture(string name, Control view, int width, int height, string outDir)
 {
     var window = new Window
@@ -423,7 +596,13 @@ static void Capture(string name, Control view, int width, int height, string out
 static void CaptureWindow(string name, Window window, string outDir)
 {
     window.Show();
+    SaveFrame(name, window, outDir);
+    window.Close();
+}
 
+// Renderiza la ventana (ya mostrada) a PNG y la deja abierta: sirve para capturar a mitad de un recorrido.
+static void SaveFrame(string name, Window window, string outDir)
+{
     // Forzar layout + render headless, dando tiempo a las cargas async de las
     // vistas que auto-cargan en OnDataContextChanged.
     for (int i = 0; i < 10; i++)
@@ -437,7 +616,6 @@ static void CaptureWindow(string name, Window window, string outDir)
     var frame = window.CaptureRenderedFrame();
     var path = Path.Combine(outDir, $"{name}.png");
     frame?.Save(path);
-    window.Close();
     Console.WriteLine($"  {name}.png  {frame?.PixelSize}");
 }
 

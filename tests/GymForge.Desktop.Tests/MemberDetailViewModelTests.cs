@@ -41,7 +41,8 @@ public class MemberDetailViewModelTests
         var charges = new ChargesViewModel(chargeRepo, _mediator, session, new ReceiptService(scopeFactory));
 
         return new MemberDetailViewModel(
-            _mediator, _membershipRepo, Substitute.For<IAccessLogRepository>(), chargeRepo, charges);
+            _mediator, _membershipRepo, Substitute.For<IAccessLogRepository>(), chargeRepo, charges,
+            session, Substitute.For<IImagePicker>(), Substitute.For<IMemberPhotoStore>());
     }
 
     private async Task<MemberDetailViewModel> SutOnMembershipsTabAsync()

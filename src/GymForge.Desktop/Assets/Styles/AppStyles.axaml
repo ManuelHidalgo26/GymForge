@@ -1,6 +1,7 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:fa="using:FluentAvalonia.UI.Controls">
+        xmlns:fa="using:FluentAvalonia.UI.Controls"
+        xmlns:ctl="using:GymForge.Desktop.Controls">
 
     <!-- ════════════════════════════════════════════════════════════════════
          Design system GymForge — clases opt-in.
@@ -64,6 +65,12 @@
         <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <!-- Teclado numérico en pantalla (ctl:NumericKeypad). Classes="NoDisplay" le oculta el visor propio: se usa cuando
+         el campo de texto que edita ya está al lado y muestra el valor (kiosk), para no repetirlo ni gastar alto. -->
+    <Style Selector="ctl|NumericKeypad.NoDisplay Border#KeypadDisplay">
+        <Setter Property="IsVisible" Value="False" />
     </Style>
 
     <!-- Chip cuadrado con tinte para el ícono de un KPI o sección -->

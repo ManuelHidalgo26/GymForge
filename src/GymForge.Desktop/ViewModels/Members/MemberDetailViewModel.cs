@@ -2,7 +2,9 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GymForge.Application.DTOs;
 using GymForge.Application.Interfaces;
+using GymForge.Application.UseCases.Members;
 using GymForge.Application.UseCases.Memberships;
+using GymForge.Desktop.Services;
 using GymForge.Desktop.ViewModels.Charges;
 using MediatR;
 using System.Collections.ObjectModel;
@@ -17,10 +19,18 @@ public partial class MemberDetailViewModel : ObservableObject
     private readonly IMembershipRepository _membershipRepo;
     private readonly IAccessLogRepository _accessLogRepo;
     private readonly IChargeRepository _chargeRepo;
+    private readonly SessionContext _session;
+    private readonly IMemberPhotoStore _photoStore;
 
     [ObservableProperty] private MemberDto _member = null!;
     [ObservableProperty] private MemberDetailTab _activeTab = MemberDetailTab.Data;
     [ObservableProperty] private bool _isLoading;
+
+    // Tab: Datos — la foto se guarda apenas se elige; la credencial al asignarla
+    public PhotoPickerViewModel Photo { get; }
+    [ObservableProperty] private string _newCredential = string.Empty;
+    [ObservableProperty] private string? _credentialMessage;
+    [ObservableProperty] private bool _credentialAssigned;
 
     // Tab: Membresías
     [ObservableProperty] private ObservableCollection<MembershipDto> _memberships = [];
@@ -47,20 +57,68 @@ public partial class MemberDetailViewModel : ObservableObject
         IMembershipRepository membershipRepo,
         IAccessLogRepository accessLogRepo,
         IChargeRepository chargeRepo,
-        ChargesViewModel chargesVm)
+        ChargesViewModel chargesVm,
+        SessionContext session,
+        IImagePicker imagePicker,
+        IMemberPhotoStore photoStore)
     {
         _mediator       = mediator;
         _membershipRepo = membershipRepo;
         _accessLogRepo  = accessLogRepo;
         _chargeRepo     = chargeRepo;
         ChargesVm       = chargesVm;
+        _session        = session;
+        _photoStore     = photoStore;
+
+        Photo = new PhotoPickerViewModel(imagePicker);
+        Photo.ImageChosen += image => _ = SavePhotoAsync(image);
     }
 
     public async Task LoadAsync(MemberDto member, CancellationToken ct = default)
     {
         Member = member;
+        Photo.ShowSaved(member.PhotoUrl);
         ChargesVm.FilterByMember(member.Id);
         await LoadActiveTabAsync(ct);
+    }
+
+    // ── Datos: foto y credencial ──────────────────────────────────────────────
+
+    /// <summary>Guarda en disco y en el socio la foto recién elegida. Nunca lanza: el motivo queda en el mensaje de la foto.</summary>
+    private async Task SavePhotoAsync(byte[] image)
+    {
+        try
+        {
+            var path = _photoStore.Save(Member.Id, image);
+            Member = await _mediator.Send(new UpdateMemberPhotoCommand(_session.CompanyId, Member.Id, path));
+            Photo.MarkSaved();
+        }
+        catch (Exception ex)
+        {
+            Photo.Message = $"No se pudo guardar la foto: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task SaveCredentialAsync()
+    {
+        CredentialMessage = null;
+        CredentialAssigned = false;
+        try
+        {
+            Member = await _mediator.Send(new AssignCredentialCommand(_session.CompanyId, Member.Id, NewCredential));
+            NewCredential = string.Empty;
+            CredentialAssigned = true;
+            CredentialMessage = "Credencial asignada.";
+        }
+        catch (FluentValidation.ValidationException vex)
+        {
+            CredentialMessage = string.Join(" ", vex.Errors.Select(e => e.ErrorMessage));
+        }
+        catch (Exception ex)
+        {
+            CredentialMessage = ex.Message;
+        }
     }
 
     // ── Tab switching ─────────────────────────────────────────────────────────

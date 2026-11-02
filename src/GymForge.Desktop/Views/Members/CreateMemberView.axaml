@@ -4,13 +4,15 @@
              xmlns:vm="using:GymForge.Desktop.ViewModels.Members"
              xmlns:enums="using:GymForge.Domain.Enums"
              xmlns:dto="using:GymForge.Application.DTOs"
+             xmlns:views="using:GymForge.Desktop.Views.Members"
              x:Class="GymForge.Desktop.Views.Members.CreateMemberView"
              x:DataType="vm:CreateMemberViewModel">
 
     <UserControl.Styles>
+        <!-- Etiqueta de campo: color secundario del tema (AA) en vez de Opacity 0.65, que daba ≈ 3,7:1 -->
         <Style Selector="TextBlock.FieldLabel">
             <Setter Property="FontSize" Value="12" />
-            <Setter Property="Opacity" Value="0.65" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
             <Setter Property="Margin" Value="0,0,0,4" />
         </Style>
         <Style Selector="TextBox, ComboBox, DatePicker">
@@ -141,6 +143,38 @@
                                       Content="Acepta comunicaciones" FontSize="13" />
                         </StackPanel>
 
+                        <!-- Credencial de acceso (carnet o llavero). El lector de códigos tipea acá: ver el code-behind.
+                             "Escanear" deja el foco en el campo: así el primer carácter del lector cae en el campo y no en
+                             otro. Estados: sin código = pista; con código = tilde verde + texto (el alta va sobre el lienzo
+                             gris, donde el texto success da ≈ 4,4:1: el tono lo lleva el ícono y el texto queda en FormLabel). -->
+                        <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,0,0,14" Spacing="6">
+                            <TextBlock Classes="FieldLabel" Margin="0" Text="Credencial / N° de tarjeta" />
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                <TextBox x:Name="CredentialInput" Text="{Binding TagSerial}" MaxLength="50"
+                                         Watermark="Opcional: código del carnet o llavero"
+                                         AutomationProperties.Name="Credencial o número de tarjeta" />
+                                <Button Grid.Column="1" Command="{Binding ScanCredentialCommand}" Classes="Secondary"
+                                        Height="36" VerticalAlignment="Center"
+                                        AutomationProperties.Name="Escanear credencial"
+                                        ToolTip.Tip="Hacé clic y pasá el carnet por el lector de códigos">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Scan}" FontSize="15" />
+                                        <TextBlock Text="Escanear" FontSize="12" />
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                            <TextBlock Classes="FormLabel" TextWrapping="Wrap"
+                                       IsVisible="{Binding TagSerial, Converter={x:Static StringConverters.IsNullOrEmpty}}"
+                                       Text="Pasá el carnet por el lector o escribí el código. Es opcional: sin credencial, el socio igual ingresa con su DNI." />
+                            <StackPanel Orientation="Horizontal" Spacing="6"
+                                        IsVisible="{Binding TagSerial, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Accept}" FontSize="14"
+                                               Foreground="{DynamicResource SuccessBrush}" VerticalAlignment="Center" />
+                                <TextBlock Classes="FormLabel" VerticalAlignment="Center"
+                                           Text="Credencial lista: se guarda junto con el socio." />
+                            </StackPanel>
+                        </StackPanel>
+
                     </Grid>
 
                     <!-- ── Membresía inicial: alta + cobro en un paso ──────── -->
@@ -215,33 +249,13 @@
                     <TextBlock Text="Foto y biometría"
                                FontSize="15" FontWeight="SemiBold" />
 
-                    <!-- Foto -->
-                    <StackPanel Spacing="8" HorizontalAlignment="Center">
-                        <Border Width="140" Height="160" CornerRadius="8"
-                                Background="{DynamicResource SubtleFillColorSecondaryBrush}"
-                                ClipToBounds="True">
-                            <Grid>
-                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Contact}"
-                                               FontSize="64" Opacity="0.25"
-                                               IsVisible="{Binding PhotoUrl,
-                                                   Converter={x:Static ObjectConverters.IsNull}}"
-                                               HorizontalAlignment="Center"
-                                               VerticalAlignment="Center" />
-                                <!-- Imagen: Sprint 2 -->
-                            </Grid>
-                        </Border>
-                        <Button Command="{Binding CapturePhotoCommand}"
-                                Classes="Secondary"
-                                HorizontalAlignment="Stretch"
-                                HorizontalContentAlignment="Center">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Camera}" FontSize="15" />
-                                <TextBlock Text="Capturar foto" FontSize="12" />
-                            </StackPanel>
-                        </Button>
-                    </StackPanel>
+                    <!-- Foto: archivo o portapapeles (la cámara en vivo no está). Componente compartido con la ficha:
+                         recuadro con vista previa o estado vacío, "Elegir archivo" / "Pegar imagen" / "Quitar foto" y errores. -->
+                    <views:PhotoPickerView DataContext="{Binding Photo}" HorizontalAlignment="Center" />
 
-                    <!-- Huella -->
+                    <Border Classes="Divider" />
+
+                    <!-- Huella: todavía no hay lector (Fase 6). Se dice con claridad en vez de "Sprint 2" y sin Opacity. -->
                     <StackPanel Spacing="8" HorizontalAlignment="Center">
                         <Border Width="100" Height="100" CornerRadius="50"
                                 Background="{DynamicResource SubtleFillColorSecondaryBrush}"
@@ -262,9 +276,8 @@
                                 <TextBlock Text="Enrolar huella" FontSize="12" />
                             </StackPanel>
                         </Button>
-                        <TextBlock Text="(disponible en Sprint 2)"
-                                   FontSize="10" Opacity="0.4"
-                                   HorizontalAlignment="Center" />
+                        <TextBlock Classes="FormLabel" Text="Disponible próximamente"
+                                   HorizontalAlignment="Center" TextAlignment="Center" />
                     </StackPanel>
 
                 </StackPanel>

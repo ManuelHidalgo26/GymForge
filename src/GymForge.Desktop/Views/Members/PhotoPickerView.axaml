@@ -1,0 +1,62 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:fa="using:FluentAvalonia.UI.Controls"
+             xmlns:vm="using:GymForge.Desktop.ViewModels.Members"
+             x:Class="GymForge.Desktop.Views.Members.PhotoPickerView"
+             x:DataType="vm:PhotoPickerViewModel">
+
+    <!-- Foto del socio: recuadro con la vista previa (o el estado vacío) + "Elegir archivo" / "Pegar imagen".
+         Lo usan el alta y la ficha: se le da como DataContext el PhotoPickerViewModel (DataContext="{Binding Photo}").
+         · Vacío: ícono + "Sin foto" + formato aceptado (JPG o PNG, hasta 10 MB; ver PhotoImage).
+         · Imagen elegida y todavía sin guardar: pill "Pendiente de guardar" + "Quitar foto". En el alta se guarda al crear
+           el socio; en la ficha se guarda apenas se elige, así que el pill solo se ve un instante.
+         · Error (formato, tamaño, portapapeles vacío, no se pudo guardar): texto rojo AA debajo de los botones. -->
+    <StackPanel Spacing="10" Width="160">
+
+        <Border Classes="Inset" Width="160" Height="180" CornerRadius="12" Padding="0" ClipToBounds="True">
+            <Grid>
+                <StackPanel Classes="EmptyState" Margin="12"
+                            IsVisible="{Binding Preview, Converter={x:Static ObjectConverters.IsNull}}">
+                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Contact}" />
+                    <TextBlock Classes="EmptyTitle" Text="Sin foto" />
+                    <TextBlock Classes="FormLabel" HorizontalAlignment="Center" TextAlignment="Center"
+                               TextWrapping="Wrap" Text="JPG o PNG, hasta 10 MB" />
+                </StackPanel>
+                <Image Source="{Binding Preview}" Stretch="UniformToFill"
+                       IsVisible="{Binding Preview, Converter={x:Static ObjectConverters.IsNotNull}}"
+                       AutomationProperties.Name="Foto del socio" />
+            </Grid>
+        </Border>
+
+        <Border Classes="Pill info" HorizontalAlignment="Center"
+                IsVisible="{Binding HasPendingImage}">
+            <TextBlock Text="Pendiente de guardar" />
+        </Border>
+
+        <Button Command="{Binding PickCommand}" Classes="Secondary"
+                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.OpenFile}" FontSize="15" />
+                <TextBlock Text="Elegir archivo" FontSize="12" />
+            </StackPanel>
+        </Button>
+        <Button Command="{Binding PasteCommand}" Classes="Secondary"
+                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Paste}" FontSize="15" />
+                <TextBlock Text="Pegar imagen" FontSize="12" />
+            </StackPanel>
+        </Button>
+        <Button Command="{Binding ClearCommand}" Classes="Ghost"
+                IsVisible="{Binding HasPendingImage}"
+                HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+            <TextBlock Text="Quitar foto" FontSize="12" />
+        </Button>
+
+        <TextBlock Classes="Feedback danger" Text="{Binding Message}"
+                   IsVisible="{Binding Message, Converter={x:Static ObjectConverters.IsNotNull}}"
+                   AutomationProperties.LiveSetting="Polite" />
+
+    </StackPanel>
+
+</UserControl>

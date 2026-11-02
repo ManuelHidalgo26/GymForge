@@ -6,9 +6,12 @@
              xmlns:vCharges="using:GymForge.Desktop.Views.Charges"
              xmlns:dto="using:GymForge.Application.DTOs"
              xmlns:enums="using:GymForge.Domain.Enums"
+             xmlns:views="using:GymForge.Desktop.Views.Members"
              x:Class="GymForge.Desktop.Views.Members.MemberDetailView"
              x:DataType="vm:MemberDetailViewModel">
 
+    <!-- Se quitaron los estilos locales TextBlock.Feedback / Feedback.ok: pisaban los del design system (AppStyles) con
+         DangerBrush, que en dark no llega a AA sobre la card. Ahora el resultado usa Feedback + success/danger globales. -->
     <UserControl.Styles>
         <Style Selector="Button.TabButton">
             <Setter Property="Background" Value="Transparent" />
@@ -39,13 +42,20 @@
                     <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Back}" FontSize="20" />
                 </Button>
 
-                <!-- Avatar -->
-                <Border DockPanel.Dock="Left" Classes="Avatar"
-                        Width="56" Height="56" CornerRadius="28"
-                        Margin="0,0,14,0">
-                    <TextBlock FontSize="20" FontWeight="Bold"
-                               Text="{Binding Member.FirstName[0]}" />
-                </Border>
+                <!-- Avatar: la foto del socio si ya tiene (Photo.Preview: la guardada o la recién elegida); si no, la inicial -->
+                <Panel DockPanel.Dock="Left" Width="56" Height="56" Margin="0,0,14,0">
+                    <Border Classes="Avatar"
+                            Width="56" Height="56" CornerRadius="28"
+                            IsVisible="{Binding Photo.Preview, Converter={x:Static ObjectConverters.IsNull}}">
+                        <TextBlock FontSize="20" FontWeight="Bold"
+                                   Text="{Binding Member.FirstName[0]}" />
+                    </Border>
+                    <Border Width="56" Height="56" CornerRadius="28" ClipToBounds="True"
+                            IsVisible="{Binding Photo.Preview, Converter={x:Static ObjectConverters.IsNotNull}}">
+                        <Image Source="{Binding Photo.Preview}" Stretch="UniformToFill"
+                               AutomationProperties.Name="Foto del socio" />
+                    </Border>
+                </Panel>
 
                 <!-- Name + status + meta -->
                 <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center" Spacing="2">
@@ -67,15 +77,15 @@
                         </Border>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="12">
-                        <TextBlock FontSize="12" Opacity="0.6">
+                        <TextBlock Classes="FormLabel">
                             <Run Text="{Binding Member.DocumentType}" />
                             <Run Text=" " />
                             <Run Text="{Binding Member.DocumentNumber}" />
                         </TextBlock>
-                        <TextBlock FontSize="12" Opacity="0.6"
+                        <TextBlock Classes="FormLabel"
                                    IsVisible="{Binding Member.Email, Converter={x:Static ObjectConverters.IsNotNull}}"
                                    Text="{Binding Member.Email}" />
-                        <TextBlock FontSize="12" Opacity="0.6"
+                        <TextBlock Classes="FormLabel"
                                    IsVisible="{Binding Member.Mobile, Converter={x:Static ObjectConverters.IsNotNull}}"
                                    Text="{Binding Member.Mobile}" />
                     </StackPanel>
@@ -133,73 +143,145 @@
             <ScrollViewer IsVisible="{Binding ActiveTab,
                 Converter={x:Static ObjectConverters.Equal},
                 ConverterParameter={x:Static vm:MemberDetailTab.Data}}">
-                <StackPanel Margin="24,20" Spacing="20" MaxWidth="700">
-                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" >
-                        <Grid.Styles>
-                            <Style Selector="StackPanel.Field">
-                                <Setter Property="Spacing" Value="4" />
-                                <Setter Property="Margin" Value="0,0,16,16" />
-                            </Style>
-                            <Style Selector="TextBlock.Label">
-                                <Setter Property="FontSize" Value="11" />
-                                <Setter Property="Opacity" Value="0.6" />
-                            </Style>
-                            <Style Selector="TextBlock.Value">
-                                <Setter Property="FontSize" Value="14" />
-                            </Style>
-                        </Grid.Styles>
+                <StackPanel Margin="24,20" Spacing="16" MaxWidth="700">
 
-                        <StackPanel Grid.Row="0" Grid.Column="0" Classes="Field">
-                            <TextBlock Classes="Label" Text="Nombre" />
-                            <TextBlock Classes="Value" Text="{Binding Member.FirstName}" />
-                        </StackPanel>
-                        <StackPanel Grid.Row="0" Grid.Column="1" Classes="Field">
-                            <TextBlock Classes="Label" Text="Apellido" />
-                            <TextBlock Classes="Value" Text="{Binding Member.LastName}" />
-                        </StackPanel>
+                    <!-- Datos personales: card como el resto de la app. El padding de abajo es corto porque cada campo
+                         ya trae 16 px de margen inferior. -->
+                    <Border Classes="Card" Padding="24,20,24,4">
+                        <StackPanel>
+                            <TextBlock Text="Datos personales" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,14" />
+                            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" >
+                                <Grid.Styles>
+                                    <Style Selector="StackPanel.Field">
+                                        <Setter Property="Spacing" Value="4" />
+                                        <Setter Property="Margin" Value="0,0,16,16" />
+                                    </Style>
+                                    <!-- Etiqueta: color secundario del tema (AA) en vez de Opacity 0.6 sobre 11 px -->
+                                    <Style Selector="TextBlock.Label">
+                                        <Setter Property="FontSize" Value="12" />
+                                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                                    </Style>
+                                    <Style Selector="TextBlock.Value">
+                                        <Setter Property="FontSize" Value="14" />
+                                    </Style>
+                                </Grid.Styles>
 
-                        <StackPanel Grid.Row="1" Grid.Column="0" Classes="Field">
-                            <TextBlock Classes="Label" Text="Tipo documento" />
-                            <TextBlock Classes="Value" Text="{Binding Member.DocumentType}" />
-                        </StackPanel>
-                        <StackPanel Grid.Row="1" Grid.Column="1" Classes="Field">
-                            <TextBlock Classes="Label" Text="Número documento" />
-                            <TextBlock Classes="Value" Text="{Binding Member.DocumentNumber}" />
-                        </StackPanel>
+                                <StackPanel Grid.Row="0" Grid.Column="0" Classes="Field">
+                                    <TextBlock Classes="Label" Text="Nombre" />
+                                    <TextBlock Classes="Value" Text="{Binding Member.FirstName}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="0" Grid.Column="1" Classes="Field">
+                                    <TextBlock Classes="Label" Text="Apellido" />
+                                    <TextBlock Classes="Value" Text="{Binding Member.LastName}" />
+                                </StackPanel>
 
-                        <StackPanel Grid.Row="2" Grid.Column="0" Classes="Field">
-                            <TextBlock Classes="Label" Text="Email" />
-                            <TextBlock Classes="Value"
-                                       Text="{Binding Member.Email, TargetNullValue='—'}" />
-                        </StackPanel>
-                        <StackPanel Grid.Row="2" Grid.Column="1" Classes="Field">
-                            <TextBlock Classes="Label" Text="Celular" />
-                            <TextBlock Classes="Value"
-                                       Text="{Binding Member.Mobile, TargetNullValue='—'}" />
-                        </StackPanel>
+                                <StackPanel Grid.Row="1" Grid.Column="0" Classes="Field">
+                                    <TextBlock Classes="Label" Text="Tipo documento" />
+                                    <TextBlock Classes="Value" Text="{Binding Member.DocumentType}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Grid.Column="1" Classes="Field">
+                                    <TextBlock Classes="Label" Text="Número documento" />
+                                    <TextBlock Classes="Value" Text="{Binding Member.DocumentNumber}" />
+                                </StackPanel>
 
-                        <StackPanel Grid.Row="3" Grid.Column="0" Classes="Field">
-                            <TextBlock Classes="Label" Text="Fecha de nacimiento" />
-                            <TextBlock Classes="Value"
-                                       Text="{Binding Member.BirthDate, TargetNullValue='—'}" />
-                        </StackPanel>
-                        <StackPanel Grid.Row="3" Grid.Column="1" Classes="Field">
-                            <TextBlock Classes="Label" Text="Edad" />
-                            <TextBlock Classes="Value"
-                                       Text="{Binding Member.Age, TargetNullValue='—'}" />
-                        </StackPanel>
+                                <StackPanel Grid.Row="2" Grid.Column="0" Classes="Field">
+                                    <TextBlock Classes="Label" Text="Email" />
+                                    <TextBlock Classes="Value"
+                                               Text="{Binding Member.Email, TargetNullValue='—'}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="2" Grid.Column="1" Classes="Field">
+                                    <TextBlock Classes="Label" Text="Celular" />
+                                    <TextBlock Classes="Value"
+                                               Text="{Binding Member.Mobile, TargetNullValue='—'}" />
+                                </StackPanel>
 
-                        <StackPanel Grid.Row="4" Grid.Column="0" Classes="Field">
-                            <TextBlock Classes="Label" Text="Socio desde" />
-                            <TextBlock Classes="Value"
-                                       Text="{Binding Member.JoinDate, TargetNullValue='—'}" />
+                                <StackPanel Grid.Row="3" Grid.Column="0" Classes="Field">
+                                    <TextBlock Classes="Label" Text="Fecha de nacimiento" />
+                                    <TextBlock Classes="Value"
+                                               Text="{Binding Member.BirthDate, TargetNullValue='—'}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="3" Grid.Column="1" Classes="Field">
+                                    <TextBlock Classes="Label" Text="Edad" />
+                                    <TextBlock Classes="Value"
+                                               Text="{Binding Member.Age, TargetNullValue='—'}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Row="4" Grid.Column="0" Classes="Field">
+                                    <TextBlock Classes="Label" Text="Socio desde" />
+                                    <TextBlock Classes="Value"
+                                               Text="{Binding Member.JoinDate, TargetNullValue='—'}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="4" Grid.Column="1" Classes="Field">
+                                    <TextBlock Classes="Label" Text="Huella digital" />
+                                    <TextBlock Classes="Value"
+                                               Text="{Binding Member.HasFingerprint,
+                                                   StringFormat={}{0:Registrada|No registrada}}" />
+                                </StackPanel>
+                            </Grid>
                         </StackPanel>
-                        <StackPanel Grid.Row="4" Grid.Column="1" Classes="Field">
-                            <TextBlock Classes="Label" Text="Huella digital" />
-                            <TextBlock Classes="Value"
-                                       Text="{Binding Member.HasFingerprint,
-                                           StringFormat={}{0:Registrada|No registrada}}" />
-                        </StackPanel>
+                    </Border>
+
+                    <!-- Foto y credencial, lado a lado. La foto es el mismo componente que usa el alta (PhotoPickerView):
+                         se guarda apenas se elige y se ve también en el avatar del encabezado. -->
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
+
+                        <Border Grid.Column="0" Classes="Card" Padding="20">
+                            <StackPanel Spacing="12">
+                                <TextBlock Text="Foto" FontSize="15" FontWeight="SemiBold" />
+                                <views:PhotoPickerView DataContext="{Binding Photo}" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Credencial de acceso: el lector de códigos tipea en el campo y el Enter final la asigna.
+                             "Escanear" deja el foco en el campo (code-behind) para que el primer carácter del lector caiga ahí. -->
+                        <Border Grid.Column="1" Classes="Card" Padding="24,20" VerticalAlignment="Top">
+                            <StackPanel Spacing="12">
+                                <TextBlock Text="Credencial de acceso" FontSize="15" FontWeight="SemiBold" />
+
+                                <StackPanel Spacing="4">
+                                    <TextBlock Classes="FormLabel" Text="Credencial actual" />
+                                    <Border Classes="Inset" HorizontalAlignment="Left" Padding="12,6"
+                                            IsVisible="{Binding Member.TagSerial, Converter={x:Static ObjectConverters.IsNotNull}}">
+                                        <TextBlock Classes="Mono" FontSize="14" FontWeight="SemiBold"
+                                                   Text="{Binding Member.TagSerial}" />
+                                    </Border>
+                                    <TextBlock Classes="FormLabel" FontSize="14" Text="Sin credencial"
+                                               IsVisible="{Binding Member.TagSerial, Converter={x:Static ObjectConverters.IsNull}}" />
+                                </StackPanel>
+
+                                <StackPanel Spacing="4">
+                                    <TextBlock Classes="FormLabel" Text="Nueva credencial" />
+                                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                                        <TextBox x:Name="CredentialInput" MaxLength="50" Text="{Binding NewCredential}"
+                                                 Watermark="Escaneá o escribí el código"
+                                                 AutomationProperties.Name="Nueva credencial">
+                                            <TextBox.KeyBindings>
+                                                <KeyBinding Gesture="Enter" Command="{Binding SaveCredentialCommand}" />
+                                            </TextBox.KeyBindings>
+                                        </TextBox>
+                                        <Button Grid.Column="1" Classes="Secondary" Click="OnScanCredentialClick"
+                                                AutomationProperties.Name="Escanear credencial"
+                                                ToolTip.Tip="Hacé clic y pasá el carnet por el lector de códigos">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Scan}" FontSize="15" />
+                                                <TextBlock Text="Escanear" FontSize="12" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Grid.Column="2" Command="{Binding SaveCredentialCommand}" Classes="Primary" Content="Asignar" />
+                                    </Grid>
+                                </StackPanel>
+
+                                <TextBlock Classes="FormLabel" TextWrapping="Wrap"
+                                           Text="Hacé clic en Escanear y pasá el carnet por el lector: al terminar se asigna solo. También podés escribir el código y presionar Enter." />
+
+                                <TextBlock Classes="Feedback" Classes.success="{Binding CredentialAssigned}"
+                                           Classes.danger="{Binding !CredentialAssigned}"
+                                           Text="{Binding CredentialMessage}"
+                                           IsVisible="{Binding CredentialMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                           AutomationProperties.LiveSetting="Polite" />
+                            </StackPanel>
+                        </Border>
+
                     </Grid>
                 </StackPanel>
             </ScrollViewer>

@@ -77,12 +77,14 @@ public class ValidateSwipeUseCase : IValidateSwipeUseCase
         // se resuelven SOLO en esa empresa+sede (los query filters toman este scope).
         using var tenantScope = _tenant.BeginScope(request.CompanyId, request.SiteId);
 
-        // 1. Resolver credencial → Member. La carga manual y el teclado son DNI;
-        //    el resto de los métodos resuelven por tag físico.
+        // 1. Resolver credencial → Member. La carga manual y el teclado son DNI; el lector de códigos
+        //    prueba el tag del gimnasio y, si no hay, el DNI; el resto resuelve por tag físico.
         Member? member = request.Method switch
         {
             AccessMethod.KeypadPin or AccessMethod.Manual =>
                 await _memberRepo.FindByDocumentAsync(DocumentType.DNI, request.Credential, request.CompanyId, ct),
+            AccessMethod.Barcode =>
+                await CredentialMatch.FindMemberAsync(_memberRepo, request.Credential, request.CompanyId, ct),
             _ => await _memberRepo.FindByTagSerialAsync(request.Credential, request.CompanyId, ct)
         };
 

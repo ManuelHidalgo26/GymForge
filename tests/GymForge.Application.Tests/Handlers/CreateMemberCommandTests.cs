@@ -75,6 +75,56 @@ public class CreateMemberCommandTests
         await _repo.DidNotReceive().AddAsync(Arg.Any<Member>(), Arg.Any<CancellationToken>());
     }
 
+    // ── Credencial de acceso (opcional) ───────────────────────────────────────
+
+    [Fact]
+    public async Task Handle_WithTagSerial_EnrollsItTrimmed()
+    {
+        var cmd = ValidCommand() with { TagSerial = "  CARNET-77  " };
+
+        var dto = await new CreateMemberCommandHandler(_repo, _license).Handle(cmd, CancellationToken.None);
+
+        dto.TagSerial.Should().Be("CARNET-77");
+        await _repo.Received(1).IsTagSerialInUseAsync(
+            cmd.CompanyId, "CARNET-77", null, Arg.Any<CancellationToken>());
+        await _repo.Received(1).AddAsync(Arg.Is<Member>(m => m.TagSerial == "CARNET-77"), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task Handle_WithoutTagSerial_LeavesTheMemberWithoutCredential(string? tagSerial)
+    {
+        var cmd = ValidCommand() with { TagSerial = tagSerial };
+
+        var dto = await new CreateMemberCommandHandler(_repo, _license).Handle(cmd, CancellationToken.None);
+
+        dto.TagSerial.Should().BeNull();
+        await _repo.DidNotReceive().IsTagSerialInUseAsync(
+            Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<Guid?>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_TagSerialOfAnotherMember_RejectsTheSignUp()
+    {
+        var cmd = ValidCommand() with { TagSerial = "CARNET-77" };
+        _repo.IsTagSerialInUseAsync(cmd.CompanyId, "CARNET-77", null, Arg.Any<CancellationToken>()).Returns(true);
+
+        var act = () => new CreateMemberCommandHandler(_repo, _license).Handle(cmd, CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*credencial*otro socio*");
+        await _repo.DidNotReceive().AddAsync(Arg.Any<Member>(), Arg.Any<CancellationToken>());
+        await _repo.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public void Validator_TagSerialLongerThanTheColumn_Fails()
+    {
+        var cmd = ValidCommand() with { TagSerial = new string('9', 51) };
+        new CreateMemberCommandValidator().Validate(cmd).IsValid.Should().BeFalse();
+    }
+
     [Fact]
     public void Validator_EmptyFirstName_Fails()
     {

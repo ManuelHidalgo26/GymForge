@@ -40,6 +40,19 @@ public class MemberRepository : IMemberRepository
         await _db.Members
             .FirstOrDefaultAsync(m => m.CompanyId == companyId && m.TagSerial == tagSerial, ct);
 
+    public async Task<bool> IsTagSerialInUseAsync(
+        Guid companyId, string tagSerial, Guid? exceptMemberId = null, CancellationToken ct = default)
+    {
+        var sameTag = _db.Members
+            .IgnoreQueryFilters()
+            .Where(m => m.CompanyId == companyId && m.TagSerial == tagSerial);
+
+        if (exceptMemberId is { } self)
+            sameTag = sameTag.Where(m => m.Id != self);
+
+        return await sameTag.AnyAsync(ct);
+    }
+
     public async Task<Member?> FindByEmailAsync(string email, Guid companyId, CancellationToken ct = default) =>
         await _db.Members
             .FirstOrDefaultAsync(m => m.CompanyId == companyId && m.Email == email, ct);

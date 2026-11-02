@@ -188,6 +188,25 @@ public class TenantAdversarialIntegrationTests : IAsyncLifetime
         (await repo.GetPagedAsync(_companyA.Id, _siteA2.Id, 1, 50)).Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task CredentialLookup_ByTagOrDni_NeverCrossesCompanyOrSite()
+    {
+        _memberB1.EnrollTag("TAG-B");
+        _memberA2.EnrollTag("TAG-A2");
+        await _db.SaveChangesAsync();
+        var handler = new FindMemberByCredentialQueryHandler(new MemberRepository(_db));
+
+        async Task<Guid?> Lookup(Guid companyId, string code) =>
+            (await handler.Handle(new FindMemberByCredentialQuery(companyId, code), CancellationToken.None))?.Id;
+
+        (await Lookup(_companyA.Id, "40000001")).Should().Be(_memberA1.Id, "es de la sede activa");
+        (await Lookup(_companyB.Id, "TAG-B")).Should().BeNull("el tenant ambiente es la empresa A");
+        (await Lookup(_companyA.Id, "TAG-B")).Should().BeNull("el tag es de la empresa B");
+        (await Lookup(_companyA.Id, "40000003")).Should().BeNull("el DNI es de un socio de la empresa B");
+        (await Lookup(_companyA.Id, "TAG-A2")).Should().BeNull("el tag es de otra sede");
+        (await Lookup(_companyA.Id, "40000002")).Should().BeNull("el DNI es de un socio de otra sede");
+    }
+
     // ── Licencia: no se esquiva creando socios en otra sede ──────────────────
 
     [Fact]

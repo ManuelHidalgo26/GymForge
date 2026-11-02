@@ -17,6 +17,11 @@ public interface IMemberRepository : IRepository<Member>
 {
     Task<Member?> FindByDocumentAsync(DocumentType docType, string docNumber, Guid companyId, CancellationToken ct = default);
     Task<Member?> FindByTagSerialAsync(string tagSerial, Guid companyId, CancellationToken ct = default);
+    /// <summary>
+    /// ¿Algún socio de la empresa (de cualquier sede) ya tiene esa credencial? La unicidad es por empresa y no por
+    /// sede, así que ignora el filtro de sede. <paramref name="exceptMemberId"/> excluye al propio socio.
+    /// </summary>
+    Task<bool> IsTagSerialInUseAsync(Guid companyId, string tagSerial, Guid? exceptMemberId = null, CancellationToken ct = default);
     Task<Member?> FindByEmailAsync(string email, Guid companyId, CancellationToken ct = default);
     Task<IReadOnlyList<Member>> SearchAsync(string query, Guid companyId, Guid siteId, int take = 50, CancellationToken ct = default);
     Task<IReadOnlyList<Member>> GetPagedAsync(Guid companyId, Guid siteId, int page, int pageSize, MemberStatus? status = null, CancellationToken ct = default);
@@ -97,6 +102,8 @@ public interface IProductRepository
     /// <summary>Todos los productos con su stock, incluidos inactivos (para administrar).</summary>
     Task<IReadOnlyList<Product>> GetAllByCompanyAsync(Guid companyId, CancellationToken ct = default);
     Task<Product?> GetBySkuAsync(Guid companyId, string sku, CancellationToken ct = default);
+    /// <summary>Producto activo (a la venta) con ese código de barras, o null.</summary>
+    Task<Product?> GetByBarcodeAsync(Guid companyId, string barcode, CancellationToken ct = default);
     Task<StockBySite?> GetStockAsync(Guid productId, Guid siteId, CancellationToken ct = default);
     Task AddAsync(Product product, CancellationToken ct = default);
     Task AddStockAsync(StockBySite stock, CancellationToken ct = default);

@@ -8,7 +8,8 @@ public enum AccessMethod
     KeypadPin,
     MobileApp,
     Facial,
-    Manual
+    Manual,
+    Barcode
 }
 
 public enum AccessDirection

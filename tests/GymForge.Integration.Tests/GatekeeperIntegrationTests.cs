@@ -205,6 +205,48 @@ public class GatekeeperIntegrationTests : IAsyncLifetime
         await _db.SaveChangesAsync();
     }
 
+    // ── Lector de códigos: AccessMethod.Barcode se persiste como texto (sin migración) ─────
+
+    private ValidateSwipeRequest BarcodeSwipe(string code) =>
+        new(code, AccessMethod.Barcode, DoorId, _siteId, _companyId);
+
+    [Fact]
+    public async Task BarcodeSwipe_WithTheGymTag_IsGranted_AndTheLogStoresTheMethodAsText()
+    {
+        await SeedMemberWithVisitPackAsync("CARNET-77", visits: 10, _siteId);
+
+        var result = await CreateGatekeeper().ValidateSwipeAsync(BarcodeSwipe("CARNET-77"));
+
+        result.Granted.Should().BeTrue();
+        _db.ChangeTracker.Clear();
+        (await _db.AccessLogs.IgnoreQueryFilters().SingleAsync()).Method.Should().Be(AccessMethod.Barcode);
+        (await _db.Database.SqlQueryRaw<string>("SELECT Method AS Value FROM AccessLogs").SingleAsync())
+            .Should().Be("Barcode");
+    }
+
+    [Fact]
+    public async Task BarcodeSwipe_WithTheDniOfAMemberWhoseTagIsAnother_IsGrantedByTheFallback()
+    {
+        await SeedMemberWithVisitPackAsync("CARNET-77", visits: 10, _siteId);   // DNI 30123456
+
+        var result = await CreateGatekeeper().ValidateSwipeAsync(BarcodeSwipe("30123456"));
+
+        result.Granted.Should().BeTrue();
+        _db.ChangeTracker.Clear();
+        (await _db.AccessLogs.IgnoreQueryFilters().SingleAsync()).Method.Should().Be(AccessMethod.Barcode);
+    }
+
+    [Fact]
+    public async Task BarcodeSwipe_WithTheDniOfAMemberOfAnotherSite_IsUnknownAtThisDoor()
+    {
+        await SeedMemberWithVisitPackAsync("CARNET-NORTE", visits: 10, _otherSiteId);   // DNI 30123456
+
+        var result = await CreateGatekeeper().ValidateSwipeAsync(BarcodeSwipe("30123456"));
+
+        result.Granted.Should().BeFalse();
+        result.DenialReason.Should().Be(AccessDenialReason.TagUnknown);
+    }
+
     [Fact]
     public async Task UnknownTag_PersistsADeniedLogWithoutMember()
     {

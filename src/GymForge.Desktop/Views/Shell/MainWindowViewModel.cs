@@ -20,6 +20,7 @@ public enum NavSection
     Members,
     Access,
     Cash,
+    Collections,
     Plans,
     Classes,
     Routines,
@@ -127,6 +128,9 @@ public partial class MainWindowViewModel : ObservableObject
 
             // Caja registradora: turno, movimientos y arqueo
             NavSection.Cash      => Cached(section, () => _sp.GetRequiredService<CashViewModel>()),
+
+            // Morosos de la sede activa + recordatorio por WhatsApp
+            NavSection.Collections => Cached(section, () => _sp.GetRequiredService<ViewModels.Collections.CollectionsViewModel>()),
 
             NavSection.Plans     => Cached(section, () => _sp.GetRequiredService<ViewModels.Plans.PlansViewModel>()),
 

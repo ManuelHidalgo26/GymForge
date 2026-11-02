@@ -44,7 +44,13 @@ public interface IChargeRepository : IRepository<Charge>
 {
     Task<decimal> SumOutstandingAsync(Guid memberId, CancellationToken ct = default);
     Task<IReadOnlyList<Charge>> GetPendingAsync(Guid memberId, CancellationToken ct = default);
+    /// <summary>Mora de la empresa completa (todas las sedes): la usa el job. Incluye el socio.</summary>
     Task<IReadOnlyList<Charge>> GetOverdueAsync(Guid companyId, DateOnly asOf, CancellationToken ct = default);
+    /// <summary>
+    /// Mora de UNA sede (pantalla de morosos): empresa y sede explícitas, no depende del tenant ambiente.
+    /// Incluye el socio. Mismos criterios que <see cref="GetOverdueAsync"/>.
+    /// </summary>
+    Task<IReadOnlyList<Charge>> GetOverdueBySiteAsync(Guid companyId, Guid siteId, DateOnly asOf, CancellationToken ct = default);
 }
 
 public interface IPaymentRepository
@@ -155,6 +161,28 @@ public interface IAccessLogRepository
     Task<AccessLog?> GetLastGrantedAsync(Guid memberId, int doorId, CancellationToken ct = default);
     Task<IReadOnlyList<AccessLog>> GetByMemberAsync(Guid memberId, int take = 50, CancellationToken ct = default);
     Task<IReadOnlyList<AccessLog>> GetBySiteAsync(Guid siteId, DateTime from, DateTime to, CancellationToken ct = default);
+}
+
+/// <summary>
+/// Registro de recordatorios de cobranza (append-only): solo se agregan avisos, nunca se modifican ni
+/// se borran. Las lecturas por socio pasan por el filtro de tenant (empresa + sede).
+/// </summary>
+public interface INotificationLogRepository
+{
+    Task AppendAsync(NotificationLog log, CancellationToken ct = default);
+    Task<int> SaveChangesAsync(CancellationToken ct = default);
+
+    /// <summary>Avisos del socio, del más reciente al más antiguo. Filtrado por tenant.</summary>
+    Task<IReadOnlyList<NotificationLog>> GetByMemberAsync(Guid memberId, int take = 50, CancellationToken ct = default);
+
+    /// <summary>Último aviso al socio (para "último recordatorio: hace N días"). Filtrado por tenant.</summary>
+    Task<NotificationLog?> GetLastForMemberAsync(Guid memberId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Dedup del job: ¿ya se envió ESTA etapa para ESTE cargo? Company-wide a propósito (el job corre
+    /// sin sede): IgnoreQueryFilters() + CompanyId explícito, igual que <see cref="IChargeRepository.GetOverdueAsync"/>.
+    /// </summary>
+    Task<bool> WasSentAsync(Guid companyId, Guid chargeId, int stageDaysOverdue, CancellationToken ct = default);
 }
 
 public interface IClassRepository

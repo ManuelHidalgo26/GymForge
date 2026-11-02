@@ -49,7 +49,20 @@ public class ChargeRepository : IChargeRepository
     // Mora de la empresa completa (todas las sedes); el límite de tenant es el CompanyId explícito.
     public async Task<IReadOnlyList<Charge>> GetOverdueAsync(
         Guid companyId, DateOnly asOf, CancellationToken ct = default) =>
-        await _db.Charges
+        await OverdueQuery(companyId, asOf)
+            .OrderBy(c => c.DueDate)
+            .ToListAsync(ct);
+
+    // Mora de una sede: el límite de tenant son el CompanyId y el SiteId explícitos.
+    public async Task<IReadOnlyList<Charge>> GetOverdueBySiteAsync(
+        Guid companyId, Guid siteId, DateOnly asOf, CancellationToken ct = default) =>
+        await OverdueQuery(companyId, asOf)
+            .Where(c => c.SiteId == siteId)
+            .OrderBy(c => c.DueDate)
+            .ToListAsync(ct);
+
+    private IQueryable<Charge> OverdueQuery(Guid companyId, DateOnly asOf) =>
+        _db.Charges
             .IgnoreQueryFilters()
             .Include(c => c.Member)
             .Where(c =>
@@ -57,7 +70,5 @@ public class ChargeRepository : IChargeRepository
                 c.DueDate < asOf &&
                 c.Status != ChargeStatus.Paid &&
                 c.Status != ChargeStatus.WrittenOff &&
-                c.Status != ChargeStatus.Refunded)
-            .OrderBy(c => c.DueDate)
-            .ToListAsync(ct);
+                c.Status != ChargeStatus.Refunded);
 }

@@ -16,12 +16,13 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 - Flujo por sesión: arqui (ADR) → dev (implementa) → qa (aprueba o veta).
 - Regla 6 de CLAUDE.md: `dotnet test` verde antes de cada commit.
 
-## Estado general (al 2026-10-28)
+## Estado general (al 2026-10-29)
 
 - Sesiones 1, 2, 3 y Fase 1: **mergeadas a `master`** (merge `--no-ff` `33ba4ec`; 19 commits de `feat/sesion-3`). Local: `origin/master` quedó atrás, **sin push**. La rama `feat/sesion-3` sigue existiendo. ADR-001 a ADR-004 en `Accepted`.
-- Tests: **646 verdes** (Domain 83 · Application 288 · Desktop 54 · Integration 221), cifra de qa tras Fase 1. Antes de F1: 504 (cifra del orquestador tras Q1). La sesión de notas no re-ejecutó `dotnet test`.
-- Working tree **limpio**: todo commiteado y en `master`. `.gitignore` ya ignora `*.lnk` y `*.pfx`.
-- Abierto en `docs/TASKS.md`: **0 bloqueadores de piloto**. Quedan: decisiones del usuario (UX11, Q2/D9, D7, D11/Q4, F1-D8, F1-D11), P-2, D1–D19, F1-D1 a F1-D11, Q3–Q9, UX1–UX12 y las fases F2–F6.
+- **Fase 2 (Sesión 4): implementada y aprobada por qa con observaciones. NADA COMMITEADO.** Los cambios están en el working tree. ADR-005 queda en `Proposed` hasta el commit. El commit lo coordina el orquestador y lo decide el usuario.
+- Tests: **862 verdes** (Domain 86 · Application 394 · Desktop 135 · Integration 247), cifra de qa tras Fase 2 (dev reportó 809; qa sumó 53). La sesión de notas no re-ejecutó `dotnet test`.
+- Working tree **con cambios sin commitear de Fase 2** (no está limpio). `.gitignore` ya ignora `*.lnk` y `*.pfx`.
+- Abierto en `docs/TASKS.md`: **0 bloqueadores de piloto**. Quedan: decisiones del usuario (UX11, Q2/D9, D7, D11/Q4, F1-D8, F1-D11 y las de F2 en "Qué sigue"), P-2, D1–D19, F1-D1 a F1-D11, F2-D1 a F2-D8, Q3–Q9, UX1–UX17 y las fases F3–F6.
 
 ## Roadmap por fases
 
@@ -29,7 +30,7 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 |---|---|---|---|
 | 0 — Bugs y reglas de negocio | 1-2 (P-1 en 3) | Correctitud del core | **CERRADA.** S1, S2, P-1 (freeze) y Q1 commiteadas en `feat/sesion-3` |
 | 1 — Robustez de producción | 3 (continuación) | Backup off-site, auto-update Velopack, licencia (CUIT + fingerprint), retención de logs, fix "Sedes: 2 de 1" | **CERRADA (2026-10-28).** F1-1 a F1-5 commiteadas; qa aprobó con observaciones. Deuda en TASKS (F1-D1 a F1-D11) |
-| 2 — WhatsApp gratis + cobranzas | 4 | Pantalla de morosos, `WhatsAppLinkSender` (wa.me), `DunningConfig` en Configuración, `NotificationLog` | PENDIENTE |
+| 2 — WhatsApp gratis + cobranzas | 4 | Pantalla de morosos, `WhatsAppLinkSender` (wa.me), `DunningConfig` en Configuración, `NotificationLog` | **CERRADA (2026-10-29), sin commit.** F2-1 a F2-7 implementados; qa aprobó con observaciones. ADR-005 (Proposed hasta el commit). Deuda en TASKS (F2-D1 a F2-D8, UX13 a UX17) |
 | 3 — Escáner HID + check-in premium | 5 | Lector keyboard-wedge en kiosk y POS, foto del socio, teclado numérico en pantalla, arquitectura de hardware | PENDIENTE |
 | 4 — Profundidad | 6-7 | Reportes reales (morosos, por plan/método/sede, retención; export Excel/PDF), editar socio desde la ficha, rutinas en la ficha, comisiones de staff | PENDIENTE |
 | 5 — Pulido US$100k | 8 | Command palette (Ctrl+K), fix branding (AccentTintBrush derivado), micro-interacciones, dashboard con ejes/hover, calendario semanal, limpieza de tokens, accesibilidad + i18n es-AR | PENDIENTE |
@@ -37,7 +38,7 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 
 ## Qué sigue
 
-**Arranque de mañana:** abrir con `/equipo`. Salvo que el usuario priorice otra cosa, arrancar la **Fase 2 (Sesión 4): WhatsApp gratis + cobranzas** — pantalla de morosos, `WhatsAppLinkSender` (wa.me), `DunningConfig` y `NotificationLog`. Alternativa antes de Fase 2: cerrar alguna decisión abierta de abajo (sobre todo UX11 + F1-D3/F1-D7 si se quiere activar el auto-update). F1 está cerrada; sus deudas F1-D1 a F1-D11 no bloquean el piloto con las 2 condiciones de uso.
+**Próxima sesión (Sesión 5, Fase 3 "Escáner HID + check-in premium"):** abrir con `/equipo`. Antes de arrancarla: (a) el commit de Fase 2 (ver "Próximo paso" de la Sesión 4) y (b) las decisiones de F2 de abajo, sobre todo F2-D1. Flujo por sesión: arqui (ADR de F3, siguiente número en `docs/adr/`) → dev → ux → qa. Si el usuario prioriza otra cosa, alternativa: cerrar alguna decisión abierta de abajo (sobre todo UX11 + F1-D3/F1-D7 si quiere activar el auto-update). F1 y F2 están cerradas; sus deudas no bloquean el piloto con las 2 condiciones de uso.
 
 Decisiones del usuario abiertas (ninguna bloquea el piloto con las 2 condiciones de uso):
 0. **UX11 + F1-D7:** origen de las actualizaciones (hoy vacío = inactivo) y `https://` obligatorio. Junto con F1-D3, bloquea activar el auto-update en campo.
@@ -47,11 +48,68 @@ Decisiones del usuario abiertas (ninguna bloquea el piloto con las 2 condiciones
 4. **F1-D8:** el CUIT de la empresa se edita sin PIN; decidir si se pide PIN de admin para cambiarlo.
 5. **F1-D11 (verificación):** antes de emitir claves con la versión nueva, `.\scripts\licencia.ps1 show <clave ya entregada>` debe seguir mostrándolas válidas.
 6. **F1-D1 / D2 / D3:** resolver antes de escalar. F1-D3 antes de activar el auto-update.
-7. Pendiente operativo: **push de `master` a `origin` y CI** (sin hacer; el merge local ya está hecho en `33ba4ec`). Lo decide el usuario. La rama `feat/sesion-3` se puede borrar tras el push.
+7. **F2 (ADR-005 §"Decisiones a confirmar"):** (a) normalización telefónica AR de `ToWhatsAppDigits` y largo mínimo (F2-D2); (b) confirmar que el aviso automático sigue log-only en Fase 2; (c) aceptar "recordatorio iniciado" (no "entregado") en el log, porque `wa.me` no confirma entrega; (d) editor de etapas fijas o agregar/quitar etapas (UX13 c); (e) orden de Morosos por días de atraso desc (aplicado por defecto; confirmar). Además: **F2-D1 antes de prender el aviso automático** (el job registra `Automatic` aunque hoy no envía, y "último recordatorio" puede mentir) y F2-D5 (¿freno a recordatorios repetidos el mismo día?).
+8. Pendiente operativo: **push de `master` a `origin` y CI** (sin hacer; el merge local ya está hecho en `33ba4ec`). Lo decide el usuario. La rama `feat/sesion-3` se puede borrar tras el push.
 
-Fuera del piloto: P-2 (saldo a favor en la ficha) y D1 (cobros multi-sede) siguen abiertas. Resto de deuda (D1–D19, F1-D4 a F1-D10, Q3–Q9, UX1–UX12): ver `docs/TASKS.md`.
+Fuera del piloto: P-2 (saldo a favor en la ficha) y D1 (cobros multi-sede) siguen abiertas. Resto de deuda (D1–D19, F1-D4 a F1-D10, F2-D1 a F2-D8, Q3–Q9, UX1–UX17): ver `docs/TASKS.md`.
 
-Sesiones 4-8: ver tabla de fases arriba.
+Sesiones 5-8: ver tabla de fases arriba.
+
+---
+
+## [2026-10-29] Sesión 4 — Fase 2 "WhatsApp gratis + cobranzas"
+
+**Hecho:**
+- **Fase 2 implementada por dev en 7 pasos TDD** según `docs/adr/ADR-005-whatsapp-cobranzas.md`. Todo en el working tree, **nada commiteado**:
+  - **F2-1 Plantillas editables** (pieza A): `DunningStage(DaysOverdue, Label, Template)`, `DunningConfig.DefaultStages` y renderer puro `DunningMessageRenderer` (`src/GymForge.Application/UseCases/Dunning/`). Placeholders `{nombre}`, `{gimnasio}`, `{monto}`, `{vencimiento}`, `{dias}`; un placeholder desconocido queda literal. Borrado `DunningTemplates.cs`. Sin schema.
+  - **F2-2 `NotificationLog` append-only** (pieza B): `BaseEntity, ISiteScoped`, repo sin Update/Remove, dedup company-wide. Enums `NotificationChannel` y `NotificationTrigger` en `Domain.Enums`; se eliminó el tipo duplicado de `INotificationSender`. Migración `20261029114239_AddNotificationLog`.
+  - **F2-3 `DunningConfig` persistido** (pieza C): columna `Company.DunningJson` (record `DunningSettings`; JSON corrupto → defaults), hidratación en `SessionContext`, `UpdateDunningSettingsCommand` que aplica en caliente. `Enabled` apaga solo el job automático. Migración `20261029114536_AddCompanyDunningConfig`.
+  - **F2-4 Job con registro y dedup** (pieza D): `DunningService` escribe `NotificationLog.Automatic` y no reenvía la misma etapa del mismo cargo; un reproceso del mismo día ya no duplica. Cierra el límite de catch-up de `docs/NOTIFICATIONS-DUNNING.md`. No hay job nuevo; el sender sigue siendo log-only.
+  - **F2-5 Link wa.me** (pieza E): `WhatsAppLink.Build` / `ToWhatsAppDigits` (Application, puro); `SendWhatsAppReminderCommand` registra `NotificationLog.Manual` y devuelve la URL (no abre nada); `IWhatsAppLinkSender` / `WhatsAppLinkSender` en Desktop (`Process.Start`).
+  - **F2-6 Pantalla de Morosos por sede** (pieza F): `IChargeRepository.GetOverdueBySiteAsync`, `GetOverdueMembersQuery` (orden por días de atraso desc), `NavSection.Collections` en GESTIÓN, `CollectionsViewModel` / `OverdueMemberRow` / `CollectionsView`. Cobra con `PaymentModalViewModel.PreSelectMember` (exige caja abierta).
+  - **F2-7 Config → "Cobranzas y recordatorios"**: toggle `Enabled` + 5 etapas editables (día, label, plantilla) vía `UpdateDunningSettingsCommand`.
+- **Verificación (qa): APROBADO CON OBSERVACIONES, sin bloqueantes.** Build Debug y Release 0 errores. **862 tests verdes** (Domain 86 · Application 394 · Desktop 135 · Integration 247; dev reportó 809, qa sumó 53).
+  - qa corrigió dos cosas de dev, con tests: (a) `WhatsAppLinkSender` validaba con `Uri.TryCreate` pero le pasaba a `ShellExecute` el string original (aceptaba comillas, espacios y saltos de línea: inyección de argumentos). Fix: allowlist regex del formato exacto que arma `WhatsAppLink.Build`, `public static`. No era explotable desde la UI, pero el control no debe depender del llamador. (b) `ToWhatsAppDigits` devolvía link para más de 15 dígitos; ahora devuelve null (tope E.164).
+  - Morosos por sede: tests adversariales en `tests/GymForge.Integration.Tests/CollectionsTenantIntegrationTests.cs`.
+  - Runtime: qa validó con `tools/GymForge.Screenshots` (capturas `25*`, `26`, `27*`, `10-configuracion*` en light y dark, más las nuevas `25b`, `25c`, `25d`, `27` y `10-dark`). Los supuestos de layout de ux se confirman, sin regresiones.
+- **Pulido de UI (ux)** sobre las 2 superficies nuevas, sin tocar ViewModels, commands ni `x:DataType`, y sin cambiar ningún binding existente (solo se agregaron bindings de presentación a propiedades que ya existen). Validado en runtime por qa:
+  - **Morosos** (`src/GymForge.Desktop/Views/Collections/CollectionsView.axaml`): columnas de dos líneas (Socio + celular, Deuda + "Cargos: N", Días de atraso + "desde dd/MM/aaaa") con filas de 52 px; el celular inválido pasa a `TextBlock.warning` ("Sin celular válido") en vez de `Caption`; pill de etapa neutral con elipsis y tooltip (el nombre lo edita el gimnasio) y orden por días; botones por fila con nombre accesible que incluye al socio; "Caja cerrada" pasa de `Caption` en el footer a un `InfoBar` Informational fijo (y el `Message` a Warning con título y `LiveSetting`); total de mora con `DangerTextBrush`, oculto mientras carga y en el estado vacío; refrescar, spinner y grilla con nombre accesible.
+  - **Config → Cobranzas y recordatorios** (card en `SettingsView.axaml`): misma estructura que Licencia (título + descripción, `Divider`, subsecciones); la aclaración de que el aviso automático hoy no envía mensajes pasó de texto con `Opacity` a un `InfoBar`; ayuda de placeholders como lista de dos columnas con el dato en monoespaciado; etapas en paneles `Border.Inset`; nombres accesibles por etapa (`Días de vencido de la etapa X`, `Mensaje de la etapa X`); orden de tabulación = orden visual. Sin `Opacity` para texto secundario (usa `FormLabel`).
+  - `ChargesView.axaml`: una sola línea, el total del footer pasa a `DangerTextBrush` para que "Saldo total" y "Mora de la sede" se vean iguales.
+
+**Registro de componentes y tokens (design system):**
+- Nuevo token en `Assets/Styles/Colors.axaml`: `DangerTextBrush` (texto rojo sobre card/inset). Light `#B91C1C`: ≈6,5:1 sobre la card y ≈5,9:1 sobre el inset. Dark `#FCA5A5`: ≈6,0:1 sobre la card (`#3A3A3C`) y ≈5,0:1 sobre el inset. Motivo: `DangerBrush` dark (`#F87171`) daba ≈4,1:1 sobre la card (UX6).
+- Cambiado en `Assets/Styles/AppStyles.axaml`: `TextBlock.danger` usa `DangerTextBrush` (afecta a los mensajes de error de Config: mismo rojo, más oscuro en light y más claro en dark). Nuevos: `Border.Inset` (radio 8, padding 12, `SubtleFillColorSecondaryBrush` + hairline `SurfaceBorderBrush`; para bloques dentro de una card) y `TextBlock.Mono` (`Consolas, Cascadia Mono, Courier New`; para claves, rutas y `{placeholders}`).
+- Patrones de la pantalla de morosos para reusar: celda de dos líneas (dato `SemiBold` + contexto `FormLabel`), estado que bloquea una acción = `InfoBar` Informational fijo, resultado de acción = `InfoBar` Warning con `LiveSetting`.
+- Usar `Classes="FormLabel"` + `Classes.warning="{Binding …}"` para texto secundario que a veces es un aviso.
+
+**En curso:** nada a medias en código (dev cerró los 7 pasos y qa los aprobó). Pendiente de UI/UX y de lógica, en `docs/TASKS.md`: UX13 (lógica de Config: "Restaurar textos de fábrica", insertar placeholders, contador, agregar/quitar etapas), UX14 (estado vacío engañoso si falla la carga y `Message` redundante con caja cerrada), UX15 (ancho mínimo de Morosos, `Header="Acciones"`, teclado en filas), UX16 (propagar `Border.Inset`/`Mono`). UX2 y UX6 actualizadas (Morosos es la cuarta copia del chrome de modal; `DangerTextBrush` cubre el texto, faltan pills y `Button.Danger`).
+
+**Capturas de ux** (`tools/GymForge.Screenshots`, light y dark): `25-morosos`, `25-morosos-dark`, `26-morosos-cobrar`, `10-configuracion` (sección Cobranzas). Casos que ux listó y que el informe de qa no confirma uno por uno: Morosos con la caja cerrada (InfoBar "La caja está cerrada"), Morosos con caja cerrada tras "Cobrar" (los dos avisos apilados), Morosos vacío (sin total en el footer), una fila sin celular válido y un nombre de etapa de 40 caracteres, Morosos a 1126 px de ancho (1366 con sidebar), y Config → Cobranzas en dark con un error de validación de varias líneas.
+
+**Dónde quedó (lógica pendiente, no implementada):**
+- UX13 (Config → Cobranzas): "Restaurar textos de fábrica", insertar placeholders, contador de caracteres, agregar/quitar etapas. `src/GymForge.Desktop/ViewModels/Settings/SettingsViewModel.cs` y `DunningStageEditor.cs`.
+- UX14 (Morosos): estado vacío engañoso si falla la carga; `Message` redundante con caja cerrada. `src/GymForge.Desktop/ViewModels/Collections/CollectionsViewModel.cs:55-78,114-123`.
+- F2-D1 (decisión + fix antes de prender el aviso automático): `src/GymForge.Application/UseCases/Dunning/GetOverdueMembersQuery.cs:58` y `DunningService.cs:60-62`.
+
+**Blockers:**
+- Técnicos: ninguno (qa: sin bloqueantes).
+- Operativos: **nada commiteado**; ADR-005 queda en `Proposed` hasta el commit. El commit y el push los decide el usuario.
+- Decisiones abiertas del usuario: ítem 7 de "Qué sigue" (F2-D1 y ADR-005 §"Decisiones a confirmar").
+
+**Próximo paso:**
+1. Orquestador: commit de Fase 2 (un commit por paso, mensajes de ADR-005 §"Orden de implementación", `dotnet test` verde antes de cada uno). ADR-005 pasa a `Accepted` al commitear.
+2. Usuario: decidir F2-D1 y las decisiones de ADR-005 antes de prender el aviso automático.
+3. Backlog (no bloquea F3): UX13 y UX14 (dev) y F2-D1 según la decisión del usuario.
+4. Sesión 5: arqui escribe el ADR de Fase 3.
+
+**Tocado:**
+- Domain: `src/GymForge.Domain/Entities/NotificationLog.cs`, `src/GymForge.Domain/Entities/Company.cs` (`DunningJson`), `src/GymForge.Domain/Enums/` (`NotificationChannel`, `NotificationTrigger`).
+- Application: `src/GymForge.Application/UseCases/Dunning/` (`DunningConfig.cs`, `DunningSettings.cs`, `DunningMessageRenderer.cs`, `DunningService.cs`, `WhatsAppLink.cs`, `SendWhatsAppReminderCommand.cs`, `UpdateDunningSettingsCommand.cs`, `GetOverdueMembersQuery.cs`; borrado `DunningTemplates.cs`), `src/GymForge.Application/Interfaces/IRepositories.cs`, `src/GymForge.Application/Interfaces/INotificationSender.cs`.
+- Infrastructure: `src/GymForge.Infrastructure/Repositories/NotificationLogRepository.cs`, `src/GymForge.Infrastructure/Persistence/Configurations/NotificationLogConfiguration.cs`, `src/GymForge.Infrastructure/Repositories/ChargeRepository.cs`, migraciones `src/GymForge.Infrastructure/Migrations/20261029114239_AddNotificationLog.cs` y `20261029114536_AddCompanyDunningConfig.cs`.
+- Desktop: `src/GymForge.Desktop/ViewModels/Collections/CollectionsViewModel.cs`, `src/GymForge.Desktop/Views/Collections/CollectionsView.axaml`, `src/GymForge.Desktop/Services/WhatsAppLinkSender.cs`, `src/GymForge.Desktop/Services/SessionContext.cs`, `src/GymForge.Desktop/ViewModels/Settings/SettingsViewModel.cs`, `src/GymForge.Desktop/Views/Settings/SettingsView.axaml`, `src/GymForge.Desktop/ViewModels/Charges/PaymentModalViewModel.cs`, `src/GymForge.Desktop/Views/Charges/ChargesView.axaml`, `src/GymForge.Desktop/Assets/Styles/Colors.axaml`, `src/GymForge.Desktop/Assets/Styles/AppStyles.axaml`.
+- Tests: `tests/GymForge.Application.Tests/Dunning/` y `Handlers/` (Dunning, WhatsAppLink, SendWhatsAppReminder, GetOverdueMembers, UpdateDunningSettings), `tests/GymForge.Integration.Tests/NotificationLogRepositoryTests.cs`, `CollectionsTenantIntegrationTests.cs`, `tests/GymForge.Desktop.Tests/` (CollectionsViewModel, SessionContextDunning, SettingsViewModelDunning, WhatsAppLinkSender), `tests/GymForge.Domain.Tests/NotificationLogTests.cs`.
+- Docs: `docs/adr/ADR-005-whatsapp-cobranzas.md` (Proposed), `docs/adr/README.md`, `docs/NOTIFICATIONS-DUNNING.md`, `docs/TASKS.md`, `docs/PROGRESS.md`. Capturas: `tools/GymForge.Screenshots/`.
 
 ---
 

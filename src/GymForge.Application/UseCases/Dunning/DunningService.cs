@@ -1,29 +1,34 @@
 using GymForge.Application.Interfaces;
 using GymForge.Domain.Entities;
+using GymForge.Domain.Enums;
 
 namespace GymForge.Application.UseCases.Dunning;
 
 /// <summary>
 /// Cobro automático: recorre los cobros vencidos y envía un recordatorio a los socios
 /// cuya deuda cumple exactamente una etapa a la fecha dada (p. ej. 7 días de vencido).
-/// Al enviar solo en el día exacto de cada etapa, es idempotente si corre una vez por día.
-/// El envío lo hace un <see cref="INotificationSender"/> (WhatsApp/SMS o log en dev).
+/// El disparo por "día exacto" es el gatillo; el <see cref="INotificationLogRepository"/> es el cinturón
+/// de seguridad: cada aviso enviado queda registrado por (cargo, etapa) y no se reenvía si el
+/// mantenimiento repite un día (catch-up). El envío lo hace un <see cref="INotificationSender"/>
+/// (WhatsApp/SMS o log en dev).
 /// </summary>
 public class DunningService
 {
     private readonly IChargeRepository _charges;
     private readonly IMemberRepository _members;
     private readonly INotificationSender _sender;
+    private readonly INotificationLogRepository _log;
     private readonly ICurrentTenant _tenant;
     private readonly DunningConfig _config;
 
     public DunningService(
-        IChargeRepository charges, IMemberRepository members,
-        INotificationSender sender, ICurrentTenant tenant, DunningConfig config)
+        IChargeRepository charges, IMemberRepository members, INotificationSender sender,
+        INotificationLogRepository log, ICurrentTenant tenant, DunningConfig config)
     {
         _charges = charges;
         _members = members;
         _sender = sender;
+        _log = log;
         _tenant = tenant;
         _config = config;
     }
@@ -44,12 +49,18 @@ public class DunningService
             var stage = _config.Stages.FirstOrDefault(s => s.DaysOverdue == daysOverdue);
             if (stage is null) continue;
 
+            if (await _log.WasSentAsync(charge.CompanyId, charge.Id, stage.DaysOverdue, ct)) continue;
+
             var member = await FindMemberInChargeSiteAsync(charge, ct);
             if (member is null || string.IsNullOrWhiteSpace(member.Mobile)) continue;
 
-            var body = DunningTemplates.Build(stage, member.FirstName, charge.AmountOutstanding, charge.DueDate, gymName);
-            if (await _sender.SendAsync(new NotificationMessage(member.Mobile!, body), ct))
-                sent++;
+            var context = new DunningContext(
+                member.FirstName, gymName, charge.AmountOutstanding, charge.DueDate, daysOverdue);
+            var body = DunningMessageRenderer.Render(stage.Template, context);
+            if (!await _sender.SendAsync(new NotificationMessage(member.Mobile, body), ct)) continue;
+
+            await RegisterAsync(charge, stage, member.Mobile, ct);
+            sent++;
         }
 
         return sent;
@@ -60,5 +71,16 @@ public class DunningService
     {
         using var tenantScope = _tenant.BeginScope(charge.CompanyId, charge.SiteId);
         return await _members.GetByIdAsync(charge.MemberId, ct);
+    }
+
+    /// <summary>Deja traza del aviso en la sede del cargo. El canal es el configurado, aunque hoy el sender solo loguee.</summary>
+    private async Task RegisterAsync(Charge charge, DunningStage stage, string toPhone, CancellationToken ct)
+    {
+        await _log.AppendAsync(
+            NotificationLog.Automatic(
+                charge.CompanyId, charge.SiteId, charge.MemberId, charge.Id,
+                NotificationChannel.WhatsApp, stage.DaysOverdue, toPhone),
+            ct);
+        await _log.SaveChangesAsync(ct);
     }
 }

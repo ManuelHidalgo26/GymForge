@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using GymForge.Application.DTOs;
 using GymForge.Application.Interfaces;
 using GymForge.Application.UseCases.Access;
+using GymForge.Application.UseCases.Dunning;
 using GymForge.Application.UseCases.Licensing;
 using GymForge.Application.UseCases.Settings;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,15 +21,17 @@ public partial class SessionContext : ObservableObject
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly GatekeeperConfig _gatekeeper;
+    private readonly DunningConfig _dunning;
     private readonly CurrentLicense _license;
     private readonly ILicenseService _licenseService;
 
     public SessionContext(
-        IServiceScopeFactory scopeFactory, GatekeeperConfig gatekeeper,
+        IServiceScopeFactory scopeFactory, GatekeeperConfig gatekeeper, DunningConfig dunning,
         CurrentLicense license, ILicenseService licenseService)
     {
         _scopeFactory = scopeFactory;
         _gatekeeper = gatekeeper;
+        _dunning = dunning;
         _license = license;
         _licenseService = licenseService;
     }
@@ -125,6 +128,10 @@ public partial class SessionContext : ObservableObject
             _gatekeeper.WarnOnOweAmount = access.WarnOnOweAmount;
             _gatekeeper.AntiPassbackMinutes = access.AntiPassbackMinutes;
         }
+
+        // Cobro automático y plantillas persistidos → configuración del job en memoria.
+        if (DunningSettings.FromJson(company.DunningJson) is { } dunning)
+            dunning.ApplyTo(_dunning);
 
         var siteList = await sites.GetByCompanyAsync(company.Id);
         Sites = siteList.Select(s => new SiteOption(s.Id, s.Name)).ToList();

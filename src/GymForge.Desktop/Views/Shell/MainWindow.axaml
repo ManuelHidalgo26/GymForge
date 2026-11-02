@@ -124,6 +124,18 @@
                                    IsVisible="{Binding !IsSidebarCollapsed}" />
 
                         <Button Command="{Binding NavigateCommand}"
+                                CommandParameter="{x:Static vm:NavSection.Collections}"
+                                Classes="NavButton"
+                                Classes.active="{Binding CurrentSection,
+                                    Converter={StaticResource NavSectionActiveConverter},
+                                    ConverterParameter=Collections}">
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Important}" FontSize="18" />
+                                <TextBlock Text="Morosos" IsVisible="{Binding !IsSidebarCollapsed}" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Command="{Binding NavigateCommand}"
                                 CommandParameter="{x:Static vm:NavSection.Plans}"
                                 Classes="NavButton"
                                 Classes.active="{Binding CurrentSection,

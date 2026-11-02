@@ -6,6 +6,7 @@
              xmlns:vmCheckin="using:GymForge.Desktop.ViewModels.Checkin"
              xmlns:vmCharges="using:GymForge.Desktop.ViewModels.Charges"
              xmlns:vmCash="using:GymForge.Desktop.ViewModels.Cash"
+             xmlns:vmCollections="using:GymForge.Desktop.ViewModels.Collections"
              xmlns:vmPlans="using:GymForge.Desktop.ViewModels.Plans"
              xmlns:vmReports="using:GymForge.Desktop.ViewModels.Reports"
              xmlns:vmSettings="using:GymForge.Desktop.ViewModels.Settings"
@@ -18,6 +19,7 @@
              xmlns:vCheckin="using:GymForge.Desktop.Views.Checkin"
              xmlns:vCharges="using:GymForge.Desktop.Views.Charges"
              xmlns:vCash="using:GymForge.Desktop.Views.Cash"
+             xmlns:vCollections="using:GymForge.Desktop.Views.Collections"
              xmlns:vPlans="using:GymForge.Desktop.Views.Plans"
              xmlns:vReports="using:GymForge.Desktop.Views.Reports"
              xmlns:vSettings="using:GymForge.Desktop.Views.Settings"
@@ -64,6 +66,9 @@
         </DataTemplate>
         <DataTemplate DataType="vmCash:RegisterSaleViewModel">
             <vCash:RegisterSaleView />
+        </DataTemplate>
+        <DataTemplate DataType="vmCollections:CollectionsViewModel">
+            <vCollections:CollectionsView />
         </DataTemplate>
         <DataTemplate DataType="vmPlans:PlansViewModel">
             <vPlans:PlansView />

@@ -1,0 +1,210 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:fa="using:FluentAvalonia.UI.Controls"
+             xmlns:vm="using:GymForge.Desktop.ViewModels.Collections"
+             x:Class="GymForge.Desktop.Views.Collections.CollectionsView"
+             x:DataType="vm:CollectionsViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+        <!-- ── Toolbar ────────────────────────────────────────────────────── -->
+        <Border Grid.Row="0" Classes="Toolbar">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8">
+                    <TextBlock Text="Morosos" Classes="ToolbarTitle" />
+                    <Border Classes="CountBadge">
+                        <TextBlock Text="{Binding DebtorCount}" />
+                    </Border>
+                </StackPanel>
+
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+                    <Button Command="{Binding LoadCommand}" Classes="Ghost" ToolTip.Tip="Actualizar"
+                            AutomationProperties.Name="Actualizar la lista de morosos">
+                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Refresh}" FontSize="16" />
+                    </Button>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ── Avisos ─────────────────────────────────────────────────────────
+             1) Estado: sin turno de caja abierto no se puede cobrar (los recordatorios siguen andando).
+                Es una condición normal, no una falla: Informational, y queda mientras dure.
+             2) Resultado de una acción (recordatorio sin link, intento de cobro sin caja, error de carga):
+                Warning, con LiveSetting para que el lector de pantalla lo anuncie.
+             Cada InfoBar lleva su propio margen: cerrado no ocupa lugar. -->
+        <StackPanel Grid.Row="1">
+            <fa:InfoBar Margin="16,8,16,0"
+                        IsOpen="{Binding !Session.HasOpenShift}"
+                        Severity="Informational"
+                        Title="La caja está cerrada"
+                        Message="Podés mandar recordatorios igual. Para cobrarle a un socio, primero abrí la caja desde la sección Caja."
+                        IsClosable="False" />
+
+            <fa:InfoBar Margin="16,8,16,0"
+                        IsOpen="{Binding Message, Converter={x:Static ObjectConverters.IsNotNull}}"
+                        Severity="Warning"
+                        Title="Atención"
+                        Message="{Binding Message}"
+                        IsClosable="False"
+                        AutomationProperties.LiveSetting="Polite" />
+        </StackPanel>
+
+        <!-- ── Deudores ─────────────────────────────────────────────────────────
+             Tres columnas de dos líneas (dato principal + contexto) para que entre todo sin scroll
+             horizontal en 1366 px: Socio / Deuda / Atraso. Filas de 52 px por las dos líneas. -->
+        <DataGrid Grid.Row="2"
+                  ItemsSource="{Binding Rows}"
+                  RowHeight="52"
+                  CanUserSortColumns="True"
+                  IsReadOnly="True"
+                  AutoGenerateColumns="False"
+                  AutomationProperties.Name="Socios con cuotas vencidas">
+
+            <DataGrid.Columns>
+
+                <!-- Socio + celular. Sin celular válido el aviso va en tono warning (texto, no solo color):
+                     explica por qué "Recordar" está deshabilitado. -->
+                <DataGridTemplateColumn Header="Socio" Width="*" MinWidth="200" SortMemberPath="FullName">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="vm:OverdueMemberRow">
+                            <StackPanel Margin="12,0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding FullName}" FontWeight="SemiBold"
+                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{Binding MobileText}" Classes="FormLabel"
+                                           Classes.warning="{Binding !HasUsableMobile}"
+                                           TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- Deuda + cantidad de cargos (cifras tabulares: las hereda la grilla) -->
+                <DataGridTemplateColumn Header="Deuda" Width="140" SortMemberPath="Dto.TotalOutstanding">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="vm:OverdueMemberRow">
+                            <StackPanel Margin="12,0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Dto.TotalOutstanding, StringFormat={}{0:C}}"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding Dto.ChargeCount, StringFormat='Cargos: {0}'}"
+                                           Classes="FormLabel" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- Días de atraso (criterio de orden de la lista) + desde cuándo -->
+                <DataGridTemplateColumn Header="Días de atraso" Width="140" SortMemberPath="Dto.DaysOverdue">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="vm:OverdueMemberRow">
+                            <StackPanel Margin="12,0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Dto.DaysOverdue}" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding Dto.OldestDueDate, StringFormat='desde {0:dd/MM/yyyy}'}"
+                                           Classes="FormLabel" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- Etapa vigente: pill NEUTRO a propósito, sin umbrales de color por gravedad.
+                     El nombre lo edita el gimnasio (hasta 40 caracteres): se recorta con elipsis y
+                     el tooltip lo muestra completo. Ordena por días porque la etapa depende de ellos
+                     (por nombre sería alfabético, sin sentido). -->
+                <DataGridTemplateColumn Header="Etapa" Width="140" SortMemberPath="Dto.DaysOverdue">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="vm:OverdueMemberRow">
+                            <Border Classes="Pill neutral" Margin="12,0"
+                                    ToolTip.Tip="{Binding Dto.CurrentStageLabel}">
+                                <TextBlock Text="{Binding Dto.CurrentStageLabel}"
+                                           TextTrimming="CharacterEllipsis" />
+                            </Border>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- Último recordatorio ("Sin recordatorios" / "Hoy" / "Ayer" / "Hace N días") -->
+                <DataGridTextColumn Header="Último recordatorio"
+                                    Binding="{Binding LastReminderText}"
+                                    SortMemberPath="Dto.LastReminderAt"
+                                    Width="180" />
+
+                <!-- Acciones. El nombre accesible incluye al socio: sin eso un lector de pantalla
+                     lee "Recordar, Cobrar, Recordar, Cobrar…" sin distinguir filas. -->
+                <DataGridTemplateColumn Header="Acciones" Width="230" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="vm:OverdueMemberRow">
+                            <StackPanel Orientation="Horizontal" Spacing="4" Margin="8,0" VerticalAlignment="Center">
+                                <Button Classes="Ghost"
+                                        ToolTip.Tip="Recordar por WhatsApp"
+                                        AutomationProperties.Name="{Binding FullName, StringFormat='Recordar por WhatsApp a {0}'}"
+                                        CommandParameter="{Binding}"
+                                        Command="{Binding $parent[UserControl].((vm:CollectionsViewModel)DataContext).RemindWhatsAppCommand}">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Send}" FontSize="16" />
+                                        <TextBlock Text="Recordar" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Classes="Ghost"
+                                        ToolTip.Tip="Cobrar"
+                                        AutomationProperties.Name="{Binding FullName, StringFormat='Cobrar a {0}'}"
+                                        CommandParameter="{Binding}"
+                                        Command="{Binding $parent[UserControl].((vm:CollectionsViewModel)DataContext).ChargeCommand}">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Accept}" FontSize="16" />
+                                        <TextBlock Text="Cobrar" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- ── Estado vacío ───────────────────────────────────────────────── -->
+        <StackPanel Grid.Row="2" Classes="EmptyState" IsVisible="{Binding IsEmpty}">
+            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Accept}" />
+            <TextBlock Classes="EmptyTitle" Text="No hay socios con cuotas vencidas" />
+            <TextBlock Classes="EmptyBody" Text="Cuando una cuota venza sin pagarse, el socio aparece acá." />
+        </StackPanel>
+
+        <!-- ── Footer: mora total de la sede ────────────────────────────────────
+             El total se oculta mientras carga y cuando no hay morosos (un "$0,00" en rojo
+             contradiría al estado vacío). Rojo = DangerTextBrush (AA en light y dark). -->
+        <Border Grid.Row="3" Classes="FooterBar">
+            <DockPanel>
+                <Panel DockPanel.Dock="Right" IsVisible="{Binding !IsLoading}">
+                    <TextBlock Classes="Numeric" FontSize="14" FontWeight="SemiBold"
+                               IsVisible="{Binding !IsEmpty}">
+                        <Run Text="Mora de la sede: " />
+                        <Run Text="{Binding TotalOutstanding, StringFormat={}{0:C}}"
+                             Foreground="{DynamicResource DangerTextBrush}" />
+                    </TextBlock>
+                </Panel>
+
+                <fa:ProgressRing IsVisible="{Binding IsLoading}"
+                                 Width="20" Height="20"
+                                 HorizontalAlignment="Left"
+                                 AutomationProperties.Name="Actualizando la lista de morosos" />
+            </DockPanel>
+        </Border>
+
+        <!-- ── Payment modal overlay ──────────────────────────────────────── -->
+        <Grid Grid.Row="0" Grid.RowSpan="4"
+              IsVisible="{Binding IsPaymentModalOpen}"
+              Background="#80000000"
+              ZIndex="100">
+            <Border MaxWidth="440"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    CornerRadius="12"
+                    Padding="24"
+                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                    BoxShadow="0 8 32 0 #44000000">
+                <ContentControl Content="{Binding PaymentModal}" />
+            </Border>
+        </Grid>
+
+    </Grid>
+
+</UserControl>

@@ -13,6 +13,8 @@ public class Company : BaseEntity
     public string? FiscalConfigJson { get; private set; }
     /// <summary>Configuración general (JSON): reglas de acceso, etc.</summary>
     public string? SettingsJson { get; private set; }
+    /// <summary>Cobro automático y plantillas de recordatorio (JSON). Null = defaults de fábrica.</summary>
+    public string? DunningJson { get; private set; }
     /// <summary>Clave de licencia firmada (null = tier Free).</summary>
     public string? LicenseKey { get; private set; }
     public string BrandColorHex { get; private set; } = "#6366F1";
@@ -57,6 +59,13 @@ public class Company : BaseEntity
     public void SetSettings(string settingsJson)
     {
         SettingsJson = settingsJson;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void SetDunningConfig(string dunningJson)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(dunningJson);
+        DunningJson = dunningJson;
         UpdatedAt = DateTime.UtcNow;
     }
 

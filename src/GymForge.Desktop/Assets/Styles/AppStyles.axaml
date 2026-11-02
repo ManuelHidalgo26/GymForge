@@ -56,6 +56,16 @@
         <Setter Property="Background" Value="{DynamicResource SurfaceBorderBrush}" />
     </Style>
 
+    <!-- Panel hundido dentro de una card: agrupa un bloque (cuadro de ayuda, un ítem editable de una lista)
+         sin sumar otra sombra. Fondo sutil + hairline, para que se defina igual en light y en dark. -->
+    <Style Selector="Border.Inset">
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="12" />
+        <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
     <!-- Chip cuadrado con tinte para el ícono de un KPI o sección -->
     <Style Selector="Border.IconChip">
         <Setter Property="Width" Value="38" />
@@ -110,6 +120,10 @@
     <Style Selector="TextBlock.Numeric">
         <Setter Property="FontFeatures" Value="+tnum" />
     </Style>
+    <!-- Valores técnicos que se copian o se tipean tal cual (claves, rutas, {placeholders}) -->
+    <Style Selector="TextBlock.Mono">
+        <Setter Property="FontFamily" Value="Consolas,Cascadia Mono,Courier New" />
+    </Style>
 
     <!-- Texto con tono semántico sobre card (light y dark, contraste AA). Se prende con
          Classes.success / Classes.warning / Classes.danger. Van DESPUÉS de FormLabel a propósito:
@@ -122,8 +136,9 @@
         <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
         <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
+    <!-- danger usa DangerTextBrush (no DangerBrush): en dark DangerBrush sobre la card da ≈4,1:1 -->
     <Style Selector="TextBlock.danger">
-        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DangerTextBrush}" />
     </Style>
 
     <!-- Resultado de una acción bajo un formulario ("Datos guardados.", "PIN incorrecto.").

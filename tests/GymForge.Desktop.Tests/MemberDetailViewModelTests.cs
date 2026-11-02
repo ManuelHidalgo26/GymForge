@@ -2,6 +2,7 @@ using FluentAssertions;
 using GymForge.Application.DTOs;
 using GymForge.Application.Interfaces;
 using GymForge.Application.UseCases.Access;
+using GymForge.Application.UseCases.Dunning;
 using GymForge.Application.UseCases.Licensing;
 using GymForge.Application.UseCases.Memberships;
 using GymForge.Desktop.Services;
@@ -35,7 +36,8 @@ public class MemberDetailViewModelTests
         var scopeFactory = Substitute.For<IServiceScopeFactory>();
         var chargeRepo = Substitute.For<IChargeRepository>();
         var session = new SessionContext(
-            scopeFactory, new GatekeeperConfig(), new CurrentLicense(), Substitute.For<ILicenseService>());
+            scopeFactory, new GatekeeperConfig(), new DunningConfig(),
+            new CurrentLicense(), Substitute.For<ILicenseService>());
         var charges = new ChargesViewModel(chargeRepo, _mediator, session, new ReceiptService(scopeFactory));
 
         return new MemberDetailViewModel(

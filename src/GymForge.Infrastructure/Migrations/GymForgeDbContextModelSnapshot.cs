@@ -603,6 +603,9 @@ namespace GymForge.Infrastructure.Migrations
                         .HasMaxLength(5)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("DunningJson")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("FiscalConfigJson")
                         .HasColumnType("TEXT");
 
@@ -1113,6 +1116,61 @@ namespace GymForge.Infrastructure.Migrations
                         .HasDatabaseName("IX_MembershipTypes_CompanyActive");
 
                     b.ToTable("MembershipTypes", (string)null);
+                });
+
+            modelBuilder.Entity("GymForge.Domain.Entities.NotificationLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ChargeId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("SiteId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("StageDaysOverdue")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ToPhone")
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Trigger")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MemberId", "SentAt")
+                        .HasDatabaseName("IX_NotificationLogs_MemberSentAt");
+
+                    b.HasIndex("CompanyId", "ChargeId", "StageDaysOverdue")
+                        .HasDatabaseName("IX_NotificationLogs_Dedup");
+
+                    b.ToTable("NotificationLogs", (string)null);
                 });
 
             modelBuilder.Entity("GymForge.Domain.Entities.Payment", b =>
@@ -2003,6 +2061,17 @@ namespace GymForge.Infrastructure.Migrations
                     b.Navigation("Member");
 
                     b.Navigation("MembershipType");
+                });
+
+            modelBuilder.Entity("GymForge.Domain.Entities.NotificationLog", b =>
+                {
+                    b.HasOne("GymForge.Domain.Entities.Member", "Member")
+                        .WithMany()
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Member");
                 });
 
             modelBuilder.Entity("GymForge.Domain.Entities.Payment", b =>

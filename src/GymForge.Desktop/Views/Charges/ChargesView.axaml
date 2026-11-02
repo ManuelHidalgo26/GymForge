@@ -137,7 +137,7 @@
                            FontSize="14" FontWeight="SemiBold">
                     <Run Text="Saldo total: " />
                     <Run Text="{Binding TotalOutstanding, StringFormat={}{0:C}}"
-                         Foreground="{DynamicResource DangerBrush}" />
+                         Foreground="{DynamicResource DangerTextBrush}" />
                 </TextBlock>
 
                 <fa:ProgressRing IsVisible="{Binding IsLoading}"

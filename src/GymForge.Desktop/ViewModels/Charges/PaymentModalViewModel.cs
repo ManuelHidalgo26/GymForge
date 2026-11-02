@@ -20,6 +20,8 @@ public partial class PaymentModalViewModel : ObservableObject
     private Guid _memberId;
 
     [ObservableProperty] private ChargeDto? _targetCharge;
+    /// <summary>Socio al que se cobra cuando no se eligió un cargo puntual (ver <see cref="PreSelectMember"/>).</summary>
+    [ObservableProperty] private string? _memberName;
     [ObservableProperty][NotifyCanExecuteChangedFor(nameof(ConfirmCommand))]
     private decimal _amount;
     [ObservableProperty] private PaymentMethod _method = PaymentMethod.Cash;
@@ -49,6 +51,17 @@ public partial class PaymentModalViewModel : ObservableObject
         TargetCharge = charge;
         _memberId    = charge.MemberId;
         Amount       = charge.AmountOutstanding;
+    }
+
+    /// <summary>
+    /// Cobro a cuenta del socio sin elegir un cargo: <see cref="ProcessPaymentCommand"/> lo aplica primero a
+    /// su deuda más vieja. El monto sugerido es editable.
+    /// </summary>
+    public void PreSelectMember(Guid memberId, string memberName, decimal suggestedAmount)
+    {
+        _memberId  = memberId;
+        MemberName = memberName;
+        Amount     = suggestedAmount;
     }
 
     partial void OnMethodChanged(PaymentMethod value) =>

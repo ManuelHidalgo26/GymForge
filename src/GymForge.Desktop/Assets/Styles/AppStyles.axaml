@@ -67,6 +67,39 @@
         <Setter Property="BorderThickness" Value="1" />
     </Style>
 
+    <!-- Encabezado del día de hoy en la grilla semanal de Clases -->
+    <Style Selector="Border.Inset.today">
+        <Setter Property="Background" Value="{DynamicResource AccentTintBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentTextBrush}" />
+    </Style>
+    <!-- (el texto de .today se define más abajo, después de TextBlock.FormLabel, para que gane el orden) -->
+
+    <!-- Chip de horario en la grilla semanal de Clases; .selected = horario elegido.
+         Seleccionado = tinte + borde de acento de 2 px (no depende solo del color: el grosor lo distingue).
+         El padding baja 1 px para que el chip no cambie de tamaño al seleccionarse. El anillo de foco de teclado
+         es el global de Button:focus-visible (trazo primario de 2 px), distinto del borde de acento. -->
+    <Style Selector="Button.ScheduleChip">
+        <Setter Property="Padding" Value="8,6" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+    </Style>
+    <Style Selector="Button.ScheduleChip.selected">
+        <Setter Property="Padding" Value="7,5" />
+        <Setter Property="BorderThickness" Value="2" />
+        <Setter Property="Background" Value="{DynamicResource AccentTintBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentTextBrush}" />
+    </Style>
+    <Style Selector="Button.ScheduleChip.selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource AccentTintBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentTextBrush}" />
+    </Style>
+    <Style Selector="Button.ScheduleChip.selected:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource AccentTintBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AccentTextBrush}" />
+    </Style>
+
     <!-- Teclado numérico en pantalla (ctl:NumericKeypad). Classes="NoDisplay" le oculta el visor propio: se usa cuando
          el campo de texto que edita ya está al lado y muestra el valor (kiosk), para no repetirlo ni gastar alto. -->
     <Style Selector="ctl|NumericKeypad.NoDisplay Border#KeypadDisplay">
@@ -121,6 +154,11 @@
     <Style Selector="TextBlock.FormLabel">
         <Setter Property="FontSize" Value="12" />
         <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+    </Style>
+    <!-- Texto del encabezado de "hoy" (grilla de Clases): va DESPUÉS de FormLabel para que el acento gane también
+         en la fecha. AccentTextBrush sobre AccentTint ≈6,0:1 light / ≈5,8:1 dark. -->
+    <Style Selector="Border.Inset.today TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
     </Style>
     <!-- KPI de una card: etiqueta (secundario, AA) + cifra grande. Mismo tamaño que las cards del Dashboard
          (13 / 30 bold); la cifra es tabular, igual que Numeric. -->

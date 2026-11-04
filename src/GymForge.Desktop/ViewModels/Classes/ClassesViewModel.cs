@@ -20,10 +20,14 @@ public partial class ClassesViewModel : ObservableObject
     private readonly IMemberRepository _memberRepo;
     private readonly SessionContext _session;
     private readonly ICompanyCalendar _calendar;
+    private static readonly string[] DayNames = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+
     private bool _weekInitialized;
+    private DateOnly _today;
 
     [ObservableProperty] private ObservableCollection<ClassDto> _classes = [];
     [ObservableProperty] private ObservableCollection<ScheduleRowDto> _schedules = [];
+    [ObservableProperty] private ObservableCollection<ScheduleDayVm> _weekDays = [];
     [ObservableProperty] private ObservableCollection<BookingRowDto> _bookings = [];
     [ObservableProperty] private ObservableCollection<MemberDto> _members = [];
 
@@ -60,7 +64,12 @@ public partial class ClassesViewModel : ObservableObject
         _calendar = calendar;
     }
 
-    partial void OnSchedulesChanged(ObservableCollection<ScheduleRowDto> value) => OnPropertyChanged(nameof(IsEmpty));
+    partial void OnSchedulesChanged(ObservableCollection<ScheduleRowDto> value)
+    {
+        OnPropertyChanged(nameof(IsEmpty));
+        BuildWeekDays();
+    }
+
     partial void OnIsLoadingChanged(bool value) => OnPropertyChanged(nameof(IsEmpty));
     partial void OnWeekStartChanged(DateOnly value) => OnPropertyChanged(nameof(WeekLabel));
 
@@ -94,13 +103,28 @@ public partial class ClassesViewModel : ObservableObject
     {
         if (_weekInitialized) return;
 
-        WeekStart = await CurrentWeekStartAsync(ct);
+        WeekStart = MondayOf(await RefreshTodayAsync(ct));
         ScheduleDate = WeekStart;
         _weekInitialized = true;
     }
 
-    private async Task<DateOnly> CurrentWeekStartAsync(CancellationToken ct = default) =>
-        MondayOf(await _calendar.TodayAsync(_session.CompanyId, ct));
+    private async Task<DateOnly> RefreshTodayAsync(CancellationToken ct = default) =>
+        _today = await _calendar.TodayAsync(_session.CompanyId, ct);
+
+    /// <summary>Proyecta los horarios cargados en 7 columnas Lun–Dom (la query acota a la semana visible).</summary>
+    private void BuildWeekDays()
+    {
+        var byDay = Schedules
+            .GroupBy(s => DateOnly.FromDateTime(s.Start))
+            .ToDictionary(g => g.Key, g => (IReadOnlyList<ScheduleRowDto>)[.. g.OrderBy(s => s.Start)]);
+
+        WeekDays = new ObservableCollection<ScheduleDayVm>(
+            Enumerable.Range(0, DayNames.Length).Select(i =>
+            {
+                var date = WeekStart.AddDays(i);
+                return new ScheduleDayVm(date, DayNames[i], date == _today, byDay.GetValueOrDefault(date) ?? []);
+            }));
+    }
 
     private async Task LoadSchedulesAsync(CancellationToken ct = default)
     {
@@ -113,6 +137,8 @@ public partial class ClassesViewModel : ObservableObject
             ? Schedules.FirstOrDefault(s => s.Id == sel.Id)
             : null;
     }
+
+    [RelayCommand] private void SelectSchedule(ScheduleRowDto row) => SelectedSchedule = row;
 
     private async Task LoadBookingsAsync(CancellationToken ct = default)
     {
@@ -128,7 +154,7 @@ public partial class ClassesViewModel : ObservableObject
     [RelayCommand]
     private async Task ThisWeekAsync()
     {
-        WeekStart = await CurrentWeekStartAsync();
+        WeekStart = MondayOf(await RefreshTodayAsync());
         await LoadSchedulesAsync();
     }
 

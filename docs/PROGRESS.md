@@ -23,10 +23,11 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 - **Fase 3 (Sesión 5): CERRADA y MERGEADA a `master`** (merge `e541586` de `feat/sesion-5`). ADR-006 `Accepted` (addendum: foto solo por archivo, sin FlashCap). Sin push.
 - **Fase 4 parte 1 (Sesión 6): CERRADA y COMMITEADA** en `feat/sesion-6` (`aa9c8d7`, `6f3124e`; ADR-007 `Accepted`). Sin push ni merge.
 - **Fase 4 parte 2 (Sesión 7): CERRADA (2026-11-04)** en `feat/sesion-6` (código `1f44d2c`; commit de docs por el orquestador). ADR-008 `Accepted`. Sin push ni merge. Ver la entrada de cierre arriba de todo.
+- **Limpieza de bugs/errores/warnings (2026-11-04): CERRADA** en `feat/sesion-6` (código `7bc780f`; commit de docs por el orquestador). Sin push ni merge. Ver la entrada de arriba de todo.
 - **Git (verificado en refs, 2026-11-03):** `master` = `e541586`. `origin/master` = `6d39c0a` (anterior al merge de F1 `33ba4ec`): **master está adelante de origin, sin push** (29 commits según el orquestador; no re-contado). Existen `feat/sesion-3`, `feat/sesion-4` y `feat/sesion-5` (ya mergeadas).
-- Tests: **1343 verdes al cierre de F4 parte 2** (Domain 106 · Application 572 · Desktop 323 · Integration 342), `dotnet test GymForge.sln` exit 0 y 0 omitidos (2026-11-04). Piso previo: 1234 (F4 parte 1).
-- Rama de trabajo: `feat/sesion-6` desde `master` (`e541586`): `aa9c8d7` y `6f3124e` (F4 parte 1), `1f44d2c` (F4 parte 2). Commit de docs de F4 parte 2 pendiente del orquestador. `.gitignore` ignora `*.lnk` y `*.pfx`.
-- Abierto en `docs/TASKS.md`: **0 bloqueadores técnicos de piloto**. Decisiones de política abiertas: **D11 ampliada** (PII en exports y en el snapshot de DELETE) y **O10** (roles para exportar y ver comisiones). Quedan además: UX11, Q2/D9, D7, D11/Q4, F1-D8, F1-D11, F2 en "Qué sigue", P-2, D1–D19, F1-D1 a F1-D11, F2-D1 a F2-D8, F3-D1 a F3-D7, Q3–Q9, UX1–UX24, deuda de F4 parte 1 (F4-Q1, NEW-1 a NEW-4, O4 a O13, UX25 a UX33, F4-D1 a F4-D4), deuda de F4 parte 2 (UX34, NEW-5 a NEW-7) y las fases F5 y F6.
+- Tests: **1392 verdes al cierre de la limpieza** (commit `7bc780f`; Domain 107 · Application 590 · Desktop 347 · Integration 348), `dotnet test GymForge.sln` exit 0 y 0 omitidos (2026-11-04). Piso previo: 1343 (F4 parte 2).
+- Rama de trabajo: `feat/sesion-6` desde `master` (`e541586`): `aa9c8d7` y `6f3124e` (F4 parte 1), `1f44d2c` y `a55e935` (F4 parte 2, con docs), `7bc780f` (limpieza). Commit de docs de la limpieza pendiente del orquestador. `.gitignore` ignora `*.lnk` y `*.pfx`.
+- Abierto en `docs/TASKS.md`: **0 bloqueadores técnicos de piloto**. Decisiones de política abiertas: **D11 ampliada** (PII en exports y en el snapshot de DELETE) y **O10** (roles para exportar y ver comisiones). Tras la limpieza (2026-11-04) siguen abiertos, entre otros: UX11, Q2/D9 (parcial), D7, D11/Q4, D12 (residuo), F1-D8, F1-D11, P-2, D1–D3, D5, D6, D8, D9 (parcial), D10, D13–D15, D17, D19 (ver TASKS), F1-D1 a F1-D3, F1-D5, F1-D7, F1-D8, F1-D10, F1-D11, F2-D1 a F2-D8, F3-D1 a F3-D7, Q3–Q8, UX1–UX4, UX6–UX17, UX19, UX21–UX24, UX34, NEW-2 a NEW-6, NEW-8 a NEW-10, O5, O8, O10, O11(c), O12, UX26–UX33, F4-D1 a F4-D4, y las fases F5 y F6. Lo cerrado en la limpieza está en DONE `LIMP-CIERRE`.
 
 ## Roadmap por fases
 
@@ -42,10 +43,10 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 
 ## Qué sigue
 
-**Próximo paso (cierre de F4 parte 2, 2026-11-04):**
-1. **Orquestador:** commit de docs del cierre de F4 parte 2 en `feat/sesion-6` (ADR-008 `Accepted`, `docs/adr/README.md`, PROGRESS, TASKS).
-2. **Usuario:** decidir (a) D11 ampliada y O10 (política de PII y roles para los exports y el reporte de comisiones, decisiones 2 y 9 abajo), (b) push de `master` a `origin` y de las ramas `feat/sesion-*` (ítem 8), (c) merge de `feat/sesion-6` a `master`, y (d) verificación manual de F4 parte 2 (foco inicial del form de edición; export de comisiones con diálogo nativo).
-3. **Sesión 8, Fase 5 "Pulido US$100k" (PENDIENTE):** arqui escribe el ADR antes de que dev implemente (command palette Ctrl+K, fix branding `AccentTintBrush`, micro-interacciones, dashboard con ejes/hover, calendario semanal, limpieza de tokens, accesibilidad + i18n es-AR). Deuda que conviene cerrar antes de distribuir: NEW-1 (`SQLitePCLRaw.lib.e_sqlite3` 2.1.10, High) y F4-Q1 (zona de la PC en reportes, alta y dashboard). Pendientes de F3 que no entraron en F4 parte 1: UX18 (login de caja: el PIN no se limpia tras error; Enter no ingresa) y F3-D2 / UX19 (el primer carácter del lector cae en el campo con foco). Son MEDIA y de uso diario en recepción; qa no los marcó como bloqueantes.
+**Próximo paso (tras la limpieza, 2026-11-04):**
+1. **Orquestador:** commit de docs de la limpieza (entrada de arriba de todo y `docs/TASKS.md`). El de F4 parte 2 ya está en `a55e935`.
+2. **Usuario:** decidir (a) D11 ampliada y O10 (política de PII y roles para los exports y el reporte de comisiones, decisiones 2 y 9 abajo), (b) push de `master` a `origin` y de las ramas `feat/sesion-*` (ítem 8), (c) merge de `feat/sesion-6` a `master`, (d) verificación manual de F4 parte 2 (foco inicial del form de edición; export de comisiones con diálogo nativo), y (e) `.editorconfig`: bajar la severidad de estilo o barrido de formato (NEW-8).
+3. **Sesión 8, Fase 5 "Pulido US$100k" (PENDIENTE):** arqui escribe el ADR antes de que dev implemente (command palette Ctrl+K, fix branding `AccentTintBrush`, micro-interacciones, dashboard con ejes/hover, calendario semanal, limpieza de tokens, accesibilidad + i18n es-AR). Cerrados en la limpieza (`7bc780f`): NEW-1 (`SQLitePCLRaw` 2.1.12; `Tmds.DBus` sin verificar) y F4-Q1. Pendiente antes de distribuir: D12 (residuo) y NEW-10 (solo tests). Pendientes de F3: UX18 (cerrado en la limpieza) y F3-D2 / UX19 (el primer carácter del lector cae en el campo con foco). Son MEDIA y de uso diario en recepción; qa no los marcó como bloqueantes.
 4. **Verificación en hardware real** (no se pudo en esta sesión): lector USB wedge real con layout es-AR, supresión de WM_CHAR en Windows, portapapeles y diálogo nativo, táctil, DPI alto y `scripts/publish.ps1` single-file. Con F3-D1 abierto (checks de teclado fuera de CI), todo cambio en kiosk o POS se prueba también con `tools/GymForge.Screenshots`.
 
 Piloto: F4 partes 1 y 2 sin bloqueadores técnicos (qa). D11 ampliada y O10 son decisiones de política que conviene tomar antes de que la recepción use los exports. Siguen las 2 condiciones de uso de F1.
@@ -67,6 +68,42 @@ Decisiones del usuario abiertas (ninguna bloquea el piloto con las 2 condiciones
 Fuera del piloto: P-2 (saldo a favor en la ficha) y D1 (cobros multi-sede) siguen abiertas. Resto de deuda (D1–D19, F1-D4 a F1-D10, F2-D1 a F2-D8, Q3–Q9, UX1–UX17): ver `docs/TASKS.md`.
 
 Sesiones 5-8: ver tabla de fases arriba.
+
+---
+
+## [2026-11-04] Limpieza de bugs/errores/warnings — CERRADA
+
+**Hecho:**
+- **Pasada de limpieza sobre `feat/sesion-6`** (después del cierre de F4 parte 2). Flujo: dev → qa (**APROBADO CON OBSERVACIONES**, sin bloqueantes). Código en `7bc780f` (`fix: [limpieza] bugs, zona horaria por empresa, vuln NEW-1 y warnings accionables a cero`). Commit de docs: orquestador, justo después de esta entrada. Sin push ni merge.
+- **Tests:** `dotnet test GymForge.sln` exit 0, 0 omitidos, **1392 verdes** (Domain 107 · Application 590 · Desktop 347 · Integration 348). Piso previo 1343. Build Debug y Release 0 errores. Sin migración.
+- **qa corrigió 2 cosas:** `tools/GymForge.Screenshots` no compilaba (CS7036 por el cambio de firma de `ClassesViewModel`; está fuera del `.sln`); y agregó un test de DI que valida todo el contenedor con `ValidateOnBuild` (antes cubría 3 VMs).
+- **Arreglado (detalle por ítem en TASKS, DONE `LIMP-CIERRE`):**
+  - NEW-1 (parcial): `SQLitePCLRaw.lib.e_sqlite3` → 2.1.12 (High); `xunit.runner.visualstudio` → 3.0.0 (NU1603). Queda SSH.NET (solo tests) → NEW-10.
+  - F2-D4 (dunning con etapa nula/vacía → defaults), UX18 (login de caja: PIN se limpia al fallar, Enter ingresa, hint solo con PIN de fábrica), UX5, UX25/O11(b), O4, O7, O9 (parcial), D4 (guard de `CompanyId` en sedes), F1-D4, F1-D6, F1-D9, D16, D18, Q9, NEW-7.
+  - Zona horaria: F4-Q1 / O13 cerrados; D12 **parcial** (`ICompanyCalendar` en alta, import, venta, rutinas, licencia, accesos, dashboard, cobros, clases, reportes).
+  - **Warnings accionables a cero:** CS8604, IDE0052, CA1822, NU1603.
+- **Decisiones y política (sin cambios):** D11 ampliada y O10 siguen abiertas, igual que el `.editorconfig` (NEW-8).
+
+**En curso:** nada a medias en código. Residuos explícitos que quedan en TODO:
+- **D12:** edad y regla de nacimiento en `src/GymForge.Domain/Entities/Member.cs` (~l. 88); `DatabaseBackupService.cs:62` (chequeo de backup del día); `DemoDataSeeder.cs:79` (seed). No cerrar D12 del todo.
+- **D9 (parcial):** `AsNoTracking` ya en `MembershipRepository`, `PaymentRepository`, `MemberRepository.GetJoinedBetweenAsync` y `SaleRepository.GetCommissionLinesBetweenAsync`. Falta el scope por operación en Desktop.
+- **UX19 / F3-D2:** primer carácter del lector; sin cambios (depende de hardware real).
+- **Warnings de estilo:** ~1560 preexistentes por `.editorconfig` (ver NEW-8). "0 warnings" total no se cumple hasta decidir.
+
+**Blockers:**
+- Técnicos: ninguno (1392 verdes; qa sin bloqueantes).
+- Decisión del usuario: `.editorconfig` (NEW-8). Bajar la severidad de estilo o hacer un barrido de formato masivo; dev y qa no lo tocaron.
+- Política: D11 ampliada y O10 (sin cambios). Push y merge: decide el usuario.
+- Verificación en hardware real: sin cambios respecto de F3 y F4 parte 2 (NEW-6, F3-D1).
+
+**Próximo paso:**
+1. Orquestador: commit de docs de la limpieza (esta entrada, `TASKS.md`).
+2. Usuario: decidir NEW-8 (`.editorconfig`), D11 ampliada y O10; decidir push y merge de `feat/sesion-6`.
+3. Sesión 8, Fase 5 "Pulido US$100k" (PENDIENTE): arqui escribe el ADR antes de que dev implemente.
+
+**Tocado:**
+- Docs: `docs/PROGRESS.md`, `docs/TASKS.md`.
+- Código (commit `7bc780f`): Application (`CreateMemberCommand`, `ImportMembersCommand`, `SellMembershipCommand`, `CreateRoutineCommand`, `ActivateLicenseCommand`, `GetTodaysAccessLogQuery`, validador de `CreateMembershipCommand`, `FreezeMembershipCommandHandler`, `UpdateSiteCommand` / `DeleteSiteCommand`, `DunningSettings`, `DailyMaintenanceRunner`, `Cuit`); Infrastructure (`DatabaseBackupService`, `ReportXlsxGenerator`, repositorios `MembershipRepository`, `PaymentRepository`, `MemberRepository`, `SaleRepository`); Desktop (`DashboardViewModel`, `ChargesViewModel`, `ClassesViewModel`, `ReportsViewModel`, `ReportExportService`, `MemberDetailViewModel`, `CashViewModel`, `SettingsViewModel`); `tools/GymForge.Screenshots`; tests (incl. test de DI con `ValidateOnBuild`); `Directory.Packages.props`.
 
 ---
 

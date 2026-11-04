@@ -381,6 +381,7 @@ public class ReportBuildersTests
         AssertWellTyped(ReportBuilders.Breakdown(SampleBreakdown(), from, Today, Context(), NowUtc));
         AssertWellTyped(ReportBuilders.Overdue([debtor], Today, Context(), NowUtc));
         AssertWellTyped(ReportBuilders.Flow(SampleFlow(), from, Today, Context(), NowUtc));
+        AssertWellTyped(ReportBuilders.StaffCommissions(SampleCommissions(), from, Today, Context(), NowUtc));
     }
 
     [Fact]
@@ -392,5 +393,51 @@ public class ReportBuildersTests
         AssertWellTyped(ReportBuilders.Breakdown(new RevenueBreakdown(0m, [], [], []), from, Today, Context(), NowUtc));
         AssertWellTyped(ReportBuilders.Overdue([], Today, Context(), NowUtc));
         AssertWellTyped(ReportBuilders.Flow(new MemberFlow(new Dictionary<MemberStatus, int>(), 0, [], [], 0), from, Today, Context(), NowUtc));
+        AssertWellTyped(ReportBuilders.StaffCommissions(new StaffCommissions(0m, []), from, Today, Context(), NowUtc));
+    }
+
+    // ── Comisiones del staff ─────────────────────────────────────────────────
+
+    private static StaffCommissions SampleCommissions() => new(
+        8_300m,
+        [
+            new StaffCommissionRow(Guid.NewGuid(), "Beto Ruiz", 2_000m, 1_300m, 3_300m),
+            new StaffCommissionRow(Guid.NewGuid(), "Ana Paz", 5_000m, 0m, 5_000m),
+        ]);
+
+    [Fact]
+    public void StaffCommissions_ArmaLasCuatroColumnasTipadas()
+    {
+        var document = ReportBuilders.StaffCommissions(
+            SampleCommissions(), new DateOnly(2026, 11, 1), Today, Context(), NowUtc);
+
+        Single(document).Columns.Should().Equal(
+            new ReportColumn("Staff", ReportColumnType.Text),
+            new ReportColumn("Comisión membresías", ReportColumnType.Money),
+            new ReportColumn("Comisión productos", ReportColumnType.Money),
+            new ReportColumn("Total", ReportColumnType.Money));
+        document.Title.Should().Be("Comisiones del staff");
+        document.Note.Should().Be(ReportBuilders.CommissionsNote);
+    }
+
+    [Fact]
+    public void StaffCommissions_CadaFilaTraeLosMontosCrudos_YLaFilaDeTotalesCierra()
+    {
+        var table = Single(ReportBuilders.StaffCommissions(
+            SampleCommissions(), new DateOnly(2026, 11, 1), Today, Context(), NowUtc));
+
+        table.Rows[0].Should().Equal("Beto Ruiz", 2_000m, 1_300m, 3_300m);
+        table.Rows[1].Should().Equal("Ana Paz", 5_000m, 0m, 5_000m);
+        table.Totals.Should().Equal("Total", 7_000m, 1_300m, 8_300m);
+    }
+
+    [Fact]
+    public void StaffCommissions_ElNombreDelArchivoLlevaElTituloYElRango()
+    {
+        var document = ReportBuilders.StaffCommissions(
+            SampleCommissions(), new DateOnly(2026, 11, 1), Today, Context(), NowUtc);
+
+        document.FileStem.Should().Be("comisiones-del-staff-2026-11-01_a_2026-11-03");
+        document.Subtitle.Should().Be("Sede Central · 01/11/2026 a 03/11/2026");
     }
 }

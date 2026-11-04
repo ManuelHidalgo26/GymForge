@@ -58,13 +58,40 @@ public class ProductCommandsTests
         var product = MakeProduct();
 
         var dto = await new UpdateProductCommandHandler(_repo).Handle(
-            new UpdateProductCommand(_companyId, product.Id, "Proteína 2kg", 45_000m, 30_000m, "779123"),
+            new UpdateProductCommand(_companyId, product.Id, "Proteína 2kg", 45_000m, 30_000m, "779123", 12.5m),
             CancellationToken.None);
 
         dto.Name.Should().Be("Proteína 2kg");
         dto.SalePrice.Should().Be(45_000m);
         dto.Barcode.Should().Be("779123");
+        dto.CommissionPct.Should().Be(12.5m);
+        product.CommissionStaffPct.Should().Be(12.5m);
         await _repo.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CreateProduct_StoresTheCommissionPercentage()
+    {
+        var dto = await new CreateProductCommandHandler(_repo).Handle(
+            new CreateProductCommand(_companyId, "BARRA", "Barra", 1_000m, 500m, null, CommissionPct: 7.5m),
+            CancellationToken.None);
+
+        dto.CommissionPct.Should().Be(7.5m);
+    }
+
+    [Theory]
+    [InlineData(0, true)]
+    [InlineData(100, true)]
+    [InlineData(-1, false)]
+    [InlineData(100.5, false)]
+    public void Validators_AcceptOnlyCommissionPercentagesFromZeroToHundred(double pct, bool valid)
+    {
+        new CreateProductCommandValidator()
+            .Validate(new CreateProductCommand(_companyId, "SKU", "Prod", 1m, 0m, null, (decimal)pct))
+            .IsValid.Should().Be(valid);
+        new UpdateProductCommandValidator()
+            .Validate(new UpdateProductCommand(_companyId, Guid.NewGuid(), "Prod", 1m, 0m, null, (decimal)pct))
+            .IsValid.Should().Be(valid);
     }
 
     [Fact]
@@ -73,7 +100,7 @@ public class ProductCommandsTests
         var product = MakeProduct();
 
         var act = () => new UpdateProductCommandHandler(_repo).Handle(
-            new UpdateProductCommand(Guid.NewGuid(), product.Id, "X", 1m, 0, null),
+            new UpdateProductCommand(Guid.NewGuid(), product.Id, "X", 1m, 0, null, 0m),
             CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>();

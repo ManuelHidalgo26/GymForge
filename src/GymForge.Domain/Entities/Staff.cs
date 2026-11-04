@@ -1,4 +1,5 @@
 using GymForge.Domain.Enums;
+using GymForge.Domain.ValueObjects;
 
 namespace GymForge.Domain.Entities;
 
@@ -60,6 +61,19 @@ public class Staff : BaseEntity, ITenantScoped, IAuditable
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(newPinCodeHash);
         PinCodeHash = newPinCodeHash;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>Porcentajes de comisión (0 a 100) por membresías, personal training y productos.</summary>
+    public void SetCommissions(decimal pctMemberships, decimal pctPt, decimal pctProducts)
+    {
+        Commission.EnsureValidPct(pctMemberships, nameof(pctMemberships));
+        Commission.EnsureValidPct(pctPt, nameof(pctPt));
+        Commission.EnsureValidPct(pctProducts, nameof(pctProducts));
+
+        CommissionPctMemberships = pctMemberships;
+        CommissionPctPt = pctPt;
+        CommissionPctProducts = pctProducts;
         UpdatedAt = DateTime.UtcNow;
     }
 

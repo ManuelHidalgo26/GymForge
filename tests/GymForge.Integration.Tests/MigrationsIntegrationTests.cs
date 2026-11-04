@@ -17,6 +17,7 @@ public class MigrationsIntegrationTests
 {
     private const string MigrationBeforeFreezePolicy = "20261027171441_AccessLogAllowUnknownMember";
     private const string MigrationBeforeDunning = "20261027212030_AddMemberCreditLedger";
+    private const string MigrationBeforeSaleLineCommission = "20261029180013_AddMemberTagSerialUniqueIndex";
 
     private static async Task<GymForgeDbContext> NewDbAsync()
     {
@@ -95,6 +96,40 @@ public class MigrationsIntegrationTests
         var company = await db.Companies.SingleAsync();
         company.DunningJson.Should().BeNull();
         DunningSettings.FromJson(company.DunningJson).Should().BeNull("el llamador conserva los defaults");
+    }
+
+    private async Task<string?> SaleLineCommissionColumnAsync(GymForgeDbContext db)
+    {
+        await using var command = db.Database.GetDbConnection().CreateCommand();
+        command.CommandText = "SELECT name FROM pragma_table_info('SaleLines') WHERE name = 'CommissionAmount'";
+        return (string?)await command.ExecuteScalarAsync();
+    }
+
+    [Fact]
+    public async Task Migrate_SaleLinesCreatedBeforeTheCommissionColumnGetZero_AndTheMigrationGoesDownCleanly()
+    {
+        await using var db = await NewDbAsync();
+        await db.GetService<IMigrator>().MigrateAsync(MigrationBeforeSaleLineCommission);
+        await db.Database.ExecuteSqlRawAsync("PRAGMA foreign_keys = OFF");   // la línea de prueba no necesita su venta
+        await db.Database.ExecuteSqlRawAsync(
+            """
+            INSERT INTO SaleLines (Id, SaleId, Description, Quantity, UnitPrice, Discount, TaxRate, CreatedAt, UpdatedAt)
+            VALUES ('22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333',
+                    'Agua', 2, 1500, 0, 0.21, '2026-01-01 00:00:00', '2026-01-01 00:00:00')
+            """);
+        (await SaleLineCommissionColumnAsync(db)).Should().BeNull("todavía no existe antes de la migración");
+
+        await db.Database.MigrateAsync();
+
+        (await SaleLineCommissionColumnAsync(db)).Should().Be("CommissionAmount");
+        var amount = await db.Database.SqlQueryRaw<decimal>("SELECT CommissionAmount AS Value FROM SaleLines").SingleAsync();
+        amount.Should().Be(0m, "las ventas anteriores no tenían comisión");
+
+        await db.GetService<IMigrator>().MigrateAsync(MigrationBeforeSaleLineCommission);
+
+        (await SaleLineCommissionColumnAsync(db)).Should().BeNull("el Down quita la columna");
+        (await db.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM SaleLines").SingleAsync())
+            .Should().Be(1, "bajar la migración conserva las líneas");
     }
 
     [Fact]

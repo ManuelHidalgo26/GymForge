@@ -562,7 +562,48 @@
                 </StackPanel>
             </ScrollViewer>
 
-            <!-- ═══ Estado vacío (de cualquiera de los cuatro) ═══
+            <!-- ═══ Comisiones del staff: grilla por persona + total en el footer ═══ -->
+            <Grid RowDefinitions="Auto,*,Auto" IsVisible="{Binding IsCommissionsReport}">
+
+                <!-- El criterio, visible (y también en el PDF/Excel): se congelan al vender -->
+                <fa:InfoBar Grid.Row="0" Margin="16,12,16,8"
+                            IsOpen="{Binding !IsEmpty}" IsClosable="False" Severity="Informational"
+                            Title="Cómo leer este reporte" Message="{Binding CommissionsNote}" />
+
+                <DataGrid Grid.Row="1"
+                          ItemsSource="{Binding CommissionRows}"
+                          IsReadOnly="True" AutoGenerateColumns="False" CanUserSortColumns="True"
+                          AutomationProperties.Name="Comisiones del staff">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Staff" Binding="{Binding StaffName}" Width="*" />
+                        <DataGridTextColumn Header="Comisión membresías"
+                                            Binding="{Binding MembershipCommission, StringFormat={}{0:C}}" Width="190" />
+                        <DataGridTextColumn Header="Comisión productos"
+                                            Binding="{Binding ProductCommission, StringFormat={}{0:C}}" Width="190" />
+                        <DataGridTemplateColumn Header="Total" Width="170" SortMemberPath="Total">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate x:DataType="rep:StaffCommissionRow">
+                                    <TextBlock Text="{Binding Total, StringFormat={}{0:C}}"
+                                               FontWeight="SemiBold" VerticalAlignment="Center" Margin="12,0" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <Border Grid.Row="2" Classes="FooterBar" IsVisible="{Binding !IsEmpty}">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Classes="Numeric" FontSize="14" FontWeight="SemiBold">
+                            <Run Text="Total de comisiones: " />
+                            <Run Text="{Binding CommissionsTotal, StringFormat={}{0:C}}" />
+                        </TextBlock>
+                        <TextBlock Classes="FormLabel" VerticalAlignment="Center"
+                                   Text="{Binding CommissionRows.Count, StringFormat={}{0} persona(s)}" />
+                    </DockPanel>
+                </Border>
+            </Grid>
+
+            <!-- ═══ Estado vacío (de cualquiera de los cinco) ═══
                  Si la carga falló (Message), no se muestra: el aviso de arriba ya dice qué pasó, y un
                  "Sin pagos" / "Sin morosos" mentiría (UX14 en Morosos). -->
             <Panel IsVisible="{Binding Message, Converter={x:Static ObjectConverters.IsNull}}">

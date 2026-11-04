@@ -28,15 +28,13 @@ public class CreateMemberCommandValidator : AbstractValidator<CreateMemberComman
 {
     public CreateMemberCommandValidator()
     {
-        RuleFor(x => x.FirstName).NotEmpty().MaximumLength(100);
-        RuleFor(x => x.LastName).NotEmpty().MaximumLength(100);
-        RuleFor(x => x.DocumentNumber).NotEmpty().MaximumLength(20);
-        RuleFor(x => x.Email).EmailAddress().When(x => !string.IsNullOrEmpty(x.Email));
-        RuleFor(x => x.Mobile).MaximumLength(30);
+        RuleFor(x => x.FirstName).ValidName();
+        RuleFor(x => x.LastName).ValidName();
+        RuleFor(x => x.DocumentNumber).ValidDocumentNumber();
+        RuleFor(x => x.Email).ValidEmail();
+        RuleFor(x => x.Mobile).ValidPhone();
         RuleFor(x => x.TagSerial).MaximumLength(CredentialEnrollment.MaxLength);
-        RuleFor(x => x.BirthDate)
-            .Must(d => !d.HasValue || d.Value <= DateOnly.FromDateTime(DateTime.Today.AddYears(-5)))
-            .WithMessage("La fecha de nacimiento parece incorrecta.");
+        RuleFor(x => x.BirthDate).ValidBirthDate();
     }
 }
 

@@ -532,6 +532,52 @@ Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVari
 Pump(detailVm.ReactivateMembershipCommand.ExecuteAsync(detailVm.Memberships.First(m => m.Status == MembershipStatus.Frozen)));
 Capture("23-socio-membresia-reactivada", new MemberDetailView { DataContext = detailVm }, 1180, 720, outDir);
 
+// ── Fase 4 parte 2: editar socio, rutinas en la ficha y comisiones ───────────────────────────────────────
+var commissionMember = membersVm.Members.First(m => m.Status == MemberStatus.Active);
+var editVm = sp.GetRequiredService<MemberDetailViewModel>();
+Pump(editVm.LoadAsync(commissionMember));
+editVm.StartEditCommand.Execute(null);
+Capture("33-ficha-editar", new MemberDetailView { DataContext = editVm }, 1180, 1700, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+Capture("33-ficha-editar-dark", new MemberDetailView { DataContext = editVm }, 1180, 1700, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+editVm.Edit.CancelCommand.Execute(null);
+Pump(editVm.SwitchTabCommand.ExecuteAsync(MemberDetailTab.Routines));
+for (int i = 0; i < 15; i++) { Dispatcher.UIThread.RunJobs(); Thread.Sleep(10); }  // carga de las rutinas del socio
+Capture("34-ficha-rutinas", new MemberDetailView { DataContext = editVm }, 1180, 820, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+Capture("34-ficha-rutinas-dark", new MemberDetailView { DataContext = editVm }, 1180, 820, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+
+// Comisiones: tarifa del cajero + una venta de membresía y una de producto que generen comisión.
+WaitFor(mediator2.Send(new UpdateStaffCommissionsCommand(session.CompanyId, staff.Id, 10m, 5m)));
+var paidPlan = WaitFor(mediator2.Send(new GetMembershipTypesQuery(session.CompanyId))).First(p => p.Price > 0);
+WaitFor(mediator2.Send(new SellMembershipCommand(
+    session.CompanyId, session.SiteId, staff.Id, shift.Id, commissionMember.Id, paidPlan.Id, PaymentMethod.Cash)));
+var commissionProduct = productsVm.Products.First(p => p.Sku == "AGUA-500");
+WaitFor(mediator2.Send(new SellProductCommand(
+    session.CompanyId, session.SiteId, staff.Id, shift.Id, commissionProduct.Id, 2m, null, PaymentMethod.Cash)));
+
+var settingsWithCommissions = NewSettingsViewModel();
+Pump(settingsWithCommissions.LoadCommand.ExecuteAsync(null));
+Capture("35-config-comisiones", new GymForge.Desktop.Views.Settings.SettingsView { DataContext = settingsWithCommissions }, 1180, 3600, outDir);
+
+Pump(productsVm.LoadCommand.ExecuteAsync(null));
+productsVm.EditProductCommand.Execute(productsVm.Products.First(p => p.Sku == "AGUA-500"));
+Capture("36-productos-comision", new GymForge.Desktop.Views.Products.ProductsView { DataContext = productsVm }, 1180, 760, outDir);
+
+reportsVm.CompanyWide = false;
+reportsVm.SelectedReport = GymForge.Desktop.ViewModels.Reports.ReportKind.StaffCommissions;
+Pump(reportsVm.LoadCommand.ExecuteAsync(null));
+Capture("37-reportes-comisiones", new GymForge.Desktop.Views.Reports.ReportsView { DataContext = reportsVm }, 1180, 760, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+Capture("37-reportes-comisiones-dark", new GymForge.Desktop.Views.Reports.ReportsView { DataContext = reportsVm }, 1180, 760, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+Check("comisiones: el reporte suma la membresía y el producto del cajero",
+    reportsVm.CommissionRows.Count == 1 && reportsVm.CommissionRows[0].MembershipCommission > 0
+    && reportsVm.CommissionRows[0].ProductCommission > 0
+    && reportsVm.CommissionsTotal == reportsVm.CommissionRows[0].Total);
+
 // Onboarding de primer arranque (asistente de configuración inicial).
 var onboardingVm = sp.GetRequiredService<GymForge.Desktop.ViewModels.Onboarding.OnboardingViewModel>();
 onboardingVm.GymName = "PowerGym";

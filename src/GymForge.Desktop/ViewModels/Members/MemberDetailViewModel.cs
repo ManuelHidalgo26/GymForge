@@ -6,6 +6,7 @@ using GymForge.Application.UseCases.Members;
 using GymForge.Application.UseCases.Memberships;
 using GymForge.Desktop.Services;
 using GymForge.Desktop.ViewModels.Charges;
+using GymForge.Desktop.ViewModels.Routines;
 using MediatR;
 using System.Collections.ObjectModel;
 
@@ -26,8 +27,9 @@ public partial class MemberDetailViewModel : ObservableObject
     [ObservableProperty] private MemberDetailTab _activeTab = MemberDetailTab.Data;
     [ObservableProperty] private bool _isLoading;
 
-    // Tab: Datos — la foto se guarda apenas se elige; la credencial al asignarla
+    // Tab: Datos — la foto se guarda apenas se elige; la credencial al asignarla; el resto, en modo edición
     public PhotoPickerViewModel Photo { get; }
+    public MemberEditViewModel Edit { get; }
     [ObservableProperty] private string _newCredential = string.Empty;
     [ObservableProperty] private string? _credentialMessage;
     [ObservableProperty] private bool _credentialAssigned;
@@ -46,6 +48,9 @@ public partial class MemberDetailViewModel : ObservableObject
     // Tab: Accesos
     [ObservableProperty] private ObservableCollection<AccessLogRowVm> _accessLogs = [];
 
+    // Tab: Rutinas — el armador del hub, embebido: el socio ya está dado, no hay buscador
+    public RoutineBuilderViewModel RoutineBuilder { get; }
+
     // Tabs list for ComboBox / TabStrip binding
     public IReadOnlyList<MemberDetailTab> Tabs { get; } =
         Enum.GetValues<MemberDetailTab>().ToList();
@@ -58,6 +63,7 @@ public partial class MemberDetailViewModel : ObservableObject
         IAccessLogRepository accessLogRepo,
         IChargeRepository chargeRepo,
         ChargesViewModel chargesVm,
+        RoutineBuilderViewModel routineBuilder,
         SessionContext session,
         IImagePicker imagePicker,
         IMemberPhotoStore photoStore)
@@ -67,22 +73,33 @@ public partial class MemberDetailViewModel : ObservableObject
         _accessLogRepo  = accessLogRepo;
         _chargeRepo     = chargeRepo;
         ChargesVm       = chargesVm;
+        RoutineBuilder  = routineBuilder;
         _session        = session;
         _photoStore     = photoStore;
 
         Photo = new PhotoPickerViewModel(imagePicker);
         Photo.ImageChosen += image => _ = SavePhotoAsync(image);
+
+        // Antes de que la vista se enlace: sin esto, al asignarle el DataContext el armador cargaría los socios del hub.
+        RoutineBuilder.ShowMemberPicker = false;
+
+        Edit = new MemberEditViewModel(mediator, session);
+        Edit.Saved += saved => Member = saved;
     }
 
     public async Task LoadAsync(MemberDto member, CancellationToken ct = default)
     {
+        Edit.CancelCommand.Execute(null);
         Member = member;
         Photo.ShowSaved(member.PhotoUrl);
         ChargesVm.FilterByMember(member.Id);
         await LoadActiveTabAsync(ct);
     }
 
-    // ── Datos: foto y credencial ──────────────────────────────────────────────
+    // ── Datos: edición, foto y credencial ─────────────────────────────────────
+
+    [RelayCommand]
+    private void StartEdit() => Edit.Begin(Member);
 
     /// <summary>Guarda en disco y en el socio la foto recién elegida. Nunca lanza: el motivo queda en el mensaje de la foto.</summary>
     private async Task SavePhotoAsync(byte[] image)
@@ -145,6 +162,9 @@ public partial class MemberDetailViewModel : ObservableObject
                     break;
                 case MemberDetailTab.Access:
                     await LoadAccessLogsAsync(ct);
+                    break;
+                case MemberDetailTab.Routines:
+                    await RoutineBuilder.InitForMemberAsync(Member, ct);
                     break;
             }
         }

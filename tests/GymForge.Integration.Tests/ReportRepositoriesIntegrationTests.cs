@@ -275,4 +275,106 @@ public class ReportRepositoriesIntegrationTests : IAsyncLifetime
         onlyCentro.Select(m => m.Id).Should().Equal(centro.Id);
         wholeCompany.Select(m => m.Id).Should().BeEquivalentTo([centro.Id, norte.Id]);
     }
+
+    // ── Comisiones: MembershipRepository.GetSoldBetweenAsync / SaleRepository.GetCommissionLinesBetweenAsync ──
+
+    private async Task<Membership> AddSoldMembershipAsync(Company company, Site site, string dni, decimal commission)
+    {
+        var member = await AddMemberAsync(company, site, dni);
+        var plan = MembershipType.Create(company.Id, $"Plan {dni}", MembershipBasis.Renewal, 10_000m);
+        await _db.MembershipTypes.AddAsync(plan);
+        var membership = Membership.Create(company.Id, site.Id, member.Id, plan.Id, From, null);
+        membership.SetCommission(Guid.NewGuid(), commission);
+        await _db.Memberships.AddAsync(membership);
+        await _db.SaveChangesAsync();
+        return membership;
+    }
+
+    private async Task<SaleLine> AddSoldLineAsync(Company company, Site site, decimal commission)
+    {
+        var sale = Sale.Create(company.Id, site.Id, Guid.NewGuid());
+        var line = SaleLine.Create(sale.Id, "Barra", 1, 1_000m);
+        line.SetCommission(Guid.NewGuid(), commission);
+        sale.Lines.Add(line);
+        await _db.Sales.AddAsync(sale);
+        await _db.SaveChangesAsync();
+        return line;
+    }
+
+    [Fact]
+    public async Task SoldBetween_SoloTraeMembresiasConComisionDentroDelPeriodo()
+    {
+        var withCommission = await AddSoldMembershipAsync(_companyA, _centro, "30000001", 3_500m);
+        await AddSoldMembershipAsync(_companyA, _centro, "30000002", 0m);
+        var repo = new MembershipRepository(_db);
+
+        var inside = await repo.GetSoldBetweenAsync(_companyA.Id, _centro.Id, HourAgo, InAnHour);
+        var after = await repo.GetSoldBetweenAsync(_companyA.Id, _centro.Id, InAnHour, InAnHour.AddHours(1));
+        var before = await repo.GetSoldBetweenAsync(_companyA.Id, _centro.Id, HourAgo.AddHours(-2), HourAgo);
+
+        inside.Select(m => m.Id).Should().Equal(withCommission.Id);
+        after.Should().BeEmpty();
+        before.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task SoldBetween_ConUnaSedeFiltraEsaSede_ConAlcanceDeEmpresaCruzaLasSedes_YNuncaOtraEmpresa()
+    {
+        var centro = await AddSoldMembershipAsync(_companyA, _centro, "30000001", 100m);
+        var norte = await AddSoldMembershipAsync(_companyA, _norte, "30000002", 200m);
+        await AddSoldMembershipAsync(_companyB, _siteB, "30000003", 300m);
+        var repo = new MembershipRepository(_db);
+
+        var onlyCentro = await repo.GetSoldBetweenAsync(_companyA.Id, _centro.Id, HourAgo, InAnHour);
+        var wholeCompany = await repo.GetSoldBetweenAsync(_companyA.Id, null, HourAgo, InAnHour);
+
+        onlyCentro.Select(m => m.Id).Should().Equal(centro.Id);
+        wholeCompany.Select(m => m.Id).Should().BeEquivalentTo([centro.Id, norte.Id]);
+    }
+
+    [Fact]
+    public async Task CommissionLines_SoloTraeLineasConComisionDentroDelPeriodo_ConSuVenta()
+    {
+        var withCommission = await AddSoldLineAsync(_companyA, _centro, 300m);
+        await AddSoldLineAsync(_companyA, _centro, 0m);
+        var repo = new SaleRepository(_db);
+
+        var inside = await repo.GetCommissionLinesBetweenAsync(_companyA.Id, _centro.Id, HourAgo, InAnHour);
+        var after = await repo.GetCommissionLinesBetweenAsync(_companyA.Id, _centro.Id, InAnHour, InAnHour.AddHours(1));
+
+        var only = inside.Should().ContainSingle().Subject;
+        only.Id.Should().Be(withCommission.Id);
+        only.Sale.SiteId.Should().Be(_centro.Id);
+        after.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task CommissionLines_ConUnaSedeFiltraEsaSede_ConAlcanceDeEmpresaCruzaLasSedes_YNuncaOtraEmpresa()
+    {
+        var centro = await AddSoldLineAsync(_companyA, _centro, 100m);
+        var norte = await AddSoldLineAsync(_companyA, _norte, 200m);
+        await AddSoldLineAsync(_companyB, _siteB, 300m);
+        var repo = new SaleRepository(_db);
+
+        var onlyCentro = await repo.GetCommissionLinesBetweenAsync(_companyA.Id, _centro.Id, HourAgo, InAnHour);
+        var wholeCompany = await repo.GetCommissionLinesBetweenAsync(_companyA.Id, null, HourAgo, InAnHour);
+
+        onlyCentro.Select(l => l.Id).Should().Equal(centro.Id);
+        wholeCompany.Select(l => l.Id).Should().BeEquivalentTo([centro.Id, norte.Id]);
+    }
+
+    [Fact]
+    public async Task StaffGetAll_IncluyeAlPersonalDadoDeBaja_PeroNuncaDeOtraEmpresa()
+    {
+        var active = Staff.Create(_companyA.Id, "Ana", "Paz", StaffRole.Receptionist, "hash");
+        var gone = Staff.Create(_companyA.Id, "Beto", "Ruiz", StaffRole.Trainer, "hash");
+        gone.Deactivate();
+        var foreign = Staff.Create(_companyB.Id, "Caro", "Sol", StaffRole.Admin, "hash");
+        await _db.Staff.AddRangeAsync(active, gone, foreign);
+        await _db.SaveChangesAsync();
+
+        var all = await new StaffRepository(_db).GetAllByCompanyAsync(_companyA.Id);
+
+        all.Select(s => s.Id).Should().BeEquivalentTo([active.Id, gone.Id]);
+    }
 }

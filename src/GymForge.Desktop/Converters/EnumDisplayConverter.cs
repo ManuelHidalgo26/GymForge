@@ -39,6 +39,17 @@ public class EnumDisplayConverter : IValueConverter
         [Gender.NonBinary] = "No binario",
         [Gender.PreferNotToSay] = "Prefiere no decir",
 
+        // Grupo sanguíneo
+        [BloodType.APositive] = "A+",
+        [BloodType.ANegative] = "A-",
+        [BloodType.BPositive] = "B+",
+        [BloodType.BNegative] = "B-",
+        [BloodType.ABPositive] = "AB+",
+        [BloodType.ABNegative] = "AB-",
+        [BloodType.OPositive] = "0+",
+        [BloodType.ONegative] = "0-",
+        [BloodType.Unknown] = "No informado",
+
         // Estado de socio
         [MemberStatus.Prospect] = "Prospecto",
         [MemberStatus.Active] = "Activo",
@@ -76,6 +87,7 @@ public class EnumDisplayConverter : IValueConverter
         [ReportKind.RevenueBreakdown] = "Recaudación desagregada",
         [ReportKind.Overdue] = "Morosos",
         [ReportKind.MemberFlow] = "Altas y bajas",
+        [ReportKind.StaffCommissions] = "Comisiones del staff",
 
         // Filtro de cobros
         [ChargeStatusFilter.Pending] = "Pendientes",
@@ -123,6 +135,13 @@ public class EnumDisplayConverter : IValueConverter
         [Equipment.Band] = "Banda elástica",
         [Equipment.Kettlebell] = "Pesa rusa",
         [Equipment.Other] = "Otro",
+
+        // Objetivo de la rutina
+        [WorkoutGoal.Hypertrophy] = "Hipertrofia",
+        [WorkoutGoal.FatLoss] = "Pérdida de grasa",
+        [WorkoutGoal.Strength] = "Fuerza",
+        [WorkoutGoal.Endurance] = "Resistencia",
+        [WorkoutGoal.Mobility] = "Movilidad",
 
         // Tipo de movimiento
         [MovementType.Compound] = "Compuesto",

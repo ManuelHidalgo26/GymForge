@@ -208,6 +208,28 @@ public class TenantAdversarialIntegrationTests : IAsyncLifetime
         (await Lookup(_companyA.Id, "40000002")).Should().BeNull("el DNI es de un socio de otra sede");
     }
 
+    // ── Edición de socio: solo el propio, de la sede activa ──────────────────
+
+    [Theory]
+    [InlineData("B1")]   // otra empresa
+    [InlineData("A2")]   // otra sede de la misma empresa
+    public async Task UpdateMember_OfAnotherCompanyOrSite_IsRejectedAsNotFound_AndNothingChanges(string target)
+    {
+        var victim = target == "B1" ? _memberB1 : _memberA2;
+        var handler = new UpdateMemberCommandHandler(new MemberRepository(_db));
+        var cmd = new UpdateMemberCommand(
+            _companyA.Id, victim.Id, "Hackeado", "Test", DocumentType.DNI, "99999999", Gender.Male,
+            null, null, null, false, null, null, null, null, null, null, BloodType.Unknown);
+
+        var act = () => handler.Handle(cmd, CancellationToken.None);
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+        _db.ChangeTracker.Clear();
+        var stored = await _db.Members.IgnoreQueryFilters().SingleAsync(m => m.Id == victim.Id);
+        stored.FirstName.Should().NotBe("Hackeado");
+        stored.DocumentNumber.Should().NotBe("99999999");
+    }
+
     // ── Licencia: no se esquiva creando socios en otra sede ──────────────────
 
     [Fact]

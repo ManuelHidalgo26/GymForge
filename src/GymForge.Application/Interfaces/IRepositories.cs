@@ -55,6 +55,11 @@ public interface IMembershipRepository : IRepository<Membership>
     /// TODA la empresa: ignora el filtro de sede pero queda acotado a <paramref name="companyId"/>.
     /// </summary>
     Task<IReadOnlyList<Membership>> GetCancelledBetweenAsync(Guid companyId, Guid? siteId, DateTime from, DateTime to, CancellationToken ct = default);
+    /// <summary>
+    /// Membresías vendidas con comisión (CommissionAmount &gt; 0) con el alta en [from, to) (UTC). <paramref name="siteId"/>
+    /// null = TODA la empresa: ignora el filtro de sede pero queda acotado a <paramref name="companyId"/>.
+    /// </summary>
+    Task<IReadOnlyList<Membership>> GetSoldBetweenAsync(Guid companyId, Guid? siteId, DateTime from, DateTime to, CancellationToken ct = default);
 }
 
 public interface IChargeRepository : IRepository<Charge>
@@ -134,6 +139,11 @@ public interface ISaleRepository
     /// <summary>Venta por id con sus líneas cargadas (para armar el recibo de venta).</summary>
     Task<Sale?> GetByIdAsync(Guid id, CancellationToken ct = default);
     void UpdateStock(StockBySite stock);
+    /// <summary>
+    /// Líneas de venta con comisión (vendedor y monto &gt; 0) de ventas en [from, to) (UTC), con su venta cargada.
+    /// <paramref name="siteId"/> null = TODA la empresa: ignora el filtro de sede pero queda acotado a <paramref name="companyId"/>.
+    /// </summary>
+    Task<IReadOnlyList<SaleLine>> GetCommissionLinesBetweenAsync(Guid companyId, Guid? siteId, DateTime from, DateTime to, CancellationToken ct = default);
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
 
@@ -141,6 +151,8 @@ public interface IStaffRepository
 {
     Task<Staff?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<IReadOnlyList<Staff>> GetActiveByCompanyAsync(Guid companyId, CancellationToken ct = default);
+    /// <summary>Todo el personal de la empresa, también el dado de baja (un reporte histórico necesita sus nombres).</summary>
+    Task<IReadOnlyList<Staff>> GetAllByCompanyAsync(Guid companyId, CancellationToken ct = default);
     void Update(Staff staff);
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

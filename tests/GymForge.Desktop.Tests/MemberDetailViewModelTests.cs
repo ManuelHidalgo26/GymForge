@@ -3,11 +3,15 @@ using GymForge.Application.DTOs;
 using GymForge.Application.Interfaces;
 using GymForge.Application.UseCases.Access;
 using GymForge.Application.UseCases.Dunning;
+using GymForge.Application.UseCases.Exercises;
 using GymForge.Application.UseCases.Licensing;
+using GymForge.Application.UseCases.Members;
 using GymForge.Application.UseCases.Memberships;
+using GymForge.Application.UseCases.Routines;
 using GymForge.Desktop.Services;
 using GymForge.Desktop.ViewModels.Charges;
 using GymForge.Desktop.ViewModels.Members;
+using GymForge.Desktop.ViewModels.Routines;
 using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
 using MediatR;
@@ -42,6 +46,7 @@ public class MemberDetailViewModelTests
 
         return new MemberDetailViewModel(
             _mediator, _membershipRepo, Substitute.For<IAccessLogRepository>(), chargeRepo, charges,
+            new RoutineBuilderViewModel(_mediator, Substitute.For<IMemberRepository>(), session),
             session, Substitute.For<IImagePicker>(), Substitute.For<IMemberPhotoStore>());
     }
 
@@ -189,5 +194,125 @@ public class MemberDetailViewModelTests
         await act.Should().NotThrowAsync();
         vm.MembershipsMessage.Should().Be("La membresía no está congelada.");
         await _membershipRepo.Received(1).GetByMemberAsync(_member.Id, Arg.Any<CancellationToken>());
+    }
+
+    // ── Datos: modo edición ───────────────────────────────────────────────────
+
+    [Fact]
+    public async Task Edit_Start_EntersEditMode_WithTheCurrentValues()
+    {
+        var vm = Sut();
+        await vm.LoadAsync(_member);
+
+        vm.StartEditCommand.Execute(null);
+
+        vm.Edit.IsEditing.Should().BeTrue();
+        vm.Edit.FirstName.Should().Be("Ana");
+        vm.Edit.LastName.Should().Be("García");
+        vm.Edit.DocumentNumber.Should().Be("30111222");
+        vm.Edit.DocumentType.Should().Be(DocumentType.DNI);
+    }
+
+    [Fact]
+    public async Task Edit_Save_SendsTheCommand_ReloadsTheMember_AndLeavesEditMode()
+    {
+        var vm = Sut();
+        await vm.LoadAsync(_member);
+        var updated = _member with { FirstName = "Anita", FullName = "Anita García", Mobile = "+5491100001111" };
+        _mediator.Send(Arg.Any<UpdateMemberCommand>(), Arg.Any<CancellationToken>()).Returns(updated);
+        vm.StartEditCommand.Execute(null);
+        vm.Edit.FirstName = " Anita ";
+        vm.Edit.Mobile = "+5491100001111";
+        vm.Edit.MedicalConditions = "Asma";
+
+        await vm.Edit.SaveCommand.ExecuteAsync(null);
+
+        await _mediator.Received(1).Send(
+            Arg.Is<UpdateMemberCommand>(c =>
+                c.MemberId == _member.Id && c.FirstName == "Anita" && c.LastName == "García"
+                && c.Mobile == "+5491100001111" && c.MedicalConditions == "Asma"),
+            Arg.Any<CancellationToken>());
+        vm.Member.Should().Be(updated);
+        vm.Edit.IsEditing.Should().BeFalse();
+        vm.Edit.ErrorMessage.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Edit_Save_WhenValidationFails_StaysInEditMode_WithTheMessage_AndKeepsTheMember()
+    {
+        var vm = Sut();
+        await vm.LoadAsync(_member);
+        _mediator.Send(Arg.Any<UpdateMemberCommand>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new FluentValidation.ValidationException(
+                [new FluentValidation.Results.ValidationFailure("Email", "El email no es válido.")]));
+        vm.StartEditCommand.Execute(null);
+        vm.Edit.Email = "malo";
+
+        await vm.Edit.SaveCommand.ExecuteAsync(null);
+
+        vm.Edit.IsEditing.Should().BeTrue();
+        vm.Edit.ErrorMessage.Should().Be("El email no es válido.");
+        vm.Member.Should().Be(_member);
+    }
+
+    [Fact]
+    public async Task Edit_Cancel_DiscardsTheChanges_WithoutSending()
+    {
+        var vm = Sut();
+        await vm.LoadAsync(_member);
+        vm.StartEditCommand.Execute(null);
+        vm.Edit.FirstName = "Otro";
+
+        vm.Edit.CancelCommand.Execute(null);
+
+        vm.Edit.IsEditing.Should().BeFalse();
+        vm.Member.FirstName.Should().Be("Ana");
+        await _mediator.DidNotReceive().Send(Arg.Any<UpdateMemberCommand>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Edit_CannotSave_WithBlankRequiredFields()
+    {
+        var vm = Sut();
+        await vm.LoadAsync(_member);
+        vm.StartEditCommand.Execute(null);
+
+        vm.Edit.FirstName = "  ";
+
+        vm.Edit.SaveCommand.CanExecute(null).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task LoadingAnotherMember_LeavesEditMode()
+    {
+        var vm = Sut();
+        await vm.LoadAsync(_member);
+        vm.StartEditCommand.Execute(null);
+
+        await vm.LoadAsync(_member with { Id = Guid.NewGuid() });
+
+        vm.Edit.IsEditing.Should().BeFalse();
+    }
+
+    // ── Rutinas en la ficha ───────────────────────────────────────────────────
+
+    [Fact]
+    public async Task RoutinesTab_InitializesTheEmbeddedBuilderWithTheCurrentMember()
+    {
+        var vm = Sut();
+        await vm.LoadAsync(_member);
+        var routine = new RoutineDto(Guid.NewGuid(), "Full Body", WorkoutGoal.Hypertrophy, 3, 2);
+        _mediator.Send(Arg.Any<GetMemberRoutinesQuery>(), Arg.Any<CancellationToken>())
+            .Returns(new List<RoutineDto> { routine });
+        _mediator.Send(Arg.Any<SearchExercisesQuery>(), Arg.Any<CancellationToken>())
+            .Returns(new List<ExerciseDto>());
+
+        await vm.SwitchTabCommand.ExecuteAsync(MemberDetailTab.Routines);
+
+        vm.RoutineBuilder.SelectedMember.Should().Be(_member);
+        vm.RoutineBuilder.ShowMemberPicker.Should().BeFalse();
+        vm.RoutineBuilder.Routines.Should().ContainSingle().Which.Should().Be(routine);
+        await _mediator.Received(1).Send(
+            Arg.Is<GetMemberRoutinesQuery>(q => q.MemberId == _member.Id), Arg.Any<CancellationToken>());
     }
 }

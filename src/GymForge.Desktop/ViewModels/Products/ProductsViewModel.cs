@@ -31,6 +31,7 @@ public partial class ProductsViewModel : ObservableObject
     [ObservableProperty] private string _name = string.Empty;
     [ObservableProperty] private decimal? _salePrice;
     [ObservableProperty] private decimal? _costPrice;
+    [ObservableProperty] private decimal? _commissionPct;
     [ObservableProperty] private string? _barcode;
     [ObservableProperty] private bool _isSkuEditable = true;
 
@@ -74,6 +75,7 @@ public partial class ProductsViewModel : ObservableObject
         Name = string.Empty;
         SalePrice = null;
         CostPrice = null;
+        CommissionPct = null;
         Barcode = null;
         IsSkuEditable = true;
         ErrorMessage = null;
@@ -91,6 +93,7 @@ public partial class ProductsViewModel : ObservableObject
         Name = dto.Name;
         SalePrice = dto.SalePrice;
         CostPrice = dto.CostPrice;
+        CommissionPct = dto.CommissionPct;
         Barcode = dto.Barcode;
         IsSkuEditable = false;  // el SKU identifica al producto; no se cambia
         ErrorMessage = null;
@@ -109,10 +112,10 @@ public partial class ProductsViewModel : ObservableObject
         {
             if (_editingId is { } id)
                 await _mediator.Send(new UpdateProductCommand(
-                    _session.CompanyId, id, Name, SalePrice ?? 0, CostPrice ?? 0, Barcode));
+                    _session.CompanyId, id, Name, SalePrice ?? 0, CostPrice ?? 0, Barcode, CommissionPct ?? 0));
             else
                 await _mediator.Send(new CreateProductCommand(
-                    _session.CompanyId, Sku, Name, SalePrice ?? 0, CostPrice ?? 0, Barcode));
+                    _session.CompanyId, Sku, Name, SalePrice ?? 0, CostPrice ?? 0, Barcode, CommissionPct ?? 0));
 
             IsFormOpen = false;
             await LoadAsync();

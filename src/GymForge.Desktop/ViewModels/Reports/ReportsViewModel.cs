@@ -13,7 +13,7 @@ using MediatR;
 namespace GymForge.Desktop.ViewModels.Reports;
 
 /// <summary>
-/// Hub de Reportes: el dueño elige un reporte (recaudación, desagregada, morosos, altas y bajas), ve los datos
+/// Hub de Reportes: el dueño elige un reporte (recaudación, desagregada, morosos, altas y bajas, comisiones), ve los datos
 /// y los exporta a PDF o Excel. Lo exportado es lo que está en pantalla: el documento se arma con los datos
 /// ya cargados, no se vuelve a consultar.
 /// </summary>
@@ -40,13 +40,13 @@ public partial class ReportsViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(
         nameof(IsPaymentsReport), nameof(IsBreakdownReport), nameof(IsOverdueReport), nameof(IsFlowReport),
-        nameof(UsesDateRange), nameof(SupportsScope), nameof(EmptyTitle), nameof(EmptyBody), nameof(IsEmpty))]
+        nameof(IsCommissionsReport), nameof(UsesDateRange), nameof(SupportsScope), nameof(EmptyTitle), nameof(EmptyBody), nameof(IsEmpty))]
     private ReportKind _selectedReport = ReportKind.Payments;
 
     [ObservableProperty] private DateOnly? _from;
     [ObservableProperty] private DateOnly? _to;
 
-    /// <summary>Alcance de la desagregada y de altas/bajas: false = esta sede, true = toda la empresa.</summary>
+    /// <summary>Alcance de la desagregada, altas/bajas y comisiones: false = esta sede, true = toda la empresa.</summary>
     [ObservableProperty] private bool _companyWide;
 
     [ObservableProperty] private bool _isLoading;
@@ -73,6 +73,10 @@ public partial class ReportsViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(ActiveNow), nameof(FrozenNow), nameof(OverdueNow), nameof(SuspendedNow))]
     private MemberFlow? _flow;
 
+    // ── Comisiones del staff ─────────────────────────────────────────────────
+    [ObservableProperty] private decimal _commissionsTotal;
+    [ObservableProperty] private ObservableCollection<StaffCommissionRow> _commissionRows = [];
+
     public ReportsViewModel(
         IMediator mediator, SessionContext session, ReceiptService receipts,
         ICompanyCalendar calendar, IReportExportService exporter, IClock clock)
@@ -95,12 +99,17 @@ public partial class ReportsViewModel : ObservableObject
     public bool IsBreakdownReport => SelectedReport == ReportKind.RevenueBreakdown;
     public bool IsOverdueReport => SelectedReport == ReportKind.Overdue;
     public bool IsFlowReport => SelectedReport == ReportKind.MemberFlow;
+    public bool IsCommissionsReport => SelectedReport == ReportKind.StaffCommissions;
 
     /// <summary>Los morosos son "a hoy": no tienen rango de fechas.</summary>
     public bool UsesDateRange => SelectedReport != ReportKind.Overdue;
 
-    /// <summary>Solo la desagregada y altas/bajas se pueden pedir de toda la empresa.</summary>
-    public bool SupportsScope => SelectedReport is ReportKind.RevenueBreakdown or ReportKind.MemberFlow;
+    /// <summary>Solo la desagregada, altas/bajas y comisiones se pueden pedir de toda la empresa.</summary>
+    public bool SupportsScope =>
+        SelectedReport is ReportKind.RevenueBreakdown or ReportKind.MemberFlow or ReportKind.StaffCommissions;
+
+    /// <summary>El criterio de las comisiones (se congelan al vender), el mismo texto que lleva el archivo.</summary>
+    public string CommissionsNote => ReportBuilders.CommissionsNote;
 
     /// <summary>El límite de "altas y bajas" (foto de hoy, bajas = cancelaciones), el mismo texto que lleva el archivo.</summary>
     public string FlowNote => ReportBuilders.FlowNote;
@@ -118,6 +127,7 @@ public partial class ReportsViewModel : ObservableObject
         ReportKind.RevenueBreakdown => ByMethod.Count > 0,
         ReportKind.Overdue => Debtors.Count > 0,
         ReportKind.MemberFlow => Flow is not null,
+        ReportKind.StaffCommissions => CommissionRows.Count > 0,
         _ => false,
     };
 
@@ -127,6 +137,7 @@ public partial class ReportsViewModel : ObservableObject
     {
         ReportKind.Overdue => "Sin morosos",
         ReportKind.MemberFlow => "Sin datos para mostrar",
+        ReportKind.StaffCommissions => "Sin comisiones en el período",
         _ => "Sin pagos en el período",
     };
 
@@ -134,6 +145,8 @@ public partial class ReportsViewModel : ObservableObject
     {
         ReportKind.Overdue => "Ningún socio de esta sede tiene cuotas vencidas.",
         ReportKind.MemberFlow => "No se pudo calcular el reporte. Probá actualizarlo.",
+        ReportKind.StaffCommissions =>
+            "Ninguna venta del período generó comisión. Cargá los porcentajes en Configuración y en Productos.",
         _ => "Ajustá el rango de fechas o registrá cobros desde Caja.",
     };
 
@@ -202,6 +215,7 @@ public partial class ReportsViewModel : ObservableObject
             ReportKind.Payments => LoadPaymentsAsync(from, to, version, ct),
             ReportKind.RevenueBreakdown => LoadBreakdownAsync(from, to, version, ct),
             ReportKind.MemberFlow => LoadFlowAsync(from, to, version, ct),
+            ReportKind.StaffCommissions => LoadCommissionsAsync(from, to, version, ct),
             _ => Task.CompletedTask,
         };
     }
@@ -261,6 +275,19 @@ public partial class ReportsViewModel : ObservableObject
         CompleteLoad(new ExportPlan(siteId, (context, now) => ReportBuilders.Flow(flow, from, to, context, now)));
     }
 
+    private async Task LoadCommissionsAsync(DateOnly from, DateOnly to, int version, CancellationToken ct)
+    {
+        var siteId = ScopedSiteId();
+        var data = await _mediator.Send(new GetStaffCommissionsQuery(_session.CompanyId, siteId, from, to), ct);
+        if (IsStale(version)) return;
+
+        CommissionsTotal = data.Total;
+        CommissionRows = new ObservableCollection<StaffCommissionRow>(data.Rows);
+        CompleteLoad(data.Rows.Count > 0
+            ? new ExportPlan(siteId, (context, now) => ReportBuilders.StaffCommissions(data, from, to, context, now))
+            : null);
+    }
+
     private static ObservableCollection<BreakdownLine> Lines(IEnumerable<RevenueBreakdownRow> rows, decimal total) =>
         new(rows.Select(r => BreakdownLine.From(r, total)));
 
@@ -277,6 +304,8 @@ public partial class ReportsViewModel : ObservableObject
         DebtTotal = 0;
         Debtors = [];
         Flow = null;
+        CommissionsTotal = 0;
+        CommissionRows = [];
         CompleteLoad(plan: null);
     }
 

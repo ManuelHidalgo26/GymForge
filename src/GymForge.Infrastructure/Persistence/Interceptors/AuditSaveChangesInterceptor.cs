@@ -34,6 +34,24 @@ public sealed class AuditSaveChangesInterceptor(ICurrentUser user, IClock clock,
         nameof(Member.Allergies)
     ];
 
+    // Datos personales del socio: en un UPDATE el log guarda quién, cuándo y qué campo cambió, pero no el
+    // valor viejo ni el nuevo (Ley 25.326: un dato personal en un log append-only no se puede purgar).
+    // El snapshot de un DELETE conserva el registro borrado, como siempre.
+    private static readonly HashSet<string> RedactedMemberUpdateProperties =
+    [
+        nameof(Member.FirstName),
+        nameof(Member.LastName),
+        nameof(Member.DocumentNumber),
+        nameof(Member.Email),
+        nameof(Member.Mobile),
+        nameof(Member.BirthDate),
+        nameof(Member.Observations),
+        nameof(Member.EmergencyName),
+        nameof(Member.EmergencyPhone),
+        nameof(Member.EmergencyRelation),
+        nameof(Member.BloodType)
+    ];
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         Converters = { new JsonStringEnumConverter() },
@@ -157,6 +175,7 @@ public sealed class AuditSaveChangesInterceptor(ICurrentUser user, IClock clock,
     /// </summary>
     private static string? ChangedValuesJson(EntityEntry entry)
     {
+        var redactPersonalData = entry.Entity is Member;
         var changes = entry.Properties
             .Where(p => p.IsModified
                         && !TimestampProperties.Contains(p.Metadata.Name)
@@ -164,8 +183,8 @@ public sealed class AuditSaveChangesInterceptor(ICurrentUser user, IClock clock,
             .ToDictionary(
                 p => p.Metadata.Name,
                 p => new ValueChange(
-                    Present(p.Metadata.Name, p.OriginalValue),
-                    Present(p.Metadata.Name, p.CurrentValue)));
+                    Present(p.Metadata.Name, p.OriginalValue, redactPersonalData),
+                    Present(p.Metadata.Name, p.CurrentValue, redactPersonalData)));
 
         return changes.Count == 0 ? null : JsonSerializer.Serialize(changes, JsonOptions);
     }
@@ -173,7 +192,7 @@ public sealed class AuditSaveChangesInterceptor(ICurrentUser user, IClock clock,
     /// <summary>Los deletes son raros y peligrosos: se conserva el dato borrado.</summary>
     private static string SnapshotJson(EntityEntry entry) =>
         JsonSerializer.Serialize(
-            entry.Properties.ToDictionary(p => p.Metadata.Name, p => Present(p.Metadata.Name, p.OriginalValue)),
+            entry.Properties.ToDictionary(p => p.Metadata.Name, p => Present(p.Metadata.Name, p.OriginalValue, redactPersonalData: false)),
             JsonOptions);
 
     private static bool SameValue(object? original, object? current) =>
@@ -182,12 +201,13 @@ public sealed class AuditSaveChangesInterceptor(ICurrentUser user, IClock clock,
             : Equals(original, current);
 
     /// <summary>
-    /// Credenciales y datos de salud ocultos (un campo vacío sigue siendo null: no se inventa un valor) y
+    /// Credenciales, datos de salud y (en updates de socio) datos personales ocultos (un campo vacío sigue siendo null: no se inventa un valor) y
     /// binarios (huella) reducidos a su tamaño: nunca base64 en la base.
     /// </summary>
-    private static object? Present(string propertyName, object? value) => value switch
+    private static object? Present(string propertyName, object? value, bool redactPersonalData) => value switch
     {
         not null when RedactedProperties.Contains(propertyName) => RedactedValue,
+        not null when redactPersonalData && RedactedMemberUpdateProperties.Contains(propertyName) => RedactedValue,
         byte[] bytes => $"<{bytes.Length} bytes>",
         _ => value
     };

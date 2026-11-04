@@ -1616,6 +1616,9 @@ namespace GymForge.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<decimal>("CommissionAmount")
+                        .HasColumnType("DECIMAL(18,2)");
+
                     b.Property<Guid?>("CommissionStaffId")
                         .HasColumnType("TEXT");
 

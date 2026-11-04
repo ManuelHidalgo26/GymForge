@@ -91,4 +91,14 @@ public class MembershipRepository : IMembershipRepository
             .Where(m => m.CompanyId == companyId && (siteId == null || m.SiteId == siteId) &&
                         m.CancelDate >= from && m.CancelDate < to)
             .ToListAsync(ct);
+
+    // Reporte de comisiones: mismo patrón que GetCancelledBetweenAsync (sede abierta, empresa acotada).
+    public async Task<IReadOnlyList<Membership>> GetSoldBetweenAsync(
+        Guid companyId, Guid? siteId, DateTime from, DateTime to, CancellationToken ct = default) =>
+        await _db.Memberships
+            .IgnoreQueryFilters()
+            .Where(m => m.CompanyId == companyId && (siteId == null || m.SiteId == siteId) &&
+                        m.SoldByStaffId != null && m.CommissionAmount > 0 &&
+                        m.CreatedAt >= from && m.CreatedAt < to)
+            .ToListAsync(ct);
 }

@@ -4,6 +4,7 @@ using GymForge.Application.Interfaces;
 using GymForge.Application.Services;
 using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
+using GymForge.Domain.ValueObjects;
 using MediatR;
 
 namespace GymForge.Application.UseCases.Sales;
@@ -42,6 +43,7 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
     private readonly IMemberRepository _memberRepo;
     private readonly IPaymentRepository _paymentRepo;
     private readonly ICashRegister _cashRegister;
+    private readonly IStaffRepository _staffRepo;
 
     public SellMembershipCommandHandler(
         IMembershipTypeRepository planRepo,
@@ -49,7 +51,8 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
         IMembershipRepository membershipRepo,
         IMemberRepository memberRepo,
         IPaymentRepository paymentRepo,
-        ICashRegister cashRegister)
+        ICashRegister cashRegister,
+        IStaffRepository staffRepo)
     {
         _planRepo = planRepo;
         _chargeRepo = chargeRepo;
@@ -57,6 +60,7 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
         _memberRepo = memberRepo;
         _paymentRepo = paymentRepo;
         _cashRegister = cashRegister;
+        _staffRepo = staffRepo;
     }
 
     public async Task<PaymentDto> Handle(SellMembershipCommand cmd, CancellationToken ct)
@@ -78,6 +82,7 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
             cmd.CompanyId, cmd.SiteId, cmd.MemberId, plan.Id,
             today, plan.CalculateEndDate(today), soldByStaffId: cmd.CashierId);
         membership.Activate();
+        await FreezeCommissionAsync(membership, cmd, plan.Price, ct);
 
         // Cuota + pago que la salda.
         var charge = Charge.Create(
@@ -105,5 +110,16 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
 
         await _chargeRepo.SaveChangesAsync(ct);
         return PaymentDto.FromEntity(payment);
+    }
+
+    /// <summary>
+    /// Congela la comisión del cajero que vende: % de membresías que tiene hoy sobre el precio del plan. Un cajero
+    /// inexistente o de otra empresa no gana comisión, pero la venta sigue.
+    /// </summary>
+    private async Task FreezeCommissionAsync(Membership membership, SellMembershipCommand cmd, decimal price, CancellationToken ct)
+    {
+        var seller = await SellerLookup.FindAsync(_staffRepo, cmd.CompanyId, cmd.CashierId, ct);
+        var pct = seller?.CommissionPctMemberships ?? 0m;
+        membership.SetCommission(cmd.CashierId, Commission.Calculate(price, pct));
     }
 }

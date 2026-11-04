@@ -57,7 +57,7 @@ public class ReportQaTests : IAsyncLifetime
 
         var sell = new SellMembershipCommandHandler(
             new MembershipTypeRepository(_db), new ChargeRepository(_db), new MembershipRepository(_db),
-            new MemberRepository(_db), new PaymentRepository(_db), Substitute.For<ICashRegister>());
+            new MemberRepository(_db), new PaymentRepository(_db), Substitute.For<ICashRegister>(), new StaffRepository(_db));
         await sell.Handle(
             new SellMembershipCommand(_company.Id, _site.Id, Guid.NewGuid(), null, member.Id, plan.Id, PaymentMethod.Cash),
             CancellationToken.None);

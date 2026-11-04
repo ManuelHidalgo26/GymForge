@@ -97,8 +97,8 @@ public class AuditInterceptorIntegrationTests : IAsyncLifetime
         await _db.SaveChangesAsync();
 
         var diff = (await AuditRowsAsync(nameof(Member), "Update")).Single().DiffJson;
-        diff.Should().Contain("\"Email\":{\"old\":null,\"new\":\"ana@test.com\"}");
-        diff.Should().Contain("\"Mobile\":{\"old\":null,\"new\":\"+5491155550000\"}");
+        diff.Should().Contain("\"Email\":{\"old\":null,\"new\":\"[redacted]\"}");
+        diff.Should().Contain("\"Mobile\":{\"old\":null,\"new\":\"[redacted]\"}");
         diff.Should().NotContain("UpdatedAt").And.NotContain("CreatedAt");
     }
 

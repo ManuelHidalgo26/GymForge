@@ -7,6 +7,7 @@ using GymForge.Application.UseCases.Members;
 using GymForge.Desktop.Services;
 using GymForge.Desktop.ViewModels.Charges;
 using GymForge.Desktop.ViewModels.Members;
+using GymForge.Desktop.ViewModels.Routines;
 using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
 using MediatR;
@@ -38,7 +39,8 @@ public class MemberDetailViewModelPhotoTests
 
         var vm = new MemberDetailViewModel(
             _mediator, Substitute.For<IMembershipRepository>(), Substitute.For<IAccessLogRepository>(),
-            chargeRepo, charges, session, _picker, _photoStore);
+            chargeRepo, charges, new RoutineBuilderViewModel(_mediator, Substitute.For<IMemberRepository>(), session),
+            session, _picker, _photoStore);
         await vm.LoadAsync(_member);
         return (vm, company);
     }

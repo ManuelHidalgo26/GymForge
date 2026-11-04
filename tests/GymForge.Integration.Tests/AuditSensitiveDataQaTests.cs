@@ -110,6 +110,35 @@ public class AuditSensitiveDataQaTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task EditingAMember_LogsWhichPersonalFieldsChanged_ButNeverTheirValues()
+    {
+        var member = await SavedMemberAsync();
+
+        member.EditIdentity("Anita", "Pérez", DocumentType.DNI, "40999888", Gender.Female);
+        member.UpdateContact("anita@secreto.com", "+5491100001111");
+        member.CompleteProfile(new DateOnly(1990, 5, 20), MemberSource.WalkIn, null, marketingConsent: true);
+        member.UpdateEmergencyContact("Luis Pérez", "+5491122223333", "Hermano");
+        member.UpdateMedicalInfo("Hipertensión", "Enalapril", "Latex", BloodType.OPositive);
+        await _db.SaveChangesAsync();
+
+        var diff = (await AuditRowAsync(nameof(Member), "Update")).DiffJson!;
+        foreach (var leaked in new[]
+                 {
+                     "Anita", "Pérez", "40999888", "30111222", "García", "secreto", "5491100001111", "1990",
+                     "Luis", "5491122223333", "Hermano", "Hipertensión", "Enalapril", "Latex", "OPositive"
+                 })
+            diff.Should().NotContain(leaked);
+
+        foreach (var field in new[]
+                 {
+                     "FirstName", "LastName", "DocumentNumber", "Email", "Mobile", "BirthDate", "EmergencyName",
+                     "EmergencyPhone", "EmergencyRelation", "MedicalConditions", "Medications", "Allergies", "BloodType"
+                 })
+            diff.Should().Contain($"\"{field}\":{{\"old\":", "queda registrado qué campo cambió");
+        diff.Should().Contain("\"MarketingConsent\":{\"old\":false,\"new\":true}", "el consentimiento no es dato personal sensible");
+    }
+
+    [Fact]
     public async Task Delete_OfMember_SnapshotKeepsEmptyHealthFieldsEmpty_AndTheFingerprintAsSizeOnly()
     {
         var member = await SavedMemberAsync();

@@ -20,6 +20,13 @@ public class StaffRepository : IStaffRepository
             .Where(s => s.CompanyId == companyId && s.IsActive)
             .ToListAsync(ct);
 
+    // Reportes históricos: incluye al personal dado de baja. Misma apertura de filtros que arriba, acotada a la empresa.
+    public async Task<IReadOnlyList<Staff>> GetAllByCompanyAsync(Guid companyId, CancellationToken ct = default) =>
+        await _db.Staff
+            .IgnoreQueryFilters()
+            .Where(s => s.CompanyId == companyId)
+            .ToListAsync(ct);
+
     public void Update(Staff staff) => _db.Staff.Update(staff);
 
     public async Task<int> SaveChangesAsync(CancellationToken ct = default) => await _db.SaveChangesAsync(ct);

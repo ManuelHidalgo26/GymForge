@@ -7,6 +7,7 @@
              xmlns:dto="using:GymForge.Application.DTOs"
              xmlns:enums="using:GymForge.Domain.Enums"
              xmlns:views="using:GymForge.Desktop.Views.Members"
+             xmlns:routines="using:GymForge.Desktop.Views.Routines"
              x:Class="GymForge.Desktop.Views.Members.MemberDetailView"
              x:DataType="vm:MemberDetailViewModel">
 
@@ -25,6 +26,18 @@
             <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColor}" />
             <Setter Property="Foreground" Value="{DynamicResource SystemAccentColor}" />
             <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style Selector="StackPanel.Field">
+            <Setter Property="Spacing" Value="4" />
+            <Setter Property="Margin" Value="0,0,16,16" />
+        </Style>
+        <!-- Etiqueta: color secundario del tema (AA) en vez de Opacity 0.6 sobre 11 px -->
+        <Style Selector="TextBlock.Label">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+        </Style>
+        <Style Selector="TextBlock.Value">
+            <Setter Property="FontSize" Value="14" />
         </Style>
     </UserControl.Styles>
 
@@ -147,24 +160,17 @@
 
                     <!-- Datos personales: card como el resto de la app. El padding de abajo es corto porque cada campo
                          ya trae 16 px de margen inferior. -->
-                    <Border Classes="Card" Padding="24,20,24,4">
+                    <Border Classes="Card" Padding="24,20,24,4"
+                            IsVisible="{Binding !Edit.IsEditing}">
                         <StackPanel>
-                            <TextBlock Text="Datos personales" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,14" />
+                            <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,14">
+                                <TextBlock Text="Datos personales" FontSize="15" FontWeight="SemiBold"
+                                           VerticalAlignment="Center" />
+                                <Button Grid.Column="1" Classes="Secondary" Content="Editar"
+                                        Command="{Binding StartEditCommand}"
+                                        AutomationProperties.Name="Editar datos del socio" />
+                            </Grid>
                             <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" >
-                                <Grid.Styles>
-                                    <Style Selector="StackPanel.Field">
-                                        <Setter Property="Spacing" Value="4" />
-                                        <Setter Property="Margin" Value="0,0,16,16" />
-                                    </Style>
-                                    <!-- Etiqueta: color secundario del tema (AA) en vez de Opacity 0.6 sobre 11 px -->
-                                    <Style Selector="TextBlock.Label">
-                                        <Setter Property="FontSize" Value="12" />
-                                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
-                                    </Style>
-                                    <Style Selector="TextBlock.Value">
-                                        <Setter Property="FontSize" Value="14" />
-                                    </Style>
-                                </Grid.Styles>
 
                                 <StackPanel Grid.Row="0" Grid.Column="0" Classes="Field">
                                     <TextBlock Classes="Label" Text="Nombre" />
@@ -213,13 +219,63 @@
                                 </StackPanel>
                                 <StackPanel Grid.Row="4" Grid.Column="1" Classes="Field">
                                     <TextBlock Classes="Label" Text="Huella digital" />
-                                    <TextBlock Classes="Value"
-                                               Text="{Binding Member.HasFingerprint,
-                                                   StringFormat={}{0:Registrada|No registrada}}" />
+                                    <TextBlock Classes="Value" Text="Registrada"
+                                               IsVisible="{Binding Member.HasFingerprint}" />
+                                    <TextBlock Classes="Value" Text="No registrada"
+                                               IsVisible="{Binding !Member.HasFingerprint}" />
                                 </StackPanel>
                             </Grid>
                         </StackPanel>
                     </Border>
+
+                    <!-- Emergencia y salud (solo lectura; se editan con "Editar" de arriba). -->
+                    <Border Classes="Card" Padding="24,20,24,4"
+                            IsVisible="{Binding !Edit.IsEditing}">
+                        <StackPanel>
+                            <TextBlock Text="Emergencia y salud" FontSize="15" FontWeight="SemiBold" Margin="0,0,0,14" />
+                            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                                <StackPanel Grid.Row="0" Grid.Column="0" Classes="Field">
+                                    <TextBlock Classes="Label" Text="Contacto de emergencia" />
+                                    <TextBlock Classes="Value" TextWrapping="Wrap"
+                                               Text="{Binding Member.EmergencyName, TargetNullValue='—'}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="0" Grid.Column="1" Classes="Field">
+                                    <TextBlock Classes="Label" Text="Teléfono de emergencia" />
+                                    <TextBlock Classes="Value" TextWrapping="Wrap"
+                                               Text="{Binding Member.EmergencyPhone, TargetNullValue='—'}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Grid.Column="0" Classes="Field">
+                                    <TextBlock Classes="Label" Text="Vínculo" />
+                                    <TextBlock Classes="Value" TextWrapping="Wrap"
+                                               Text="{Binding Member.EmergencyRelation, TargetNullValue='—'}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Grid.Column="1" Classes="Field">
+                                    <TextBlock Classes="Label" Text="Grupo sanguíneo" />
+                                    <TextBlock Classes="Value" TextWrapping="Wrap"
+                                               Text="{Binding Member.BloodType, Converter={StaticResource EnumEs}}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="2" Grid.Column="0" Classes="Field">
+                                    <TextBlock Classes="Label" Text="Condiciones médicas" />
+                                    <TextBlock Classes="Value" TextWrapping="Wrap"
+                                               Text="{Binding Member.MedicalConditions, TargetNullValue='—'}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="2" Grid.Column="1" Classes="Field">
+                                    <TextBlock Classes="Label" Text="Medicación" />
+                                    <TextBlock Classes="Value" TextWrapping="Wrap"
+                                               Text="{Binding Member.Medications, TargetNullValue='—'}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="3" Grid.Column="0" Classes="Field">
+                                    <TextBlock Classes="Label" Text="Alergias" />
+                                    <TextBlock Classes="Value" TextWrapping="Wrap"
+                                               Text="{Binding Member.Allergies, TargetNullValue='—'}" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel IsVisible="{Binding Edit.IsEditing}">
+                        <views:MemberEditForm DataContext="{Binding Edit}" />
+                    </StackPanel>
 
                     <!-- Foto y credencial, lado a lado. La foto es el mismo componente que usa el alta (PhotoPickerView):
                          se guarda apenas se elige y se ve también en el avatar del encabezado. -->
@@ -421,20 +477,11 @@
                 </DataGrid.Columns>
             </DataGrid>
 
-            <!-- TAB: Rutinas -->
+            <!-- TAB: Rutinas — el armador del hub, sin buscador de socio -->
             <Grid IsVisible="{Binding ActiveTab,
                 Converter={x:Static ObjectConverters.Equal},
-                ConverterParameter={x:Static vm:MemberDetailTab.Routines}}"
-                  HorizontalAlignment="Center"
-                  VerticalAlignment="Center">
-                <StackPanel Spacing="12" HorizontalAlignment="Center">
-                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Globe}" FontSize="48" Opacity="0.25"
-                                   HorizontalAlignment="Center" />
-                    <TextBlock Text="Módulo Rutinas" FontSize="16" FontWeight="SemiBold"
-                               HorizontalAlignment="Center" />
-                    <TextBlock Text="Asignación de rutinas disponible en Sprint 3"
-                               FontSize="13" Opacity="0.55" HorizontalAlignment="Center" />
-                </StackPanel>
+                ConverterParameter={x:Static vm:MemberDetailTab.Routines}}">
+                <routines:RoutineBuilderView DataContext="{Binding RoutineBuilder}" />
             </Grid>
 
         </Grid>

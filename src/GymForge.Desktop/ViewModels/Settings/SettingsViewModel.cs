@@ -36,6 +36,9 @@ public partial class SettingsViewModel : ObservableObject
     private readonly IMachineFingerprint _fingerprint;
     private Guid? _editingSiteId;   // null = agregando
 
+    /// <summary>Card "Comisiones del personal": su propio VM, para no seguir engordando este.</summary>
+    public StaffCommissionsViewModel Commissions { get; }
+
     // Datos del gimnasio
     [ObservableProperty] private string _legalName = string.Empty;
     [ObservableProperty] private string _taxId = string.Empty;
@@ -142,6 +145,7 @@ public partial class SettingsViewModel : ObservableObject
         _fingerprint = fingerprint;
         Updates = updates;
         _dunning = dunning;
+        Commissions = new StaffCommissionsViewModel(mediator, session);
     }
 
     [RelayCommand]
@@ -172,6 +176,8 @@ public partial class SettingsViewModel : ObservableObject
             _dunning.Stages.OrderBy(s => s.DaysOverdue).Select(s => new DunningStageEditor(s)));
 
         IsDefaultPinInUse = await _mediator.Send(new CheckDefaultPinQuery(_session.CompanyId), ct);
+
+        await Commissions.LoadAsync(ct);
 
         UpdateFeedDisplay = string.IsNullOrWhiteSpace(_localSettings.UpdateFeedUrl)
             ? "sin configurar"

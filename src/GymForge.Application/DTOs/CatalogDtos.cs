@@ -28,11 +28,11 @@ public record ProductDto(Guid Id, string Sku, string Name, decimal SalePrice)
 public record ProductRowDto(
     Guid Id, string Sku, string Name, string? Barcode,
     decimal SalePrice, decimal CostPrice,
-    decimal StockQty, decimal ReorderPoint, bool IsActive)
+    decimal StockQty, decimal ReorderPoint, bool IsActive, decimal CommissionPct)
 {
     public bool IsLowStock => ReorderPoint > 0 && StockQty <= ReorderPoint;
 
     public static ProductRowDto FromEntity(Product p, StockBySite? stock) =>
         new(p.Id, p.Sku, p.Name, p.Barcode, p.SalePrice, p.CostPrice,
-            stock?.Qty ?? 0, stock?.ReorderPoint ?? 0, p.IsActive);
+            stock?.Qty ?? 0, stock?.ReorderPoint ?? 0, p.IsActive, p.CommissionStaffPct);
 }

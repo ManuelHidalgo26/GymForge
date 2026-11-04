@@ -374,7 +374,7 @@ public class ReportExportTests
     // ── Builders reales → exportador real ────────────────────────────────────
 
     [Fact]
-    public void LosCuatroReportesDeLosBuilders_SeExportanAPdfYAExcel()
+    public void LosCincoReportesDeLosBuilders_SeExportanAPdfYAExcel()
     {
         var today = new DateOnly(2026, 11, 3);
         var from = new DateOnly(2026, 11, 1);
@@ -398,12 +398,15 @@ public class ReportExportTests
             [new MemberFlowJoin("Beto Paz", "30111222", today)],
             [new MemberFlowLeave("Caro Gil", "Trimestral", today, null)],
             0);
+        var commissions = new StaffCommissions(
+            8_300m, [new StaffCommissionRow(Guid.NewGuid(), "Ana Paz", 5_000m, 3_300m, 8_300m)]);
         ReportDocument[] documents =
         [
             ReportBuilders.Payments(payments, from, today, context, nowUtc),
             ReportBuilders.Breakdown(breakdown, from, today, context, nowUtc),
             ReportBuilders.Overdue(debtors, today, context, nowUtc),
             ReportBuilders.Flow(flow, from, today, context, nowUtc),
+            ReportBuilders.StaffCommissions(commissions, from, today, context, nowUtc),
         ];
         var exporter = new ReportExporter(new ReportPdfGenerator(), new ReportXlsxGenerator());
 

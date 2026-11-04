@@ -63,6 +63,7 @@ public class ReportsViewModelTests
         HaveBreakdown(new RevenueBreakdown(0m, [], [], []));
         HaveDebtors();
         HaveFlow(new MemberFlow(new Dictionary<MemberStatus, int>(), 0, [], [], 0));
+        HaveCommissions(new StaffCommissions(0m, []));
     }
 
     private static PaymentsReport SamplePayments() => new(35_000m, 1,
@@ -99,19 +100,30 @@ public class ReportsViewModelTests
     private void HaveFlow(MemberFlow flow) =>
         _mediator.Send(Arg.Any<GetMemberFlowQuery>(), Arg.Any<CancellationToken>()).Returns(flow);
 
+    private void HaveCommissions(StaffCommissions commissions) =>
+        _mediator.Send(Arg.Any<GetStaffCommissionsQuery>(), Arg.Any<CancellationToken>()).Returns(commissions);
+
+    private static StaffCommissions SampleCommissions() => new(
+        8_300m,
+        [
+            new StaffCommissionRow(Guid.NewGuid(), "Beto Ruiz", 2_000m, 1_300m, 3_300m),
+            new StaffCommissionRow(Guid.NewGuid(), "Ana Paz", 5_000m, 0m, 5_000m),
+        ]);
+
     private static ReportDocument SentDocument(IReportExportService exporter) =>
         (ReportDocument)exporter.ReceivedCalls().Single().GetArguments()[0]!;
 
     // ── Selector y carga ─────────────────────────────────────────────────────
 
     [Fact]
-    public async Task Arranca_EnLaRecaudacionDelPeriodo_ConLosCuatroReportesEnElSelector()
+    public async Task Arranca_EnLaRecaudacionDelPeriodo_ConLosCincoReportesEnElSelector()
     {
         var sut = await SutAsync();
 
         sut.SelectedReport.Should().Be(ReportKind.Payments);
         ReportsViewModel.ReportKinds.Should().Equal(
-            ReportKind.Payments, ReportKind.RevenueBreakdown, ReportKind.Overdue, ReportKind.MemberFlow);
+            ReportKind.Payments, ReportKind.RevenueBreakdown, ReportKind.Overdue, ReportKind.MemberFlow,
+            ReportKind.StaffCommissions);
         sut.UsesDateRange.Should().BeTrue();
         sut.SupportsScope.Should().BeFalse();
     }
@@ -207,6 +219,52 @@ public class ReportsViewModelTests
         sut.Flow!.Joins.Should().ContainSingle();
         sut.Flow.Leaves.Should().ContainSingle();
         sut.SupportsScope.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Comisiones_CargaConElAlcanceElegido_YExponeLasFilasYElTotal()
+    {
+        var sut = await SutAsync();
+        HaveCommissions(SampleCommissions());
+
+        sut.SelectedReport = ReportKind.StaffCommissions;
+
+        await _mediator.Received(1).Send(
+            Arg.Is<GetStaffCommissionsQuery>(q =>
+                q.CompanyId == _company.Id && q.SiteId == _site.Id && q.From == MonthStart && q.To == Today),
+            Arg.Any<CancellationToken>());
+        sut.IsCommissionsReport.Should().BeTrue();
+        sut.CommissionRows.Select(r => r.StaffName).Should().Equal("Beto Ruiz", "Ana Paz");
+        sut.CommissionsTotal.Should().Be(8_300m);
+        sut.SupportsScope.Should().BeTrue();
+        sut.UsesDateRange.Should().BeTrue();
+        sut.IsEmpty.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Comisiones_ConAlcanceDeEmpresa_PideTodasLasSedes()
+    {
+        var sut = await SutAsync();
+        sut.SelectedReport = ReportKind.StaffCommissions;
+        _mediator.ClearReceivedCalls();
+
+        sut.CompanyWide = true;
+
+        await _mediator.Received(1).Send(
+            Arg.Is<GetStaffCommissionsQuery>(q => q.CompanyId == _company.Id && q.SiteId == null),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Comisiones_SinVentasConComision_MuestraElEstadoVacio_ConSuPropioTexto()
+    {
+        var sut = await SutAsync();
+
+        sut.SelectedReport = ReportKind.StaffCommissions;
+
+        sut.IsEmpty.Should().BeTrue();
+        sut.EmptyTitle.Should().Be("Sin comisiones en el período");
+        sut.ExportCommand.CanExecute(ReportFormat.Pdf).Should().BeFalse();
     }
 
     [Fact]
@@ -338,6 +396,24 @@ public class ReportsViewModelTests
         document.Title.Should().Be("Altas y bajas");
         document.Tables.Select(t => t.Title).Should().Equal("Resumen", "Altas del período", "Bajas del período");
         document.Note.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
+    public async Task Exportar_Comisiones_ArmaLaTablaConLaFilaDeTotalesYLaNota()
+    {
+        var sut = await SutAsync();
+        HaveCommissions(SampleCommissions());
+        sut.SelectedReport = ReportKind.StaffCommissions;
+
+        await sut.ExportCommand.ExecuteAsync(ReportFormat.Xlsx);
+
+        var document = SentDocument(_exporter);
+        document.Title.Should().Be("Comisiones del staff");
+        var table = document.Tables.Single();
+        table.Rows.Should().HaveCount(2);
+        table.Totals.Should().Equal("Total", 7_000m, 1_300m, 8_300m);
+        document.Note.Should().Be(ReportBuilders.CommissionsNote);
+        await _exporter.Received(1).ExportAsync(Arg.Any<ReportDocument>(), ReportFormat.Xlsx, Arg.Any<CancellationToken>());
     }
 
     [Fact]

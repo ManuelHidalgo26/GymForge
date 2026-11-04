@@ -185,6 +185,38 @@ public static class ReportBuilders
         ],
         flow.Leaves.Select(l => (IReadOnlyList<object?>)[l.FullName, l.Plan, l.CancelDate, l.Reason]).ToList());
 
+    // ── Comisiones del staff ─────────────────────────────────────────────────
+
+    public const string CommissionsNote =
+        "Cada comisión se calculó al momento de la venta con el porcentaje vigente entonces: cambiar un porcentaje " +
+        "no modifica lo ya vendido. Membresías por fecha de alta y productos por fecha de venta; no se descuentan " +
+        "las membresías canceladas después.";
+
+    private static readonly IReadOnlyList<ReportColumn> CommissionColumns =
+    [
+        new("Staff", ReportColumnType.Text),
+        new("Comisión membresías", ReportColumnType.Money),
+        new("Comisión productos", ReportColumnType.Money),
+        new("Total", ReportColumnType.Money),
+    ];
+
+    public static ReportDocument StaffCommissions(
+        StaffCommissions data, DateOnly from, DateOnly to, ReportContext context, DateTime generatedAtUtc)
+    {
+        const string title = "Comisiones del staff";
+        IReadOnlyList<object?> totals = ["Total", data.MembershipTotal, data.ProductTotal, data.Total];
+
+        var table = new ReportTable(
+            title,
+            CommissionColumns,
+            data.Rows.Select(r => (IReadOnlyList<object?>)[r.StaffName, r.MembershipCommission, r.ProductCommission, r.Total]).ToList(),
+            totals);
+
+        return NewDocument(
+            context, title, $"{context.Scope} · {Range(from, to)}", generatedAtUtc, [table], Stem(title, from, to),
+            CommissionsNote);
+    }
+
     // ── Piezas comunes ───────────────────────────────────────────────────────
 
     private static ReportDocument NewDocument(

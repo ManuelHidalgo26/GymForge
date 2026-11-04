@@ -4,6 +4,7 @@ using GymForge.Application.Interfaces;
 using GymForge.Application.Services;
 using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
+using GymForge.Domain.ValueObjects;
 using MediatR;
 
 namespace GymForge.Application.UseCases.Sales;
@@ -42,17 +43,20 @@ public class SellProductCommandHandler : IRequestHandler<SellProductCommand, Pay
     private readonly ISaleRepository _saleRepo;
     private readonly IPaymentRepository _paymentRepo;
     private readonly ICashRegister _cashRegister;
+    private readonly IStaffRepository _staffRepo;
 
     public SellProductCommandHandler(
         IProductRepository productRepo,
         ISaleRepository saleRepo,
         IPaymentRepository paymentRepo,
-        ICashRegister cashRegister)
+        ICashRegister cashRegister,
+        IStaffRepository staffRepo)
     {
         _productRepo = productRepo;
         _saleRepo = saleRepo;
         _paymentRepo = paymentRepo;
         _cashRegister = cashRegister;
+        _staffRepo = staffRepo;
     }
 
     public async Task<PaymentDto> Handle(SellProductCommand cmd, CancellationToken ct)
@@ -61,7 +65,9 @@ public class SellProductCommandHandler : IRequestHandler<SellProductCommand, Pay
             ?? throw new InvalidOperationException("El producto seleccionado no existe.");
 
         var sale = Sale.Create(cmd.CompanyId, cmd.SiteId, cmd.CashierId, cmd.MemberId, cmd.ShiftId);
-        sale.Lines.Add(SaleLine.Create(sale.Id, product.Name, cmd.Quantity, product.SalePrice, product.TaxRate));
+        var line = SaleLine.Create(sale.Id, product.Name, cmd.Quantity, product.SalePrice, product.TaxRate);
+        line.SetCommission(cmd.CashierId, Commission.Calculate(line.LineTotal, await ProductPctAsync(product, cmd, ct)));
+        sale.Lines.Add(line);
         sale.RecalculateTotals();
 
         // Descontar stock de la sede (si está cargado). Lanza si quedaría negativo.
@@ -83,5 +89,17 @@ public class SellProductCommandHandler : IRequestHandler<SellProductCommand, Pay
 
         await _saleRepo.SaveChangesAsync(ct);
         return PaymentDto.FromEntity(payment);
+    }
+
+    /// <summary>
+    /// % de comisión de la venta: el propio del producto si lo tiene; si no, el % de productos del vendedor
+    /// (su tarifa general). Sin ninguno de los dos, 0: la comisión queda apagada.
+    /// </summary>
+    private async Task<decimal> ProductPctAsync(Product product, SellProductCommand cmd, CancellationToken ct)
+    {
+        if (product.CommissionStaffPct > 0) return product.CommissionStaffPct;
+
+        var seller = await SellerLookup.FindAsync(_staffRepo, cmd.CompanyId, cmd.CashierId, ct);
+        return seller?.CommissionPctProducts ?? 0m;
     }
 }

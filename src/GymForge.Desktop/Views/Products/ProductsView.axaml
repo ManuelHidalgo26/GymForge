@@ -37,7 +37,8 @@
         <Border Grid.Row="1" Classes="Toolbar" IsVisible="{Binding IsFormOpen}">
             <StackPanel Spacing="10">
                 <TextBlock Text="{Binding FormTitle}" FontSize="13" FontWeight="SemiBold" />
-                <StackPanel Orientation="Horizontal" Spacing="10">
+                <!-- WrapPanel: con ocho campos el formulario no entra en una sola línea en ventanas angostas -->
+                <WrapPanel ItemSpacing="10" LineSpacing="10">
                     <StackPanel Spacing="4">
                         <TextBlock Text="SKU *" Classes="FormLabel" />
                         <TextBox Text="{Binding Sku}" Watermark="Ej: PROT-1KG" Width="140"
@@ -58,10 +59,17 @@
                                        FormatString="C0" Width="150" />
                     </StackPanel>
                     <StackPanel Spacing="4">
+                        <TextBlock Text="% comisión del vendedor" Classes="FormLabel" />
+                        <NumericUpDown Value="{Binding CommissionPct}" Minimum="0" Maximum="100" Increment="0.5"
+                                       FormatString="0.##" Width="150"
+                                       ToolTip.Tip="Porcentaje del vendedor sobre la venta (sin IVA). 0 = usa el % de productos de cada vendedor."
+                                       AutomationProperties.Name="Porcentaje de comisión del vendedor. 0 usa el porcentaje de productos de cada vendedor." />
+                    </StackPanel>
+                    <StackPanel Spacing="4">
                         <TextBlock Text="Código de barras" Classes="FormLabel" />
                         <TextBox Text="{Binding Barcode}" Watermark="(opcional)" Width="160" />
                     </StackPanel>
-                </StackPanel>
+                </WrapPanel>
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <Button Content="Guardar" Command="{Binding SaveCommand}" Classes="Primary" />
                     <Button Content="Cancelar" Command="{Binding CancelFormCommand}" Classes="Ghost" />
@@ -106,6 +114,7 @@
                 <DataGridTextColumn Header="Producto" Binding="{Binding Name}" Width="*" />
                 <DataGridTextColumn Header="Precio" Binding="{Binding SalePrice, StringFormat={}{0:C}}" Width="120" />
                 <DataGridTextColumn Header="Costo" Binding="{Binding CostPrice, StringFormat={}{0:C}}" Width="120" />
+                <DataGridTextColumn Header="% comisión" Binding="{Binding CommissionPct, StringFormat={}{0:0.##}%}" Width="110" />
 
                 <!-- Stock con aviso de reposición -->
                 <DataGridTemplateColumn Header="Stock" Width="130" SortMemberPath="StockQty">

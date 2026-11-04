@@ -16,14 +16,16 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 - Flujo por sesión: arqui (ADR) → dev (implementa) → qa (aprueba o veta).
 - Regla 6 de CLAUDE.md: `dotnet test` verde antes de cada commit.
 
-## Estado general (al 2026-11-02)
+## Estado general (al 2026-11-03)
 
 - Sesiones 1, 2, 3 y Fase 1: **mergeadas a `master`** (merge `--no-ff` `33ba4ec`; 19 commits de `feat/sesion-3`). Local: `origin/master` quedó atrás, **sin push**. La rama `feat/sesion-3` sigue existiendo. ADR-001 a ADR-004 en `Accepted`.
-- **Fase 2 (Sesión 4): COMMITEADA en la rama `feat/sesion-4`** — 3 commits: `9894c8f` (backend), `c11770f` (UI), `fc140c0` (docs). ADR-005 en `Accepted`. **Sin push** (origin sigue atrás). qa había aprobado con observaciones.
-- **Fase 3 (Sesión 5): CERRADA (2026-11-02).** ADR-006 `Accepted` (addendum: foto solo por archivo, sin FlashCap). Los 6 pasos, el pulido de ux y el veto de qa (APROBADO CON OBSERVACIONES) están hechos. **Falta solo el commit** en `feat/sesion-5` (desde `fc140c0`), a cargo del orquestador. Sin commitear. Ver la entrada de cierre arriba de todo.
-- Tests: **1071 verdes al cierre de F3** (Domain 86 · Application 453 · Desktop 274 · Integration 258), `dotnet test` exit 0 (qa, 2026-11-02). Referencias: piso tras Fase 2 = 862; dev reportó 1067 antes de los fixes de qa.
-- Rama de trabajo: `feat/sesion-5` (desde `fc140c0`, tip de F2). **Fase 3 sin commitear** en el working tree (commit del orquestador). `.gitignore` ignora `*.lnk` y `*.pfx`.
-- Abierto en `docs/TASKS.md`: **0 bloqueadores de piloto**. Quedan: decisiones del usuario (UX11, Q2/D9, D7, D11/Q4, F1-D8, F1-D11 y las de F2 en "Qué sigue"), P-2, D1–D19, F1-D1 a F1-D11, F2-D1 a F2-D8, F3-D1 a F3-D7, Q3–Q9, UX1–UX24 y las fases F4–F6.
+- **Fase 2 (Sesión 4): CERRADA y MERGEADA a `master`** (merge `9d44634` de `feat/sesion-4`; 3 commits: `9894c8f`, `c11770f`, `fc140c0`). ADR-005 `Accepted`. Sin push.
+- **Fase 3 (Sesión 5): CERRADA y MERGEADA a `master`** (merge `e541586` de `feat/sesion-5`). ADR-006 `Accepted` (addendum: foto solo por archivo, sin FlashCap). Sin push.
+- **Fase 4 parte 1 (Sesión 6): CERRADA (2026-11-03)**: reportes reales + export (ADR-007). **Sin commit**: el commit lo hace el orquestador en `feat/sesion-6` desde `master` (`e541586`). ADR-007 sigue `Proposed` hasta el commit (pasa a `Accepted`). Ver la entrada de cierre arriba de todo.
+- **Git (verificado en refs, 2026-11-03):** `master` = `e541586`. `origin/master` = `6d39c0a` (anterior al merge de F1 `33ba4ec`): **master está adelante de origin, sin push** (29 commits según el orquestador; no re-contado). Existen `feat/sesion-3`, `feat/sesion-4` y `feat/sesion-5` (ya mergeadas).
+- Tests: **1234 verdes al cierre de F4 parte 1** (Domain 86 · Application 520 · Desktop 299 · Integration 329), `dotnet test GymForge.sln` exit 0 y 0 omitidos (qa, 2026-11-03). Piso previo: 1071 (F3).
+- Rama de trabajo: **pendiente** `feat/sesion-6` desde `master` (`e541586`), a crear por el orquestador al commitear F4 parte 1. Working tree sin commitear: 50 archivos (ver `git status`). `.gitignore` ignora `*.lnk` y `*.pfx`.
+- Abierto en `docs/TASKS.md`: **0 bloqueadores técnicos de piloto**. Decisiones de política abiertas: **D11 ampliada** (PII en exports) y **O10** (roles para exportar). Quedan además: UX11, Q2/D9, D7, D11/Q4, F1-D8, F1-D11, F2 en "Qué sigue", P-2, D1–D19, F1-D1 a F1-D11, F2-D1 a F2-D8, F3-D1 a F3-D7, Q3–Q9, UX1–UX24, deuda de F4 (F4-Q1, NEW-1 a NEW-4, O4 a O13, UX25 a UX33, F4-D1 a F4-D4) y las fases F4 (parte 2) a F6.
 
 ## Roadmap por fases
 
@@ -31,38 +33,72 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 |---|---|---|---|
 | 0 — Bugs y reglas de negocio | 1-2 (P-1 en 3) | Correctitud del core | **CERRADA.** S1, S2, P-1 (freeze) y Q1 commiteadas en `feat/sesion-3` |
 | 1 — Robustez de producción | 3 (continuación) | Backup off-site, auto-update Velopack, licencia (CUIT + fingerprint), retención de logs, fix "Sedes: 2 de 1" | **CERRADA (2026-10-28).** F1-1 a F1-5 commiteadas; qa aprobó con observaciones. Deuda en TASKS (F1-D1 a F1-D11) |
-| 2 — WhatsApp gratis + cobranzas | 4 | Pantalla de morosos, `WhatsAppLinkSender` (wa.me), `DunningConfig` en Configuración, `NotificationLog` | **CERRADA y COMMITEADA (2026-10-29)** en `feat/sesion-4` (3 commits). ADR-005 Accepted. Sin push. Deuda en TASKS (F2-D1 a F2-D8, UX13 a UX17) |
-| 3 — Escáner HID + check-in premium | 5 | Lector keyboard-wedge en kiosk y POS, foto del socio, teclado numérico en pantalla, arquitectura de hardware | **CERRADA (2026-11-02).** ADR-006 `Accepted`. 1071 tests verdes; qa aprobó con observaciones. **Commit pendiente** en `feat/sesion-5`. Deuda en TASKS (F3-D1 a F3-D7, UX18 a UX24) |
-| 4 — Profundidad | 6-7 | Reportes reales (morosos, por plan/método/sede, retención; export Excel/PDF), editar socio desde la ficha, rutinas en la ficha, comisiones de staff | PENDIENTE |
+| 2 — WhatsApp gratis + cobranzas | 4 | Pantalla de morosos, `WhatsAppLinkSender` (wa.me), `DunningConfig` en Configuración, `NotificationLog` | **CERRADA, COMMITEADA y MERGEADA a `master`** (2026-10-29; merge `9d44634`). ADR-005 Accepted. Sin push. Deuda en TASKS (F2-D1 a F2-D8, UX13 a UX17) |
+| 3 — Escáner HID + check-in premium | 5 | Lector keyboard-wedge en kiosk y POS, foto del socio, teclado numérico en pantalla, arquitectura de hardware | **CERRADA, COMMITEADA y MERGEADA a `master`** (2026-11-02; merge `e541586`). ADR-006 `Accepted`. Qa aprobó con observaciones. Sin push. Deuda en TASKS (F3-D1 a F3-D7, UX18 a UX24) |
+| 4 — Profundidad | 6-7 | Parte 1 (sesión 6): reportes reales (morosos, recaudación por método/concepto-plan/sede, altas y bajas) + export PDF/Excel. Parte 2 (sesión 7): editar socio desde la ficha, rutinas en la ficha, comisiones de staff | **Parte 1 CERRADA (2026-11-03)**: ADR-007 `Proposed` hasta el commit; 1234 verdes; qa aprobó con observaciones (sin bloqueantes). **Commit pendiente** en `feat/sesion-6`. **Parte 2 PENDIENTE.** Deuda en TASKS ("Deuda de F4") |
 | 5 — Pulido US$100k | 8 | Command palette (Ctrl+K), fix branding (AccentTintBrush derivado), micro-interacciones, dashboard con ejes/hover, calendario semanal, limpieza de tokens, accesibilidad + i18n es-AR | PENDIENTE |
 | 6 — AFIP + hardware físico | +3-5 (opcional) | WSFE/WSAA/CAE, sidecars reales ZKTeco | OPCIONAL |
 
 ## Qué sigue
 
-**Próximo paso (cierre de F3, 2026-11-02):**
-1. **Orquestador:** commit de F3 en `feat/sesion-5` (desde `fc140c0`), con `dotnet test` en verde (1071) antes del commit. ADR-006 ya está `Accepted`.
-2. **Usuario:** decidir (a) commit/push de F2 (commiteada en `feat/sesion-4`, sin push), (b) push de `feat/sesion-5` y (c) merge a `master` (ver ítem 8 abajo).
-3. **Sesión 6, Fase 4 "Profundidad" (PENDIENTE):** arqui escribe el ADR de F4 antes de que dev implemente (flujo del equipo). Conviene decidir antes si entran primero UX18 (login de caja: el PIN no se limpia tras error; Enter no ingresa) y F3-D2 / UX19 (el primer carácter del lector cae en el campo con foco). Son MEDIA y de uso diario en recepción; qa no los marcó como bloqueantes.
+**Próximo paso (cierre de F4 parte 1, 2026-11-03):**
+1. **Orquestador:** commit de F4 parte 1 en `feat/sesion-6` (desde `master`, `e541586`), un commit por paso, con `dotnet test GymForge.sln` en verde (1234) antes de cada uno. ADR-007 pasa a `Accepted` al commitear.
+2. **Usuario:** decidir (a) D11 ampliada y O10 (política de PII y roles para los exports, decisiones 2 y 9 abajo), (b) push de `master` a `origin` y de las ramas `feat/sesion-*` (ítem 8), y (c) merge de `feat/sesion-6` a `master`.
+3. **Sesión 7, Fase 4 parte 2 (PENDIENTE):** arqui escribe el ADR de la parte 2 antes de que dev implemente (editar socio desde la ficha, rutinas en la ficha, comisiones de staff; y qué F4-D1 a F4-D4 entran). Deuda que conviene cerrar antes de distribuir: NEW-1 (`SQLitePCLRaw.lib.e_sqlite3` 2.1.10, High) y F4-Q1 (zona de la PC en reportes, alta y dashboard). Pendientes de F3 que no entraron en F4 parte 1: UX18 (login de caja: el PIN no se limpia tras error; Enter no ingresa) y F3-D2 / UX19 (el primer carácter del lector cae en el campo con foco). Son MEDIA y de uso diario en recepción; qa no los marcó como bloqueantes.
 4. **Verificación en hardware real** (no se pudo en esta sesión): lector USB wedge real con layout es-AR, supresión de WM_CHAR en Windows, portapapeles y diálogo nativo, táctil, DPI alto y `scripts/publish.ps1` single-file. Con F3-D1 abierto (checks de teclado fuera de CI), todo cambio en kiosk o POS se prueba también con `tools/GymForge.Screenshots`.
 
-Piloto: sin bloqueadores nuevos de F3; siguen las 2 condiciones de uso de F1.
+Piloto: F4 parte 1 sin bloqueadores técnicos (qa). D11 ampliada y O10 son decisiones de política que conviene tomar antes de que la recepción use los exports. Siguen las 2 condiciones de uso de F1.
 
 Decisiones de F3 **ya tomadas por el usuario** (no re-preguntar): credencial = `TagSerial` con fallback a DNI (no PDF417); foto = **solo archivo/pegar, SIN FlashCap** ni dependencias nuevas; índice único de credencial = **SÍ**; barcode de producto en POS = **SÍ**; umbrales del detector = default. Alternativa si el usuario prioriza otra cosa: cerrar decisiones abiertas de abajo (UX11 + F1-D3/F1-D7 para el auto-update). F1 y F2 están cerradas; sus deudas no bloquean el piloto con las 2 condiciones de uso.
 
 Decisiones del usuario abiertas (ninguna bloquea el piloto con las 2 condiciones de uso):
 0. **UX11 + F1-D7:** origen de las actualizaciones (hoy vacío = inactivo) y `https://` obligatorio. Junto con F1-D3, bloquea activar el auto-update en campo.
 1. **Q2 / D9:** `AsNoTracking` antes de operar, o aceptar reinicios diarios de la PC de recepción.
-2. **D11 + Q4:** política de datos personales en AuditLog (el motivo de freeze es dato de salud).
+2. **D11 (ampliada en F4, 2026-11-03; decisión 6 de ADR-007) + Q4:** política de datos personales. Los exports de reportes sacan PII a un archivo local que elige el usuario: Morosos (nombre, celular, deuda) y Altas/Bajas (DNI, nombre, motivo de baja). Además, en AuditLog, el motivo de freeze es dato de salud (Q4). qa no lo marcó como bloqueante; el plazo original ("antes de la Fase 4") ya pasó.
 3. **D7:** DNI y licencia en multi-sede.
 4. **F1-D8:** el CUIT de la empresa se edita sin PIN; decidir si se pide PIN de admin para cambiarlo.
 5. **F1-D11 (verificación):** antes de emitir claves con la versión nueva, `.\scripts\licencia.ps1 show <clave ya entregada>` debe seguir mostrándolas válidas.
 6. **F1-D1 / D2 / D3:** resolver antes de escalar. F1-D3 antes de activar el auto-update.
 7. **F2 (ADR-005 §"Decisiones a confirmar"):** (a) normalización telefónica AR de `ToWhatsAppDigits` y largo mínimo (F2-D2); (b) confirmar que el aviso automático sigue log-only en Fase 2; (c) aceptar "recordatorio iniciado" (no "entregado") en el log, porque `wa.me` no confirma entrega; (d) editor de etapas fijas o agregar/quitar etapas (UX13 c); (e) orden de Morosos por días de atraso desc (aplicado por defecto; confirmar). Además: **F2-D1 antes de prender el aviso automático** (el job registra `Automatic` aunque hoy no envía, y "último recordatorio" puede mentir) y F2-D5 (¿freno a recordatorios repetidos el mismo día?).
-8. Pendiente operativo: **push de `master` a `origin` y CI** (sin hacer; el merge local ya está hecho en `33ba4ec`). Lo decide el usuario. La rama `feat/sesion-3` se puede borrar tras el push.
+8. Pendiente operativo: **push de `master` a `origin` y CI** (sin hacer). `origin/master` = `6d39c0a`; `master` = `e541586` (29 commits de diferencia según el orquestador, no re-contado). Lo decide el usuario. Las ramas `feat/sesion-3`, `feat/sesion-4` y `feat/sesion-5` ya están mergeadas y se pueden borrar tras el push (`feat/sesion-6` tras su commit y merge).
+9. **O10 (roles para exportar):** hoy cualquier sesión de recepción puede exportar "toda la empresa" con PII y finanzas (no hay roles finos en la UI). Liga con D11 y con la decisión 5 de ADR-007.
 
 Fuera del piloto: P-2 (saldo a favor en la ficha) y D1 (cobros multi-sede) siguen abiertas. Resto de deuda (D1–D19, F1-D4 a F1-D10, F2-D1 a F2-D8, Q3–Q9, UX1–UX17): ver `docs/TASKS.md`.
 
 Sesiones 5-8: ver tabla de fases arriba.
+
+---
+
+## [2026-11-03] Sesión 6 (Fase 4 parte 1) — CERRADA: Reportes reales + export
+
+**Hecho:**
+- **Fase 4 parte 1 cerrada.** Flujo: arqui (ADR-007, `Proposed`) → dev (5 pasos TDD) → ux (pulido de `ReportsView.axaml` + design system) → qa (**VETO por B1**) → fix pass (dev + ux) → qa re-review (**APROBADO CON OBSERVACIONES**, sin bloqueantes).
+- **Entregado, 4 reportes exportables:** (1) recaudación del período (detalle); (2) recaudación desagregada por método, por concepto/plan y por sede, con invariante ΣMétodo = ΣConcepto = ΣSede = Total; (3) morosos (reusa `GetOverdueMembersQuery` de F2, sin recalcular); (4) altas y bajas del período, solo con datos que el dominio ya tiene.
+- **Infra de export:** `IReportExporter` (Application) con `ReportPdfGenerator` (QuestPDF, A4) y `ReportXlsxGenerator` (**ClosedXML 0.105.1, nueva dependencia aprobada por el usuario**, solo en Infrastructure). Diálogo nativo de guardado en `ReportExportService` (Desktop). Sin migración EF (todo lectura).
+- **Tests:** `dotnet test GymForge.sln` exit 0, **1234 verdes, 0 omitidos** (Domain 86 · Application 520 · Desktop 299 · Integration 329). Piso previo 1071. Build Debug y Release 0 errores. qa verificó en runtime: B1 end-to-end, export `.xlsx`/`.pdf` reales, capturas light/dark, sin regresiones.
+- **B1 (bloqueante, RESUELTO):** `SellMembershipCommand` creaba el `Charge` con `MembershipId=null` (la membresía se creaba después), así que "por plan" caía todo en "Cuotas". Fix: crear la membresía primero y pasarle su Id al cargo. Cargos históricos sin plan → "Cuotas (sin plan asignado)" (`src/GymForge.Application/Services/SpanishLabels.cs:31`).
+- **Observaciones corregidas en el fix pass:** O1 (rango por día del gimnasio, no UTC: `CompanyTime.StartOfDayUtc` + `ReportPeriod.UtcBounds(tz)`), O2 (`Mode=OneWay`: el Excel no recibe "—" literal), O3 ("Sede Sede Central" → nombre tal cual), O6 (SixLabors.Fonts fijado en 1.0.0 por transitive pinning, por tema de licencia), O11(a) (banda muerta del toolbar).
+
+**En curso:** nada a medias en código. Falta solo el **commit** (orquestador) en `feat/sesion-6` desde `master` (`e541586`); 50 archivos en el working tree. ADR-007 pasa de `Proposed` a `Accepted` al commitear (como ADR-005/006). Quedan fixes menores de qa sin hacer (detalle en "Deuda de F4" de TASKS): O4 en `ReportExportService.TryOpen` (validar extensión), O7 en `ReportXlsxGenerator` (truncar texto >32.767), O9 (`AsNoTracking` en las 4 lecturas de reportes) y O11(b) (`ExportedPath` no se limpia al recargar ni al cambiar el rango; en `src/GymForge.Desktop/ViewModels/Reports/ReportsViewModel.cs`).
+
+**Blockers:**
+- Técnicos: ninguno (1234 verdes; qa sin bloqueantes).
+- Operativos: commit de F4 parte 1 (orquestador) y push de `master` (decisión del usuario).
+- Política (no técnicos, no marcados como bloqueantes por qa): **D11 ampliada** (PII en exports) y **O10** (roles para exportar). Conviene decidirlas antes de que la recepción use los exports.
+
+**Próximo paso:**
+1. Orquestador: commit de F4 parte 1 en `feat/sesion-6` (desde `master`, `e541586`), un commit por paso, `dotnet test` verde (1234) antes de cada uno. ADR-007 a `Accepted`.
+2. Usuario: decidir D11 ampliada (política de PII en exports) y O10 (roles); decidir push de `master`.
+3. Dev, antes de distribuir: **NEW-1** (`SQLitePCLRaw.lib.e_sqlite3` 2.1.10, High, viaja en el exe) y **F4-Q1** (zona de la PC en `DashboardViewModel`, `SellMembershipCommand.cs:73` y `ReportsViewModel.cs:87,320,326`).
+4. Sesión 7 (Fase 4 parte 2): arqui escribe el ADR antes de que dev implemente (editar socio desde la ficha, rutinas en la ficha, comisiones de staff; y qué F4-D1 a F4-D4 entran).
+
+**Tocado:**
+- Docs: `docs/PROGRESS.md`, `docs/TASKS.md`, `docs/adr/ADR-007-reportes-y-export.md` (nuevo, `Proposed`), `docs/adr/README.md` (fila ADR-007).
+- Application: `src/GymForge.Application/Interfaces/IReportExporter.cs`, `Services/CompanyTime.cs`, `Services/SpanishLabels.cs`, `UseCases/Reports/{MemberFlowQuery,ReportBuilders,ReportContextQuery,ReportModel,ReportPeriod,RevenueBreakdownQuery,PaymentsReportQuery}.cs`, `UseCases/Sales/SellMembershipCommand.cs` (B1), `UseCases/Charges/BuildReceiptQuery.cs`, `Interfaces/IRepositories.cs`.
+- Infrastructure: `Services/ReportPdfGenerator.cs`, `Services/ReportXlsxGenerator.cs`, `Services/ReceiptPdfGenerator.cs`, `Repositories/{MemberRepository,MembershipRepository,PaymentRepository}.cs`, `InfrastructureServiceExtensions.cs`, `GymForge.Infrastructure.csproj` (ClosedXML), `Directory.Packages.props` (ClosedXML 0.105.1; SixLabors.Fonts 1.0.0).
+- Desktop: `Services/ReportExportService.cs`, `Services/IReportExportService.cs`, `ViewModels/Reports/ReportsViewModel.cs`, `Views/Reports/ReportsView.axaml`, `ServiceCollectionExtensions.cs`, `Converters/EnumDisplayConverter.cs`, `Assets/Styles/AppStyles.axaml`.
+- Tests: `tests/GymForge.Application.Tests/Handlers/{GetPaymentsReportQueryHandlerTests,SellMembershipCommandTests}.cs`, `tests/GymForge.Desktop.Tests/DesktopWiringTests.cs`, `tests/GymForge.Integration.Tests/TenantAdversarialIntegrationTests.cs`, y los tests nuevos de reportes en los cuatro proyectos.
+- Herramienta de capturas: `tools/GymForge.Screenshots/Program.cs`.
 
 ---
 

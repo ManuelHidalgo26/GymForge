@@ -12,3 +12,4 @@ Architecture Decision Records. Uno por decisión relevante; no se borran, cambia
 | [ADR-005](ADR-005-whatsapp-cobranzas.md) | WhatsApp gratis + cobranzas (morosos, wa.me, DunningConfig editable, NotificationLog) | Accepted | S4 — Fase 2 |
 | [ADR-006](ADR-006-escaner-hid-y-checkin-premium.md) | Escáner HID + check-in premium (keyboard-wedge, foto por archivo, teclado numérico, arquitectura de hardware) | Accepted | S5 — Fase 3 |
 | [ADR-007](ADR-007-reportes-y-export.md) | Reportes reales + export (morosos, recaudación desagregada, altas y bajas; export PDF/Excel con ClosedXML, diálogo nativo de guardado) | Accepted | S6 — Fase 4 (parte 1) |
+| [ADR-008](ADR-008-editar-socio-rutinas-comisiones.md) | Editar socio desde la ficha, rutinas en la ficha y comisiones de staff (snapshot al vender + reporte, reutiliza el export de ADR-007) | Proposed | S7 — Fase 4 (parte 2) |

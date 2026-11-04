@@ -25,10 +25,11 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 - **Fase 4 parte 2 (Sesión 7): CERRADA (2026-11-04)** en `feat/sesion-6` (código `1f44d2c`; commit de docs por el orquestador). ADR-008 `Accepted`. Sin push ni merge. Ver la entrada de cierre arriba de todo.
 - **Limpieza de bugs/errores/warnings (2026-11-04): CERRADA** en `feat/sesion-6` (código `7bc780f`; commit de docs por el orquestador). Sin push ni merge. Ver la entrada de arriba de todo.
 - **Git (verificado en refs, 2026-11-03):** `master` = `e541586`. `origin/master` = `6d39c0a` (anterior al merge de F1 `33ba4ec`): **master está adelante de origin, sin push** (29 commits según el orquestador; no re-contado). Existen `feat/sesion-3`, `feat/sesion-4` y `feat/sesion-5` (ya mergeadas).
-- Tests: **1456 verdes al cierre de Fase 5 parte 1** (commit `d33e101`; Domain 107 · Application 590 · Desktop 411 · Integration 348), `dotnet test GymForge.sln` exit 0 y 0 omitidos (2026-11-04). Piso previo: 1392 (limpieza, `7bc780f`).
+- Tests: **1461 verdes al cierre de Fase 5 parte 2** (pieza F; Domain 107 · Application 590 · Desktop 416 · Integration 348), `dotnet test GymForge.sln` exit 0 y 0 omitidos (2026-11-04). Piso previo: 1456 (Fase 5 parte 1, commit `d33e101`); 1392 antes de la limpieza (`7bc780f`).
 - **Fase 5 parte 1 (Sesión 8): CERRADA (2026-11-04)** en `feat/sesion-6` (código `d33e101`; commit de docs por el orquestador). ADR-009 `Accepted`. Piezas A–E y G; F (calendario) diferida a parte 2. Sin push ni merge. Ver la entrada de cierre arriba de todo.
-- Rama de trabajo: `feat/sesion-6` desde `master` (`e541586`): `aa9c8d7` y `6f3124e` (F4 parte 1), `1f44d2c` y `a55e935` (F4 parte 2, con docs), `7bc780f` (limpieza), `d33e101` (Fase 5 parte 1). Commits de docs de la limpieza y de F5 parte 1 pendientes del orquestador. `.gitignore` ignora `*.lnk` y `*.pfx`.
-- Abierto en `docs/TASKS.md`: **0 bloqueadores técnicos de piloto**. Decisiones de política abiertas: **D11 ampliada** (PII en exports y en el snapshot de DELETE) y **O10** (roles para exportar y ver comisiones). Tras la limpieza (2026-11-04) siguen abiertos, entre otros: UX11, Q2/D9 (parcial), D7, D11/Q4, D12 (residuo), F1-D8, F1-D11, P-2, D1–D3, D5, D6, D8, D9 (parcial), D10, D13–D15, D17, D19 (ver TASKS), F1-D1 a F1-D3, F1-D5, F1-D7, F1-D8, F1-D10, F1-D11, F2-D1 a F2-D8, F3-D1 a F3-D7, Q3–Q8, UX1–UX4, UX6–UX17, UX19, UX21–UX24, UX34, NEW-2 a NEW-6, NEW-8 a NEW-10, O5, O8, O10, O11(c), O12, UX26–UX33, F4-D1 a F4-D4, y las fases F5 y F6. Lo cerrado en la limpieza está en DONE `LIMP-CIERRE`.
+- **Fase 5 parte 2 (Sesión 9): CERRADA (2026-11-04)** en `feat/sesion-6`: pieza F (calendario semanal de Clases en grilla de 7 días). **Fase 5 completa cerrada (piezas A–G).** ADR-010 pasa a `Accepted` al commitear (orquestador). Código y docs pendientes de commit del orquestador. Sin push ni merge. Ver la entrada de cierre arriba de todo.
+- Rama de trabajo: `feat/sesion-6` desde `master` (`e541586`): `aa9c8d7` y `6f3124e` (F4 parte 1), `1f44d2c` y `a55e935` (F4 parte 2, con docs), `7bc780f` (limpieza), `d33e101` (Fase 5 parte 1) y la pieza F de Fase 5 parte 2 (código y docs, **pendientes de commit del orquestador**). `.gitignore` ignora `*.lnk` y `*.pfx`.
+- Abierto en `docs/TASKS.md`: **0 bloqueadores técnicos de piloto**. Decisiones de política abiertas: **D11 ampliada** (PII en exports y en el snapshot de DELETE) y **O10** (roles para exportar y ver comisiones). Tras la limpieza (2026-11-04) siguen abiertos, entre otros: UX11, Q2/D9 (parcial), D7, D11/Q4, D12 (residuo), F1-D8, F1-D11, P-2, D1–D3, D5, D6, D8, D9 (parcial), D10, D13–D15, D17, D19 (ver TASKS), F1-D1 a F1-D3, F1-D5, F1-D7, F1-D8, F1-D10, F1-D11, F2-D1 a F2-D8, F3-D1 a F3-D7, Q3–Q8, UX1–UX4, UX6–UX17, UX19, UX21–UX24, UX34, NEW-2 a NEW-6, NEW-8 a NEW-10, O5, O8, O10, O11(c), O12, UX26–UX33, F4-D1 a F4-D4, y la fase F6 (F5 cerrada en parte 2). Lo cerrado en la limpieza está en DONE `LIMP-CIERRE`.
 
 ## Roadmap por fases
 
@@ -39,16 +40,29 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 | 2 — WhatsApp gratis + cobranzas | 4 | Pantalla de morosos, `WhatsAppLinkSender` (wa.me), `DunningConfig` en Configuración, `NotificationLog` | **CERRADA, COMMITEADA y MERGEADA a `master`** (2026-10-29; merge `9d44634`). ADR-005 Accepted. Sin push. Deuda en TASKS (F2-D1 a F2-D8, UX13 a UX17) |
 | 3 — Escáner HID + check-in premium | 5 | Lector keyboard-wedge en kiosk y POS, foto del socio, teclado numérico en pantalla, arquitectura de hardware | **CERRADA, COMMITEADA y MERGEADA a `master`** (2026-11-02; merge `e541586`). ADR-006 `Accepted`. Qa aprobó con observaciones. Sin push. Deuda en TASKS (F3-D1 a F3-D7, UX18 a UX24) |
 | 4 — Profundidad | 6-7 | Parte 1 (sesión 6): reportes reales (morosos, recaudación por método/concepto-plan/sede, altas y bajas) + export PDF/Excel. Parte 2 (sesión 7): editar socio desde la ficha, rutinas en la ficha, comisiones de staff | **CERRADA (parte 1 el 2026-11-03; parte 2 el 2026-11-04).** Parte 1: ADR-007 `Accepted`, commits `aa9c8d7` y `6f3124e`. Parte 2: ADR-008 `Accepted`, commit `1f44d2c` (commit de docs pendiente del orquestador). 1343 verdes; qa aprobó con observaciones (sin bloqueantes). Sin push. Deuda en TASKS ("Deuda de F4 parte 1" y "Deuda de F4 parte 2") |
-| 5 — Pulido US$100k | 8 (parte 1) + parte 2 | Parte 1 (sesión 8): command palette (Ctrl+K), branding derivado (`BrandPalette`), micro-interacciones, dashboard con eje Y/guías, limpieza de tokens, accesibilidad + strings es-AR (piezas A–E y G). Parte 2 (pendiente): pieza F, calendario semanal de Clases | **Parte 1 CERRADA (2026-11-04)**: ADR-009 `Accepted`, commit `d33e101`, 1456 verdes, qa con observaciones. **Parte 2 PENDIENTE** (NEW-11 en TASKS) |
+| 5 — Pulido US$100k | 8 (parte 1) + parte 2 | Parte 1 (sesión 8): command palette (Ctrl+K), branding derivado (`BrandPalette`), micro-interacciones, dashboard con eje Y/guías, limpieza de tokens, accesibilidad + strings es-AR (piezas A–E y G). Parte 2 (sesión 9): pieza F, calendario semanal de Clases en grilla de 7 días | **Parte 1 CERRADA (2026-11-04)**: ADR-009 `Accepted`, commit `d33e101`, 1456 verdes. **Parte 2 CERRADA (2026-11-04)**: pieza F entregada, ADR-010 `Accepted` al commitear (orquestador), 1461 verdes, qa con observaciones (deuda F5-D1 a F5-D4). Fase 5 completa (A–G); código y docs de la parte 2 pendientes de commit |
 | 6 — AFIP + hardware físico | +3-5 (opcional) | WSFE/WSAA/CAE, sidecars reales ZKTeco | OPCIONAL |
 
 ## Qué sigue
 
-**Próximo paso (tras la limpieza, 2026-11-04):**
-1. **Orquestador:** commit de docs de la limpieza (entrada de arriba de todo y `docs/TASKS.md`). El de F4 parte 2 ya está en `a55e935`.
+**Próximo paso (tras Fase 5 parte 2, 2026-11-04):**
+1. **Orquestador:** commit de código de la pieza F (`feat: [clases] agenda semanal en grilla de 7 dias`) y commit de docs aparte (ADR-010 a `Accepted`, `docs/adr/README.md`, entrada de arriba de todo y `docs/TASKS.md`).
 2. **Usuario:** decidir (a) D11 ampliada y O10 (política de PII y roles para los exports y el reporte de comisiones, decisiones 2 y 9 abajo), (b) push de `master` a `origin` y de las ramas `feat/sesion-*` (ítem 8), (c) merge de `feat/sesion-6` a `master`, (d) verificación manual de F4 parte 2 (foco inicial del form de edición; export de comisiones con diálogo nativo), y (e) `.editorconfig`: bajar la severidad de estilo o barrido de formato (NEW-8).
-3. **Fase 5 parte 2 (PENDIENTE, tras la sesión 8):** pieza F, calendario semanal de Clases (NEW-11). Arqui escribe el ADR antes de que dev implemente. Fase 5 parte 1 ya cerrada (sesión 8, ver entrada de arriba). Cerrados en la limpieza (`7bc780f`): NEW-1 (`SQLitePCLRaw` 2.1.12; `Tmds.DBus` sin verificar) y F4-Q1. Pendiente antes de distribuir: D12 (residuo) y NEW-10 (solo tests). Pendientes de F3: UX18 (cerrado en la limpieza) y F3-D2 / UX19 (el primer carácter del lector cae en el campo con foco). Son MEDIA y de uso diario en recepción; qa no los marcó como bloqueantes.
+3. **Endurecimiento final "todo junto" (pedido por el usuario; alcance a acordar antes de tocar código):** Fase 5 completa cerrada (sesión 9, ver entrada de arriba). Candidatos detallados abajo. Histórico: cerrados en la limpieza (`7bc780f`): NEW-1 (`SQLitePCLRaw` 2.1.12; `Tmds.DBus` sin verificar) y F4-Q1. Pendiente antes de distribuir: D12 (residuo) y NEW-10 (solo tests). Pendientes de F3: UX18 (cerrado en la limpieza) y F3-D2 / UX19 (el primer carácter del lector cae en el campo con foco). Son MEDIA y de uso diario en recepción; qa no los marcó como bloqueantes.
 4. **Verificación en hardware real** (no se pudo en esta sesión): lector USB wedge real con layout es-AR, supresión de WM_CHAR en Windows, portapapeles y diálogo nativo, táctil, DPI alto y `scripts/publish.ps1` single-file. Con F3-D1 abierto (checks de teclado fuera de CI), todo cambio en kiosk o POS se prueba también con `tools/GymForge.Screenshots`.
+
+**Endurecimiento "todo junto" (candidatos; alcance y orden a acordar con el usuario):**
+- D9: scope por operación en Desktop (fix de fondo; `AsNoTracking` ya es parcial).
+- D2: auth de la API (bloquea solo si Kestrel sale de localhost:5000).
+- D3: `SiteId` en Routine, Booking, WorkoutLog y BodyMeasurement + migración.
+- D7: DNI único y licencia en multi-sede (decisión del usuario antes).
+- NEW-8: `.editorconfig` (decisión del usuario; re-medir antes).
+- NEW-9: `tools/GymForge.Screenshots` al `.sln` o a CI (amplía NEW-4 y F3-D1).
+- NEW-10: SSH.NET, solo tests (subir cuando haya parche).
+- UX19 / F3-D2: primer carácter del lector (requiere hardware real).
+- D12: residuo (`Member.cs:88`, `DatabaseBackupService.cs:62`, `DemoDataSeeder.cs:79`).
+- F5-D1 a F5-D4 y NEW-12: verificación manual de F5 partes 1 y 2 (Escape, Tab cíclico y foco en modales, teclado en grillas, ancho de Clases).
+- Fuera de este endurecimiento sin decisión del usuario: D11 ampliada, O10, push y merge de `feat/sesion-6`.
 
 Piloto: F4 partes 1 y 2 sin bloqueadores técnicos (qa). D11 ampliada y O10 son decisiones de política que conviene tomar antes de que la recepción use los exports. Siguen las 2 condiciones de uso de F1.
 
@@ -69,6 +83,40 @@ Decisiones del usuario abiertas (ninguna bloquea el piloto con las 2 condiciones
 Fuera del piloto: P-2 (saldo a favor en la ficha) y D1 (cobros multi-sede) siguen abiertas. Resto de deuda (D1–D19, F1-D4 a F1-D10, F2-D1 a F2-D8, Q3–Q9, UX1–UX17): ver `docs/TASKS.md`.
 
 Sesiones 5-8: ver tabla de fases arriba.
+
+---
+
+## [2026-11-04] Sesión 9 (Fase 5 parte 2) — CERRADA: calendario semanal de Clases (pieza F)
+
+**Hecho:**
+- **Fase 5 parte 2 cerrada. Con esto la Fase 5 completa queda cerrada (piezas A–G).** Flujo: arqui (ADR-010, `docs/adr/ADR-010-calendario-semanal-clases.md`; el orquestador lo pasa a `Accepted` al commitear) → dev (VM + grilla + 5 tests, TDD) → ux (pasada visual y AA) → qa (**APROBADO CON OBSERVACIONES**, sin bloqueantes).
+- **Entregado:** la agenda de Clases pasa de `ListBox` plano a grilla de 7 días (Lun–Dom) con los horarios por día.
+  - `ScheduleDayVm` (nuevo): Date, DayName (es-AR), DateLabel, IsToday, Schedules, IsEmpty.
+  - `ClassesViewModel`: `WeekDays` + `BuildWeekDays()` + `SelectScheduleCommand`.
+  - Chips `Button.ScheduleChip` clickeables: hora + clase + pill de ocupación `neutral`; `AutomationProperties.Name` por chip (MultiBinding + StringFormat).
+  - Resalte del día de hoy (calendario del gimnasio, no de la PC) y de la selección (borde 2 px).
+  - `ValuesEqualConverter` (nuevo).
+  - Navegación de semana y lógica de reservas reutilizadas sin cambios.
+- Sin migración EF. UI pura. Multi-tenant (CompanyId + SiteId) y append-only intactos.
+- **Tests:** `dotnet test GymForge.sln` exit 0, 0 omitidos, **1461 verdes** (Domain 107 · Application 590 · Desktop 416 · Integration 348). Piso previo 1456. Build Debug y Release 0 errores. `tools/GymForge.Screenshots` (fuera del `.sln`) compila; qa verificó render en light y dark.
+- **Deuda nueva (qa, no bloqueante):** F5-D1 a F5-D4 en TASKS ("Deuda de Fase 5 parte 2").
+
+**En curso:** nada a medias en código. Pendiente del orquestador: (1) commit de código, con mensaje previsto `feat: [clases] agenda semanal en grilla de 7 dias`; (2) commit de docs aparte (ADR-010 a `Accepted`, `docs/adr/README.md`, esta entrada y TASKS). Sin push ni merge.
+
+**Blockers:**
+- Técnicos: ninguno (1461 verdes; qa sin bloqueantes).
+- Política sin cambios: D11 ampliada y O10. Push y merge de `feat/sesion-6`: decide el usuario.
+- Decisión del usuario sin cambios: `.editorconfig` (NEW-8). Verificación manual sin cubrir (NEW-12, de F5 parte 1) sigue abierta.
+
+**Próximo paso:**
+1. Orquestador: commit de código y commit de docs de la pieza F (ver "En curso"); ADR-010 a `Accepted`.
+2. Usuario: decidir push y merge de `feat/sesion-6`, D11 ampliada, O10 y NEW-8; decidir F5-D1 (ancho de la grilla de Clases: bajar `MinWidth` de 120 o achicar el panel de reservas de 360).
+3. Endurecimiento final "todo junto" (pedido por el usuario): acordar alcance con el usuario antes de tocar código. Candidatos en TASKS y en "Qué sigue" de PROGRESS.
+
+**Tocado:**
+- Docs: `docs/PROGRESS.md`, `docs/TASKS.md`.
+- Código (pendiente de commit, `feat: [clases] agenda semanal en grilla de 7 dias`): `src/GymForge.Desktop/ViewModels/Classes/ClassesViewModel.cs` (modificado), `src/GymForge.Desktop/ViewModels/Classes/ScheduleDayVm.cs` (nuevo), `src/GymForge.Desktop/Views/Classes/ClassesView.axaml` (modificado), `src/GymForge.Desktop/Converters/ValuesEqualConverter.cs` (nuevo), `src/GymForge.Desktop/App.axaml` (modificado), `src/GymForge.Desktop/Assets/Styles/AppStyles.axaml` (modificado), `tests/GymForge.Desktop.Tests/ClassesCalendarViewModelTests.cs` (nuevo).
+- ADR (lo maneja el orquestador): `docs/adr/ADR-010-calendario-semanal-clases.md`.
 
 ---
 

@@ -263,6 +263,35 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
     }
 
     [Fact]
+    public void BackupOffsiteNow_SiNoSePudoCrearElBackupLocal_InformaLocalBackupFailedYNoCopiaNada()
+    {
+        PlugInPendrive();
+        SqliteConnection.ClearAllPools();
+        File.Delete(Path.Combine(DataDir, "gymforge.db"));
+
+        var outcome = NewService().BackupOffsiteNow();
+
+        outcome.Should().Be(OffsiteBackupOutcome.LocalBackupFailed);
+        OffsiteFiles().Should().BeEmpty();
+    }
+
+    [Fact]
+    public void BackupOffsiteNow_BarreLosTemporalesPropiosHuerfanos_PeroNoLosAjenos()
+    {
+        PlugInPendrive();
+        Directory.CreateDirectory(OffsiteDir);
+        var orphan = Path.Combine(OffsiteDir, "gymforge-20200101-000000.db.tmp");
+        var foreign = Path.Combine(OffsiteDir, "otro-programa.tmp");
+        File.WriteAllText(orphan, "copia a medias");
+        File.WriteAllText(foreign, "no es nuestro");
+
+        NewService().BackupOffsiteNow().Should().Be(OffsiteBackupOutcome.Copied);
+
+        File.Exists(orphan).Should().BeFalse();
+        File.Exists(foreign).Should().BeTrue();
+    }
+
+    [Fact]
     public void BackupOffsiteNow_SinDestinoConfigurado_InformaNotConfigured()
     {
         NewService().BackupOffsiteNow().Should().Be(OffsiteBackupOutcome.NotConfigured);

@@ -44,6 +44,7 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
     private readonly IPaymentRepository _paymentRepo;
     private readonly ICashRegister _cashRegister;
     private readonly IStaffRepository _staffRepo;
+    private readonly ICompanyCalendar _calendar;
 
     public SellMembershipCommandHandler(
         IMembershipTypeRepository planRepo,
@@ -52,7 +53,8 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
         IMemberRepository memberRepo,
         IPaymentRepository paymentRepo,
         ICashRegister cashRegister,
-        IStaffRepository staffRepo)
+        IStaffRepository staffRepo,
+        ICompanyCalendar calendar)
     {
         _planRepo = planRepo;
         _chargeRepo = chargeRepo;
@@ -61,6 +63,7 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
         _paymentRepo = paymentRepo;
         _cashRegister = cashRegister;
         _staffRepo = staffRepo;
+        _calendar = calendar;
     }
 
     public async Task<PaymentDto> Handle(SellMembershipCommand cmd, CancellationToken ct)
@@ -74,7 +77,7 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
         if (plan.Price <= 0)
             throw new InvalidOperationException("El plan seleccionado no tiene costo; no requiere cobro.");
 
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = await _calendar.TodayAsync(cmd.CompanyId, ct);
 
         // Membresía activa según la duración del plan. Va primero: la cuota se vincula a ella para que los
         // reportes atribuyan lo cobrado al plan.

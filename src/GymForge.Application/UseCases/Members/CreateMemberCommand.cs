@@ -1,6 +1,7 @@
 using FluentValidation;
 using GymForge.Application.DTOs;
 using GymForge.Application.Interfaces;
+using GymForge.Application.Services;
 using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
 using MediatR;
@@ -42,11 +43,13 @@ public class CreateMemberCommandHandler : IRequestHandler<CreateMemberCommand, M
 {
     private readonly IMemberRepository _repo;
     private readonly Licensing.CurrentLicense _license;
+    private readonly ICompanyCalendar _calendar;
 
-    public CreateMemberCommandHandler(IMemberRepository repo, Licensing.CurrentLicense license)
+    public CreateMemberCommandHandler(IMemberRepository repo, Licensing.CurrentLicense license, ICompanyCalendar calendar)
     {
         _repo = repo;
         _license = license;
+        _calendar = calendar;
     }
 
     public async Task<MemberDto> Handle(CreateMemberCommand cmd, CancellationToken ct)
@@ -79,7 +82,7 @@ public class CreateMemberCommandHandler : IRequestHandler<CreateMemberCommand, M
         // Alta directa como socio activo (mostrador); sin esto queda Prospecto
         // hasta que compre una membresía.
         if (cmd.ActivateImmediately)
-            member.Activate(DateOnly.FromDateTime(DateTime.Today));
+            member.Activate(await _calendar.TodayAsync(cmd.CompanyId, ct));
 
         await _repo.AddAsync(member, ct);
         await _repo.SaveChangesAsync(ct);

@@ -307,6 +307,8 @@ public enum OffsiteBackupOutcome
     /// <summary>No hay carpeta de destino configurada: no hay nada que copiar.</summary>
     NotConfigured,
     Copied,
-    /// <summary>Destino no disponible (pendrive desenchufado, red caída, sin permisos) o backup local fallido.</summary>
+    /// <summary>Destino no disponible (pendrive desenchufado, red caída, sin permisos): el backup local sí quedó hecho.</summary>
     Failed,
+    /// <summary>No se pudo crear el backup en esta PC (disco lleno, base inaccesible): no hay nada que copiar.</summary>
+    LocalBackupFailed,
 }

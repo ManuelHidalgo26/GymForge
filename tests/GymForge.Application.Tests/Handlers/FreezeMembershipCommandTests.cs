@@ -15,7 +15,8 @@ public class FreezeMembershipCommandTests
     private readonly ISiteRepository _siteRepo = Substitute.For<ISiteRepository>();
     private readonly FakeClock _clock = new(FakeClock.ArgentinaNoon(new DateOnly(2026, 3, 1)));
 
-    private FreezeMembershipCommandHandler FreezeSut() => new(_membershipRepo, _siteRepo);
+    private FreezeMembershipCommandHandler FreezeSut() => new(
+        _membershipRepo, _siteRepo, new CompanyCalendar(_clock, _siteRepo, NullLogger<CompanyCalendar>.Instance));
 
     private UnfreezeMembershipCommandHandler UnfreezeSut() => new(
         _membershipRepo, new CompanyCalendar(_clock, _siteRepo, NullLogger<CompanyCalendar>.Instance));
@@ -63,6 +64,31 @@ public class FreezeMembershipCommandTests
         dto.Status.Should().Be(MembershipStatus.Frozen);
         _membershipRepo.Received(1).Update(ms);
         await _membershipRepo.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Freeze_StartInAFutureDate_IsRejectedAndNothingChanges()
+    {
+        var ms = ActiveMembershipOf(CompanyWithCap(90));
+        var cmd = new FreezeMembershipCommand(ms.Id, new DateOnly(2026, 3, 2), new DateOnly(2026, 3, 20), "Viaje");
+
+        var act = () => FreezeSut().Handle(cmd, CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*año en curso*");
+        ms.Status.Should().Be(MembershipStatus.Active);
+        await _membershipRepo.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Freeze_StartInAnotherYear_IsRejected_SoItCannotOverwriteTheYearlyCount()
+    {
+        var ms = ActiveMembershipOf(CompanyWithCap(90));
+        var cmd = new FreezeMembershipCommand(ms.Id, new DateOnly(2025, 12, 20), new DateOnly(2026, 1, 10), "Viaje");
+
+        var act = () => FreezeSut().Handle(cmd, CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*año en curso*");
+        await _membershipRepo.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]

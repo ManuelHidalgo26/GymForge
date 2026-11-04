@@ -363,7 +363,7 @@ public partial class SettingsViewModel : ObservableObject
 
             if (_editingSiteId is { } id)
             {
-                await _mediator.Send(new UpdateSiteCommand(id, NewSiteName, NewSiteAddress, phone));
+                await _mediator.Send(new UpdateSiteCommand(_session.CompanyId, id, NewSiteName, NewSiteAddress, phone));
                 message = "Sede actualizada.";
             }
             else
@@ -393,7 +393,7 @@ public partial class SettingsViewModel : ObservableObject
         SiteSaved = false;
         try
         {
-            var deleted = await _mediator.Send(new DeleteSiteCommand(site.Id));
+            var deleted = await _mediator.Send(new DeleteSiteCommand(_session.CompanyId, site.Id));
             SiteSaved = true;
             SiteMessage = deleted
                 ? "Sede eliminada."
@@ -638,6 +638,8 @@ public partial class SettingsViewModel : ObservableObject
         {
             OffsiteBackupOutcome.Copied => "Copia externa lista.",
             OffsiteBackupOutcome.NotConfigured => "Elegí primero la carpeta de destino.",
+            OffsiteBackupOutcome.LocalBackupFailed =>
+                "No se pudo crear el resguardo en esta PC (revisá el espacio en disco), así que no se copió nada al destino externo.",
             _ => "No se pudo copiar. Revisá que el pendrive o la carpeta estén disponibles; el resguardo en esta PC sí quedó hecho.",
         };
         await RefreshOffsiteStatusAsync();

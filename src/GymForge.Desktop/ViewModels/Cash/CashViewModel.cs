@@ -36,6 +36,7 @@ public partial class CashViewModel : ObservableObject
     [ObservableProperty] private ShiftDto? _currentShift;
     [ObservableProperty] private string? _statusMessage;
     [ObservableProperty] private bool _isBusy;
+    [ObservableProperty] private bool _isDefaultPinInUse;
 
     public bool HasOpenShift => CurrentShift is { Status: ShiftStatus.Open };
     public bool IsShiftClosed => CurrentShift is { Status: ShiftStatus.Closed };
@@ -92,6 +93,7 @@ public partial class CashViewModel : ObservableObject
     public async Task LoadAsync(CancellationToken ct = default)
     {
         StatusMessage = null;
+        await RefreshDefaultPinAsync(ct);
         if (_session.SiteId == Guid.Empty) return;
 
         var open = await _shiftRepo.GetOpenForSiteAsync(_session.SiteId, ct);
@@ -104,17 +106,27 @@ public partial class CashViewModel : ObservableObject
     {
         StatusMessage = null;
         var staff = await _mediator.Send(new AuthenticateStaffCommand(_session.CompanyId, Pin));
-        if (staff is null) { StatusMessage = "PIN incorrecto."; return; }
-        _session.SignIn(staff);
         Pin = string.Empty;
+        if (staff is null)
+        {
+            StatusMessage = "PIN incorrecto.";
+            return;
+        }
+
+        _session.SignIn(staff);
     }
 
     [RelayCommand]
-    private void SignOut()
+    private async Task SignOutAsync()
     {
         _session.SignOut();
         CurrentShift = null;
+        await RefreshDefaultPinAsync();   // el PIN pudo cambiarse en Config mientras la sesión estaba abierta
     }
+
+    private async Task RefreshDefaultPinAsync(CancellationToken ct = default) =>
+        IsDefaultPinInUse = _session.CompanyId != Guid.Empty
+            && await _mediator.Send(new CheckDefaultPinQuery(_session.CompanyId), ct);
 
     [RelayCommand]
     private Task OpenShiftAsync() => RunAsync(async () =>

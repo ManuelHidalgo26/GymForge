@@ -37,13 +37,13 @@ public class App : Avalonia.Application
         if (PlatformSettings is { } ps)
             ps.ColorValuesChanged += (_, _) => SyncThemeFlag();
 
-        // Aplicar el color de marca del gimnasio (persistido) antes de mostrar la ventana.
-        if (Services is not null)
-            ApplyBrandAccent(Services.GetRequiredService<SessionContext>().BrandColorHex);
-
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var session = Services.GetRequiredService<SessionContext>();
+
+            // Aplicar el color de marca del gimnasio (persistido) antes de mostrar la ventana.
+            ApplyBrandAccent(session.BrandColorHex);
+
             if (session.NeedsOnboarding)
                 desktop.MainWindow = BuildOnboardingWindow(desktop);
             else

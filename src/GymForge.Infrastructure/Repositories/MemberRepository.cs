@@ -133,6 +133,7 @@ public class MemberRepository : IMemberRepository
     public async Task<IReadOnlyList<Member>> GetJoinedBetweenAsync(
         Guid companyId, Guid? siteId, DateOnly from, DateOnly to, CancellationToken ct = default) =>
         await _db.Members
+            .AsNoTracking()
             .IgnoreQueryFilters()
             .Where(m => m.CompanyId == companyId && (siteId == null || m.SiteId == siteId) &&
                         m.JoinDate >= from && m.JoinDate <= to)

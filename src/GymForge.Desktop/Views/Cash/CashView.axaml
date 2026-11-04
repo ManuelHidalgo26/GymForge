@@ -51,12 +51,17 @@
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="32">
                         <StackPanel Grid.Column="0" Spacing="12" VerticalAlignment="Center">
                             <TextBlock Text="Iniciar sesión de cajero" FontSize="15" FontWeight="SemiBold" />
-                            <TextBlock Text="Ingresá tu PIN para operar la caja (admin de ejemplo: 1234)."
-                                       Classes="FormLabel" TextWrapping="Wrap" />
+                            <TextBlock Text="Ingresá tu PIN para operar la caja." Classes="FormLabel" TextWrapping="Wrap" />
+                            <TextBlock Text="(admin de ejemplo: 1234)" Classes="FormLabel" TextWrapping="Wrap"
+                                       IsVisible="{Binding IsDefaultPinInUse}" />
                             <TextBox Watermark="PIN" PasswordChar="●" MaxLength="8" Width="200"
                                      HorizontalAlignment="Left"
                                      AutomationProperties.Name="PIN del cajero"
-                                     Text="{Binding Pin}" />
+                                     Text="{Binding Pin}">
+                                <TextBox.KeyBindings>
+                                    <KeyBinding Gesture="Enter" Command="{Binding LoginCommand}" />
+                                </TextBox.KeyBindings>
+                            </TextBox>
                             <Button Command="{Binding LoginCommand}" Classes="Primary" Width="200"
                                     HorizontalAlignment="Left" HorizontalContentAlignment="Center">
                                 <TextBlock Text="Ingresar" />

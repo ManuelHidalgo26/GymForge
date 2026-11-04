@@ -2,6 +2,7 @@ using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GymForge.Application.Interfaces;
+using GymForge.Application.Services;
 using GymForge.Desktop.Services;
 using GymForge.Domain.Enums;
 using System.Collections.ObjectModel;
@@ -29,6 +30,11 @@ public partial class DashboardViewModel : ObservableObject
     private readonly IChargeRepository _charges;
     private readonly IMembershipRepository _memberships;
     private readonly SessionContext _session;
+    private readonly ISiteRepository _sites;
+    private readonly ICompanyCalendar _calendar;
+
+    // Zona del gimnasio de la última carga: convierte entre los instantes UTC guardados y el día local.
+    private string _timezone = string.Empty;
 
     /// <summary>Acciones rápidas: las cablea MainWindowViewModel a la navegación.</summary>
     public event Action? CreateMemberRequested;
@@ -79,7 +85,8 @@ public partial class DashboardViewModel : ObservableObject
     public DashboardViewModel(
         IMemberRepository members, IPaymentRepository payments,
         IAccessLogRepository accessLogs, IChargeRepository charges,
-        IMembershipRepository memberships, SessionContext session)
+        IMembershipRepository memberships, SessionContext session,
+        ISiteRepository sites, ICompanyCalendar calendar)
     {
         _members = members;
         _payments = payments;
@@ -87,6 +94,8 @@ public partial class DashboardViewModel : ObservableObject
         _charges = charges;
         _memberships = memberships;
         _session = session;
+        _sites = sites;
+        _calendar = calendar;
     }
 
     [RelayCommand] private void QuickCreateMember() => CreateMemberRequested?.Invoke();
@@ -99,7 +108,10 @@ public partial class DashboardViewModel : ObservableObject
         IsLoading = true;
         try
         {
-            var today = DateTime.Today;
+            var company = await _sites.GetCompanyAsync(_session.CompanyId)
+                ?? throw new InvalidOperationException("La empresa no existe.");
+            _timezone = company.Timezone;
+            var today = _calendar.TodayFor(company);
             TodayLabel = Capitalize(today.ToString("dddd d 'de' MMMM"));
 
             // ── Socios ──────────────────────────────────────────────────────
@@ -109,28 +121,28 @@ public partial class DashboardViewModel : ObservableObject
             MembersSubtitle = $"de {totalMembers} registrados";
 
             // ── Check-ins de hoy vs. ayer (guardados en UTC) ────────────────
-            var dayStartUtc = today.ToUniversalTime();
+            var dayStartUtc = StartOfDayUtc(today);
             var todayLogs = await _accessLogs.GetBySiteAsync(
-                _session.SiteId, dayStartUtc, dayStartUtc.AddDays(1));
+                _session.SiteId, dayStartUtc, StartOfDayUtc(today.AddDays(1)));
             CheckInsToday = todayLogs.Count(l => l.AccessGranted);
 
             var yesterdayLogs = await _accessLogs.GetBySiteAsync(
-                _session.SiteId, dayStartUtc.AddDays(-1), dayStartUtc);
+                _session.SiteId, StartOfDayUtc(today.AddDays(-1)), dayStartUtc);
             CheckInsSubtitle = $"ayer: {yesterdayLogs.Count(l => l.AccessGranted)}";
 
             // ── Mora real: cobros vencidos impagos ──────────────────────────
             var overdueCharges = await _charges.GetOverdueAsync(
-                _session.CompanyId, DateOnly.FromDateTime(today));
+                _session.CompanyId, today);
             OverdueMembers = overdueCharges.Select(c => c.MemberId).Distinct().Count();
             var owed = overdueCharges.Sum(c => c.AmountOutstanding);
             OverdueSubtitle = owed > 0 ? $"deben ${owed:N0} en total" : "sin deuda vencida";
 
             // ── Recaudación del mes + tendencia vs. mismo período anterior ──
-            var monthStartUtc = new DateTime(today.Year, today.Month, 1).ToUniversalTime();
+            var monthStartUtc = StartOfDayUtc(new DateOnly(today.Year, today.Month, 1));
             RevenueThisMonth = await _payments.SumReceivedAsync(
                 _session.CompanyId, _session.SiteId, monthStartUtc, DateTime.UtcNow);
 
-            var prevStartUtc = new DateTime(today.Year, today.Month, 1).AddMonths(-1).ToUniversalTime();
+            var prevStartUtc = StartOfDayUtc(new DateOnly(today.Year, today.Month, 1).AddMonths(-1));
             var prevSamePeriod = await _payments.SumReceivedAsync(
                 _session.CompanyId, _session.SiteId, prevStartUtc,
                 prevStartUtc.Add(DateTime.UtcNow - monthStartUtc));
@@ -153,15 +165,17 @@ public partial class DashboardViewModel : ObservableObject
         }
     }
 
-    private async Task LoadRevenueChartAsync(DateTime today)
+    private DateTime StartOfDayUtc(DateOnly day) => CompanyTime.StartOfDayUtc(day, _timezone);
+
+    private async Task LoadRevenueChartAsync(DateOnly today)
     {
         var fromLocal = today.AddDays(-29);
         var payments = await _payments.GetByPeriodAsync(
             _session.CompanyId, _session.SiteId,
-            fromLocal.ToUniversalTime(), DateTime.UtcNow);
+            StartOfDayUtc(fromLocal), DateTime.UtcNow);
 
         var byDay = payments
-            .GroupBy(p => p.ReceivedAt.ToLocalTime().Date)
+            .GroupBy(p => DateOnly.FromDateTime(CompanyTime.ToLocal(p.ReceivedAt, _timezone)))
             .ToDictionary(g => g.Key, g => g.Sum(p => p.Amount));
 
         var days = Enumerable.Range(0, 30).Select(i => fromLocal.AddDays(i)).ToList();
@@ -169,9 +183,9 @@ public partial class DashboardViewModel : ObservableObject
 
         var bars = days.Select(d =>
         {
-            var amount = byDay.GetValueOrDefault(d.Date);
+            var amount = byDay.GetValueOrDefault(d);
             var height = amount == 0 ? 3 : Math.Max(6, (double)(amount / max) * ChartHeight);
-            return new RevenueBarVm(height, $"{d:ddd d/MM} — ${amount:N0}", d.Date == today);
+            return new RevenueBarVm(height, $"{d:ddd d/MM} — ${amount:N0}", d == today);
         }).ToList();
 
         RevenueBars = new ObservableCollection<RevenueBarVm>(bars);
@@ -216,9 +230,8 @@ public partial class DashboardViewModel : ObservableObject
         }
     }
 
-    private async Task LoadExpiringAsync(DateTime today)
+    private async Task LoadExpiringAsync(DateOnly from)
     {
-        var from = DateOnly.FromDateTime(today);
         var expiring = await _memberships.GetExpiringAsync(_session.CompanyId, from, from.AddDays(7));
 
         ExpiringRows = new ObservableCollection<ExpiringRowVm>(expiring.Take(6).Select(m =>
@@ -245,7 +258,7 @@ public partial class DashboardViewModel : ObservableObject
         AccessRows = new ObservableCollection<AccessRowVm>(todayLogs.Take(6).Select(l => new AccessRowVm(
             Initials(l.Member?.FirstName, l.Member?.LastName),
             l.Member is null ? "Desconocido" : $"{l.Member.FirstName} {l.Member.LastName}",
-            l.SwipedAt.ToLocalTime().ToString("HH:mm"),
+            CompanyTime.ToLocal(l.SwipedAt, _timezone).ToString("HH:mm"),
             l.AccessGranted,
             l.AccessGranted ? "Ingresó" : "Rechazado")));
         NotifyEmptyStates();

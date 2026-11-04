@@ -507,4 +507,66 @@ public class ReportsViewModelTests
         sut.Message.Should().Contain("No se pudo exportar").And.Contain("abierto en otro programa");
         sut.ExportedPath.Should().BeNull();
     }
+
+    [Fact]
+    public async Task Recargar_DescartaLaRutaDelUltimoExport()
+    {
+        var sut = await SutAsync();
+        HavePayments(SamplePayments());
+        await sut.LoadCommand.ExecuteAsync(null);
+        await sut.ExportCommand.ExecuteAsync(ReportFormat.Pdf);
+        sut.ExportedPath.Should().NotBeNull();
+
+        await sut.LoadCommand.ExecuteAsync(null);
+
+        sut.ExportedPath.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task CambiarElRango_DescartaLaRutaDelUltimoExport()
+    {
+        var sut = await SutAsync();
+        HavePayments(SamplePayments());
+        await sut.LoadCommand.ExecuteAsync(null);
+        await sut.ExportCommand.ExecuteAsync(ReportFormat.Pdf);
+
+        sut.From = MonthStart.AddDays(1);
+
+        sut.ExportedPath.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task PrimeraCarga_ArrancaEnEsteMesSegunElDiaDelGimnasio()
+    {
+        var sut = NewUnprimed(await SessionAsync());
+
+        await sut.LoadCommand.ExecuteAsync(null);
+
+        sut.From.Should().Be(MonthStart);
+        sut.To.Should().Be(Today);
+    }
+
+    [Fact]
+    public async Task Atajos_UsanElDiaDelGimnasio()
+    {
+        var sut = await SutAsync();
+
+        await sut.TodayCommand.ExecuteAsync(null);
+        (sut.From, sut.To).Should().Be((Today, Today));
+
+        await sut.ThisMonthCommand.ExecuteAsync(null);
+        (sut.From, sut.To).Should().Be((MonthStart, Today));
+    }
+
+    private async Task<SessionContext> SessionAsync()
+    {
+        _site = Site.Create(_company.Id, "Central", "Calle 1");
+        var session = await TestSession.InitializedAsync(_company, [_site]);
+        _calendar.TodayAsync(_company.Id, Arg.Any<CancellationToken>()).Returns(Today);
+        PrimeEmptyReports();
+        return session;
+    }
+
+    private ReportsViewModel NewUnprimed(SessionContext session) => new(
+        _mediator, session, new ReceiptService(Substitute.For<IServiceScopeFactory>()), _calendar, _exporter, _clock);
 }

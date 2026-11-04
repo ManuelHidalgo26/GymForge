@@ -513,7 +513,7 @@
                     <!-- El límite del reporte, visible (y también en el PDF/Excel) -->
                     <fa:InfoBar IsOpen="True" IsClosable="False" Severity="Informational"
                                 Title="Cómo leer este reporte"
-                                Message="{Binding FlowNote}" />
+                                Message="{x:Static rep:ReportBuilders.FlowNote}" />
 
                     <!-- Altas del período -->
                     <Border Classes="Card" Padding="0">
@@ -568,7 +568,7 @@
                 <!-- El criterio, visible (y también en el PDF/Excel): se congelan al vender -->
                 <fa:InfoBar Grid.Row="0" Margin="16,12,16,8"
                             IsOpen="{Binding !IsEmpty}" IsClosable="False" Severity="Informational"
-                            Title="Cómo leer este reporte" Message="{Binding CommissionsNote}" />
+                            Title="Cómo leer este reporte" Message="{x:Static rep:ReportBuilders.CommissionsNote}" />
 
                 <DataGrid Grid.Row="1"
                           ItemsSource="{Binding CommissionRows}"

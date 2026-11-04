@@ -68,7 +68,8 @@ public class FreezeAtTheDoorTests : IAsyncLifetime
         new ValidateSwipeRequest(Tag, AccessMethod.RfidCard, DoorId, _site.Id, _company.Id));
 
     private Task FreezeAsync(Guid membershipId) =>
-        new FreezeMembershipCommandHandler(new MembershipRepository(_db), new SiteRepository(_db)).Handle(
+        new FreezeMembershipCommandHandler(
+            new MembershipRepository(_db), new SiteRepository(_db), TestServices.Calendar(_db, _clock)).Handle(
             new FreezeMembershipCommand(membershipId, _today, _today.AddDays(10), "Viaje"), CancellationToken.None);
 
     private Task UnfreezeAsync(Guid membershipId) =>

@@ -19,7 +19,6 @@ public partial class MemberDetailViewModel : ObservableObject
     private readonly IMediator _mediator;
     private readonly IMembershipRepository _membershipRepo;
     private readonly IAccessLogRepository _accessLogRepo;
-    private readonly IChargeRepository _chargeRepo;
     private readonly SessionContext _session;
     private readonly IMemberPhotoStore _photoStore;
 
@@ -61,7 +60,6 @@ public partial class MemberDetailViewModel : ObservableObject
         IMediator mediator,
         IMembershipRepository membershipRepo,
         IAccessLogRepository accessLogRepo,
-        IChargeRepository chargeRepo,
         ChargesViewModel chargesVm,
         RoutineBuilderViewModel routineBuilder,
         SessionContext session,
@@ -71,7 +69,6 @@ public partial class MemberDetailViewModel : ObservableObject
         _mediator       = mediator;
         _membershipRepo = membershipRepo;
         _accessLogRepo  = accessLogRepo;
-        _chargeRepo     = chargeRepo;
         ChargesVm       = chargesVm;
         RoutineBuilder  = routineBuilder;
         _session        = session;
@@ -149,6 +146,7 @@ public partial class MemberDetailViewModel : ObservableObject
 
     private async Task LoadActiveTabAsync(CancellationToken ct = default)
     {
+        MembershipsMessage = null;
         IsLoading = true;
         try
         {

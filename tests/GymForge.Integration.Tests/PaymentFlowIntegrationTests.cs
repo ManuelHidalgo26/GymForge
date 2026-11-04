@@ -8,6 +8,7 @@ using GymForge.Infrastructure.Persistence;
 using GymForge.Infrastructure.Repositories;
 using GymForge.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace GymForge.Integration.Tests;
 
@@ -46,7 +47,8 @@ public class PaymentFlowIntegrationTests : IAsyncLifetime
     public async Task CreateMember_WithRealTenant_Persists()
     {
         var handler = new CreateMemberCommandHandler(
-            new MemberRepository(_db), new GymForge.Application.UseCases.Licensing.CurrentLicense());
+            new MemberRepository(_db), new GymForge.Application.UseCases.Licensing.CurrentLicense(),
+            new CompanyCalendar(new SystemClock(), new SiteRepository(_db), NullLogger<CompanyCalendar>.Instance));
 
         var dto = await handler.Handle(new CreateMemberCommand(
             _companyId, _site.Id, "Ana", "García",

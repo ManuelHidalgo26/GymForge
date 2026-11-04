@@ -20,6 +20,9 @@ public sealed partial class DailyMaintenanceRunner : IDailyMaintenanceRunner
     /// <summary>Tope de días a recuperar: evita un backfill patológico y reenvíos de dunning sin fin.</summary>
     private const int MaxCatchUpDays = 35;
 
+    /// <summary>Cuánto puede adelantarse el checkpoint a hoy (reloj de la PC atrasado) y seguir siendo creíble.</summary>
+    private const int MaxClockSkewDays = 2;
+
     private readonly ISiteRepository _sites;
     private readonly DailyMaintenanceService _maintenance;
     private readonly IMaintenanceCheckpoint _checkpoint;
@@ -62,12 +65,15 @@ public sealed partial class DailyMaintenanceRunner : IDailyMaintenanceRunner
 
     /// <summary>
     /// Primer arranque (sin checkpoint): solo hoy, sin retro-procesar el historial. Si no, el día siguiente
-    /// al último procesado, acotado a <see cref="MaxCatchUpDays"/> días hacia atrás.
+    /// al último procesado, acotado a <see cref="MaxCatchUpDays"/> días hacia atrás. Un checkpoint adelantado
+    /// unos días (el reloj de la PC se atrasó) se respeta y no reprocesa; uno más allá de
+    /// <see cref="MaxClockSkewDays"/> no es creíble (archivo mal), se trata como primer arranque y se reescribe:
+    /// si no, la empresa quedaría sin mantenimiento hasta alcanzar esa fecha.
     /// </summary>
     private static DateOnly FirstPendingDay(DateOnly? lastRun, DateOnly localToday)
     {
         var earliestAllowed = localToday.AddDays(1 - MaxCatchUpDays);
-        var next = lastRun?.AddDays(1) ?? localToday;
+        var next = lastRun is { } last && last <= localToday.AddDays(MaxClockSkewDays) ? last.AddDays(1) : localToday;
         return next < earliestAllowed ? earliestAllowed : next;
     }
 

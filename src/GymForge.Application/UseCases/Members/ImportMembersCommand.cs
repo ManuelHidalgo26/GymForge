@@ -1,4 +1,5 @@
 using GymForge.Application.Interfaces;
+using GymForge.Application.Services;
 using GymForge.Application.UseCases.Licensing;
 using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
@@ -24,11 +25,13 @@ public class ImportMembersCommandHandler : IRequestHandler<ImportMembersCommand,
 {
     private readonly IMemberRepository _repo;
     private readonly CurrentLicense _license;
+    private readonly ICompanyCalendar _calendar;
 
-    public ImportMembersCommandHandler(IMemberRepository repo, CurrentLicense license)
+    public ImportMembersCommandHandler(IMemberRepository repo, CurrentLicense license, ICompanyCalendar calendar)
     {
         _repo = repo;
         _license = license;
+        _calendar = calendar;
     }
 
     public async Task<ImportMembersResult> Handle(ImportMembersCommand cmd, CancellationToken ct)
@@ -39,7 +42,7 @@ public class ImportMembersCommandHandler : IRequestHandler<ImportMembersCommand,
 
         var existing = await _repo.CountByCompanyAsync(cmd.CompanyId, ct);
         var max = _license.State.MaxMembers;
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = await _calendar.TodayAsync(cmd.CompanyId, ct);
 
         foreach (var row in cmd.Rows)
         {

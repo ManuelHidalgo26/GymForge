@@ -17,9 +17,14 @@ public class SellMembershipCommandTests
     private readonly IPaymentRepository _paymentRepo = Substitute.For<IPaymentRepository>();
     private readonly ICashRegister _cashRegister = Substitute.For<ICashRegister>();
     private readonly IStaffRepository _staffRepo = Substitute.For<IStaffRepository>();
+    private readonly ICompanyCalendar _calendar = Substitute.For<ICompanyCalendar>();
+    private static readonly DateOnly Today = new(2026, 7, 21);
+
+    public SellMembershipCommandTests() =>
+        _calendar.TodayAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(Today);
 
     private SellMembershipCommandHandler Sut() =>
-        new(_planRepo, _chargeRepo, _membershipRepo, _memberRepo, _paymentRepo, _cashRegister, _staffRepo);
+        new(_planRepo, _chargeRepo, _membershipRepo, _memberRepo, _paymentRepo, _cashRegister, _staffRepo, _calendar);
 
     private static Member MakeProspect(Guid companyId, Guid siteId) =>
         Member.Create(companyId, siteId, "Juan", "Pérez", DocumentType.DNI, "30111222", Gender.Male);
@@ -81,6 +86,28 @@ public class SellMembershipCommandTests
         membership.Should().NotBeNull();
         charge.Should().NotBeNull();
         charge!.MembershipId.Should().Be(membership!.Id);
+    }
+
+    [Fact]
+    public async Task Handle_LasFechasSalenDelDiaLocalDeLaEmpresa()
+    {
+        var companyId = Guid.NewGuid();
+        var plan = MembershipType.Create(companyId, "Mensual", MembershipBasis.Renewal, 35_000m, 1, "Month");
+        var member = MakeProspect(companyId, Guid.NewGuid());
+        _planRepo.GetByIdAsync(plan.Id, Arg.Any<CancellationToken>()).Returns(plan);
+        _memberRepo.GetByIdAsync(member.Id, Arg.Any<CancellationToken>()).Returns(member);
+        Charge? charge = null;
+        Membership? membership = null;
+        await _chargeRepo.AddAsync(Arg.Do<Charge>(c => charge = c), Arg.Any<CancellationToken>());
+        await _membershipRepo.AddAsync(Arg.Do<Membership>(m => membership = m), Arg.Any<CancellationToken>());
+
+        await Sut().Handle(new SellMembershipCommand(
+            companyId, Guid.NewGuid(), Guid.NewGuid(), null, member.Id, plan.Id, PaymentMethod.Cash),
+            CancellationToken.None);
+
+        membership!.StartDate.Should().Be(Today);
+        charge!.DueDate.Should().Be(Today);
+        member.JoinDate.Should().Be(Today);
     }
 
     [Fact]

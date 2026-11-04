@@ -30,6 +30,7 @@ public class PaymentRepository : IPaymentRepository
     public async Task<IReadOnlyList<Payment>> GetByPeriodAsync(
         Guid companyId, Guid siteId, DateTime from, DateTime to, CancellationToken ct = default) =>
         await _db.Payments
+            .AsNoTracking()
             .Include(p => p.Member)
             .Where(p => p.CompanyId == companyId && p.SiteId == siteId &&
                         p.ReceivedAt >= from && p.ReceivedAt < to &&
@@ -41,6 +42,7 @@ public class PaymentRepository : IPaymentRepository
     public async Task<IReadOnlyList<Payment>> GetForBreakdownAsync(
         Guid companyId, Guid? siteId, DateTime from, DateTime to, CancellationToken ct = default) =>
         await _db.Payments
+            .AsNoTracking()
             .IgnoreQueryFilters()
             .Include(p => p.Allocations).ThenInclude(a => a.Charge)
                 .ThenInclude(c => c.Membership!).ThenInclude(m => m.MembershipType)

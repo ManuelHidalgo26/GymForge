@@ -35,6 +35,8 @@ public partial class ReportsViewModel : ObservableObject
     // Cada carga lleva un número: una respuesta tardía de un reporte o rango anterior no pisa lo vigente.
     private int _loadVersion;
     private ExportPlan? _exportPlan;
+    private bool _rangeInitialized;
+    private bool _settingInitialRange;
 
     // ── Selección ────────────────────────────────────────────────────────────
     [ObservableProperty]
@@ -87,10 +89,6 @@ public partial class ReportsViewModel : ObservableObject
         _calendar = calendar;
         _exporter = exporter;
         _clock = clock;
-
-        var today = DateOnly.FromDateTime(DateTime.Today);
-        _from = new DateOnly(today.Year, today.Month, 1);
-        _to = today;
     }
 
     // ── Estado derivado para la vista ────────────────────────────────────────
@@ -107,12 +105,6 @@ public partial class ReportsViewModel : ObservableObject
     /// <summary>Solo la desagregada, altas/bajas y comisiones se pueden pedir de toda la empresa.</summary>
     public bool SupportsScope =>
         SelectedReport is ReportKind.RevenueBreakdown or ReportKind.MemberFlow or ReportKind.StaffCommissions;
-
-    /// <summary>El criterio de las comisiones (se congelan al vender), el mismo texto que lleva el archivo.</summary>
-    public string CommissionsNote => ReportBuilders.CommissionsNote;
-
-    /// <summary>El límite de "altas y bajas" (foto de hoy, bajas = cancelaciones), el mismo texto que lleva el archivo.</summary>
-    public string FlowNote => ReportBuilders.FlowNote;
 
     public int ActiveNow => Flow?.ActiveNow ?? 0;
     public int FrozenNow => StatusCount(MemberStatus.Frozen);
@@ -151,8 +143,8 @@ public partial class ReportsViewModel : ObservableObject
     };
 
     partial void OnIsLoadingChanged(bool value) => RefreshState();
-    partial void OnFromChanged(DateOnly? value) => _ = LoadAsync();
-    partial void OnToChanged(DateOnly? value) => _ = LoadAsync();
+    partial void OnFromChanged(DateOnly? value) => ReloadOnRangeChange();
+    partial void OnToChanged(DateOnly? value) => ReloadOnRangeChange();
     partial void OnCompanyWideChanged(bool value) => _ = LoadAsync();
 
     partial void OnSelectedReportChanged(ReportKind value)
@@ -161,6 +153,11 @@ public partial class ReportsViewModel : ObservableObject
         ExportedPath = null;
         CompleteLoad(plan: null);
         _ = LoadAsync();
+    }
+
+    private void ReloadOnRangeChange()
+    {
+        if (!_settingInitialRange) _ = LoadAsync();
     }
 
     private void RefreshState()
@@ -186,8 +183,10 @@ public partial class ReportsViewModel : ObservableObject
         var version = ++_loadVersion;
         IsLoading = true;
         Message = null;
+        ExportedPath = null;
         try
         {
+            await EnsureInitialRangeAsync(ct);
             await LoadSelectedAsync(version, ct);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
@@ -204,6 +203,26 @@ public partial class ReportsViewModel : ObservableObject
     }
 
     private bool IsStale(int version) => version != _loadVersion;
+
+    /// <summary>
+    /// Primera carga: el rango arranca en "este mes" según el día del gimnasio (no el de la zona de la PC).
+    /// No dispara una carga por cada fecha: la que está en curso ya lee el rango completo.
+    /// </summary>
+    private async Task EnsureInitialRangeAsync(CancellationToken ct)
+    {
+        if (_rangeInitialized) return;
+
+        if (From is null && To is null)
+        {
+            var today = await _calendar.TodayAsync(_session.CompanyId, ct);
+            _settingInitialRange = true;
+            From = new DateOnly(today.Year, today.Month, 1);
+            To = today;
+            _settingInitialRange = false;
+        }
+
+        _rangeInitialized = true;
+    }
 
     private Task LoadSelectedAsync(int version, CancellationToken ct)
     {
@@ -344,17 +363,17 @@ public partial class ReportsViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void ThisMonth()
+    private async Task ThisMonthAsync()
     {
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = await _calendar.TodayAsync(_session.CompanyId);
         From = new DateOnly(today.Year, today.Month, 1);
         To = today;
     }
 
     [RelayCommand]
-    private void Today()
+    private async Task TodayAsync()
     {
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = await _calendar.TodayAsync(_session.CompanyId);
         From = today;
         To = today;
     }

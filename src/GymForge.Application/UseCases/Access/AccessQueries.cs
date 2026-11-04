@@ -1,4 +1,5 @@
 using GymForge.Application.Interfaces;
+using GymForge.Application.Services;
 using GymForge.Domain.Enums;
 using MediatR;
 
@@ -38,13 +39,25 @@ public class GetTodaysAccessLogQueryHandler
     : IRequestHandler<GetTodaysAccessLogQuery, IReadOnlyList<AccessLogRowDto>>
 {
     private readonly IAccessLogRepository _logs;
-    public GetTodaysAccessLogQueryHandler(IAccessLogRepository logs) => _logs = logs;
+    private readonly ISiteRepository _sites;
+    private readonly ICompanyCalendar _calendar;
+
+    public GetTodaysAccessLogQueryHandler(IAccessLogRepository logs, ISiteRepository sites, ICompanyCalendar calendar)
+    {
+        _logs = logs;
+        _sites = sites;
+        _calendar = calendar;
+    }
 
     public async Task<IReadOnlyList<AccessLogRowDto>> Handle(GetTodaysAccessLogQuery q, CancellationToken ct)
     {
-        // SwipedAt se guarda en UTC; "hoy" es el día local del kiosko (corre en la sede).
-        var from = DateTime.Today.ToUniversalTime();
-        var to = DateTime.Today.AddDays(1).ToUniversalTime();
+        var company = await _sites.GetCompanyAsync(q.CompanyId, ct)
+            ?? throw new KeyNotFoundException($"Empresa {q.CompanyId} no encontrada.");
+
+        // SwipedAt se guarda en UTC; "hoy" es el día local del gimnasio, no el de la zona de la PC.
+        var today = _calendar.TodayFor(company);
+        var from = CompanyTime.StartOfDayUtc(today, company.Timezone);
+        var to = CompanyTime.StartOfDayUtc(today.AddDays(1), company.Timezone);
 
         var logs = await _logs.GetBySiteAsync(q.SiteId, from, to, ct);
         return logs
@@ -52,7 +65,7 @@ public class GetTodaysAccessLogQueryHandler
             .Take(50)
             .Select(l => new AccessLogRowDto(
                 l.Member?.FullName ?? "Desconocido",
-                l.SwipedAt.ToLocalTime(),
+                CompanyTime.ToLocal(l.SwipedAt, company.Timezone),
                 l.AccessGranted,
                 AccessMessages.Status(l.AccessGranted, l.DenialReason)))
             .ToList();

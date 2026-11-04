@@ -50,6 +50,17 @@ public class DunningSettingsTests
         DunningSettings.FromJson("""{"Enabled":true,"Stages":[]}""").Should().BeNull();
     }
 
+    [Theory]
+    [InlineData("""{"Enabled":true,"Stages":[{"DaysOverdue":2,"Label":"Aviso","Template":null}]}""")]
+    [InlineData("""{"Enabled":true,"Stages":[{"DaysOverdue":2,"Label":null,"Template":"Hola"}]}""")]
+    [InlineData("""{"Enabled":true,"Stages":[{"DaysOverdue":2,"Label":"Aviso","Template":"  "}]}""")]
+    [InlineData("""{"Enabled":true,"Stages":[null]}""")]
+    [InlineData("""{"Enabled":true,"Stages":[{"DaysOverdue":2,"Label":"Ok","Template":"Hola"},{"DaysOverdue":9}]}""")]
+    public void FromJson_EtapaConCamposNulosOVacios_EsConfigCorruptaYDevuelveNull(string json)
+    {
+        DunningSettings.FromJson(json).Should().BeNull();
+    }
+
     [Fact]
     public void Default_TraeLasCincoEtapasDeFabrica_ConElCobroApagado()
     {

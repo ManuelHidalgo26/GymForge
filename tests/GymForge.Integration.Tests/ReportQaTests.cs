@@ -10,6 +10,7 @@ using GymForge.Infrastructure.Persistence;
 using GymForge.Infrastructure.Repositories;
 using GymForge.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace GymForge.Integration.Tests;
@@ -57,7 +58,8 @@ public class ReportQaTests : IAsyncLifetime
 
         var sell = new SellMembershipCommandHandler(
             new MembershipTypeRepository(_db), new ChargeRepository(_db), new MembershipRepository(_db),
-            new MemberRepository(_db), new PaymentRepository(_db), Substitute.For<ICashRegister>(), new StaffRepository(_db));
+            new MemberRepository(_db), new PaymentRepository(_db), Substitute.For<ICashRegister>(), new StaffRepository(_db),
+            new CompanyCalendar(new SystemClock(), new SiteRepository(_db), NullLogger<CompanyCalendar>.Instance));
         await sell.Handle(
             new SellMembershipCommand(_company.Id, _site.Id, Guid.NewGuid(), null, member.Id, plan.Id, PaymentMethod.Cash),
             CancellationToken.None);
@@ -163,6 +165,25 @@ public class ReportQaTests : IAsyncLifetime
 
         pdf.Should().NotThrow($"PDF con texto '{caso}'");
         xlsx.Should().NotThrow($"Excel con texto '{caso}'");
+    }
+
+    [Fact]
+    public void Xlsx_UnTextoDeMasDe32767Caracteres_SeTruncaAlLimiteDeLaCeldaDeExcel()
+    {
+        var huge = new string('Z', 40_000);
+        var document = new ReportDocument(
+            new ReportBranding("Gym QA", null, null, null, null),
+            "Altas y bajas", "Toda la empresa", new DateTime(2026, 11, 3, 9, 0, 0),
+            [new ReportTable("Bajas", [new ReportColumn("Motivo", ReportColumnType.Text)], [[huge]])],
+            "altas-bajas-2026-11-03",
+            Note: huge);
+
+        var bytes = new ReportXlsxGenerator().Generate(document);
+
+        using var workbook = new XLWorkbook(new MemoryStream(bytes));
+        var sheet = workbook.Worksheet(1);
+        sheet.Cell("A5").GetString().Should().HaveLength(32_767);
+        sheet.Cell("A7").GetString().Should().HaveLength(32_767, "la nota también va a una celda");
     }
 
     [Fact]

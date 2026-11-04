@@ -15,6 +15,7 @@ using GymForge.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace GymForge.Integration.Tests;
@@ -241,7 +242,9 @@ public class TenantAdversarialIntegrationTests : IAsyncLifetime
             await _db.Members.AddAsync(MemberAt(_companyA, _siteA2, $"Extra{i}", $"5{i:D7}"));
         await _db.SaveChangesAsync();
         // Empresa A: 2 en A1 + (1 + inOtherSite) en A2 = max - 1 → entra uno más y el siguiente no.
-        var handler = new CreateMemberCommandHandler(new MemberRepository(_db), new CurrentLicense());
+        var handler = new CreateMemberCommandHandler(
+            new MemberRepository(_db), new CurrentLicense(),
+            new CompanyCalendar(new SystemClock(), new SiteRepository(_db), NullLogger<CompanyCalendar>.Instance));
         CreateMemberCommand NewMember(string dni) => new(
             _companyA.Id, _siteA1.Id, "Nuevo", "Socio", DocumentType.DNI, dni, Gender.Male, null, null, null);
 

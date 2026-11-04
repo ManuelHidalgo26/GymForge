@@ -39,7 +39,7 @@ public sealed class ReportExportService : IReportExportService
         if (file?.TryGetLocalPath() is not { } destination) return null;
 
         await File.WriteAllBytesAsync(destination, bytes, ct);
-        TryOpen(destination);
+        if (CanOpen(destination, extension)) TryOpen(destination);
         return destination;
     }
 
@@ -49,6 +49,13 @@ public sealed class ReportExportService : IReportExportService
         ReportFormat.Xlsx => new FilePickerFileType("Libro de Excel (*.xlsx)") { Patterns = ["*.xlsx"] },
         _ => throw new ArgumentOutOfRangeException(nameof(format), format, "Formato de reporte desconocido."),
     };
+
+    /// <summary>
+    /// El usuario puede escribir cualquier nombre en el diálogo de guardado: solo se abre el archivo si conserva la
+    /// extensión del formato exportado, así un nombre como <c>reporte.bat</c> no se ejecuta con el shell.
+    /// </summary>
+    public static bool CanOpen(string path, string expectedExtension) =>
+        string.Equals(Path.GetExtension(path), "." + expectedExtension, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Abre el archivo con el programa del sistema. Best-effort: si no hay visor, el archivo igual quedó guardado.</summary>
     private static void TryOpen(string path)

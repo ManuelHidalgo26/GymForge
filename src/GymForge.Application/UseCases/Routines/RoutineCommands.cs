@@ -1,5 +1,6 @@
 using FluentValidation;
 using GymForge.Application.Interfaces;
+using GymForge.Application.Services;
 using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
 using MediatR;
@@ -48,13 +49,19 @@ public class CreateRoutineCommandValidator : AbstractValidator<CreateRoutineComm
 public class CreateRoutineCommandHandler : IRequestHandler<CreateRoutineCommand, RoutineDto>
 {
     private readonly IRoutineRepository _repo;
-    public CreateRoutineCommandHandler(IRoutineRepository repo) => _repo = repo;
+    private readonly ICompanyCalendar _calendar;
+
+    public CreateRoutineCommandHandler(IRoutineRepository repo, ICompanyCalendar calendar)
+    {
+        _repo = repo;
+        _calendar = calendar;
+    }
 
     public async Task<RoutineDto> Handle(CreateRoutineCommand cmd, CancellationToken ct)
     {
         var routine = Routine.Create(
             cmd.CompanyId, cmd.MemberId, cmd.Name.Trim(), cmd.Goal,
-            DateOnly.FromDateTime(DateTime.Today), cmd.FrequencyPerWeek);
+            await _calendar.TodayAsync(cmd.CompanyId, ct), cmd.FrequencyPerWeek);
         await _repo.AddRoutineAsync(routine, ct);
         await _repo.SaveChangesAsync(ct);
         return RoutineDto.FromEntity(routine);

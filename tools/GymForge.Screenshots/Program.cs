@@ -235,7 +235,7 @@ liveLicense.State = licenseBeforeMismatch;
 
 // Clases v2: agenda semanal con un horario seleccionado y sus reservas
 var classesVm = new GymForge.Desktop.ViewModels.Classes.ClassesViewModel(
-    mediator2, sp.GetRequiredService<IMemberRepository>(), session);
+    mediator2, sp.GetRequiredService<IMemberRepository>(), session, sp.GetRequiredService<GymForge.Application.Services.ICompanyCalendar>());
 Pump(classesVm.LoadCommand.ExecuteAsync(null));
 classesVm.SelectedSchedule = classesVm.Schedules.FirstOrDefault(s => s.Id == sampleScheduleId)
     ?? classesVm.Schedules.FirstOrDefault();

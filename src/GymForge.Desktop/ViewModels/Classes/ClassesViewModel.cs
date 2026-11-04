@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using FluentValidation;
 using GymForge.Application.DTOs;
 using GymForge.Application.Interfaces;
+using GymForge.Application.Services;
 using GymForge.Application.UseCases.Classes;
 using GymForge.Desktop.Services;
 using MediatR;
@@ -18,6 +19,8 @@ public partial class ClassesViewModel : ObservableObject
     private readonly IMediator _mediator;
     private readonly IMemberRepository _memberRepo;
     private readonly SessionContext _session;
+    private readonly ICompanyCalendar _calendar;
+    private bool _weekInitialized;
 
     [ObservableProperty] private ObservableCollection<ClassDto> _classes = [];
     [ObservableProperty] private ObservableCollection<ScheduleRowDto> _schedules = [];
@@ -48,13 +51,13 @@ public partial class ClassesViewModel : ObservableObject
     public bool HasSelection => SelectedSchedule is not null;
     public string WeekLabel => $"{WeekStart:dd/MM} – {WeekStart.AddDays(6):dd/MM}";
 
-    public ClassesViewModel(IMediator mediator, IMemberRepository memberRepo, SessionContext session)
+    public ClassesViewModel(
+        IMediator mediator, IMemberRepository memberRepo, SessionContext session, ICompanyCalendar calendar)
     {
         _mediator = mediator;
         _memberRepo = memberRepo;
         _session = session;
-        _weekStart = MondayOf(DateOnly.FromDateTime(DateTime.Today));
-        _scheduleDate = _weekStart;
+        _calendar = calendar;
     }
 
     partial void OnSchedulesChanged(ObservableCollection<ScheduleRowDto> value) => OnPropertyChanged(nameof(IsEmpty));
@@ -74,6 +77,7 @@ public partial class ClassesViewModel : ObservableObject
         ErrorMessage = null;
         try
         {
+            await EnsureCurrentWeekAsync(ct);
             Classes = new ObservableCollection<ClassDto>(
                 await _mediator.Send(new GetClassesQuery(_session.CompanyId), ct));
 
@@ -84,6 +88,19 @@ public partial class ClassesViewModel : ObservableObject
         }
         finally { IsLoading = false; }
     }
+
+    /// <summary>La agenda arranca en la semana del día del gimnasio (no el de la zona de la PC).</summary>
+    private async Task EnsureCurrentWeekAsync(CancellationToken ct)
+    {
+        if (_weekInitialized) return;
+
+        WeekStart = await CurrentWeekStartAsync(ct);
+        ScheduleDate = WeekStart;
+        _weekInitialized = true;
+    }
+
+    private async Task<DateOnly> CurrentWeekStartAsync(CancellationToken ct = default) =>
+        MondayOf(await _calendar.TodayAsync(_session.CompanyId, ct));
 
     private async Task LoadSchedulesAsync(CancellationToken ct = default)
     {
@@ -107,7 +124,13 @@ public partial class ClassesViewModel : ObservableObject
 
     [RelayCommand] private void PrevWeek() { WeekStart = WeekStart.AddDays(-7); _ = LoadSchedulesAsync(); }
     [RelayCommand] private void NextWeek() { WeekStart = WeekStart.AddDays(7); _ = LoadSchedulesAsync(); }
-    [RelayCommand] private void ThisWeek() { WeekStart = MondayOf(DateOnly.FromDateTime(DateTime.Today)); _ = LoadSchedulesAsync(); }
+
+    [RelayCommand]
+    private async Task ThisWeekAsync()
+    {
+        WeekStart = await CurrentWeekStartAsync();
+        await LoadSchedulesAsync();
+    }
 
     // ── Catálogo: nueva clase ───────────────────────────────────────────────
     [RelayCommand] private void OpenForm() { ErrorMessage = null; IsFormOpen = true; }

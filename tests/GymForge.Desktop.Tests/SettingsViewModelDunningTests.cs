@@ -36,6 +36,27 @@ public class SettingsViewModelDunningTests
     }
 
     [Fact]
+    public async Task CopiarAhora_SiFallaElBackupLocal_NoAfirmaQueElResguardoLocalQuedoHecho()
+    {
+        var backup = Substitute.For<IDatabaseBackup>();
+        backup.BackupOffsiteNow().Returns(OffsiteBackupOutcome.LocalBackupFailed);
+        var settings = Substitute.For<ILocalSettings>();
+        settings.OffsiteBackupDir.Returns(@"E:\");
+        var session = await TestSession.InitializedAsync(_company, [], _dunning);
+        var vm = new SettingsViewModel(
+            _mediator, Substitute.For<ISiteRepository>(), Substitute.For<IMemberRepository>(), session,
+            new GatekeeperConfig(), new CurrentLicense(), Substitute.For<IDataTransfer>(),
+            backup, settings, Substitute.For<IMachineFingerprint>(),
+            new UpdateViewModel(Substitute.For<IUpdateService>()), _dunning);
+        await vm.LoadCommand.ExecuteAsync(null);
+
+        await vm.BackupOffsiteNowCommand.ExecuteAsync(null);
+
+        vm.OffsiteOk.Should().BeFalse();
+        vm.OffsiteMessage.Should().Contain("No se pudo crear el resguardo").And.NotContain("sí quedó hecho");
+    }
+
+    [Fact]
     public async Task Load_MuestraLaConfiguracionVigenteDelCobro()
     {
         _dunning.Enabled = true;

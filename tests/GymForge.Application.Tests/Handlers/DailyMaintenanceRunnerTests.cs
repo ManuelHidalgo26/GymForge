@@ -93,6 +93,19 @@ public class DailyMaintenanceRunnerTests
     }
 
     [Fact]
+    public async Task CheckpointFarInTheFuture_IsDistrusted_ProcessesTodayAndRewritesIt()
+    {
+        var company = CompanyIn(ArgentinaTz);
+        HaveCompanies(company);
+        _checkpoint.LastRun = Today.AddDays(3);
+
+        await Sut().RunPendingAsync();
+
+        DaysOf(company).Should().Equal(Today);
+        _checkpoint.LastRun.Should().Be(Today);
+    }
+
+    [Fact]
     public async Task SameDayTwice_IsANoOp()
     {
         var company = CompanyIn(ArgentinaTz);

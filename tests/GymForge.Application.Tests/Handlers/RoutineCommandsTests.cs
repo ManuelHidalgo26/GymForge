@@ -1,5 +1,6 @@
 using FluentAssertions;
 using GymForge.Application.Interfaces;
+using GymForge.Application.Services;
 using GymForge.Application.UseCases.Routines;
 using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
@@ -12,11 +13,16 @@ public class RoutineCommandsTests
     private readonly IRoutineRepository _repo = Substitute.For<IRoutineRepository>();
     private readonly Guid _companyId = Guid.NewGuid();
     private readonly Guid _memberId = Guid.NewGuid();
+    private readonly ICompanyCalendar _calendar = Substitute.For<ICompanyCalendar>();
+    private static readonly DateOnly Today = new(2026, 7, 21);
+
+    public RoutineCommandsTests() =>
+        _calendar.TodayAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(Today);
 
     [Fact]
     public async Task CreateRoutine_PersistsAndReturnsDto()
     {
-        var dto = await new CreateRoutineCommandHandler(_repo).Handle(
+        var dto = await new CreateRoutineCommandHandler(_repo, _calendar).Handle(
             new CreateRoutineCommand(_companyId, _memberId, "Full Body", WorkoutGoal.Hypertrophy, 3),
             CancellationToken.None);
 
@@ -24,6 +30,16 @@ public class RoutineCommandsTests
         dto.FrequencyPerWeek.Should().Be(3);
         await _repo.Received(1).AddRoutineAsync(
             Arg.Is<Routine>(r => r.MemberId == _memberId && r.Name == "Full Body"), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CreateRoutine_EmpiezaElDiaLocalDeLaEmpresa()
+    {
+        await new CreateRoutineCommandHandler(_repo, _calendar).Handle(
+            new CreateRoutineCommand(_companyId, _memberId, "Full Body", WorkoutGoal.Hypertrophy, 3),
+            CancellationToken.None);
+
+        await _repo.Received(1).AddRoutineAsync(Arg.Is<Routine>(r => r.StartDate == Today), Arg.Any<CancellationToken>());
     }
 
     [Fact]

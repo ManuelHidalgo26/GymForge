@@ -1,5 +1,6 @@
 using FluentValidation;
 using GymForge.Application.Interfaces;
+using GymForge.Application.Services;
 using GymForge.Domain.Entities;
 using GymForge.Domain.ValueObjects;
 using MediatR;
@@ -21,23 +22,23 @@ public sealed partial class ActivateLicenseCommandHandler : IRequestHandler<Acti
     private readonly ISiteRepository _repo;
     private readonly ILicenseService _licenses;
     private readonly CurrentLicense _current;
-    private readonly IClock _clock;
+    private readonly ICompanyCalendar _calendar;
     private readonly ILogger<ActivateLicenseCommandHandler> _log;
 
     public ActivateLicenseCommandHandler(
-        ISiteRepository repo, ILicenseService licenses, CurrentLicense current, IClock clock,
+        ISiteRepository repo, ILicenseService licenses, CurrentLicense current, ICompanyCalendar calendar,
         ILogger<ActivateLicenseCommandHandler> log)
     {
         _repo = repo;
         _licenses = licenses;
         _current = current;
-        _clock = clock;
+        _calendar = calendar;
         _log = log;
     }
 
     public async Task<LicenseState> Handle(ActivateLicenseCommand cmd, CancellationToken ct)
     {
-        var state = _licenses.Resolve(cmd.LicenseKey, _clock.Today);
+        var state = _licenses.Resolve(cmd.LicenseKey, await _calendar.TodayAsync(cmd.CompanyId, ct));
 
         if (state.Status == LicenseStatus.Expired)
             throw new InvalidOperationException(

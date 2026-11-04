@@ -13,6 +13,9 @@ public sealed class ReportXlsxGenerator
     private const string FallbackSheetName = "Reporte";
     private const int HeaderRow = 4;
 
+    /// <summary>Límite de Excel por celda: pasarlo hace que ClosedXML lance y se pierda el reporte entero.</summary>
+    private const int MaxCellTextLength = 32_767;
+
     private const string MoneyFormat = "\"$\"#,##0.00";
     private const string IntegerFormat = "0";
     private const string PercentFormat = "0.0%";
@@ -56,7 +59,7 @@ public sealed class ReportXlsxGenerator
         sheet.SheetView.FreezeRows(HeaderRow);
 
         if (!string.IsNullOrWhiteSpace(document.Note))
-            sheet.Cell(row + 1, 1).SetValue(document.Note).Style.Font.SetItalic().Font.SetFontColor(MutedText);
+            sheet.Cell(row + 1, 1).SetValue(CellText(document.Note)).Style.Font.SetItalic().Font.SetFontColor(MutedText);
     }
 
     private static void WriteBranding(IXLWorksheet sheet, ReportDocument document, XLColor brand)
@@ -103,7 +106,7 @@ public sealed class ReportXlsxGenerator
         switch (column.Type)
         {
             case ReportColumnType.Text:
-                cell.SetValue(ReportFormatting.Expect<string>(column, value));
+                cell.SetValue(CellText(ReportFormatting.Expect<string>(column, value)));
                 break;
             case ReportColumnType.Money:
                 cell.SetValue(ReportFormatting.Expect<decimal>(column, value));
@@ -163,6 +166,8 @@ public sealed class ReportXlsxGenerator
 
         return candidate;
     }
+
+    private static string CellText(string text) => Truncate(text, MaxCellTextLength);
 
     private static string Truncate(string text, int maxLength) =>
         text.Length <= maxLength ? text : text[..maxLength];

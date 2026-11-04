@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GymForge.Application.DTOs;
 using GymForge.Application.Interfaces;
+using GymForge.Application.Services;
 using GymForge.Desktop.Services;
 using GymForge.Domain.Enums;
 using MediatR;
@@ -20,6 +21,7 @@ public partial class ChargesViewModel : ObservableObject
     private readonly IMediator _mediator;
     private readonly SessionContext _session;
     private readonly ReceiptService _receipts;
+    private readonly ICompanyCalendar _calendar;
 
     // Injected at construction; null = mostrar todos los cobros del site
     private Guid? _filterMemberId;
@@ -43,12 +45,14 @@ public partial class ChargesViewModel : ObservableObject
     partial void OnIsLoadingChanged(bool value) => OnPropertyChanged(nameof(IsEmpty));
 
     public ChargesViewModel(
-        IChargeRepository chargeRepo, IMediator mediator, SessionContext session, ReceiptService receipts)
+        IChargeRepository chargeRepo, IMediator mediator, SessionContext session, ReceiptService receipts,
+        ICompanyCalendar calendar)
     {
         _chargeRepo = chargeRepo;
         _mediator   = mediator;
         _session    = session;
         _receipts   = receipts;
+        _calendar   = calendar;
     }
 
     /// <summary>Limita la vista a los cobros de un socio concreto.</summary>
@@ -63,18 +67,19 @@ public partial class ChargesViewModel : ObservableObject
         try
         {
             IReadOnlyList<Domain.Entities.Charge> raw;
+            var today = await _calendar.TodayAsync(_session.CompanyId, ct);
 
             if (_filterMemberId.HasValue)
             {
                 raw = StatusFilter == ChargeStatusFilter.Overdue
-                    ? (await _chargeRepo.GetOverdueAsync(_session.CompanyId, DateOnly.FromDateTime(DateTime.Today), ct))
+                    ? (await _chargeRepo.GetOverdueAsync(_session.CompanyId, today, ct))
                         .Where(c => c.MemberId == _filterMemberId).ToList()
                     : await _chargeRepo.GetPendingAsync(_filterMemberId.Value, ct);
             }
             else
             {
                 raw = StatusFilter == ChargeStatusFilter.Overdue
-                    ? await _chargeRepo.GetOverdueAsync(_session.CompanyId, DateOnly.FromDateTime(DateTime.Today), ct)
+                    ? await _chargeRepo.GetOverdueAsync(_session.CompanyId, today, ct)
                     : await _chargeRepo.GetOverdueAsync(_session.CompanyId, DateOnly.MaxValue, ct);
             }
 

@@ -24,6 +24,7 @@ public class SaleRepository : ISaleRepository
     public async Task<IReadOnlyList<SaleLine>> GetCommissionLinesBetweenAsync(
         Guid companyId, Guid? siteId, DateTime from, DateTime to, CancellationToken ct = default) =>
         await _db.SaleLines
+            .AsNoTracking()
             .IgnoreQueryFilters()
             .Include(l => l.Sale)
             .Where(l => l.Sale.CompanyId == companyId && (siteId == null || l.Sale.SiteId == siteId) &&

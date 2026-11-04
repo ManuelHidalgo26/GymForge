@@ -28,6 +28,7 @@ public class CuitTests
     [InlineData("30-7123456-1")]        // faltan dígitos
     [InlineData("30-71234567-12")]      // sobran dígitos
     [InlineData("30-7123456A-1")]       // letras
+    [InlineData("30-7123456٧-1")]       // dígito arábigo-índico (Unicode, no ASCII)
     public void TryParse_CuitInvalido_DevuelveFalseSinLanzar(string? text)
     {
         var parsed = Cuit.TryParse(text, out var cuit);

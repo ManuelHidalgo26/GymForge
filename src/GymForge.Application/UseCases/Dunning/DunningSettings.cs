@@ -17,10 +17,16 @@ public record DunningSettings(bool Enabled, IReadOnlyList<DunningStageSettings> 
         try
         {
             // Stages puede venir null en un JSON incompleto aunque el tipo no lo admita; sin etapas no hay config útil.
-            return JsonSerializer.Deserialize<DunningSettings>(json) is { Stages.Count: > 0 } settings ? settings : null;
+            return JsonSerializer.Deserialize<DunningSettings>(json) is { Stages.Count: > 0 } settings && settings.Stages.All(IsUsable)
+                ? settings
+                : null;
         }
         catch (JsonException) { return null; }
     }
+
+    // Una etapa con Label/Template vacío o null (JSON editado a mano) rompería el render del mensaje.
+    private static bool IsUsable(DunningStageSettings? stage) =>
+        stage is not null && !string.IsNullOrWhiteSpace(stage.Label) && !string.IsNullOrWhiteSpace(stage.Template);
 
     public string ToJson() => JsonSerializer.Serialize(this);
 

@@ -1,6 +1,7 @@
 using FluentAssertions;
 using GymForge.Application.DTOs;
 using GymForge.Application.Interfaces;
+using GymForge.Application.Services;
 using GymForge.Application.UseCases.Access;
 using GymForge.Application.UseCases.Dunning;
 using GymForge.Application.UseCases.Exercises;
@@ -42,10 +43,11 @@ public class MemberDetailViewModelTests
         var session = new SessionContext(
             scopeFactory, new GatekeeperConfig(), new DunningConfig(),
             new CurrentLicense(), Substitute.For<ILicenseService>());
-        var charges = new ChargesViewModel(chargeRepo, _mediator, session, new ReceiptService(scopeFactory));
+        var charges = new ChargesViewModel(
+            chargeRepo, _mediator, session, new ReceiptService(scopeFactory), Substitute.For<ICompanyCalendar>());
 
         return new MemberDetailViewModel(
-            _mediator, _membershipRepo, Substitute.For<IAccessLogRepository>(), chargeRepo, charges,
+            _mediator, _membershipRepo, Substitute.For<IAccessLogRepository>(), charges,
             new RoutineBuilderViewModel(_mediator, Substitute.For<IMemberRepository>(), session),
             session, Substitute.For<IImagePicker>(), Substitute.For<IMemberPhotoStore>());
     }
@@ -194,6 +196,33 @@ public class MemberDetailViewModelTests
         await act.Should().NotThrowAsync();
         vm.MembershipsMessage.Should().Be("La membresía no está congelada.");
         await _membershipRepo.Received(1).GetByMemberAsync(_member.Id, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CambiarDePestana_LimpiaElAvisoDeMembresias()
+    {
+        var vm = await SutOnMembershipsTabAsync();
+        _mediator.Send(Arg.Any<UnfreezeMembershipCommand>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new InvalidOperationException("La membresía no está congelada."));
+        await vm.ReactivateMembershipCommand.ExecuteAsync(MembershipDtoIn(MembershipStatus.Frozen));
+        vm.MembershipsMessage.Should().NotBeNull();
+
+        await vm.SwitchTabCommand.ExecuteAsync(MemberDetailTab.Access);
+
+        vm.MembershipsMessage.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task CargarOtroSocio_LimpiaElAvisoDeMembresias()
+    {
+        var vm = await SutOnMembershipsTabAsync();
+        _mediator.Send(Arg.Any<UnfreezeMembershipCommand>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new InvalidOperationException("La membresía no está congelada."));
+        await vm.ReactivateMembershipCommand.ExecuteAsync(MembershipDtoIn(MembershipStatus.Frozen));
+
+        await vm.LoadAsync(_member);
+
+        vm.MembershipsMessage.Should().BeNull();
     }
 
     // ── Datos: modo edición ───────────────────────────────────────────────────

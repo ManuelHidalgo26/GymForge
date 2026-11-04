@@ -51,4 +51,15 @@ public class DesktopWiringTests
         provider.GetRequiredService<IReportExportService>().Should().BeOfType<ReportExportService>();
         provider.GetRequiredService<ReportsViewModel>().Should().NotBeNull();
     }
+
+    [Fact]
+    public void EveryRegisteredService_HasResolvableConstructorDependencies()
+    {
+        var services = new ServiceCollection();
+        services.AddGymForgeDesktop("Data Source=:memory:");
+
+        var build = () => services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true }).Dispose();
+
+        build.Should().NotThrow();
+    }
 }

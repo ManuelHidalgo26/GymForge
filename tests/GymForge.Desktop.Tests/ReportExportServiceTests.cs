@@ -34,6 +34,19 @@ public class ReportExportServiceTests
         path.Should().BeNull("no hay ventana principal donde mostrar el diálogo, como si el usuario cancelara");
     }
 
+    [Theory]
+    [InlineData(@"C:\Users\dueno\reporte.pdf", "pdf", true)]
+    [InlineData(@"C:\Users\dueno\REPORTE.PDF", "pdf", true)]
+    [InlineData(@"C:\Users\dueno\reporte.xlsx", "xlsx", true)]
+    [InlineData(@"C:\Users\dueno\reporte.bat", "pdf", false)]
+    [InlineData(@"C:\Users\dueno\reporte.pdf.exe", "pdf", false)]
+    [InlineData(@"C:\Users\dueno\reporte", "pdf", false)]
+    [InlineData(@"C:\Users\dueno\reporte.xlsx", "pdf", false)]
+    public void CanOpen_SoloSiConservaLaExtensionDelFormatoExportado(string path, string extension, bool expected)
+    {
+        ReportExportService.CanOpen(path, extension).Should().Be(expected);
+    }
+
     [Fact]
     public async Task Export_SiElReporteEstaMalArmado_LanzaSinPedirDondeGuardar()
     {

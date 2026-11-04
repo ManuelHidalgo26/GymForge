@@ -1,8 +1,10 @@
 using FluentAssertions;
 using GymForge.Application.Interfaces;
 using GymForge.Desktop.Services;
+using GymForge.Desktop.ViewModels.Reports;
 using GymForge.Desktop.ViewModels.Settings;
 using GymForge.Desktop.ViewModels.Shared;
+using GymForge.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GymForge.Desktop.Tests;
@@ -38,5 +40,15 @@ public class DesktopWiringTests
 
         settings.Should().NotBeNull();
         provider.GetRequiredService<IMachineFingerprint>().Current().Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public void Reports_ResolveWithTheExporterAndTheSaveDialogService()
+    {
+        using var provider = BuildProvider();
+
+        provider.GetRequiredService<IReportExporter>().Should().BeOfType<ReportExporter>();
+        provider.GetRequiredService<IReportExportService>().Should().BeOfType<ReportExportService>();
+        provider.GetRequiredService<ReportsViewModel>().Should().NotBeNull();
     }
 }

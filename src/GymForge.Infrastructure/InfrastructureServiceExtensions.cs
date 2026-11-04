@@ -68,6 +68,12 @@ public static class InfrastructureServiceExtensions
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<IPinHasher, Pbkdf2PinHasher>();
         services.AddSingleton<IReceiptPdfWriter, ReceiptPdfGenerator>();
+
+        // Exportador genérico de reportes (PDF con QuestPDF, Excel con ClosedXML). Los generadores no
+        // guardan estado, como ReceiptPdfGenerator.
+        services.AddSingleton<ReportPdfGenerator>();
+        services.AddSingleton<ReportXlsxGenerator>();
+        services.AddSingleton<IReportExporter, ReportExporter>();
         services.AddScoped<IEventBus, InProcessEventBus>();
 
         // Notificaciones + cobro automático (dunning). Sender por defecto = log; el

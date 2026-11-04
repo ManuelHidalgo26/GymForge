@@ -6,6 +6,7 @@ using GymForge.Application.UseCases.Charges;
 using GymForge.Application.UseCases.Dunning;
 using GymForge.Application.UseCases.Licensing;
 using GymForge.Application.UseCases.Members;
+using GymForge.Application.UseCases.Reports;
 using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
 using GymForge.Infrastructure.Persistence;
@@ -284,6 +285,139 @@ public class TenantAdversarialIntegrationTests : IAsyncLifetime
         var log = await _db.AccessLogs.IgnoreQueryFilters().SingleAsync();
         log.CompanyId.Should().Be(_companyA.Id);
         log.MemberId.Should().BeNull();
+    }
+
+    // ── Reportes de dueño: cruzan las sedes de UNA empresa, nunca otra ───────
+
+    private async Task<(Payment A1, Payment A2, Payment B1)> SeedPaymentsAsync()
+    {
+        var a1 = Payment.Create(_companyA.Id, _siteA1.Id, null, Guid.NewGuid(), 10_000m, PaymentMethod.Cash);
+        var a2 = Payment.Create(_companyA.Id, _siteA2.Id, null, Guid.NewGuid(), 5_000m, PaymentMethod.BankTransfer);
+        var b1 = Payment.Create(_companyB.Id, _siteB1.Id, null, Guid.NewGuid(), 99_000m, PaymentMethod.Cash);
+        await _db.Payments.AddRangeAsync(a1, a2, b1);
+        await _db.SaveChangesAsync();
+        _db.ChangeTracker.Clear();
+        return (a1, a2, b1);
+    }
+
+    private GetRevenueBreakdownQueryHandler BreakdownHandler() =>
+        new(new PaymentRepository(_db), new SiteRepository(_db));
+
+    private static GetRevenueBreakdownQuery BreakdownQuery(Guid companyId, Guid? siteId) =>
+        new(companyId, siteId, DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)), DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)));
+
+    [Fact]
+    public async Task RevenueBreakdown_CompanyWide_CrossesTheSitesOfTheCompany_ButNeverAnotherCompany()
+    {
+        var (a1, a2, _) = await SeedPaymentsAsync();
+
+        var result = await new PaymentRepository(_db).GetForBreakdownAsync(
+            _companyA.Id, null, DateTime.UtcNow.AddHours(-1), DateTime.UtcNow.AddHours(1));
+
+        result.Select(p => p.Id).Should().BeEquivalentTo([a1.Id, a2.Id], "B1 es de otra empresa");
+    }
+
+    [Fact]
+    public async Task RevenueBreakdown_WithAForeignSite_ReturnsNothing()
+    {
+        await SeedPaymentsAsync();
+
+        var breakdown = await BreakdownHandler().Handle(BreakdownQuery(_companyA.Id, _siteB1.Id), CancellationToken.None);
+
+        breakdown.Total.Should().Be(0m, "la sede B1 no es de la empresa A: el CompanyId explícito la deja afuera");
+        breakdown.ByMethod.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task RevenueBreakdown_Handler_ReconcilesTheThreeCutsAcrossSites_WithoutAnotherCompany()
+    {
+        await SeedPaymentsAsync();
+
+        var breakdown = await BreakdownHandler().Handle(BreakdownQuery(_companyA.Id, null), CancellationToken.None);
+
+        breakdown.Total.Should().Be(15_000m);
+        breakdown.ByMethod.Sum(r => r.Amount).Should().Be(15_000m);
+        breakdown.ByConcept.Sum(r => r.Amount).Should().Be(15_000m);
+        breakdown.BySite.Select(r => (r.Label, r.Amount)).Should().Equal(("A Centro", 10_000m), ("A Norte", 5_000m));
+    }
+
+    [Fact]
+    public async Task RevenueBreakdown_WithOneSite_DoesNotSeeTheOtherSiteOfTheCompany()
+    {
+        await SeedPaymentsAsync();
+
+        var breakdown = await BreakdownHandler().Handle(BreakdownQuery(_companyA.Id, _siteA2.Id), CancellationToken.None);
+
+        breakdown.Total.Should().Be(5_000m);
+        breakdown.BySite.Should().ContainSingle(r => r.Label == "A Norte");
+    }
+
+    private static readonly DateOnly FlowDay = DateOnly.FromDateTime(DateTime.UtcNow);
+
+    private GetMemberFlowQueryHandler FlowHandler() =>
+        new(new MemberRepository(_db), new MembershipRepository(_db), new SiteRepository(_db));
+
+    private static GetMemberFlowQuery FlowQuery(Guid companyId, Guid? siteId) =>
+        new(companyId, siteId, FlowDay.AddDays(-1), FlowDay.AddDays(1));
+
+    /// <summary>Activa a los cuatro socios del mundo y cancela una membresía en A2 y otra en B1 (hoy).</summary>
+    private async Task SeedFlowAsync()
+    {
+        foreach (var member in new[] { _memberA1, _memberA1Other, _memberA2, _memberB1 })
+            member.Activate(FlowDay);
+
+        foreach (var (company, site, member) in new[]
+                 {
+                     (_companyA, _siteA2, _memberA2),
+                     (_companyB, _siteB1, _memberB1),
+                 })
+        {
+            var plan = MembershipType.Create(company.Id, $"Plan {company.LegalName}", MembershipBasis.Renewal, 10_000m);
+            var membership = Membership.Create(company.Id, site.Id, member.Id, plan.Id, FlowDay, null);
+            membership.Cancel("Baja de prueba");
+            await _db.MembershipTypes.AddAsync(plan);
+            await _db.Memberships.AddAsync(membership);
+        }
+
+        await _db.SaveChangesAsync();
+        _db.ChangeTracker.Clear();
+    }
+
+    [Fact]
+    public async Task MemberFlow_CompanyWide_CrossesTheSitesOfTheCompany_ButNeverAnotherCompany()
+    {
+        await SeedFlowAsync();
+
+        var flow = await FlowHandler().Handle(FlowQuery(_companyA.Id, null), CancellationToken.None);
+
+        flow.ActiveNow.Should().Be(3, "A1 (2 socios) + A2; el socio de B1 no cuenta");
+        flow.Joins.Select(j => j.Document).Should().BeEquivalentTo(["40000001", "40000004", "40000002"]);
+        flow.Leaves.Should().ContainSingle(l => l.Plan == "Plan Gym A");
+        flow.Net.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task MemberFlow_WithOneSite_DoesNotSeeTheOtherSiteOfTheCompany()
+    {
+        await SeedFlowAsync();
+
+        var flow = await FlowHandler().Handle(FlowQuery(_companyA.Id, _siteA1.Id), CancellationToken.None);
+
+        flow.ActiveNow.Should().Be(2);
+        flow.Joins.Should().HaveCount(2);
+        flow.Leaves.Should().BeEmpty("la baja de prueba es de la sede A2");
+    }
+
+    [Fact]
+    public async Task MemberFlow_WithAForeignSite_ReturnsNothing()
+    {
+        await SeedFlowAsync();
+
+        var flow = await FlowHandler().Handle(FlowQuery(_companyA.Id, _siteB1.Id), CancellationToken.None);
+
+        flow.ActiveNow.Should().Be(0);
+        flow.Joins.Should().BeEmpty();
+        flow.Leaves.Should().BeEmpty();
     }
 
     // ── Migración: el cambio de schema no pierde el historial de accesos ─────

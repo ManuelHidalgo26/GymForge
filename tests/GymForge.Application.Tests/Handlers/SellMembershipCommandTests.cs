@@ -60,6 +60,29 @@ public class SellMembershipCommandTests
     }
 
     [Fact]
+    public async Task Handle_LaCuotaQuedaVinculadaALaMembresiaVendida_ParaQueLosReportesLaAtribuyanAlPlan()
+    {
+        var companyId = Guid.NewGuid();
+        var siteId = Guid.NewGuid();
+        var plan = MembershipType.Create(companyId, "Mensual", MembershipBasis.Renewal, 35_000m, 1, "Month");
+        var member = MakeProspect(companyId, siteId);
+        _planRepo.GetByIdAsync(plan.Id, Arg.Any<CancellationToken>()).Returns(plan);
+        _memberRepo.GetByIdAsync(member.Id, Arg.Any<CancellationToken>()).Returns(member);
+        Charge? charge = null;
+        Membership? membership = null;
+        await _chargeRepo.AddAsync(Arg.Do<Charge>(c => charge = c), Arg.Any<CancellationToken>());
+        await _membershipRepo.AddAsync(Arg.Do<Membership>(m => membership = m), Arg.Any<CancellationToken>());
+
+        await Sut().Handle(new SellMembershipCommand(
+            companyId, siteId, Guid.NewGuid(), null, member.Id, plan.Id, PaymentMethod.Cash),
+            CancellationToken.None);
+
+        membership.Should().NotBeNull();
+        charge.Should().NotBeNull();
+        charge!.MembershipId.Should().Be(membership!.Id);
+    }
+
+    [Fact]
     public async Task Handle_AlreadyActiveMember_DoesNotResetJoinDate()
     {
         var companyId = Guid.NewGuid();

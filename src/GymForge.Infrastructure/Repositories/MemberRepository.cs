@@ -119,4 +119,22 @@ public class MemberRepository : IMemberRepository
             .IgnoreQueryFilters()
             .Where(m => m.CompanyId == companyId && m.Status == status)
             .ToListAsync(ct);
+
+    // Reportes de dueño: IgnoreQueryFilters solo abre la sede; el CompanyId explícito mantiene el límite de empresa.
+    public async Task<IReadOnlyDictionary<MemberStatus, int>> CountByStatusAsync(
+        Guid companyId, Guid? siteId, CancellationToken ct = default) =>
+        await _db.Members
+            .IgnoreQueryFilters()
+            .Where(m => m.CompanyId == companyId && (siteId == null || m.SiteId == siteId))
+            .GroupBy(m => m.Status)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Status, x => x.Count, ct);
+
+    public async Task<IReadOnlyList<Member>> GetJoinedBetweenAsync(
+        Guid companyId, Guid? siteId, DateOnly from, DateOnly to, CancellationToken ct = default) =>
+        await _db.Members
+            .IgnoreQueryFilters()
+            .Where(m => m.CompanyId == companyId && (siteId == null || m.SiteId == siteId) &&
+                        m.JoinDate >= from && m.JoinDate <= to)
+            .ToListAsync(ct);
 }

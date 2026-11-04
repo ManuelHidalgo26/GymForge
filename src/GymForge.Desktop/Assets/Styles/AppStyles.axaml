@@ -122,6 +122,18 @@
         <Setter Property="FontSize" Value="12" />
         <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
     </Style>
+    <!-- KPI de una card: etiqueta (secundario, AA) + cifra grande. Mismo tamaño que las cards del Dashboard
+         (13 / 30 bold); la cifra es tabular, igual que Numeric. -->
+    <Style Selector="TextBlock.KpiLabel">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+    <Style Selector="TextBlock.KpiValue">
+        <Setter Property="FontSize" Value="30" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="FontFeatures" Value="+tnum" />
+    </Style>
     <!-- Cifras tabulares: montos y KPIs alinean en columnas y no "bailan" al cambiar.
          FontFeatures se hereda a los Run hijos, así que sirve para textos con $ + Run. -->
     <Style Selector="TextBlock.Numeric">
@@ -182,8 +194,10 @@
     <Style Selector="Border.Pill.danger">
         <Setter Property="Background" Value="{DynamicResource DangerTintBrush}" />
     </Style>
+    <!-- El texto del pill danger usa DangerTextBrush (no DangerBrush): sobre su propio tinte DangerBrush daba
+         ≈4,0:1 en light y ≈3,6:1 en dark (< AA a 11 px); DangerTextBrush da ≈5,4:1 y ≈5,3:1 (UX6). -->
     <Style Selector="Border.Pill.danger > TextBlock">
-        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource DangerTextBrush}" />
     </Style>
     <Style Selector="Border.Pill.info">
         <Setter Property="Background" Value="{DynamicResource InfoTintBrush}" />
@@ -283,10 +297,12 @@
         <Setter Property="HorizontalAlignment" Value="Center" />
         <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
     </Style>
+    <!-- Texto de apoyo del estado vacío: explica qué hacer, así que va en el secundario (AA ≈6:1).
+         El terciario daba ≈3,3:1 (UX21 b). La jerarquía con el título la dan el tamaño y el peso. -->
     <Style Selector="TextBlock.EmptyBody">
         <Setter Property="FontSize" Value="12" />
         <Setter Property="HorizontalAlignment" Value="Center" />
-        <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
     </Style>
 
     <!-- Encabezado de grupo del sidebar (se oculta al colapsar) -->

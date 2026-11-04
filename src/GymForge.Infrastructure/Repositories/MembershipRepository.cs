@@ -80,4 +80,15 @@ public class MembershipRepository : IMembershipRepository
                 m.FreezeEnd != null &&
                 m.FreezeEnd <= asOf)
             .ToListAsync(ct);
+
+    // Reporte de dueño: IgnoreQueryFilters solo abre la sede; el CompanyId explícito mantiene el límite de empresa.
+    public async Task<IReadOnlyList<Membership>> GetCancelledBetweenAsync(
+        Guid companyId, Guid? siteId, DateTime from, DateTime to, CancellationToken ct = default) =>
+        await _db.Memberships
+            .IgnoreQueryFilters()
+            .Include(m => m.Member)
+            .Include(m => m.MembershipType)
+            .Where(m => m.CompanyId == companyId && (siteId == null || m.SiteId == siteId) &&
+                        m.CancelDate >= from && m.CancelDate < to)
+            .ToListAsync(ct);
 }

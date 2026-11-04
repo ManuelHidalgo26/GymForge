@@ -2,6 +2,7 @@ using System.Globalization;
 using Avalonia.Data.Converters;
 using GymForge.Desktop.ViewModels.Cash;
 using GymForge.Desktop.ViewModels.Charges;
+using GymForge.Desktop.ViewModels.Reports;
 using GymForge.Domain.Enums;
 
 namespace GymForge.Desktop.Converters;
@@ -69,6 +70,12 @@ public class EnumDisplayConverter : IValueConverter
         // Concepto de cobro
         [SaleConcept.Membership] = "Membresía",
         [SaleConcept.Product] = "Producto",
+
+        // Reportes
+        [ReportKind.Payments] = "Recaudación del período",
+        [ReportKind.RevenueBreakdown] = "Recaudación desagregada",
+        [ReportKind.Overdue] = "Morosos",
+        [ReportKind.MemberFlow] = "Altas y bajas",
 
         // Filtro de cobros
         [ChargeStatusFilter.Pending] = "Pendientes",

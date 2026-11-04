@@ -72,9 +72,16 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
 
         var today = DateOnly.FromDateTime(DateTime.Today);
 
+        // Membresía activa según la duración del plan. Va primero: la cuota se vincula a ella para que los
+        // reportes atribuyan lo cobrado al plan.
+        var membership = Membership.Create(
+            cmd.CompanyId, cmd.SiteId, cmd.MemberId, plan.Id,
+            today, plan.CalculateEndDate(today), soldByStaffId: cmd.CashierId);
+        membership.Activate();
+
         // Cuota + pago que la salda.
         var charge = Charge.Create(
-            cmd.CompanyId, cmd.SiteId, cmd.MemberId, null,
+            cmd.CompanyId, cmd.SiteId, cmd.MemberId, membership.Id,
             ConceptType.MembershipFee, $"Cuota {plan.Name}", plan.Price, today);
         charge.ApplyPayment(plan.Price);
 
@@ -83,12 +90,6 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
             plan.Price, cmd.Method, cmd.ShiftId, cmd.CardLast4);
         payment.Allocations.Add(PaymentAllocation.Create(payment.Id, charge.Id, plan.Price));
 
-        // Membresía activa según la duración del plan.
-        var membership = Membership.Create(
-            cmd.CompanyId, cmd.SiteId, cmd.MemberId, plan.Id,
-            today, plan.CalculateEndDate(today), soldByStaffId: cmd.CashierId);
-        membership.Activate();
-
         // El socio pasa a Activo (deja de ser prospecto / vencido).
         if (member.Status != MemberStatus.Active)
         {
@@ -96,8 +97,8 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
             _memberRepo.Update(member);
         }
 
-        await _chargeRepo.AddAsync(charge, ct);
         await _membershipRepo.AddAsync(membership, ct);
+        await _chargeRepo.AddAsync(charge, ct);
         await _paymentRepo.AddAsync(payment, ct);
         await _cashRegister.PostIfCashAsync(
             cmd.Method, cmd.ShiftId, CashMovementCategory.Membership, plan.Price, payment.Id, ct);

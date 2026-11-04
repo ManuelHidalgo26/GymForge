@@ -2,92 +2,578 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:fa="using:FluentAvalonia.UI.Controls"
              xmlns:vm="using:GymForge.Desktop.ViewModels.Reports"
+             xmlns:col="using:GymForge.Desktop.ViewModels.Collections"
+             xmlns:app="using:GymForge.Application.Interfaces"
              xmlns:rep="using:GymForge.Application.UseCases.Reports"
              x:Class="GymForge.Desktop.Views.Reports.ReportsView"
              x:DataType="vm:ReportsViewModel">
 
+    <UserControl.Resources>
+        <!-- Estas grillas son informativas: tocar una fila no "elige" nada. El resaltado de fila seleccionada
+             del tema (acento a ~70%, UX17) pesa más que los datos, así que acá queda apenas tintado.
+             Si funciona en captura, subirlo a AppStyles para todas las grillas (UX17). -->
+        <x:Double x:Key="DataGridRowSelectedBackgroundOpacity">0.12</x:Double>
+        <x:Double x:Key="DataGridRowSelectedHoveredBackgroundOpacity">0.16</x:Double>
+        <x:Double x:Key="DataGridRowSelectedUnfocusedBackgroundOpacity">0.08</x:Double>
+        <x:Double x:Key="DataGridRowSelectedHoveredUnfocusedBackgroundOpacity">0.12</x:Double>
+    </UserControl.Resources>
+
     <Grid RowDefinitions="Auto,Auto,*">
 
-        <!-- ── Toolbar: rango de fechas ───────────────────────────────────── -->
+        <!-- ── Toolbar: qué reporte, sobre qué datos y cómo llevárselo ───────────
+             Fila 1: título + selector | actualizar + exportar.
+             Fila 2: filtros (rango y alcance) o, en Morosos, la aclaración de que es "a hoy".
+             El orden de tabulación sigue el orden visual: selector, actualizar, PDF, Excel, filtros. -->
         <Border Grid.Row="0" Classes="Toolbar">
-            <DockPanel>
-                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="10">
-                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Document}" FontSize="20" VerticalAlignment="Center" />
-                    <TextBlock Text="Reportes" Classes="ToolbarTitle" />
-                </StackPanel>
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8"
-                            HorizontalAlignment="Right">
-                    <TextBlock Text="Desde" Classes="FormLabel" VerticalAlignment="Center" />
-                    <DatePicker SelectedDate="{Binding From, Converter={StaticResource DateOnlyOffset}}" />
-                    <TextBlock Text="Hasta" Classes="FormLabel" VerticalAlignment="Center" />
-                    <DatePicker SelectedDate="{Binding To, Converter={StaticResource DateOnlyOffset}}" />
-                    <Button Content="Hoy" Command="{Binding TodayCommand}" Classes="Ghost" />
-                    <Button Content="Este mes" Command="{Binding ThisMonthCommand}" Classes="Ghost" />
-                </StackPanel>
-            </DockPanel>
+            <StackPanel Spacing="10">
+
+                <DockPanel LastChildFill="False">
+                    <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="Reportes" Classes="ToolbarTitle" />
+                        <ComboBox ItemsSource="{x:Static vm:ReportsViewModel.ReportKinds}"
+                                  SelectedItem="{Binding SelectedReport}"
+                                  Width="250" VerticalAlignment="Center"
+                                  AutomationProperties.Name="Reporte a mostrar">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ReportKind">
+                                    <TextBlock Text="{Binding Converter={StaticResource EnumEs}}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <!-- Dos formatos = dos botones a la vista (un clic, sin menú). Se habilitan cuando el
+                         reporte cargado tiene datos; lo que se exporta es lo que se ve. -->
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8"
+                                VerticalAlignment="Center">
+                        <Button Classes="Ghost" Command="{Binding LoadCommand}"
+                                ToolTip.Tip="Actualizar"
+                                AutomationProperties.Name="Actualizar el reporte">
+                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Refresh}" FontSize="16" />
+                        </Button>
+                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Save}" FontSize="16" Margin="8,0,0,0"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <TextBlock Text="Exportar" Classes="FormLabel" VerticalAlignment="Center" />
+                        <Button Content="PDF" Classes="Secondary"
+                                Command="{Binding ExportCommand}"
+                                CommandParameter="{x:Static app:ReportFormat.Pdf}"
+                                ToolTip.Tip="Guardar este reporte como PDF"
+                                AutomationProperties.Name="Exportar el reporte a PDF" />
+                        <Button Content="Excel" Classes="Secondary"
+                                Command="{Binding ExportCommand}"
+                                CommandParameter="{x:Static app:ReportFormat.Xlsx}"
+                                ToolTip.Tip="Guardar este reporte como Excel (.xlsx)"
+                                AutomationProperties.Name="Exportar el reporte a Excel" />
+                    </StackPanel>
+                </DockPanel>
+
+                <!-- Rango de fechas y alcance. Se parte en líneas si la ventana es angosta. Morosos no usa
+                     rango (es "a hoy"): ahí va la aclaración de abajo. -->
+                <WrapPanel ItemSpacing="16" LineSpacing="8" IsVisible="{Binding UsesDateRange}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="Desde" Classes="FormLabel" VerticalAlignment="Center" />
+                        <DatePicker SelectedDate="{Binding From, Converter={StaticResource DateOnlyOffset}}"
+                                    AutomationProperties.Name="Fecha desde" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="Hasta" Classes="FormLabel" VerticalAlignment="Center" />
+                        <DatePicker SelectedDate="{Binding To, Converter={StaticResource DateOnlyOffset}}"
+                                    AutomationProperties.Name="Fecha hasta" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                        <Button Content="Hoy" Command="{Binding TodayCommand}" Classes="Ghost"
+                                AutomationProperties.Name="Ver solo hoy" />
+                        <Button Content="Este mes" Command="{Binding ThisMonthCommand}" Classes="Ghost"
+                                AutomationProperties.Name="Ver este mes" />
+                    </StackPanel>
+                    <ToggleSwitch IsVisible="{Binding SupportsScope}"
+                                  IsChecked="{Binding CompanyWide}"
+                                  OnContent="Toda la empresa" OffContent="Solo esta sede"
+                                  VerticalAlignment="Center"
+                                  AutomationProperties.Name="Alcance del reporte" />
+                </WrapPanel>
+
+                <TextBlock IsVisible="{Binding IsOverdueReport}" Classes="FormLabel" TextWrapping="Wrap"
+                           Text="Socios con cuotas vencidas a hoy en esta sede. Este reporte no usa rango de fechas." />
+            </StackPanel>
         </Border>
 
-        <!-- ── KPIs del período ───────────────────────────────────────────── -->
-        <Grid Grid.Row="1" ColumnDefinitions="*,*" Margin="16,12" ColumnSpacing="12">
-            <Border Grid.Column="0" Classes="Card">
-                <StackPanel Spacing="2">
-                    <TextBlock Text="Recaudación del período" Classes="FormLabel" />
-                    <TextBlock Text="{Binding Total, StringFormat={}{0:C}}" FontSize="24" FontWeight="Bold" Classes="Numeric" />
-                </StackPanel>
-            </Border>
-            <Border Grid.Column="1" Classes="Card">
-                <StackPanel Spacing="2">
-                    <TextBlock Text="Pagos registrados" Classes="FormLabel" />
-                    <TextBlock Text="{Binding Count}" FontSize="24" FontWeight="Bold" Classes="Numeric" />
-                </StackPanel>
-            </Border>
-        </Grid>
+        <!-- Cargando: línea indeterminada sobre el borde inferior del toolbar. Sirve a los cuatro reportes
+             (dos de ellos no tienen footer donde poner un anillo, como Cobros o Morosos). -->
+        <ProgressBar Grid.Row="0" VerticalAlignment="Bottom" Height="3" MinHeight="3"
+                     Background="Transparent" IsIndeterminate="True"
+                     IsHitTestVisible="False" IsVisible="{Binding IsLoading}"
+                     AutomationProperties.Name="Actualizando el reporte" />
 
-        <!-- ── Tabla de pagos ─────────────────────────────────────────────── -->
-        <DataGrid Grid.Row="2"
-                  ItemsSource="{Binding Rows}"
-                  IsReadOnly="True" AutoGenerateColumns="False" CanUserSortColumns="True"
-                  Margin="16,0,16,12">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Fecha"
-                                    Binding="{Binding ReceivedAt, StringFormat={}{0:dd/MM/yyyy HH:mm}}"
-                                    Width="160" />
-                <DataGridTextColumn Header="Socio" Binding="{Binding MemberName}" Width="*" />
-                <DataGridTemplateColumn Header="Método" Width="170" SortMemberPath="Method">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate x:DataType="rep:ReportPaymentRow">
-                            <TextBlock Text="{Binding Method, Converter={StaticResource EnumEs}}"
-                                       VerticalAlignment="Center" Margin="8,0" />
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-                <DataGridTextColumn Header="Monto"
-                                    Binding="{Binding Amount, StringFormat={}{0:C}}" Width="140" />
-                <DataGridTemplateColumn Header="" Width="140">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate x:DataType="rep:ReportPaymentRow">
-                            <Button Classes="Ghost" Margin="8,0" HorizontalAlignment="Center"
-                                    ToolTip.Tip="Reimprimir recibo"
-                                    Command="{Binding ((vm:ReportsViewModel)DataContext).ReprintReceiptCommand,
-                                              RelativeSource={RelativeSource AncestorType=DataGrid}}"
-                                    CommandParameter="{Binding PaymentId}">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Print}" />
-                                    <TextBlock Text="Recibo" />
-                                </StackPanel>
-                            </Button>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-            </DataGrid.Columns>
-        </DataGrid>
-
-        <!-- ── Estado vacío ───────────────────────────────────────────────── -->
-        <StackPanel Grid.Row="2" Classes="EmptyState" IsVisible="{Binding IsEmpty}">
-            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Document}" />
-            <TextBlock Classes="EmptyTitle" Text="Sin pagos en el período" />
-            <TextBlock Classes="EmptyBody" Text="Ajustá el rango de fechas o registrá cobros desde Caja." />
+        <!-- ── Avisos: error al cargar o exportar, y dónde quedó el archivo ─────
+             El InfoBar cerrado se oculta por dentro pero su Margin sigue ocupando lugar (2 x 16 = 32 px de
+             aire muerto bajo el toolbar). Por eso el margen vive en un Border que se colapsa junto con el
+             aviso: mismo patrón que el banner de actualización de MainWindow. Abierto se ve igual que antes. -->
+        <StackPanel Grid.Row="1">
+            <Border Margin="16,8,16,8"
+                    IsVisible="{Binding Message, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <fa:InfoBar IsOpen="{Binding Message, Converter={x:Static ObjectConverters.IsNotNull}}"
+                            Severity="Warning"
+                            Title="Atención"
+                            Message="{Binding Message}"
+                            IsClosable="False"
+                            AutomationProperties.LiveSetting="Polite" />
+            </Border>
+            <Border Margin="16,8,16,8"
+                    IsVisible="{Binding ExportedPath, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <fa:InfoBar IsOpen="{Binding ExportedPath, Converter={x:Static ObjectConverters.IsNotNull}}"
+                            Severity="Success"
+                            Title="Reporte guardado"
+                            Message="{Binding ExportedPath}"
+                            IsClosable="False"
+                            AutomationProperties.LiveSetting="Polite" />
+            </Border>
         </StackPanel>
+
+        <!-- ── Contenido: un panel por reporte, se ve solo el elegido ─────────── -->
+        <Grid Grid.Row="2">
+
+            <!-- ═══ Recaudación del período: grilla a sangre + total en el footer (como Cobros) ═══ -->
+            <Grid RowDefinitions="*,Auto" IsVisible="{Binding IsPaymentsReport}">
+
+                <DataGrid Grid.Row="0"
+                          ItemsSource="{Binding Rows}"
+                          IsReadOnly="True" AutoGenerateColumns="False" CanUserSortColumns="True"
+                          AutomationProperties.Name="Pagos del período">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Fecha"
+                                            Binding="{Binding ReceivedAt, StringFormat={}{0:dd/MM/yyyy HH:mm}}"
+                                            Width="160" />
+                        <DataGridTextColumn Header="Socio" Binding="{Binding MemberName}" Width="*" />
+                        <DataGridTemplateColumn Header="Método" Width="170" SortMemberPath="Method">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate x:DataType="rep:ReportPaymentRow">
+                                    <TextBlock Text="{Binding Method, Converter={StaticResource EnumEs}}"
+                                               VerticalAlignment="Center" Margin="12,0" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <!-- El monto es el dato de la fila: va en SemiBold (cifras tabulares, las hereda la grilla) -->
+                        <DataGridTemplateColumn Header="Monto" Width="150" SortMemberPath="Amount">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate x:DataType="rep:ReportPaymentRow">
+                                    <TextBlock Text="{Binding Amount, StringFormat={}{0:C}}"
+                                               FontWeight="SemiBold" VerticalAlignment="Center" Margin="12,0" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <!-- El nombre accesible lleva al socio: sin eso se lee "Recibo, Recibo, Recibo…" -->
+                        <DataGridTemplateColumn Header="Acciones" Width="140" IsReadOnly="True">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate x:DataType="rep:ReportPaymentRow">
+                                    <Button Classes="Ghost" Margin="8,0" HorizontalAlignment="Center"
+                                            ToolTip.Tip="Reimprimir recibo"
+                                            AutomationProperties.Name="{Binding MemberName, StringFormat='Reimprimir el recibo de {0}'}"
+                                            Command="{Binding ((vm:ReportsViewModel)DataContext).ReprintReceiptCommand,
+                                                      RelativeSource={RelativeSource AncestorType=DataGrid}}"
+                                            CommandParameter="{Binding PaymentId}">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Print}" FontSize="16" />
+                                            <TextBlock Text="Recibo" />
+                                        </StackPanel>
+                                    </Button>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!-- Footer: cantidad a la izquierda, total a la derecha. Se oculta si no hay pagos
+                     (un total en $0,00 contradiría al estado vacío). -->
+                <Border Grid.Row="1" Classes="FooterBar" IsVisible="{Binding !IsEmpty}">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Classes="Numeric" FontSize="14" FontWeight="SemiBold">
+                            <Run Text="Recaudación del período: " />
+                            <Run Text="{Binding Total, StringFormat={}{0:C}}" />
+                        </TextBlock>
+                        <TextBlock Classes="FormLabel" VerticalAlignment="Center"
+                                   Text="{Binding Count, StringFormat={}{0} pago(s)}" />
+                    </DockPanel>
+                </Border>
+            </Grid>
+
+            <!-- ═══ Recaudación desagregada: total + tres cortes que suman ese total ═══ -->
+            <ScrollViewer IsVisible="{Binding IsBreakdownReport}">
+                <StackPanel Margin="16,16,16,24" Spacing="16" MaxWidth="1240" IsVisible="{Binding !IsEmpty}">
+
+                    <Border Classes="Card">
+                        <Grid ColumnDefinitions="Auto,*">
+                            <Border Classes="IconChip" Background="{DynamicResource SuccessTintBrush}"
+                                    VerticalAlignment="Top">
+                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Tag}" FontSize="18"
+                                               Foreground="{DynamicResource SuccessBrush}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <StackPanel Grid.Column="1" Margin="14,0,0,0" Spacing="2">
+                                <TextBlock Text="Recaudación del período" Classes="KpiLabel" />
+                                <TextBlock Text="{Binding BreakdownTotal, StringFormat={}{0:C}}" Classes="KpiValue" />
+                                <TextBlock Text="Cada uno de los tres cortes de abajo suma este total."
+                                           Classes="FormLabel" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- Por método de pago -->
+                    <Border Classes="Card" Padding="0">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="20,14,20,12">
+                                <TextBlock Text="Por método de pago" Classes="SectionTitle" VerticalAlignment="Center" />
+                                <Border Classes="CountBadge">
+                                    <TextBlock Text="{Binding ByMethod.Count}" />
+                                </Border>
+                            </StackPanel>
+                            <Border Classes="Divider" />
+                            <DataGrid ItemsSource="{Binding ByMethod}" MaxHeight="420" BorderThickness="0"
+                                      IsReadOnly="True" AutoGenerateColumns="False" CanUserSortColumns="True"
+                                      AutomationProperties.Name="Recaudación por método de pago">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Método" Binding="{Binding Label}" Width="*" />
+                                    <DataGridTextColumn Header="Monto" Binding="{Binding Amount, StringFormat={}{0:C}}" Width="160" />
+                                    <DataGridTextColumn Header="Pagos" Binding="{Binding Count}" Width="90" />
+                                    <DataGridTemplateColumn Header="Participación" Width="240" SortMemberPath="Share">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate x:DataType="vm:BreakdownLine">
+                                                <Grid ColumnDefinitions="*,60" ColumnSpacing="10"
+                                                      Margin="12,0" VerticalAlignment="Center">
+                                                    <ProgressBar Minimum="0" Maximum="1" Value="{Binding Share}"
+                                                                 Height="6" MinWidth="0" CornerRadius="3" VerticalAlignment="Center"
+                                                                 Background="{DynamicResource NeutralTintBrush}"
+                                                                 AutomationProperties.Name="{Binding Label, StringFormat='Participación de {0}'}" />
+                                                    <TextBlock Grid.Column="1" HorizontalAlignment="Right"
+                                                               Text="{Binding Share, StringFormat={}{0:P1}}" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Por concepto y plan -->
+                    <Border Classes="Card" Padding="0">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="20,14,20,12">
+                                <TextBlock Text="Por concepto y plan" Classes="SectionTitle" VerticalAlignment="Center" />
+                                <Border Classes="CountBadge">
+                                    <TextBlock Text="{Binding ByConcept.Count}" />
+                                </Border>
+                            </StackPanel>
+                            <Border Classes="Divider" />
+                            <DataGrid ItemsSource="{Binding ByConcept}" MaxHeight="560" BorderThickness="0"
+                                      IsReadOnly="True" AutoGenerateColumns="False" CanUserSortColumns="True"
+                                      AutomationProperties.Name="Recaudación por concepto y plan">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Concepto / Plan" Binding="{Binding Label}" Width="*" />
+                                    <DataGridTextColumn Header="Monto" Binding="{Binding Amount, StringFormat={}{0:C}}" Width="160" />
+                                    <DataGridTemplateColumn Header="Participación" Width="240" SortMemberPath="Share">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate x:DataType="vm:BreakdownLine">
+                                                <Grid ColumnDefinitions="*,60" ColumnSpacing="10"
+                                                      Margin="12,0" VerticalAlignment="Center">
+                                                    <ProgressBar Minimum="0" Maximum="1" Value="{Binding Share}"
+                                                                 Height="6" MinWidth="0" CornerRadius="3" VerticalAlignment="Center"
+                                                                 Background="{DynamicResource NeutralTintBrush}"
+                                                                 AutomationProperties.Name="{Binding Label, StringFormat='Participación de {0}'}" />
+                                                    <TextBlock Grid.Column="1" HorizontalAlignment="Right"
+                                                               Text="{Binding Share, StringFormat={}{0:P1}}" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Por sede (con "Solo esta sede" es una fila: el archivo exportado también la trae) -->
+                    <Border Classes="Card" Padding="0">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="20,14,20,12">
+                                <TextBlock Text="Por sede" Classes="SectionTitle" VerticalAlignment="Center" />
+                                <Border Classes="CountBadge">
+                                    <TextBlock Text="{Binding BySite.Count}" />
+                                </Border>
+                            </StackPanel>
+                            <Border Classes="Divider" />
+                            <DataGrid ItemsSource="{Binding BySite}" MaxHeight="420" BorderThickness="0"
+                                      IsReadOnly="True" AutoGenerateColumns="False" CanUserSortColumns="True"
+                                      AutomationProperties.Name="Recaudación por sede">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Sede" Binding="{Binding Label}" Width="*" />
+                                    <DataGridTextColumn Header="Monto" Binding="{Binding Amount, StringFormat={}{0:C}}" Width="160" />
+                                    <DataGridTextColumn Header="Pagos" Binding="{Binding Count}" Width="90" />
+                                    <DataGridTemplateColumn Header="Participación" Width="240" SortMemberPath="Share">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate x:DataType="vm:BreakdownLine">
+                                                <Grid ColumnDefinitions="*,60" ColumnSpacing="10"
+                                                      Margin="12,0" VerticalAlignment="Center">
+                                                    <ProgressBar Minimum="0" Maximum="1" Value="{Binding Share}"
+                                                                 Height="6" MinWidth="0" CornerRadius="3" VerticalAlignment="Center"
+                                                                 Background="{DynamicResource NeutralTintBrush}"
+                                                                 AutomationProperties.Name="{Binding Label, StringFormat='Participación de {0}'}" />
+                                                    <TextBlock Grid.Column="1" HorizontalAlignment="Right"
+                                                               Text="{Binding Share, StringFormat={}{0:P1}}" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- ═══ Morosos: mismas columnas de dos líneas que la pantalla Morosos, sin acciones ═══ -->
+            <Grid RowDefinitions="*,Auto" IsVisible="{Binding IsOverdueReport}">
+
+                <DataGrid Grid.Row="0"
+                          ItemsSource="{Binding Debtors}"
+                          RowHeight="52"
+                          IsReadOnly="True" AutoGenerateColumns="False" CanUserSortColumns="True"
+                          AutomationProperties.Name="Socios con cuotas vencidas">
+                    <DataGrid.Columns>
+
+                        <!-- Socio + celular (sin celular válido, aviso en tono warning: texto, no solo color) -->
+                        <!-- Anchos pensados para que entre sin scroll horizontal con la ventana en su mínimo (784 px de contenido) -->
+                        <DataGridTemplateColumn Header="Socio" Width="*" MinWidth="180" SortMemberPath="FullName">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate x:DataType="col:OverdueMemberRow">
+                                    <StackPanel Margin="12,0" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding FullName}" FontWeight="SemiBold"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding MobileText}" Classes="FormLabel"
+                                                   Classes.warning="{Binding !HasUsableMobile}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- Deuda + cantidad de cargos -->
+                        <DataGridTemplateColumn Header="Deuda" Width="130" SortMemberPath="Dto.TotalOutstanding">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate x:DataType="col:OverdueMemberRow">
+                                    <StackPanel Margin="12,0" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Dto.TotalOutstanding, StringFormat={}{0:C}}"
+                                                   FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding Dto.ChargeCount, StringFormat='Cargos: {0}'}"
+                                                   Classes="FormLabel" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- Días de atraso + desde cuándo -->
+                        <DataGridTemplateColumn Header="Días de atraso" Width="130" SortMemberPath="Dto.DaysOverdue">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate x:DataType="col:OverdueMemberRow">
+                                    <StackPanel Margin="12,0" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Dto.DaysOverdue}" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding Dto.OldestDueDate, StringFormat='desde {0:dd/MM/yyyy}'}"
+                                                   Classes="FormLabel" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- Etapa: pill neutro a propósito (el nombre lo edita el gimnasio: elipsis + tooltip) -->
+                        <DataGridTemplateColumn Header="Etapa" Width="140" SortMemberPath="Dto.DaysOverdue">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate x:DataType="col:OverdueMemberRow">
+                                    <Border Classes="Pill neutral" Margin="12,0"
+                                            ToolTip.Tip="{Binding Dto.CurrentStageLabel}">
+                                        <TextBlock Text="{Binding Dto.CurrentStageLabel}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </Border>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <!-- Último recordatorio ("Sin recordatorios" / "Hoy" / "Ayer" / "Hace N días") -->
+                        <DataGridTextColumn Header="Último recordatorio"
+                                            Binding="{Binding LastReminderText}"
+                                            SortMemberPath="Dto.LastReminderAt"
+                                            Width="160" />
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <!-- Footer: cantidad y deuda total (rojo AA: DangerTextBrush). Oculto sin morosos. -->
+                <Border Grid.Row="1" Classes="FooterBar" IsVisible="{Binding !IsEmpty}">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Right" Classes="Numeric" FontSize="14" FontWeight="SemiBold">
+                            <Run Text="Deuda total: " />
+                            <Run Text="{Binding DebtTotal, StringFormat={}{0:C}}"
+                                 Foreground="{DynamicResource DangerTextBrush}" />
+                        </TextBlock>
+                        <TextBlock Classes="FormLabel" VerticalAlignment="Center"
+                                   Text="{Binding Debtors.Count, StringFormat={}{0} deudor(es)}" />
+                    </DockPanel>
+                </Border>
+            </Grid>
+
+            <!-- ═══ Altas y bajas: movimiento del período + foto de estados de hoy ═══ -->
+            <ScrollViewer IsVisible="{Binding IsFlowReport}">
+                <StackPanel Margin="16,16,16,24" Spacing="16" MaxWidth="1240" IsVisible="{Binding !IsEmpty}">
+
+                    <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="12">
+                        <!-- Activos (a hoy) -->
+                        <Border Grid.Column="0" Classes="Card">
+                            <StackPanel Spacing="10">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <Border Classes="IconChip">
+                                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.People}" FontSize="18"
+                                                       Foreground="{DynamicResource SystemAccentColor}"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <TextBlock Grid.Column="1" Text="Socios activos" Classes="KpiLabel"
+                                               Margin="11,0,0,0" VerticalAlignment="Center" />
+                                </Grid>
+                                <TextBlock Text="{Binding ActiveNow}" Classes="KpiValue" />
+                                <TextBlock Text="A hoy, sin importar el rango" Classes="FormLabel" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Altas -->
+                        <Border Grid.Column="1" Classes="Card">
+                            <StackPanel Spacing="10">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <Border Classes="IconChip" Background="{DynamicResource SuccessTintBrush}">
+                                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Add}" FontSize="18"
+                                                       Foreground="{DynamicResource SuccessBrush}"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <TextBlock Grid.Column="1" Text="Altas" Classes="KpiLabel"
+                                               Margin="11,0,0,0" VerticalAlignment="Center" />
+                                </Grid>
+                                <TextBlock Text="{Binding Flow.Joins.Count}" Classes="KpiValue" />
+                                <TextBlock Text="Socios nuevos en el período" Classes="FormLabel" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Bajas -->
+                        <Border Grid.Column="2" Classes="Card">
+                            <StackPanel Spacing="10">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <Border Classes="IconChip" Background="{DynamicResource DangerTintBrush}">
+                                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Remove}" FontSize="18"
+                                                       Foreground="{DynamicResource DangerBrush}"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <TextBlock Grid.Column="1" Text="Bajas" Classes="KpiLabel"
+                                               Margin="11,0,0,0" VerticalAlignment="Center" />
+                                </Grid>
+                                <TextBlock Text="{Binding Flow.Leaves.Count}" Classes="KpiValue" />
+                                <TextBlock Text="Membresías canceladas" Classes="FormLabel" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Neto (con signo: +3 / -2 / 0) -->
+                        <Border Grid.Column="3" Classes="Card">
+                            <StackPanel Spacing="10">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <Border Classes="IconChip">
+                                        <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Calculator}" FontSize="18"
+                                                       Foreground="{DynamicResource SystemAccentColor}"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <TextBlock Grid.Column="1" Text="Neto" Classes="KpiLabel"
+                                               Margin="11,0,0,0" VerticalAlignment="Center" />
+                                </Grid>
+                                <TextBlock Text="{Binding Flow.Net, StringFormat='{}{0:+#;-#;0}'}" Classes="KpiValue" />
+                                <TextBlock Text="Altas menos bajas" Classes="FormLabel" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <!-- Resto de los estados, a hoy. Tonos = los de StatusToneConverter (Frozen info,
+                         Overdue warning, Suspended danger). Sobre la card: sobre el lienzo gris el pill
+                         warning no llega a AA. -->
+                    <Border Classes="Card" Padding="16,12">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Text="Otros estados, a hoy" Classes="FormLabel" VerticalAlignment="Center" />
+                            <Border Classes="Pill info">
+                                <TextBlock Text="{Binding FrozenNow, StringFormat='Congelados: {0}'}" />
+                            </Border>
+                            <Border Classes="Pill warning">
+                                <TextBlock Text="{Binding OverdueNow, StringFormat='En mora: {0}'}" />
+                            </Border>
+                            <Border Classes="Pill danger">
+                                <TextBlock Text="{Binding SuspendedNow, StringFormat='Suspendidos: {0}'}" />
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- El límite del reporte, visible (y también en el PDF/Excel) -->
+                    <fa:InfoBar IsOpen="True" IsClosable="False" Severity="Informational"
+                                Title="Cómo leer este reporte"
+                                Message="{Binding FlowNote}" />
+
+                    <!-- Altas del período -->
+                    <Border Classes="Card" Padding="0">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="20,14,20,12">
+                                <TextBlock Text="Altas del período" Classes="SectionTitle" VerticalAlignment="Center" />
+                                <Border Classes="CountBadge">
+                                    <TextBlock Text="{Binding Flow.Joins.Count}" />
+                                </Border>
+                            </StackPanel>
+                            <Border Classes="Divider" />
+                            <DataGrid ItemsSource="{Binding Flow.Joins}" MaxHeight="440" BorderThickness="0"
+                                      IsReadOnly="True" AutoGenerateColumns="False" CanUserSortColumns="True"
+                                      AutomationProperties.Name="Socios dados de alta en el período">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Socio" Binding="{Binding FullName}" Width="*" />
+                                    <DataGridTextColumn Header="Documento" Binding="{Binding Document}" Width="150" />
+                                    <DataGridTextColumn Header="Alta" Binding="{Binding JoinDate, StringFormat={}{0:dd/MM/yyyy}}" Width="130" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Bajas del período -->
+                    <Border Classes="Card" Padding="0">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="20,14,20,12">
+                                <TextBlock Text="Bajas del período" Classes="SectionTitle" VerticalAlignment="Center" />
+                                <Border Classes="CountBadge">
+                                    <TextBlock Text="{Binding Flow.Leaves.Count}" />
+                                </Border>
+                            </StackPanel>
+                            <Border Classes="Divider" />
+                            <DataGrid ItemsSource="{Binding Flow.Leaves}" MaxHeight="440" BorderThickness="0"
+                                      IsReadOnly="True" AutoGenerateColumns="False" CanUserSortColumns="True"
+                                      AutomationProperties.Name="Membresías canceladas en el período">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Socio" Binding="{Binding FullName}" Width="2*" />
+                                    <DataGridTextColumn Header="Plan" Binding="{Binding Plan}" Width="1.5*" />
+                                    <DataGridTextColumn Header="Baja" Binding="{Binding CancelDate, StringFormat={}{0:dd/MM/yyyy}}" Width="130" />
+                                    <DataGridTextColumn Header="Motivo" Binding="{Binding Reason, Mode=OneWay, TargetNullValue='—'}" Width="2*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- ═══ Estado vacío (de cualquiera de los cuatro) ═══
+                 Si la carga falló (Message), no se muestra: el aviso de arriba ya dice qué pasó, y un
+                 "Sin pagos" / "Sin morosos" mentiría (UX14 en Morosos). -->
+            <Panel IsVisible="{Binding Message, Converter={x:Static ObjectConverters.IsNull}}">
+                <StackPanel Classes="EmptyState" IsVisible="{Binding IsEmpty}">
+                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Accept}" IsVisible="{Binding IsOverdueReport}" />
+                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Document}" IsVisible="{Binding !IsOverdueReport}" />
+                    <TextBlock Classes="EmptyTitle" Text="{Binding EmptyTitle}" />
+                    <TextBlock Classes="EmptyBody" Text="{Binding EmptyBody}" />
+                </StackPanel>
+            </Panel>
+        </Grid>
 
     </Grid>
 

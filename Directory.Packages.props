@@ -1,6 +1,7 @@
 <Project>
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
 
   <ItemGroup Label="Avalonia UI">
@@ -42,6 +43,10 @@
 
   <ItemGroup Label="Reporting">
     <PackageVersion Include="QuestPDF" Version="2025.4.0" />
+    <PackageVersion Include="ClosedXML" Version="0.105.1" />
+    <!-- Transitiva de ClosedXML, que acepta [1.0.0, 3.0.0). Desde la 2.0 la licencia pasa a "Split" (comercial):
+         se fija en la línea Apache 1.x. Lo vigila ReportQaTests.Licencia_SixLaborsFontsSigueEnLaLineaApache1. -->
+    <PackageVersion Include="SixLabors.Fonts" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup Label="Logging">

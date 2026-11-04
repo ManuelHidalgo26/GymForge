@@ -13,6 +13,7 @@ using GymForge.Application.UseCases.Charges;
 using GymForge.Application.UseCases.Dunning;
 using GymForge.Application.UseCases.Licensing;
 using GymForge.Application.UseCases.Members;
+using GymForge.Application.UseCases.Reports;
 using GymForge.Application.UseCases.Sales;
 using GymForge.Application.UseCases.Staff;
 using GymForge.Desktop;
@@ -147,8 +148,60 @@ Capture("08-planes", new GymForge.Desktop.Views.Plans.PlansView { DataContext = 
 
 // Reportes: recaudación del mes con los pagos del seed
 var reportsVm = new GymForge.Desktop.ViewModels.Reports.ReportsViewModel(
-    mediator2, session, sp.GetRequiredService<GymForge.Desktop.Services.ReceiptService>());
+    mediator2, session, sp.GetRequiredService<GymForge.Desktop.Services.ReceiptService>(),
+    sp.GetRequiredService<GymForge.Application.Services.ICompanyCalendar>(),
+    sp.GetRequiredService<GymForge.Desktop.Services.IReportExportService>(),
+    sp.GetRequiredService<IClock>());
+Pump(reportsVm.LoadCommand.ExecuteAsync(null));
 Capture("09-reportes", new GymForge.Desktop.Views.Reports.ReportsView { DataContext = reportsVm }, 1180, 760, outDir);
+
+// Los otros tres reportes del hub (desagregada y altas/bajas con alcance de toda la empresa)
+reportsVm.CompanyWide = true;
+foreach (var (kind, shot) in new[]
+         {
+             (GymForge.Desktop.ViewModels.Reports.ReportKind.RevenueBreakdown, "09b-reportes-desagregada"),
+             (GymForge.Desktop.ViewModels.Reports.ReportKind.Overdue, "09c-reportes-morosos"),
+             (GymForge.Desktop.ViewModels.Reports.ReportKind.MemberFlow, "09d-reportes-altas-bajas"),
+         })
+{
+    reportsVm.SelectedReport = kind;
+    Pump(reportsVm.LoadCommand.ExecuteAsync(null));
+    Capture(shot, new GymForge.Desktop.Views.Reports.ReportsView { DataContext = reportsVm }, 1180, 760, outDir);
+}
+
+// Los mismos reportes como archivos exportables (PDF y Excel) para revisar el layout
+{
+    var reportToday = DateOnly.FromDateTime(DateTime.Today);
+    var reportFrom = new DateOnly(reportToday.Year, reportToday.Month, 1);
+    var siteContext = WaitFor(mediator2.Send(new GetReportContextQuery(session.CompanyId, session.SiteId)));
+    var companyContext = WaitFor(mediator2.Send(new GetReportContextQuery(session.CompanyId, null)));
+    var nowUtc = DateTime.UtcNow;
+    var exporter = sp.GetRequiredService<IReportExporter>();
+
+    ReportDocument[] sampleReports =
+    [
+        ReportBuilders.Payments(
+            WaitFor(mediator2.Send(new GetPaymentsReportQuery(session.CompanyId, session.SiteId, reportFrom, reportToday))),
+            reportFrom, reportToday, siteContext, nowUtc),
+        ReportBuilders.Breakdown(
+            WaitFor(mediator2.Send(new GetRevenueBreakdownQuery(session.CompanyId, null, reportFrom, reportToday))),
+            reportFrom, reportToday, companyContext, nowUtc),
+        ReportBuilders.Overdue(
+            WaitFor(mediator2.Send(new GetOverdueMembersQuery(session.CompanyId, session.SiteId, reportToday))),
+            reportToday, siteContext, nowUtc),
+        ReportBuilders.Flow(
+            WaitFor(mediator2.Send(new GetMemberFlowQuery(session.CompanyId, null, reportFrom, reportToday))),
+            reportFrom, reportToday, companyContext, nowUtc),
+    ];
+
+    foreach (var report in sampleReports)
+        foreach (var format in new[] { ReportFormat.Pdf, ReportFormat.Xlsx })
+        {
+            var file = $"{report.FileStem}.{exporter.Extension(format)}";
+            File.WriteAllBytes(Path.Combine(outDir, file), exporter.Export(report, format));
+            Console.WriteLine($"  {file}");
+        }
+}
 
 // Configuración: datos del gimnasio + sedes
 GymForge.Desktop.ViewModels.Settings.SettingsViewModel NewSettingsViewModel() => new(

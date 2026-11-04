@@ -5,7 +5,6 @@
     <!-- Converters -->
     <conv:SidebarWidthConverter x:Key="SidebarWidthConverter" />
     <conv:CollapsedIconConverter x:Key="CollapsedIconConverter" />
-    <conv:StatusColorConverter x:Key="StatusColorConverter" />
     <conv:NavSectionActiveConverter x:Key="NavSectionActiveConverter" />
     <!-- Estado (socio o membresía) → ¿es este tono semántico? Alimenta Border.Pill.success/warning/danger/info/neutral/accent -->
     <conv:StatusToneConverter x:Key="StatusTone" />
@@ -20,12 +19,21 @@
 
             <!-- Tokens semánticos: color pleno para texto/íconos, tinte para fondos -->
             <SolidColorBrush x:Key="SurfaceBorderBrush" Color="#E6E6EA" />
+            <!-- Marca: valores por defecto (índigo). En runtime App.ApplyBrandAccent los recalcula con el acento
+                 del gimnasio (BrandPalette): tinte de fondo, texto de acento AA sobre el tinte y texto sobre el acento. -->
             <SolidColorBrush x:Key="AccentTintBrush" Color="#1F6366F1" />
-            <SolidColorBrush x:Key="SuccessBrush" Color="#15803D" />
+            <SolidColorBrush x:Key="AccentTextBrush" Color="#4338CA" />
+            <SolidColorBrush x:Key="AccentForegroundBrush" Color="#FFFFFF" />
+            <!-- #166534 (≈7:1 sobre blanco, ≈6,2:1 sobre el lienzo gris y ≈5,7:1 sobre su tinte): #15803D quedaba en ≈4,4:1 fuera de card (UX21) -->
+            <SolidColorBrush x:Key="SuccessBrush" Color="#166534" />
             <SolidColorBrush x:Key="SuccessTintBrush" Color="#2422C55E" />
             <SolidColorBrush x:Key="WarningBrush" Color="#C2410C" />
             <SolidColorBrush x:Key="WarningTintBrush" Color="#24F59E0B" />
             <SolidColorBrush x:Key="DangerBrush" Color="#DC2626" />
+            <!-- Relleno de Button.Danger con texto blanco (≈4,8:1 / ≈6,5:1 en dark); DangerBrush en dark da ≈2,8:1 con blanco (UX6) -->
+            <SolidColorBrush x:Key="DangerFillBrush" Color="#DC2626" />
+            <SolidColorBrush x:Key="DangerFillHoverBrush" Color="#B91C1C" />
+            <SolidColorBrush x:Key="ScrimBrush" Color="#80000000" />
             <SolidColorBrush x:Key="DangerTintBrush" Color="#24EF4444" />
             <!-- Danger como TEXTO sobre card/inset (montos en mora, mensajes de error). DangerBrush (#DC2626)
                  da ≈4,8:1 sobre blanco pero queda justo; #B91C1C ≈ 6,5:1 sobre la card y ≈ 5,9:1 sobre el inset. -->
@@ -47,12 +55,17 @@
             <SolidColorBrush x:Key="CardBackgroundFillColorDefaultBrush" Color="#3A3A3C" />
 
             <SolidColorBrush x:Key="SurfaceBorderBrush" Color="#3F3F42" />
-            <SolidColorBrush x:Key="AccentTintBrush" Color="#2E818CF8" />
+            <SolidColorBrush x:Key="AccentTintBrush" Color="#2E6366F1" />
+            <SolidColorBrush x:Key="AccentTextBrush" Color="#A5B4FC" />
+            <SolidColorBrush x:Key="AccentForegroundBrush" Color="#FFFFFF" />
             <SolidColorBrush x:Key="SuccessBrush" Color="#4ADE80" />
             <SolidColorBrush x:Key="SuccessTintBrush" Color="#2622C55E" />
             <SolidColorBrush x:Key="WarningBrush" Color="#FDBA74" />
             <SolidColorBrush x:Key="WarningTintBrush" Color="#26F59E0B" />
             <SolidColorBrush x:Key="DangerBrush" Color="#F87171" />
+            <SolidColorBrush x:Key="DangerFillBrush" Color="#B91C1C" />
+            <SolidColorBrush x:Key="DangerFillHoverBrush" Color="#991B1B" />
+            <SolidColorBrush x:Key="ScrimBrush" Color="#99000000" />
             <SolidColorBrush x:Key="DangerTintBrush" Color="#26EF4444" />
             <!-- #F87171 sobre la card oscura (#3A3A3C) da ≈4,1:1 (< AA); #FCA5A5 ≈ 6,0:1 sobre la card y ≈ 5,0:1 sobre el inset -->
             <SolidColorBrush x:Key="DangerTextBrush" Color="#FCA5A5" />

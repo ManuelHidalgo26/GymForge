@@ -102,6 +102,10 @@ public partial class SettingsViewModel : ObservableObject
     public bool HasThisPcCode => !string.IsNullOrEmpty(ThisPcCode);
     public string ThisPcCodeDisplay => HasThisPcCode ? ThisPcCode : "No disponible";
 
+    /// <summary>Feedback inline de "Copiar" (junto al botón): se prende al copiar y se apaga solo.</summary>
+    [ObservableProperty] private bool _thisPcCodeCopied;
+    private static readonly TimeSpan CopiedFeedbackDuration = TimeSpan.FromSeconds(2.5);
+
     // Versión y actualizaciones: el estado vive en UpdateViewModel (compartido con el aviso del shell).
     public UpdateViewModel Updates { get; }
     [ObservableProperty] private string _updateFeedDisplay = string.Empty;
@@ -464,8 +468,15 @@ public partial class SettingsViewModel : ObservableObject
         if (MainClipboard() is not { } clipboard) return;
 
         await clipboard.SetTextAsync(ThisPcCode);
-        LicenseSaved = true;
-        LicenseMessage = "Código de esta PC copiado.";
+        await ShowThisPcCodeCopiedAsync(CopiedFeedbackDuration);
+    }
+
+    /// <summary>Muestra "Copiado" junto al botón durante <paramref name="duration"/> y lo oculta.</summary>
+    public async Task ShowThisPcCodeCopiedAsync(TimeSpan duration)
+    {
+        ThisPcCodeCopied = true;
+        await Task.Delay(duration);
+        ThisPcCodeCopied = false;
     }
 
     // ── Datos: exportar / importar ──────────────────────────────────────────

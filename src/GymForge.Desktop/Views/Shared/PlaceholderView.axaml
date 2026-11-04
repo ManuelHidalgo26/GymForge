@@ -12,7 +12,8 @@
                     Background="{DynamicResource SubtleFillColorSecondaryBrush}"
                     HorizontalAlignment="Center">
                 <fa:SymbolIcon Symbol="{Binding Icon}"
-                               FontSize="36" Opacity="0.4"
+                               FontSize="36"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center" />
             </Border>
@@ -21,8 +22,8 @@
                        FontSize="20" FontWeight="SemiBold"
                        HorizontalAlignment="Center" />
 
-            <TextBlock Text="{Binding Subtitle}"
-                       FontSize="13" Opacity="0.55"
+            <TextBlock Text="{Binding Subtitle}" Classes="FormLabel"
+                       FontSize="13"
                        HorizontalAlignment="Center"
                        MaxWidth="320" TextWrapping="Wrap"
                        TextAlignment="Center" />

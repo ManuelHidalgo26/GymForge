@@ -53,6 +53,7 @@ public partial class MainWindowViewModel : ObservableObject
         GymName = _session.GymName;
         CurrentSiteName = _session.CurrentSite?.Name ?? "—";
         _session.PropertyChanged += OnSessionChanged;
+        Palette = new CommandPaletteViewModel(PaletteCatalog.Build(Navigate, OpenCreateMember, ToggleTheme));
 
         Navigate(NavSection.Dashboard);
 
@@ -90,12 +91,6 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isSidebarCollapsed;
-
-    [ObservableProperty]
-    private bool _isCommandPaletteOpen;
-
-    [ObservableProperty]
-    private string _searchQuery = string.Empty;
 
     [ObservableProperty]
     private string _gymName = "GymForge";
@@ -195,11 +190,8 @@ public partial class MainWindowViewModel : ObservableObject
 
     // ── Command Palette ───────────────────────────────────────────────────────
 
-    [RelayCommand]
-    private void OpenCommandPalette() => IsCommandPaletteOpen = true;
-
-    [RelayCommand]
-    private void CloseCommandPalette() => IsCommandPaletteOpen = false;
+    /// <summary>Paleta de comandos (Ctrl+K): navega a las secciones y dispara las acciones rápidas.</summary>
+    public CommandPaletteViewModel Palette { get; }
 
     // ── Theme ─────────────────────────────────────────────────────────────────
 

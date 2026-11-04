@@ -14,6 +14,18 @@ namespace GymForge.Desktop.ViewModels.Dashboard;
 /// <summary>Barra del gráfico de recaudación (un día). Altura ya escalada en px.</summary>
 public record RevenueBarVm(double BarHeight, string Tooltip, bool IsToday);
 
+/// <summary>Referencia del eje Y: etiqueta de monto y su posición vertical (px desde el tope del plot, centro de la línea).</summary>
+public record AxisTickVm(string Label, double Y)
+{
+    private const double LabelHalfHeight = 7;
+
+    /// <summary>Holgura sobre el plot (y bajo él, la mitad de una etiqueta) para que las etiquetas de los extremos no queden cortadas.</summary>
+    public const double PlotTopInset = 8;
+
+    /// <summary>Posición del borde superior de la etiqueta (en el gutter, que incluye la holgura) para que quede centrada sobre su línea de guía.</summary>
+    public double LabelTop => Y + PlotTopInset - LabelHalfHeight;
+}
+
 /// <summary>Membresía que vence en los próximos días.</summary>
 public record ExpiringRowVm(string Initials, string MemberName, string PlanName, string WhenLabel, bool IsUrgent);
 
@@ -63,6 +75,9 @@ public partial class DashboardViewModel : ObservableObject
     // Área rellena + línea del gráfico de recaudación (área/línea premium).
     [ObservableProperty] private Geometry? _revenueAreaGeometry;
     [ObservableProperty] private Geometry? _revenueLineGeometry;
+    // Eje Y: etiquetas (fuera del Viewbox, en un gutter fijo) y líneas de guía horizontales del plot.
+    [ObservableProperty] private ObservableCollection<AxisTickVm> _axisTicks = [];
+    [ObservableProperty] private Geometry? _revenueGuideGeometry;
 
     // ── Listas accionables ──────────────────────────────────────────────────
     [ObservableProperty] private ObservableCollection<ExpiringRowVm> _expiringRows = [];
@@ -179,21 +194,33 @@ public partial class DashboardViewModel : ObservableObject
             .ToDictionary(g => g.Key, g => g.Sum(p => p.Amount));
 
         var days = Enumerable.Range(0, 30).Select(i => fromLocal.AddDays(i)).ToList();
-        var max = Math.Max(byDay.Count == 0 ? 0m : byDay.Values.Max(), 1m);
+        var axis = ChartAxis.Build(byDay.Count == 0 ? 0m : byDay.Values.Max());
+        var scaleTop = Math.Max(axis.Top, 1m);
 
         var bars = days.Select(d =>
         {
             var amount = byDay.GetValueOrDefault(d);
-            var height = amount == 0 ? 3 : Math.Max(6, (double)(amount / max) * ChartHeight);
+            var height = amount == 0 ? 3 : Math.Max(6, (double)(amount / scaleTop) * ChartHeight);
             return new RevenueBarVm(height, $"{d:ddd d/MM} — ${amount:N0}", d == today);
         }).ToList();
 
         RevenueBars = new ObservableCollection<RevenueBarVm>(bars);
+        AxisTicks = new ObservableCollection<AxisTickVm>(
+            axis.Ticks.Select(tick => new AxisTickVm(tick.Label, (1 - tick.Fraction) * ChartHeight)));
+        BuildGuideGeometry(AxisTicks);
         BuildRevenueGeometry(bars.Select(b => b.BarHeight).ToList());
 
         Revenue30DaysTotal = $"${byDay.Values.Sum():N0}";
         ChartFromLabel = fromLocal.ToString("d MMM");
         ChartToLabel = today.ToString("d MMM");
+    }
+
+    /// <summary>Líneas de guía horizontales a la altura de cada referencia del eje (sistema virtual 300×130).</summary>
+    private void BuildGuideGeometry(IEnumerable<AxisTickVm> ticks)
+    {
+        var path = string.Join(" ", ticks.Select(t =>
+            string.Create(CultureInfo.InvariantCulture, $"M 0,{t.Y:0.##} L {ChartWidth:0.##},{t.Y:0.##}")));
+        RevenueGuideGeometry = TryParseGeometry(path);
     }
 
     /// <summary>Arma el área rellena y la línea del gráfico en el sistema virtual
@@ -217,16 +244,24 @@ public partial class DashboardViewModel : ObservableObject
             area.Append($" L {N(X(i))},{N(Y(i))}");
         area.Append($" L {N(ChartWidth)},{N(ChartHeight)} Z");
 
+        var lineGeometry = TryParseGeometry(line.ToString());
+        var areaGeometry = TryParseGeometry(area.ToString());
+        var drawable = lineGeometry is not null && areaGeometry is not null;
+        RevenueLineGeometry = drawable ? lineGeometry : null;
+        RevenueAreaGeometry = drawable ? areaGeometry : null;
+    }
+
+    /// <summary>Geometry.Parse necesita la plataforma de render inicializada; si aún no lo está (p. ej. pre-render
+    /// fuera del hilo de UI) devuelve null y se reintenta al recargar.</summary>
+    private static Geometry? TryParseGeometry(string path)
+    {
         try
         {
-            RevenueLineGeometry = Geometry.Parse(line.ToString());
-            RevenueAreaGeometry = Geometry.Parse(area.ToString());
+            return Geometry.Parse(path);
         }
         catch
         {
-            // Geometry.Parse necesita la plataforma de render inicializada; si aún no
-            // lo está (p. ej. pre-render fuera del hilo de UI), se reintenta al recargar.
-            RevenueAreaGeometry = RevenueLineGeometry = null;
+            return null;
         }
     }
 

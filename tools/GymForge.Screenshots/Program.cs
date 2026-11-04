@@ -488,6 +488,26 @@ var shellBrand = new GymForge.Desktop.Views.Shell.MainWindow
 CaptureWindow("17-marca-verde", shellBrand, outDir);
 GymForge.Desktop.App.ApplyBrandAccent("#6366F1");
 
+// Paleta de comandos (Ctrl+K): abierta, filtrada sin acentos, sin resultados y con un acento claro (amarillo).
+var shellVm = sp.GetRequiredService<GymForge.Desktop.Views.Shell.MainWindowViewModel>();
+var shellPalette = new GymForge.Desktop.Views.Shell.MainWindow { DataContext = shellVm, Width = 1366, Height = 800 };
+shellPalette.Show();
+shellVm.Palette.OpenCommand.Execute(null);
+SaveFrame("38-paleta-abierta", shellPalette, outDir);
+shellVm.Palette.Query = "configuracion";
+SaveFrame("38-paleta-filtrada", shellPalette, outDir);
+shellVm.Palette.Query = "zzz";
+SaveFrame("38-paleta-vacia", shellPalette, outDir);
+shellVm.Palette.CloseCommand.Execute(null);
+GymForge.Desktop.App.ApplyBrandAccent("#FACC15");
+shellVm.Palette.OpenCommand.Execute(null);
+SaveFrame("38-paleta-marca-amarilla", shellPalette, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+SaveFrame("38-paleta-marca-amarilla-dark", shellPalette, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+shellPalette.Close();
+GymForge.Desktop.App.ApplyBrandAccent("#6366F1");
+
 // Auto-actualización: el origen simulado pasa a ofrecer una versión nueva y el shell muestra el aviso.
 // La ventana ya busca sola al abrirse; acá se fuerza la búsqueda para dejar el estado "lista" listo antes.
 sp.GetRequiredService<SampleUpdateService>().NextCheck = UpdateCheckResult.Found(new AvailableUpdate("0.4.0"));

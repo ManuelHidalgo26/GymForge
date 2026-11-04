@@ -6,6 +6,7 @@
         xmlns:vm="using:GymForge.Desktop.Views.Shell"
         xmlns:svc="using:GymForge.Desktop.Services"
         xmlns:conv="using:GymForge.Desktop.Converters"
+        xmlns:ctl="using:GymForge.Desktop.Controls"
         mc:Ignorable="d"
         x:Class="GymForge.Desktop.Views.Shell.MainWindow"
         x:DataType="vm:MainWindowViewModel"
@@ -24,8 +25,8 @@
         <KeyBinding Gesture="F3" Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:NavSection.Members}" />
         <KeyBinding Gesture="F4" Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:NavSection.Access}" />
         <KeyBinding Gesture="F5" Command="{Binding NavigateCommand}" CommandParameter="{x:Static vm:NavSection.Cash}" />
-        <KeyBinding Gesture="Ctrl+K" Command="{Binding OpenCommandPaletteCommand}" />
-        <KeyBinding Gesture="Escape" Command="{Binding CloseCommandPaletteCommand}" />
+        <KeyBinding Gesture="Ctrl+K" Command="{Binding Palette.OpenCommand}" />
+        <KeyBinding Gesture="Escape" Command="{Binding Palette.CloseCommand}" />
         <KeyBinding Gesture="Alt+Left" Command="{Binding GoBackCommand}" />
     </Window.KeyBindings>
 
@@ -59,7 +60,7 @@
                         <StackPanel IsVisible="{Binding !IsSidebarCollapsed}" VerticalAlignment="Center">
                             <TextBlock Text="{Binding GymName}" FontWeight="SemiBold" FontSize="14"
                                        TextTrimming="CharacterEllipsis" />
-                            <TextBlock Text="{Binding CurrentSiteName}" FontSize="11" Opacity="0.6"
+                            <TextBlock Classes="FormLabel" Text="{Binding CurrentSiteName}" FontSize="11"
                                        TextTrimming="CharacterEllipsis" />
                         </StackPanel>
                     </StackPanel>
@@ -258,11 +259,12 @@
 
                     <!-- Global search Ctrl+K -->
                     <Button DockPanel.Dock="Left"
-                            Command="{Binding OpenCommandPaletteCommand}"
+                            Command="{Binding Palette.OpenCommand}"
                             Classes="SearchButton">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Find}" FontSize="16" Opacity="0.5" />
-                            <TextBlock Text="Buscar... (Ctrl+K)" Opacity="0.5" FontSize="13" />
+                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Find}" FontSize="16"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            <TextBlock Text="Buscar… (Ctrl+K)" Classes="FormLabel" FontSize="13" />
                         </StackPanel>
                     </Button>
 
@@ -337,6 +339,14 @@
             </Border>
 
         </Grid>
+
+        <!-- Paleta de comandos (Ctrl+K): reusa el host de modal (scrim, Border.ModalCard, foco inicial y devolución de foco). -->
+        <ctl:ModalHost Grid.ColumnSpan="2"
+                       IsVisible="{Binding Palette.IsOpen}"
+                       Content="{Binding Palette}"
+                       CardMaxWidth="600"
+                       VerticalContentAlignment="Top"
+                       Padding="0,96,0,0" />
 
     </Grid>
 </Window>

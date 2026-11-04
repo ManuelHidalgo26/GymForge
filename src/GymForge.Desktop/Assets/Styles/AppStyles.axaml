@@ -91,7 +91,7 @@
     <Style Selector="Border.Avatar > TextBlock">
         <Setter Property="FontSize" Value="11" />
         <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="Foreground" Value="{DynamicResource SystemAccentColor}" />
+        <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
         <Setter Property="HorizontalAlignment" Value="Center" />
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
@@ -143,6 +143,9 @@
     <Style Selector="TextBlock.Mono">
         <Setter Property="FontFamily" Value="Consolas,Cascadia Mono,Courier New" />
     </Style>
+    <Style Selector="TextBox.Mono">
+        <Setter Property="FontFamily" Value="Consolas,Cascadia Mono,Courier New" />
+    </Style>
 
     <!-- Texto con tono semántico sobre card (light y dark, contraste AA). Se prende con
          Classes.success / Classes.warning / Classes.danger. Van DESPUÉS de FormLabel a propósito:
@@ -161,7 +164,7 @@
     </Style>
 
     <!-- Resultado de una acción bajo un formulario ("Datos guardados.", "PIN incorrecto.").
-         Éxito = success, error = danger. Reemplaza al verde/rojo literal de ActiveColorBrushConverter
+         Éxito = success, error = danger. Reemplaza al verde/rojo literal de los antiguos converters de color
          (#3F9C49 / #E05252: ~3,5:1, no llega a AA ni en light ni en dark). -->
     <Style Selector="TextBlock.Feedback">
         <Setter Property="FontSize" Value="12" />
@@ -215,7 +218,7 @@
         <Setter Property="Background" Value="{DynamicResource AccentTintBrush}" />
     </Style>
     <Style Selector="Border.Pill.accent > TextBlock">
-        <Setter Property="Foreground" Value="{DynamicResource SystemAccentColor}" />
+        <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
     </Style>
 
     <!-- Contador junto a un título (p.ej. "Planes [12]") -->
@@ -236,19 +239,26 @@
     </Style>
 
     <!-- ── Botones ── -->
+    <!-- Texto sobre el acento: AccentForegroundBrush (blanco, o casi negro si el acento del gimnasio es claro) -->
     <Style Selector="Button.Primary">
         <Setter Property="Background" Value="{DynamicResource SystemAccentColor}" />
-        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Foreground" Value="{DynamicResource AccentForegroundBrush}" />
         <Setter Property="Padding" Value="14,9" />
         <Setter Property="CornerRadius" Value="9" />
     </Style>
     <Style Selector="Button.Primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource SystemAccentColorDark1}" />
-        <Setter Property="TextBlock.Foreground" Value="White" />
+        <Setter Property="TextBlock.Foreground" Value="{DynamicResource AccentForegroundBrush}" />
     </Style>
     <Style Selector="Button.Primary:pressed /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource SystemAccentColorDark2}" />
-        <Setter Property="TextBlock.Foreground" Value="White" />
+        <Setter Property="TextBlock.Foreground" Value="{DynamicResource AccentForegroundBrush}" />
+    </Style>
+    <!-- Deshabilitado (UX3): tinte de acento + texto de acento legible (AA por construcción), en vez de la
+         plantilla Fluent que lo deja casi invisible. Más específico que :pointerover, así que no se "prende" al pasar el mouse. -->
+    <Style Selector="Button.Primary:disabled /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource AccentTintBrush}" />
+        <Setter Property="TextBlock.Foreground" Value="{DynamicResource AccentTextBrush}" />
     </Style>
 
     <Style Selector="Button.Secondary">
@@ -257,13 +267,13 @@
     </Style>
 
     <Style Selector="Button.Danger">
-        <Setter Property="Background" Value="{DynamicResource DangerBrush}" />
+        <Setter Property="Background" Value="{DynamicResource DangerFillBrush}" />
         <Setter Property="Foreground" Value="White" />
         <Setter Property="Padding" Value="14,9" />
         <Setter Property="CornerRadius" Value="9" />
     </Style>
     <Style Selector="Button.Danger:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-        <Setter Property="Background" Value="#B91C1C" />
+        <Setter Property="Background" Value="{DynamicResource DangerFillHoverBrush}" />
         <Setter Property="TextBlock.Foreground" Value="White" />
     </Style>
 
@@ -288,7 +298,8 @@
     </Style>
     <Style Selector="StackPanel.EmptyState fa|SymbolIcon">
         <Setter Property="FontSize" Value="44" />
-        <Setter Property="Opacity" Value="0.25" />
+        <!-- Ícono decorativo: terciario (≈3,3:1 en light, ≈3,6:1 en dark; basta para no-texto) en vez de Opacity -->
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}" />
         <Setter Property="HorizontalAlignment" Value="Center" />
     </Style>
     <Style Selector="TextBlock.EmptyTitle">
@@ -331,12 +342,23 @@
         <Setter Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}" />
     </Style>
 
-    <!-- Active nav button — filled accent tint -->
+    <!-- Active nav button — tinte de acento del gimnasio + hairline de acento (el tinte solo al 12% quedaba flojo)
+         + texto de acento legible (AccentTextBrush). El borde es decorativo: el texto no depende de él. -->
     <Style Selector="Button.NavButton.active /template/ ContentPresenter">
-        <Setter Property="Background" Value="{DynamicResource SystemAccentColorLight3}" />
+        <Setter Property="Background" Value="{DynamicResource AccentTintBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SystemAccentColorLight2}" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="Button.NavButton.active:pointerover /template/ ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource AccentTintBrush}" />
+    </Style>
+    <!-- Más específico que el borde de arriba: el anillo de teclado no se pierde en el ítem activo -->
+    <Style Selector="Button.NavButton.active:focus-visible /template/ ContentPresenter">
+        <Setter Property="BorderBrush" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="BorderThickness" Value="2" />
     </Style>
     <Style Selector="Button.NavButton.active">
-        <Setter Property="Foreground" Value="{DynamicResource SystemAccentColor}" />
+        <Setter Property="Foreground" Value="{DynamicResource AccentTextBrush}" />
         <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
 
@@ -386,6 +408,67 @@
         <Setter Property="FontSize" Value="13" />
         <Setter Property="GridLinesVisibility" Value="Horizontal" />
         <Setter Property="(TextElement.FontFeatures)" Value="+tnum" />
+    </Style>
+    <!-- Selección de fila (UX17): las acciones de las grillas son por botón, no por selección. Fluent pinta la fila
+         con el acento al ~70% y arruina los pills; acá queda un relleno sutil neutro, igual en light y dark. -->
+    <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+        <Setter Property="Fill" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+        <Setter Property="Opacity" Value="1" />
+    </Style>
+    <Style Selector="DataGridRow:pointerover:selected /template/ Rectangle#BackgroundRectangle">
+        <Setter Property="Fill" Value="{DynamicResource SubtleFillColorTertiaryBrush}" />
+        <Setter Property="Opacity" Value="1" />
+    </Style>
+
+    <!-- ── Modales ── -->
+    <!-- Card de un modal (y del command palette): borde hairline (en dark la sombra no se ve y el borde define la
+         card), radio 12, padding 24 y sombra más profunda que la de Border.Card porque flota sobre el scrim. -->
+    <Style Selector="Border.ModalCard">
+        <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource SurfaceBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="24" />
+        <Setter Property="BoxShadow" Value="0 8 32 0 #44000000" />
+    </Style>
+
+    <!-- Host común de modal: scrim + scroll de reserva (ventana baja) + card centrada. Foco/Tab: ver ctl:ModalHost. -->
+    <Style Selector="ctl|ModalHost">
+        <Setter Property="ZIndex" Value="100" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Panel Background="{DynamicResource ScrimBrush}">
+                    <ScrollViewer Padding="{TemplateBinding Padding}"
+                                  VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <Border Classes="ModalCard" Margin="24"
+                                MaxWidth="{TemplateBinding CardMaxWidth}"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                KeyboardNavigation.TabNavigation="Cycle">
+                            <ContentPresenter Name="PART_ContentPresenter"
+                                              Content="{TemplateBinding Content}"
+                                              ContentTemplate="{TemplateBinding ContentTemplate}" />
+                        </Border>
+                    </ScrollViewer>
+                </Panel>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
+    <!-- ── Estados de botones coherentes: transición corta (≤160 ms) y foco visible ── -->
+    <Style Selector="Button /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.12" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <!-- Anillo de foco de teclado (no aparece al hacer click): trazo de texto primario, visible en light y dark
+         sobre cualquier fondo de botón. -->
+    <Style Selector="Button:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="BorderBrush" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="BorderThickness" Value="2" />
     </Style>
 
 </Styles>

@@ -77,13 +77,14 @@
                     <StackPanel Spacing="12">
                         <TextBlock Text="Seguridad — PIN de acceso" FontSize="15" FontWeight="SemiBold" />
 
-                        <Border CornerRadius="8" Padding="12,8" Background="#33F59E0B"
-                                IsVisible="{Binding IsDefaultPinInUse}">
-                            <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="{DynamicResource DangerBrush}"
-                                       Text="⚠ Todavía está activo el PIN de fábrica (1234). Cambialo antes de poner el gimnasio en marcha." />
-                        </Border>
+                        <fa:InfoBar IsOpen="{Binding IsDefaultPinInUse}"
+                                    Severity="Warning"
+                                    Title="PIN de fábrica activo"
+                                    Message="Todavía está activo el PIN de fábrica (1234). Cambialo antes de poner el gimnasio en marcha."
+                                    IsClosable="False"
+                                    AutomationProperties.LiveSetting="Polite" />
 
-                        <TextBlock FontSize="12" Opacity="0.6" TextWrapping="Wrap"
+                        <TextBlock Classes="FormLabel" FontSize="12" TextWrapping="Wrap"
                                    Text="El PIN se usa para abrir caja e iniciar sesión de cajero. Tiene que tener entre 4 y 8 dígitos." />
 
                         <StackPanel Orientation="Horizontal" Spacing="12">
@@ -115,7 +116,7 @@
                     <StackPanel Spacing="16">
                         <StackPanel Spacing="3">
                             <TextBlock Text="Marca" FontSize="15" FontWeight="SemiBold" />
-                            <TextBlock FontSize="12" Opacity="0.6" TextWrapping="Wrap"
+                            <TextBlock Classes="FormLabel" FontSize="12" TextWrapping="Wrap"
                                        Text="El logo aparece en el menú y en los recibos. El color de acento pinta botones, íconos y resaltados de toda la app." />
                         </StackPanel>
 
@@ -127,7 +128,8 @@
                                 <Panel>
                                     <Image Source="{Binding LogoPreview}" Stretch="UniformToFill"
                                            IsVisible="{Binding HasLogoPreview}" />
-                                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Image}" FontSize="26" Opacity="0.35"
+                                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Image}" FontSize="26"
+                                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                                    HorizontalAlignment="Center" VerticalAlignment="Center"
                                                    IsVisible="{Binding !HasLogoPreview}" />
                                 </Panel>
@@ -195,7 +197,8 @@
                                 <DataTemplate x:DataType="set:SiteDto">
                                     <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,2">
                                         <fa:SymbolIcon Grid.Column="0" Symbol="{x:Static fa:Symbol.Home}"
-                                                       FontSize="14" Margin="0,0,10,0" Opacity="0.6" />
+                                                       FontSize="14" Margin="0,0,10,0"
+                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                                         <TextBlock Grid.Column="1" VerticalAlignment="Center">
                                             <Run Text="{Binding Name}" FontWeight="SemiBold" />
                                             <Run Text=" — " />
@@ -214,7 +217,7 @@
                                                     <Flyout Placement="BottomEdgeAlignedRight">
                                                         <StackPanel Spacing="8" Width="240">
                                                             <TextBlock Text="¿Eliminar esta sede?" FontWeight="SemiBold" FontSize="13" />
-                                                            <TextBlock FontSize="11" Opacity="0.6" TextWrapping="Wrap"
+                                                            <TextBlock Classes="FormLabel" FontSize="11" TextWrapping="Wrap"
                                                                        Text="Si tiene socios o movimientos se desactiva (conserva el historial). No se puede eliminar la única sede." />
                                                             <Button Content="Eliminar"
                                                                     Classes="Danger"
@@ -264,7 +267,7 @@
                 <Border Classes="Card" Padding="24">
                     <StackPanel Spacing="12">
                         <TextBlock Text="Control de acceso" FontSize="15" FontWeight="SemiBold" />
-                        <TextBlock FontSize="12" Opacity="0.6" TextWrapping="Wrap"
+                        <TextBlock Classes="FormLabel" FontSize="12" TextWrapping="Wrap"
                                    Text="Reglas del molinete/kiosko: cuánto puede deber un socio antes de avisar o bloquear el ingreso, y el tiempo mínimo entre pasadas (anti-passback)." />
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <StackPanel Spacing="4">
@@ -441,7 +444,6 @@
                                         Classes="Primary" VerticalAlignment="Center"
                                         AutomationProperties.Name="Activar licencia" />
                             </Grid>
-                            <!-- También lo usa "Copiar" del código de esta PC ("Código de esta PC copiado.") -->
                             <TextBlock Text="{Binding LicenseMessage}" Classes="Feedback"
                                        Classes.success="{Binding LicenseSaved}"
                                        Classes.danger="{Binding !LicenseSaved}"
@@ -460,7 +462,7 @@
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <TextBox Text="{Binding ThisPcCodeDisplay, Mode=OneWay}" IsReadOnly="True" Width="260"
-                                         FontFamily="Consolas,Cascadia Mono,Courier New" FontSize="14"
+                                         Classes="Mono" FontSize="14"
                                          VerticalAlignment="Center"
                                          AutomationProperties.Name="Código de esta PC" />
                                 <Button Command="{Binding CopyThisPcCodeCommand}" VerticalAlignment="Center"
@@ -470,6 +472,14 @@
                                         <TextBlock Text="Copiar" />
                                     </StackPanel>
                                 </Button>
+                                <!-- Feedback inline de "Copiar": junto al botón, no en el mensaje de activación -->
+                                <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center"
+                                            IsVisible="{Binding ThisPcCodeCopied}"
+                                            AutomationProperties.LiveSetting="Polite">
+                                    <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Accept}" FontSize="14"
+                                                   Foreground="{DynamicResource SuccessBrush}" />
+                                    <TextBlock Text="Copiado" Classes="Feedback success" />
+                                </StackPanel>
                             </StackPanel>
                         </StackPanel>
                     </StackPanel>
@@ -479,7 +489,7 @@
                 <Border Classes="Card" Padding="24">
                     <StackPanel Spacing="12">
                         <TextBlock Text="Copia de seguridad y migración" FontSize="15" FontWeight="SemiBold" />
-                        <TextBlock FontSize="12" Opacity="0.6" TextWrapping="Wrap"
+                        <TextBlock Classes="FormLabel" FontSize="12" TextWrapping="Wrap"
                                    Text="Exportar guarda en un solo archivo todo lo del gimnasio: socios, cobros, caja, rutinas, el logo y las fotos. Sirve de respaldo y para mudar los datos a otra PC." />
 
                         <StackPanel Orientation="Horizontal" Spacing="8">
@@ -498,7 +508,7 @@
                                 <TextBlock Text="Vas a reemplazar todos los datos actuales"
                                            FontSize="13" FontWeight="SemiBold" />
                                 <TextBlock Text="{Binding ImportSummary}" FontSize="12" TextWrapping="Wrap" />
-                                <TextBlock FontSize="12" Opacity="0.7" TextWrapping="Wrap"
+                                <TextBlock Classes="FormLabel" FontSize="12" TextWrapping="Wrap"
                                            Text="Se guarda una copia de los datos actuales antes de reemplazarlos. Al terminar, GymForge se reinicia." />
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <TextBox Text="{Binding ImportPin}" PasswordChar="•"
@@ -640,7 +650,7 @@
                         <StackPanel Spacing="4">
                             <TextBlock Text="Origen de las actualizaciones" Classes="FormLabel" />
                             <TextBox Text="{Binding UpdateFeedDisplay, Mode=OneWay}" IsReadOnly="True"
-                                     FontFamily="Consolas,Cascadia Mono,Courier New" FontSize="12"
+                                     Classes="Mono" FontSize="12"
                                      AutomationProperties.Name="Origen de las actualizaciones" />
                             <TextBlock Classes="FormLabel" TextWrapping="Wrap"
                                        Text="Lo define la instalación de GymForge en esta PC; no se cambia desde acá." />
@@ -652,7 +662,7 @@
                 <Border Classes="Card" Padding="24">
                     <StackPanel Spacing="6">
                         <TextBlock Text="Sistema" FontSize="15" FontWeight="SemiBold" />
-                        <TextBlock FontSize="12" Opacity="0.7"
+                        <TextBlock Classes="FormLabel" FontSize="12"
                                    Text="Los datos se guardan localmente en esta PC (%LOCALAPPDATA%\GymForge). Moneda: ARS · Zona horaria: Argentina (UTC-3)."
                                    TextWrapping="Wrap" />
                     </StackPanel>

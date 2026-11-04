@@ -210,20 +210,12 @@
         </ScrollViewer>
 
         <!-- ── Modal: registrar cobro / venta ─────────────────────────────── -->
-        <!-- Con scroll de reserva: el modal crece con el aviso del lector y los errores, y en una ventana baja
-             (1366x768) ya no entra entero. Si entra, se ve centrado como antes y no hay barra. -->
-        <Grid Grid.Row="0" Grid.RowSpan="2"
-              IsVisible="{Binding IsSaleModalOpen}"
-              Background="#80000000" ZIndex="100">
-            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <Border MaxWidth="440" Margin="24" HorizontalAlignment="Center" VerticalAlignment="Center"
-                        CornerRadius="12" Padding="24"
-                        Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                        BoxShadow="0 8 32 0 #44000000">
-                    <ContentControl Content="{Binding SaleModal}" />
-                </Border>
-            </ScrollViewer>
-        </Grid>
+        <!-- El host trae el scroll de reserva: el modal crece con el aviso del lector y los errores, y en una ventana
+             baja (1366x768) ya no entra entero. Si entra, se ve centrado y no hay barra. -->
+        <ctl:ModalHost Grid.Row="0" Grid.RowSpan="2"
+                       IsVisible="{Binding IsSaleModalOpen}"
+                       Content="{Binding SaleModal}"
+                       AutomationProperties.Name="Registrar cobro o venta" />
 
     </Grid>
 

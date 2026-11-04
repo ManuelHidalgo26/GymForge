@@ -27,6 +27,7 @@
              xmlns:vRoutines="using:GymForge.Desktop.Views.Routines"
              xmlns:vProducts="using:GymForge.Desktop.Views.Products"
              xmlns:vShared="using:GymForge.Desktop.Views.Shared"
+             xmlns:vShell="using:GymForge.Desktop.Views.Shell"
              xmlns:conv="using:GymForge.Desktop.Converters"
              x:Class="GymForge.Desktop.App"
              RequestedThemeVariant="Default">
@@ -94,6 +95,9 @@
         <DataTemplate DataType="vmCharges:PaymentModalViewModel">
             <vCharges:PaymentModalView />
         </DataTemplate>
+        <DataTemplate DataType="vShell:CommandPaletteViewModel">
+            <vShell:CommandPaletteView />
+        </DataTemplate>
         <DataTemplate DataType="vmShared:PlaceholderViewModel">
             <vShared:PlaceholderView />
         </DataTemplate>
@@ -103,8 +107,6 @@
         <ResourceDictionary>
             <conv:EnumDisplayConverter x:Key="EnumEs" />
             <conv:DateOnlyOffsetConverter x:Key="DateOnlyOffset" />
-            <conv:ActiveColorConverter x:Key="ActiveColorConverter" />
-            <conv:ActiveColorBrushConverter x:Key="ActiveColorBrushConverter" />
             <conv:ActiveLabelConverter x:Key="ActiveLabelConverter" />
             <conv:ActiveToggleLabelConverter x:Key="ActiveToggleLabelConverter" />
             <conv:StringEqualsConverter x:Key="StringEquals" />

@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:GymForge.Desktop.Controls"
              xmlns:fa="using:FluentAvalonia.UI.Controls"
              xmlns:vm="using:GymForge.Desktop.ViewModels.Charges"
              x:Class="GymForge.Desktop.Views.Charges.ChargesView"
@@ -92,22 +93,20 @@
                 <DataGridTemplateColumn Header="Estado" Width="110">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="vm:ChargeRowVm">
-                            <Border Classes="Pill" Margin="4,0">
-                                <Border.Background>
-                                    <SolidColorBrush Color="{Binding StatusColor}" Opacity="0.15" />
-                                </Border.Background>
-                                <TextBlock Text="{Binding StatusLabel}">
-                                    <TextBlock.Foreground>
-                                        <SolidColorBrush Color="{Binding StatusColor}" />
-                                    </TextBlock.Foreground>
-                                </TextBlock>
+                            <Border Classes="Pill" Margin="4,0"
+                                    Classes.success="{Binding Dto.Status, Converter={StaticResource StatusTone}, ConverterParameter=success}"
+                                    Classes.warning="{Binding Dto.Status, Converter={StaticResource StatusTone}, ConverterParameter=warning}"
+                                    Classes.danger="{Binding Dto.Status, Converter={StaticResource StatusTone}, ConverterParameter=danger}"
+                                    Classes.info="{Binding Dto.Status, Converter={StaticResource StatusTone}, ConverterParameter=info}"
+                                    Classes.neutral="{Binding Dto.Status, Converter={StaticResource StatusTone}, ConverterParameter=neutral}">
+                                <TextBlock Text="{Binding StatusLabel}" />
                             </Border>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
                 <!-- Acciones -->
-                <DataGridTemplateColumn Header="" Width="60" IsReadOnly="True">
+                <DataGridTemplateColumn Header="Acciones" Width="90" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="vm:ChargeRowVm">
                             <Button Classes="IconButton"
@@ -147,20 +146,10 @@
         </Border>
 
         <!-- ── Payment modal overlay ──────────────────────────────────────── -->
-        <Grid Grid.Row="0" Grid.RowSpan="3"
-              IsVisible="{Binding IsPaymentModalOpen}"
-              Background="#80000000"
-              ZIndex="100">
-            <Border MaxWidth="440"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    CornerRadius="12"
-                    Padding="24"
-                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                    BoxShadow="0 8 32 0 #44000000">
-                <ContentControl Content="{Binding PaymentModal}" />
-            </Border>
-        </Grid>
+        <ctl:ModalHost Grid.Row="0" Grid.RowSpan="3"
+                       IsVisible="{Binding IsPaymentModalOpen}"
+                       Content="{Binding PaymentModal}"
+                       AutomationProperties.Name="Registrar pago" />
 
     </Grid>
 

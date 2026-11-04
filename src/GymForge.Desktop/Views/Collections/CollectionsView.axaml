@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="using:GymForge.Desktop.Controls"
              xmlns:fa="using:FluentAvalonia.UI.Controls"
              xmlns:vm="using:GymForge.Desktop.ViewModels.Collections"
              x:Class="GymForge.Desktop.Views.Collections.CollectionsView"
@@ -190,20 +191,10 @@
         </Border>
 
         <!-- ── Payment modal overlay ──────────────────────────────────────── -->
-        <Grid Grid.Row="0" Grid.RowSpan="4"
-              IsVisible="{Binding IsPaymentModalOpen}"
-              Background="#80000000"
-              ZIndex="100">
-            <Border MaxWidth="440"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    CornerRadius="12"
-                    Padding="24"
-                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                    BoxShadow="0 8 32 0 #44000000">
-                <ContentControl Content="{Binding PaymentModal}" />
-            </Border>
-        </Grid>
+        <ctl:ModalHost Grid.Row="0" Grid.RowSpan="4"
+                       IsVisible="{Binding IsPaymentModalOpen}"
+                       Content="{Binding PaymentModal}"
+                       AutomationProperties.Name="Registrar pago" />
 
     </Grid>
 

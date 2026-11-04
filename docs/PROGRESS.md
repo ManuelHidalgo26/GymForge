@@ -25,8 +25,9 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 - **Fase 4 parte 2 (Sesión 7): CERRADA (2026-11-04)** en `feat/sesion-6` (código `1f44d2c`; commit de docs por el orquestador). ADR-008 `Accepted`. Sin push ni merge. Ver la entrada de cierre arriba de todo.
 - **Limpieza de bugs/errores/warnings (2026-11-04): CERRADA** en `feat/sesion-6` (código `7bc780f`; commit de docs por el orquestador). Sin push ni merge. Ver la entrada de arriba de todo.
 - **Git (verificado en refs, 2026-11-03):** `master` = `e541586`. `origin/master` = `6d39c0a` (anterior al merge de F1 `33ba4ec`): **master está adelante de origin, sin push** (29 commits según el orquestador; no re-contado). Existen `feat/sesion-3`, `feat/sesion-4` y `feat/sesion-5` (ya mergeadas).
-- Tests: **1392 verdes al cierre de la limpieza** (commit `7bc780f`; Domain 107 · Application 590 · Desktop 347 · Integration 348), `dotnet test GymForge.sln` exit 0 y 0 omitidos (2026-11-04). Piso previo: 1343 (F4 parte 2).
-- Rama de trabajo: `feat/sesion-6` desde `master` (`e541586`): `aa9c8d7` y `6f3124e` (F4 parte 1), `1f44d2c` y `a55e935` (F4 parte 2, con docs), `7bc780f` (limpieza). Commit de docs de la limpieza pendiente del orquestador. `.gitignore` ignora `*.lnk` y `*.pfx`.
+- Tests: **1456 verdes al cierre de Fase 5 parte 1** (commit `d33e101`; Domain 107 · Application 590 · Desktop 411 · Integration 348), `dotnet test GymForge.sln` exit 0 y 0 omitidos (2026-11-04). Piso previo: 1392 (limpieza, `7bc780f`).
+- **Fase 5 parte 1 (Sesión 8): CERRADA (2026-11-04)** en `feat/sesion-6` (código `d33e101`; commit de docs por el orquestador). ADR-009 `Accepted`. Piezas A–E y G; F (calendario) diferida a parte 2. Sin push ni merge. Ver la entrada de cierre arriba de todo.
+- Rama de trabajo: `feat/sesion-6` desde `master` (`e541586`): `aa9c8d7` y `6f3124e` (F4 parte 1), `1f44d2c` y `a55e935` (F4 parte 2, con docs), `7bc780f` (limpieza), `d33e101` (Fase 5 parte 1). Commits de docs de la limpieza y de F5 parte 1 pendientes del orquestador. `.gitignore` ignora `*.lnk` y `*.pfx`.
 - Abierto en `docs/TASKS.md`: **0 bloqueadores técnicos de piloto**. Decisiones de política abiertas: **D11 ampliada** (PII en exports y en el snapshot de DELETE) y **O10** (roles para exportar y ver comisiones). Tras la limpieza (2026-11-04) siguen abiertos, entre otros: UX11, Q2/D9 (parcial), D7, D11/Q4, D12 (residuo), F1-D8, F1-D11, P-2, D1–D3, D5, D6, D8, D9 (parcial), D10, D13–D15, D17, D19 (ver TASKS), F1-D1 a F1-D3, F1-D5, F1-D7, F1-D8, F1-D10, F1-D11, F2-D1 a F2-D8, F3-D1 a F3-D7, Q3–Q8, UX1–UX4, UX6–UX17, UX19, UX21–UX24, UX34, NEW-2 a NEW-6, NEW-8 a NEW-10, O5, O8, O10, O11(c), O12, UX26–UX33, F4-D1 a F4-D4, y las fases F5 y F6. Lo cerrado en la limpieza está en DONE `LIMP-CIERRE`.
 
 ## Roadmap por fases
@@ -38,7 +39,7 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 | 2 — WhatsApp gratis + cobranzas | 4 | Pantalla de morosos, `WhatsAppLinkSender` (wa.me), `DunningConfig` en Configuración, `NotificationLog` | **CERRADA, COMMITEADA y MERGEADA a `master`** (2026-10-29; merge `9d44634`). ADR-005 Accepted. Sin push. Deuda en TASKS (F2-D1 a F2-D8, UX13 a UX17) |
 | 3 — Escáner HID + check-in premium | 5 | Lector keyboard-wedge en kiosk y POS, foto del socio, teclado numérico en pantalla, arquitectura de hardware | **CERRADA, COMMITEADA y MERGEADA a `master`** (2026-11-02; merge `e541586`). ADR-006 `Accepted`. Qa aprobó con observaciones. Sin push. Deuda en TASKS (F3-D1 a F3-D7, UX18 a UX24) |
 | 4 — Profundidad | 6-7 | Parte 1 (sesión 6): reportes reales (morosos, recaudación por método/concepto-plan/sede, altas y bajas) + export PDF/Excel. Parte 2 (sesión 7): editar socio desde la ficha, rutinas en la ficha, comisiones de staff | **CERRADA (parte 1 el 2026-11-03; parte 2 el 2026-11-04).** Parte 1: ADR-007 `Accepted`, commits `aa9c8d7` y `6f3124e`. Parte 2: ADR-008 `Accepted`, commit `1f44d2c` (commit de docs pendiente del orquestador). 1343 verdes; qa aprobó con observaciones (sin bloqueantes). Sin push. Deuda en TASKS ("Deuda de F4 parte 1" y "Deuda de F4 parte 2") |
-| 5 — Pulido US$100k | 8 | Command palette (Ctrl+K), fix branding (AccentTintBrush derivado), micro-interacciones, dashboard con ejes/hover, calendario semanal, limpieza de tokens, accesibilidad + i18n es-AR | PENDIENTE |
+| 5 — Pulido US$100k | 8 (parte 1) + parte 2 | Parte 1 (sesión 8): command palette (Ctrl+K), branding derivado (`BrandPalette`), micro-interacciones, dashboard con eje Y/guías, limpieza de tokens, accesibilidad + strings es-AR (piezas A–E y G). Parte 2 (pendiente): pieza F, calendario semanal de Clases | **Parte 1 CERRADA (2026-11-04)**: ADR-009 `Accepted`, commit `d33e101`, 1456 verdes, qa con observaciones. **Parte 2 PENDIENTE** (NEW-11 en TASKS) |
 | 6 — AFIP + hardware físico | +3-5 (opcional) | WSFE/WSAA/CAE, sidecars reales ZKTeco | OPCIONAL |
 
 ## Qué sigue
@@ -46,7 +47,7 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 **Próximo paso (tras la limpieza, 2026-11-04):**
 1. **Orquestador:** commit de docs de la limpieza (entrada de arriba de todo y `docs/TASKS.md`). El de F4 parte 2 ya está en `a55e935`.
 2. **Usuario:** decidir (a) D11 ampliada y O10 (política de PII y roles para los exports y el reporte de comisiones, decisiones 2 y 9 abajo), (b) push de `master` a `origin` y de las ramas `feat/sesion-*` (ítem 8), (c) merge de `feat/sesion-6` a `master`, (d) verificación manual de F4 parte 2 (foco inicial del form de edición; export de comisiones con diálogo nativo), y (e) `.editorconfig`: bajar la severidad de estilo o barrido de formato (NEW-8).
-3. **Sesión 8, Fase 5 "Pulido US$100k" (PENDIENTE):** arqui escribe el ADR antes de que dev implemente (command palette Ctrl+K, fix branding `AccentTintBrush`, micro-interacciones, dashboard con ejes/hover, calendario semanal, limpieza de tokens, accesibilidad + i18n es-AR). Cerrados en la limpieza (`7bc780f`): NEW-1 (`SQLitePCLRaw` 2.1.12; `Tmds.DBus` sin verificar) y F4-Q1. Pendiente antes de distribuir: D12 (residuo) y NEW-10 (solo tests). Pendientes de F3: UX18 (cerrado en la limpieza) y F3-D2 / UX19 (el primer carácter del lector cae en el campo con foco). Son MEDIA y de uso diario en recepción; qa no los marcó como bloqueantes.
+3. **Fase 5 parte 2 (PENDIENTE, tras la sesión 8):** pieza F, calendario semanal de Clases (NEW-11). Arqui escribe el ADR antes de que dev implemente. Fase 5 parte 1 ya cerrada (sesión 8, ver entrada de arriba). Cerrados en la limpieza (`7bc780f`): NEW-1 (`SQLitePCLRaw` 2.1.12; `Tmds.DBus` sin verificar) y F4-Q1. Pendiente antes de distribuir: D12 (residuo) y NEW-10 (solo tests). Pendientes de F3: UX18 (cerrado en la limpieza) y F3-D2 / UX19 (el primer carácter del lector cae en el campo con foco). Son MEDIA y de uso diario en recepción; qa no los marcó como bloqueantes.
 4. **Verificación en hardware real** (no se pudo en esta sesión): lector USB wedge real con layout es-AR, supresión de WM_CHAR en Windows, portapapeles y diálogo nativo, táctil, DPI alto y `scripts/publish.ps1` single-file. Con F3-D1 abierto (checks de teclado fuera de CI), todo cambio en kiosk o POS se prueba también con `tools/GymForge.Screenshots`.
 
 Piloto: F4 partes 1 y 2 sin bloqueadores técnicos (qa). D11 ampliada y O10 son decisiones de política que conviene tomar antes de que la recepción use los exports. Siguen las 2 condiciones de uso de F1.
@@ -68,6 +69,43 @@ Decisiones del usuario abiertas (ninguna bloquea el piloto con las 2 condiciones
 Fuera del piloto: P-2 (saldo a favor en la ficha) y D1 (cobros multi-sede) siguen abiertas. Resto de deuda (D1–D19, F1-D4 a F1-D10, F2-D1 a F2-D8, Q3–Q9, UX1–UX17): ver `docs/TASKS.md`.
 
 Sesiones 5-8: ver tabla de fases arriba.
+
+---
+
+## [2026-11-04] Sesión 8 (Fase 5 parte 1) — CERRADA: pulido US$100k (A–E + G)
+
+**Hecho:**
+- **Fase 5 parte 1 cerrada.** Flujo: arqui (ADR-009, con addendum del orquestador → `Accepted`) → dev (piezas A, B, C, D, E, G) → ux (pasada visual) → qa (**APROBADO CON OBSERVACIONES**, sin bloqueantes). qa corrigió un bloqueante de compilación que dejó ux: selector XAML combinado `TextBlock.Mono, TextBox.Mono` inválido; se separó en dos estilos.
+- **Código en `d33e101`** (`feat: [ui] pulido US$100k...`), en `feat/sesion-6`. Commit de docs (ADR-009 + `docs/adr/README.md` + esta entrada + TASKS) por el orquestador justo después de esta sesión.
+- **Tests:** `dotnet test GymForge.sln` exit 0, 0 omitidos, **1456 verdes** (Domain 107 · Application 590 · Desktop 411 · Integration 348). Piso previo 1392. Build Debug y Release 0 errores. Sin migración.
+- **Entregado por pieza:**
+  - A) Branding derivado: `BrandPalette`, `App.ApplyBrandAccent`; tokens `AccentTintBrush` / `AccentTextBrush` / `AccentForegroundBrush` (cierra UX4).
+  - B) Limpieza de tokens: `StatusToneConverter` cubre `ChargeStatus` y bool. Retirados `StatusColorConverter` (`git rm`), `ActiveColorBrushConverter` y `ActiveColorConverter`. `SuccessBrush` light `#166534`. `Button.Danger` tokenizado.
+  - C) Command palette Ctrl+K en `Views/Shell/` (`CommandPaletteViewModel`, `PaletteCatalog`, `PaletteSearch`) y `ModalHost`.
+  - D) `Border.ModalCard` + `Controls/ModalHost.cs` en los 4 modales; `Button.Primary:disabled`; `:focus-visible`; selección de DataGrid neutra.
+  - E) Dashboard con eje Y (`ChartAxis`) y guías.
+  - G) `Opacity` → tokens (`FormLabel`); aviso de PIN como `InfoBar`; feedback inline de "Copiar"; hint del 0% en Productos; `Header` accesible; strings es-AR sin emoji ni tuteo.
+- **Decisiones del usuario:** alcance A–E + G ahora; **F (calendario semanal) diferida a F5 parte 2**. Branding: tono de acento legible derivado (cualquier color de marca cumple AA en light y dark). Defaults: mapa de tono de `ChargeStatus` (Paid→success; Pending/PartiallyPaid/Overdue→warning; Refunded→danger; Billed→info; Draft/WrittenOff→neutral); i18n = consistencia de strings sin framework; micro-interacciones ≤160 ms + foco visible.
+- **UX cerradas (en DONE `F5-P1-CIERRE`):** UX1, UX2, UX3, UX4, UX6, UX7, UX8, UX9, UX10, UX16, UX17, UX21, UX30, UX32, UX34; UX15 parcial ((b) y (c) cerrados, queda (a)).
+
+**En curso:** nada a medias en código. Pieza F (calendario semanal de Clases) no empezada: falta ADR de arqui (NEW-11 en TASKS).
+
+**Blockers:**
+- Técnicos: ninguno (1456 verdes; qa sin bloqueantes).
+- Verificación manual sin cubrir por headless (NEW-12): Escape idempotente (palette, modal, nada abierto); Tab cíclico, foco inicial y devolución en los 4 modales; teclado en grillas (UX15 c) y `:focus-visible`. qa marcó que el Tab cíclico de `ModalHost` es lo más frágil sin probar en vivo; sugiere test de `Avalonia.Headless` para `ModalHost` + Escape.
+- Docs desactualizados (NEW-13): `CLAUDE.md:91` todavía lista `StatusColorConverter`, ya retirado. Lo corrige el usuario (CLAUDE.md no se toca desde notas).
+- Decisión del usuario sin cambios: `.editorconfig` (NEW-8). Dato nuevo: qa reportó ~809 warnings de estilo al cierre; NEW-8 registraba ~1560. Los números no coinciden; hay que re-medir.
+- Política sin cambios: D11 ampliada y O10. Push y merge de `feat/sesion-6`: decide el usuario.
+
+**Próximo paso:**
+1. Orquestador: commit de docs de F5 parte 1 (ADR-009 `Accepted`, `docs/adr/README.md`, esta entrada, TASKS).
+2. Arqui: ADR para F5 parte 2 (pieza F, calendario semanal de Clases; NEW-11), antes de que dev implemente.
+3. Usuario: verificación manual de NEW-12; decidir NEW-8 (`.editorconfig`), D11 ampliada, O10; decidir push y merge de `feat/sesion-6`. Corregir `CLAUDE.md:91` (NEW-13).
+4. Después de F5 parte 2: endurecimiento final "todo junto" (refactor completo de D9, D2 auth de API, D3, D7, NEW-9, NEW-10, UX19 y las verificaciones manuales pendientes), acordado con el usuario.
+
+**Tocado:**
+- Docs: `docs/adr/ADR-009-pulido-us100k.md` (nuevo, `Accepted`), `docs/adr/README.md` (fila ADR-009), `docs/PROGRESS.md`, `docs/TASKS.md`.
+- Código (commit `d33e101`): `src/GymForge.Desktop/Controls/ModalHost.cs`; `Views/Shell/` (command palette); `Assets/Styles/Colors.axaml` y `AppStyles.axaml`; `App.axaml.cs` (`ApplyBrandAccent`); `BrandPalette`; `StatusToneConverter`; dashboard (`ChartAxis`); los 4 modales; tests (1456 verdes). Retirados: `StatusColorConverter`, `ActiveColorBrushConverter`, `ActiveColorConverter`.
 
 ---
 

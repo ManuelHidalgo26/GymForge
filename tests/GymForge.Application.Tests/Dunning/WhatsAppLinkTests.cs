@@ -24,11 +24,47 @@ public class WhatsAppLinkTests
         WhatsAppLink.ToWhatsAppDigits(raw).Should().Be(expected);
     }
 
-    [Fact]
-    public void ToWhatsAppDigits_SinCodigoDeArea_QuitaElQuinceYDejaLoQueQueda()
+    [Theory]
+    [InlineData("1234")]                  // muy corto
+    [InlineData("4555-0000")]             // abonado sin código de área
+    [InlineData("1512345678")]            // 15 + abonado sin área: no se puede armar el número completo
+    [InlineData("11 2345-67890")]         // un dígito de más
+    public void ToWhatsAppDigits_SinLos10DigitosNacionales_DevuelveNull(string raw)
     {
-        // Límite documentado: sin código de área no hay forma de armar un número completo (best-effort).
-        WhatsAppLink.ToWhatsAppDigits("1512345678").Should().Be("54912345678");
+        WhatsAppLink.ToWhatsAppDigits(raw).Should().BeNull();
+    }
+
+    [Fact]
+    public void Build_ConUnCelularArgentinoDe10Digitos_ArmaElLinkCorrecto()
+    {
+        WhatsAppLink.Build("11 2345-6789", "Hola").Should().Be("https://wa.me/5491123456789?text=Hola");
+    }
+
+    [Theory]
+    [InlineData("+55 11 91234-5678", "5511912345678")]     // Brasil: se respeta el 55, no se pisa a 549
+    [InlineData("0055 11 91234-5678", "5511912345678")]    // marcado internacional con 00
+    [InlineData("+1 415 555 2671", "14155552671")]
+    public void ToWhatsAppDigits_ConPrefijoInternacionalDeOtroPais_LoRespeta(string raw, string expected)
+    {
+        WhatsAppLink.ToWhatsAppDigits(raw).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("00 54 9 11 2345 6789", "5491123456789")]  // 00 + código de país argentino: se normaliza
+    [InlineData("0054 11 2345 6789", "5491123456789")]
+    [InlineData("00 11 2345 6789", "1123456789")]          // 00 + algo que no es 54: se lee como internacional (código 1)
+    public void ToWhatsAppDigits_ConDobleCeroInicial_LoTomaComoPrefijoInternacional(string raw, string expected)
+    {
+        WhatsAppLink.ToWhatsAppDigits(raw).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("+55 11")]                                 // extranjero demasiado corto
+    [InlineData("+54 4555 0000")]                          // argentino internacional sin área
+    [InlineData("+55 11 91234-5678 / +55 11 98765-4321")]  // dos números: pasa los 15 dígitos
+    public void ToWhatsAppDigits_InternacionalInvalido_DevuelveNull(string raw)
+    {
+        WhatsAppLink.ToWhatsAppDigits(raw).Should().BeNull();
     }
 
     [Theory]

@@ -90,7 +90,7 @@ public class WhatsAppLinkSenderTests
     [InlineData("+54 9 11 2345-6789")]
     [InlineData("011 15 2345-6789")]
     [InlineData("2234 15-123456")]
-    [InlineData("1234")]
+    [InlineData("+55 11 91234-5678")]
     public void LoQueArmaWhatsAppLink_SiempreLoAceptaElSender_AunConMensajesHostiles(string phone)
     {
         string[] hostileMessages =

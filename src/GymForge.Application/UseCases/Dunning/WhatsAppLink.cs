@@ -23,6 +23,9 @@ public static class WhatsAppLink
 
     // E.164: un número internacional tiene a lo sumo 15 dígitos. Más es un campo con dos números cargados o basura.
     private const int MaxInternationalDigits = 15;
+    // Piso para un número extranjero (código de país + abonado): menos que esto no es un teléfono.
+    private const int MinInternationalDigits = 8;
+    private const string InternationalDialPrefix = "00";
 
     /// <summary>https://wa.me/&lt;dígitos&gt;?text=&lt;mensaje url-encoded&gt;. Lanza si el teléfono no tiene dígitos usables.</summary>
     public static string Build(
@@ -36,28 +39,37 @@ public static class WhatsAppLink
     }
 
     /// <summary>
-    /// Normaliza un celular a los dígitos que pide wa.me (54 + 9 + área + número, sin 0 ni 15).
-    /// Devuelve null si no quedan dígitos usables o el resultado pasa los 15 dígitos de E.164. Ver las
-    /// limitaciones en las observaciones de la clase.
+    /// Normaliza un celular a los dígitos que pide wa.me. Un número argentino queda como 54 + 9 + área + abonado
+    /// (sin 0 ni 15) y tiene que sumar exactamente 10 dígitos nacionales. Un número que declara ser internacional
+    /// ("+" o "00" al inicio) con otro código de país se respeta tal cual, sin pisarlo a 549. Devuelve null si no
+    /// se puede armar un número válido (muy corto, sin área, o más de 15 dígitos de E.164). Ver las limitaciones
+    /// en las observaciones de la clase.
     /// </summary>
     public static string? ToWhatsAppDigits(
         string? rawPhone, string countryCode = DefaultCountryCode, string mobilePrefix = DefaultMobilePrefix)
     {
-        var digits = new string((rawPhone ?? string.Empty).Where(char.IsAsciiDigit).ToArray());
+        var phone = (rawPhone ?? string.Empty).Trim();
+        var digits = new string(phone.Where(char.IsAsciiDigit).ToArray());
 
-        var national = digits.StartsWith(countryCode, StringComparison.Ordinal)
-            ? digits[countryCode.Length..]
-            : digits;
+        var declaresInternational = phone.StartsWith('+') || digits.StartsWith(InternationalDialPrefix, StringComparison.Ordinal);
+        if (digits.StartsWith(InternationalDialPrefix, StringComparison.Ordinal))
+            digits = digits[InternationalDialPrefix.Length..];
 
+        var hasCountryCode = digits.StartsWith(countryCode, StringComparison.Ordinal);
+        if (declaresInternational && !hasCountryCode)
+            return ForeignNumber(digits);
+
+        var national = hasCountryCode ? digits[countryCode.Length..] : digits;
         national = RemoveTrunkPrefix(national);
         national = RemoveMobilePrefix(national, mobilePrefix);
         national = RemoveLegacyMobileMarker(national);
 
-        if (national.Length == 0) return null;
-
-        var full = countryCode + mobilePrefix + national;
-        return full.Length > MaxInternationalDigits ? null : full;
+        return national.Length == NationalNumberLength ? countryCode + mobilePrefix + national : null;
     }
+
+    /// <summary>Número de otro país: se respeta como vino, con largo E.164 válido.</summary>
+    private static string? ForeignNumber(string digits) =>
+        digits.Length is >= MinInternationalDigits and <= MaxInternationalDigits ? digits : null;
 
     /// <summary>El 0 inicial es el prefijo troncal de las llamadas dentro del país.</summary>
     private static string RemoveTrunkPrefix(string national) =>

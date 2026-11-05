@@ -105,6 +105,8 @@ public static class InfrastructureServiceExtensions
         backup.EnsureHealthy();
 
         await BaselineLegacyDatabaseAsync(db);
+        await MemberDocumentMigrationGuard.EnsureNoDuplicatesAsync(
+            db, scope.ServiceProvider.GetRequiredService<ILogger<GymForgeDbContext>>());
         await db.Database.MigrateAsync();
         await seeder.SeedAsync();
 

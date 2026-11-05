@@ -102,3 +102,17 @@ que el release queda listo para auto-actualización. Hoy la app solo corre
 `VelopackApp.Build().Run()` (hooks de instalación): **todavía no busca actualizaciones sola**.
 Hasta que se agregue el `UpdateManager`, actualizar = correr el Setup nuevo encima, que
 respeta la base de datos en `%LOCALAPPDATA%\GymForge`.
+
+### Actualizar sobre una base viva (DNIs duplicados)
+
+Desde la versión con el índice único de DNI, la base exige un documento único por (empresa, sede).
+Antes de actualizar una instalación con datos reales:
+
+1. **Backup**: Config → "Copia de seguridad y migración" → exportar el `.zip` (o copiar `gymforge.db`).
+2. **Actualizar** (correr el Setup nuevo). Al arrancar, antes de migrar, la app revisa si hay socios con
+   el mismo DNI en la misma sede.
+3. Si los hay, **la app no abre** y no toca ningún dato: el motivo queda en el log
+   (`%LOCALAPPDATA%\GymForge\logs`) con cada sede, DNI y cantidad de repetidos. Nunca se borra ni
+   fusiona nada automáticamente.
+4. Para resolverlo: abrir la **versión anterior**, corregir el DNI mal cargado o dar de baja el socio
+   duplicado en cada caso listado, y volver a abrir la versión nueva. El mismo DNI en sedes distintas es válido.

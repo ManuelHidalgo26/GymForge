@@ -19,6 +19,8 @@ internal static class MemberDocumentMigrationGuard
 {
     internal const string UniqueIndexMigrationId = "20261105001255_AddMemberDocumentUniqueIndex";
     private const int MaxGroupsInMessage = 20;
+    private const int VisibleDocumentDigits = 3;
+    private const char MaskChar = '•';
 
     internal sealed class DuplicateGroup
     {
@@ -38,9 +40,17 @@ internal static class MemberDocumentMigrationGuard
             return;
 
         var message = BuildMessage(groups);
-        logger.LogCritical("Migración bloqueada por DNIs duplicados: {Groups} grupo(s). {Detail}", groups.Count, message);
+        logger.LogCritical(
+            "Migración bloqueada por DNIs duplicados: {Groups} grupo(s), {Members} socio(s) afectados",
+            groups.Count, groups.Sum(g => g.Total));
         throw new DuplicateMemberDocumentsBlockMigrationException(message);
     }
+
+    /// <summary>Deja visibles solo los últimos 3 dígitos: el operador ubica al socio sin que el DNI completo llegue al log.</summary>
+    private static string Mask(string document) =>
+        document.Length <= VisibleDocumentDigits
+            ? new string(MaskChar, VisibleDocumentDigits)
+            : new string(MaskChar, document.Length - VisibleDocumentDigits) + document[^VisibleDocumentDigits..];
 
     private static async Task<bool> MembersTableExistsAsync(GymForgeDbContext db) =>
         (await db.Database
@@ -68,7 +78,7 @@ internal static class MemberDocumentMigrationGuard
             $"No se puede actualizar la base: hay {groups.Count} documento(s) repetido(s) entre socios de la misma sede " +
             $"({groups.Sum(g => g.Total)} socios involucrados). La nueva versión exige un DNI único por sede.");
         foreach (var group in groups.Take(MaxGroupsInMessage))
-            text.AppendLine($"  - Sede \"{group.SiteName}\": DNI {group.DocumentNumber} x{group.Total}");
+            text.AppendLine($"  - Sede \"{group.SiteName}\": DNI {Mask(group.DocumentNumber)} x{group.Total}");
         if (groups.Count > MaxGroupsInMessage)
             text.AppendLine($"  ... y {groups.Count - MaxGroupsInMessage} más.");
         text.Append(

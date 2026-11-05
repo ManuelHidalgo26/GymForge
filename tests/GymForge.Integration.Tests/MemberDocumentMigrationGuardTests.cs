@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace GymForge.Integration.Tests;
 
@@ -35,7 +36,8 @@ public class MemberDocumentMigrationGuardTests : IDisposable
     [Fact]
     public async Task InitialiseDatabase_WithDuplicateDocumentsInTheSameSite_AbortsWithActionableMessageAndTouchesNothing()
     {
-        await using var provider = BuildProvider();
+        var logs = new CapturingLoggerProvider();
+        await using var provider = BuildProvider(logs);
         await PrepareLegacyDatabaseAsync(provider,
             ("11111111-1111-1111-1111-111111111111", SiteId, "30111222"),
             ("22222222-2222-2222-2222-222222222222", SiteId, "30111222"),
@@ -44,9 +46,12 @@ public class MemberDocumentMigrationGuardTests : IDisposable
         var act = () => provider.InitialiseDatabaseAsync();
 
         var error = (await act.Should().ThrowAsync<DuplicateMemberDocumentsBlockMigrationException>()).Which;
-        error.Message.Should().Contain("30111222").And.Contain("x2").And.Contain("copia de seguridad")
+        error.Message.Should().Contain("DNI •••••222 x2").And.Contain("copia de seguridad")
             .And.Contain("No se modificó ni se borró ningún dato");
+        error.Message.Should().NotContain("30111222", "el DNI completo no debe salir en el mensaje (va al log de arranque)");
         error.Message.Should().NotContain("40999888", "un DNI sin repetir no es parte del problema");
+        logs.Messages.Should().ContainSingle().Which.Should()
+            .Contain("1 grupo(s)").And.Contain("2 socio(s)").And.NotContain("30111222").And.NotContain("222");
 
         await using var db = OpenDb(provider);
         (await db.Database.SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM Members").SingleAsync()).Should().Be(3);
@@ -79,10 +84,14 @@ public class MemberDocumentMigrationGuardTests : IDisposable
         (await db.Database.GetPendingMigrationsAsync()).Should().BeEmpty();
     }
 
-    private ServiceProvider BuildProvider()
+    private ServiceProvider BuildProvider(ILoggerProvider? logProvider = null)
     {
         var services = new ServiceCollection();
-        services.AddLogging();
+        services.AddLogging(builder =>
+        {
+            if (logProvider is not null)
+                builder.AddProvider(logProvider);
+        });
         services.AddApplication();
         services.AddSingleton<ICurrentTenant, AmbientTenantProvider>();
         services.AddSingleton<ICurrentUser, AmbientCurrentUser>();
@@ -111,5 +120,31 @@ public class MemberDocumentMigrationGuardTests : IDisposable
                         'Active', 'Unknown', 'WalkIn', 0, '2026-01-01 00:00:00', '2026-01-01 00:00:00')
                 """);
         await db.Database.CloseConnectionAsync();
+    }
+
+    /// <summary>Guarda los mensajes críticos ya formateados para verificar qué llegaría al archivo de log.</summary>
+    private sealed class CapturingLoggerProvider : ILoggerProvider
+    {
+        public List<string> Messages { get; } = [];
+
+        public ILogger CreateLogger(string categoryName) => new CapturingLogger(Messages);
+
+        public void Dispose()
+        {
+        }
+
+        private sealed class CapturingLogger(List<string> messages) : ILogger
+        {
+            public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+            public bool IsEnabled(LogLevel logLevel) => true;
+
+            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+                Func<TState, Exception?, string> formatter)
+            {
+                if (logLevel == LogLevel.Critical)
+                    messages.Add(formatter(state, exception));
+            }
+        }
     }
 }

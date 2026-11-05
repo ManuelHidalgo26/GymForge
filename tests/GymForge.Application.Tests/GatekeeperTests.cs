@@ -26,7 +26,6 @@ public class GatekeeperTests
     {
         StopOnOweAmount = 10_000m,
         WarnOnOweAmount = 5_000m,
-        Timezone = "UTC",
         AntiPassbackMinutes = 5
     };
 
@@ -604,7 +603,7 @@ public class GatekeeperTests
     }
 
     [Fact]
-    public async Task OpenEndedMembership_NeverExpires_AndDoesNotNeedTheCompany()
+    public async Task OpenEndedMembership_NeverExpires()
     {
         var member = MakeActiveMember();
         ArrangeGrantableSwipe(member, MakeOpenEndedMembership(member.Id));
@@ -612,6 +611,37 @@ public class GatekeeperTests
         var result = await CreateSut().ValidateSwipeAsync(TagSwipe());
 
         result.Granted.Should().BeTrue();
-        await _siteRepo.DidNotReceive().GetCompanyAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    // ── Horario permitido: la zona es la de la empresa ───────────────────────
+
+    // 14:00 UTC = 11:00 en Argentina (UTC-3) = 02:00 del día siguiente en Nueva Zelanda (UTC+12).
+    private async Task<AccessDecision> SwipeWithMorningOnlyPlanAsync(string companyTimezone)
+    {
+        GivenCompanyIn(companyTimezone);
+        var member = MakeActiveMember();
+        var membership = MakeOpenEndedMembership(member.Id);
+        typeof(MembershipType).GetProperty(nameof(MembershipType.ScheduleRestrictionJson))!.SetValue(
+            membership.MembershipType, """[{"Days":[0,1,2,3,4,5,6],"From":"09:00:00","To":"12:00:00"}]""");
+        ArrangeGrantableSwipe(member, membership, new DateTime(2026, 4, 21, 14, 0, 0, DateTimeKind.Utc));
+
+        return await CreateSut().ValidateSwipeAsync(TagSwipe());
+    }
+
+    [Fact]
+    public async Task Horario_UsesTheCompanyZone_AllowedInsideTheWindow()
+    {
+        var result = await SwipeWithMorningOnlyPlanAsync("Argentina Standard Time");
+
+        result.Granted.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Horario_UsesTheCompanyZone_DeniedOutsideTheWindow()
+    {
+        var result = await SwipeWithMorningOnlyPlanAsync("New Zealand Standard Time");
+
+        result.Granted.Should().BeFalse();
+        result.DenialReason.Should().Be(AccessDenialReason.OutOfHours);
     }
 }

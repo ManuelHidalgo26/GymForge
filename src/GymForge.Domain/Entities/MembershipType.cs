@@ -68,7 +68,8 @@ public class MembershipType : BaseEntity, ITenantScoped, IAuditable
         _ => start.AddMonths(DurationValue),
     };
 
-    public bool IsTimeAllowed(DateTime localTime, string timezone)
+    /// <summary>Hora de pared (ya en la zona de la empresa) permitida por las restricciones horarias del plan.</summary>
+    public bool IsTimeAllowed(DateTime localTime)
     {
         if (string.IsNullOrEmpty(ScheduleRestrictionJson)) return true;
 

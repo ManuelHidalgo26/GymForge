@@ -17,6 +17,12 @@ public interface ICompanyCalendar
 
     /// <summary>Hoy en la zona de la empresa indicada. Lanza <see cref="KeyNotFoundException"/> si no existe.</summary>
     Task<DateOnly> TodayAsync(Guid companyId, CancellationToken ct = default);
+
+    /// <summary>
+    /// La hora de pared actual en la zona de la empresa indicada (para reglas de horario). Lanza
+    /// <see cref="KeyNotFoundException"/> si no existe. Fuente única de la zona: <c>Company.Timezone</c>.
+    /// </summary>
+    Task<DateTime> LocalNowAsync(Guid companyId, CancellationToken ct = default);
 }
 
 public sealed partial class CompanyCalendar : ICompanyCalendar
@@ -33,25 +39,30 @@ public sealed partial class CompanyCalendar : ICompanyCalendar
     }
 
     /// <remarks>Si la zona no existe en esta PC se usa la fecha del reloj (UTC) y se avisa en el log.</remarks>
-    public DateOnly TodayFor(Company company)
+    public DateOnly TodayFor(Company company) => DateOnly.FromDateTime(LocalNowFor(company));
+
+    public async Task<DateOnly> TodayAsync(Guid companyId, CancellationToken ct = default) =>
+        TodayFor(await LoadCompanyAsync(companyId, ct));
+
+    public async Task<DateTime> LocalNowAsync(Guid companyId, CancellationToken ct = default) =>
+        LocalNowFor(await LoadCompanyAsync(companyId, ct));
+
+    private async Task<Company> LoadCompanyAsync(Guid companyId, CancellationToken ct) =>
+        await _sites.GetCompanyAsync(companyId, ct)
+            ?? throw new KeyNotFoundException($"Empresa {companyId} no encontrada.");
+
+    private DateTime LocalNowFor(Company company)
     {
         try
         {
             var zone = TimeZoneInfo.FindSystemTimeZoneById(company.Timezone);
-            return DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(_clock.Now, zone));
+            return TimeZoneInfo.ConvertTimeFromUtc(_clock.Now, zone);
         }
         catch (Exception ex) when (ex is TimeZoneNotFoundException or InvalidTimeZoneException)
         {
             LogTimeZoneFallback(ex, company.Id, company.Timezone);
-            return _clock.Today;
+            return _clock.Now;
         }
-    }
-
-    public async Task<DateOnly> TodayAsync(Guid companyId, CancellationToken ct = default)
-    {
-        var company = await _sites.GetCompanyAsync(companyId, ct)
-            ?? throw new KeyNotFoundException($"Empresa {companyId} no encontrada.");
-        return TodayFor(company);
     }
 
     [LoggerMessage(Level = LogLevel.Warning,

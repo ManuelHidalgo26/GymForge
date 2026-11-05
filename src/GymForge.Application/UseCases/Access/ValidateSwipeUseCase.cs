@@ -28,7 +28,6 @@ public class GatekeeperConfig
     // set (no init): los valores persistidos por Company se aplican al arrancar.
     public decimal StopOnOweAmount { get; set; } = 10_000m;
     public decimal WarnOnOweAmount { get; set; } = 5_000m;
-    public string Timezone { get; set; } = "Argentina Standard Time";
     public int AntiPassbackMinutes { get; set; } = 5;
 }
 
@@ -119,11 +118,9 @@ public class ValidateSwipeUseCase : IValidateSwipeUseCase
         bool warn = owing > _config.WarnOnOweAmount;
 
         // 4. Horario permitido por el plan
-        var localNow = TimeZoneInfo.ConvertTimeFromUtc(
-            _clock.Now,
-            TimeZoneInfo.FindSystemTimeZoneById(_config.Timezone));
+        var localNow = await _calendar.LocalNowAsync(request.CompanyId, ct);
 
-        if (!membership.MembershipType.IsTimeAllowed(localNow, _config.Timezone))
+        if (!membership.MembershipType.IsTimeAllowed(localNow))
         {
             await AppendDenied(request, member.Id, AccessDenialReason.OutOfHours, ct);
             return Deny(member.Id, member.FullName, member.PhotoUrl, AccessDenialReason.OutOfHours, owing);

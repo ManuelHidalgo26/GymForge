@@ -62,7 +62,7 @@ public class FreezeAtTheDoorTests : IAsyncLifetime
     private ValidateSwipeUseCase Gatekeeper() => new(
         new MemberRepository(_db), new MembershipRepository(_db), new ChargeRepository(_db),
         new AccessLogRepository(_db), Substitute.For<IEventBus>(), _clock,
-        TestServices.Calendar(_db, _clock), _tenant, new GatekeeperConfig { Timezone = "UTC" });
+        TestServices.Calendar(_db, _clock), _tenant, new GatekeeperConfig());
 
     private Task<AccessDecision> SwipeAsync() => Gatekeeper().ValidateSwipeAsync(
         new ValidateSwipeRequest(Tag, AccessMethod.RfidCard, DoorId, _site.Id, _company.Id));

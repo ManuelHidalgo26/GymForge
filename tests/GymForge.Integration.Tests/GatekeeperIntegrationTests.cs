@@ -60,7 +60,7 @@ public class GatekeeperIntegrationTests : IAsyncLifetime
             clock,
             TestServices.Calendar(_db, clock),
             _tenant,
-            new GatekeeperConfig { Timezone = "UTC" });
+            new GatekeeperConfig());
     }
 
     private ValidateSwipeRequest TagSwipe(string tag) =>

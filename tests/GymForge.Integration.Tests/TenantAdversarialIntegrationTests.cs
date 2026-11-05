@@ -297,7 +297,7 @@ public class TenantAdversarialIntegrationTests : IAsyncLifetime
         var gatekeeper = new ValidateSwipeUseCase(
             new MemberRepository(_db), new MembershipRepository(_db), new ChargeRepository(_db),
             new AccessLogRepository(_db), Substitute.For<IEventBus>(), clock,
-            TestServices.Calendar(_db, clock), _tenant, new GatekeeperConfig { Timezone = "UTC" });
+            TestServices.Calendar(_db, clock), _tenant, new GatekeeperConfig());
 
         var result = await gatekeeper.ValidateSwipeAsync(
             new ValidateSwipeRequest("TAG-B", AccessMethod.RfidCard, 1, _siteA1.Id, _companyA.Id));

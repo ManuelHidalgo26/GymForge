@@ -18,6 +18,7 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 
 ## Estado general (al 2026-11-05)
 
+- **Barrido de deuda (pasada 2, 2026-11-05): CERRADO** (tag previsto `DEUDA-COBROS-P2-2026-11-05`). Cerrados **D13, F2-D1, F2-D2 y F2-D6** (cluster de cobranzas/dunning). Código en el working tree **sin commit** (lo hace el orquestador). qa: APROBADO CON OBSERVACIONES, sin bloqueantes. Tests **1504 verdes** (Domain 107 · Application 617 · Desktop 421 · Integration 359). Deuda nueva: NEW-28 a NEW-30. Ver la entrada de arriba de todo.
 - **Barrido de deuda (pasada 1, 2026-11-05): CERRADO** (tag `DEUDA-COBROS-2026-11-05`). Cerrados **D1, D10, D14 y D15**. Código en el working tree **sin commit** (lo hace el orquestador). qa: APROBADO CON OBSERVACIONES, sin bloqueantes. Tests **1485 verdes** (Domain 107 · Application 599 · Desktop 421 · Integration 358), 0 fallos, 0 omitidos. Deuda nueva no bloqueante: NEW-24 a NEW-27. El cluster de cobranzas/dunning (D13, F2-D1, F2-D2, F2-D6) queda para la pasada 2. Ver la entrada de arriba de todo.
 
 - **Endurecimiento para piloto (2026-11-05): CERRADO** en `feat/sesion-6` (NEW-15 vuln High `Tmds.DBus.Protocol` pin 0.21.3; NEW-16 guard de DNIs duplicados antes de migrar D7). Código **sin commit** (lo hace el orquestador). qa: APROBADO CON OBSERVACIONES. Tests **1477 verdes**. Deuda nueva NEW-19 a NEW-21 en TASKS. La revisión de seguridad automática marcó PII (DNIs) en el log del guard; corregido el mismo día enmascarando el DNI y dejando el log con conteos (dev → qa APROBADO; deuda NEW-22/23). Ver la entrada de arriba de todo.
@@ -29,7 +30,7 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 - **Fase 4 parte 2 (Sesión 7): CERRADA (2026-11-04)** en `feat/sesion-6` (código `1f44d2c`; commit de docs por el orquestador). ADR-008 `Accepted`. Sin push ni merge. Ver la entrada de cierre arriba de todo.
 - **Limpieza de bugs/errores/warnings (2026-11-04): CERRADA** en `feat/sesion-6` (código `7bc780f`; commit de docs por el orquestador). Sin push ni merge. Ver la entrada de arriba de todo.
 - **Git (verificado en refs, 2026-11-03):** `master` = `e541586`. `origin/master` = `6d39c0a` (anterior al merge de F1 `33ba4ec`): **master está adelante de origin, sin push** (29 commits según el orquestador; no re-contado). Existen `feat/sesion-3`, `feat/sesion-4` y `feat/sesion-5` (ya mergeadas).
-- Tests: **1485 verdes al cierre del barrido de deuda, pasada 1 (2026-11-05)** (Domain 107 · Application 599 · Desktop 421 · Integration 358). Anterior: **1477 verdes al cierre del endurecimiento para piloto (2026-11-05)** (Domain 107 · Application 591 · Desktop 421 · Integration 358). Anterior: **1472 verdes al cierre del Endurecimiento final** (Domain 107 · Application 591 · Desktop 419 · Integration 355), `dotnet test GymForge.sln` exit 0, 0 omitidos, Debug y Release (2026-11-04). Piso previo: 1461 (Fase 5 parte 2, pieza F); 1456 (Fase 5 parte 1, `d33e101`); 1392 antes de la limpieza (`7bc780f`).
+- Tests: **1504 verdes al cierre del barrido de deuda, pasada 2 (2026-11-05)** (Domain 107 · Application 617 · Desktop 421 · Integration 359). Anterior: **1485 verdes al cierre del barrido de deuda, pasada 1 (2026-11-05)** (Domain 107 · Application 599 · Desktop 421 · Integration 358). Anterior: **1477 verdes al cierre del endurecimiento para piloto (2026-11-05)** (Domain 107 · Application 591 · Desktop 421 · Integration 358). Anterior: **1472 verdes al cierre del Endurecimiento final** (Domain 107 · Application 591 · Desktop 419 · Integration 355), `dotnet test GymForge.sln` exit 0, 0 omitidos, Debug y Release (2026-11-04). Piso previo: 1461 (Fase 5 parte 2, pieza F); 1456 (Fase 5 parte 1, `d33e101`); 1392 antes de la limpieza (`7bc780f`).
 - **Endurecimiento final (post-Fase 5): CERRADO (2026-11-04)** en `feat/sesion-6`: 7 commits de código (`6dd304f`, `5274395`, `ffcbbbc`, `6ec5ae4`, `e9ef7aa`, `dd294d5`, `3b4d7e9`) + commit de docs pendiente del orquestador. ADR-011 `Accepted` con plan por tiers: MUST + SHOULD entregados; D9b, D2 y UX19 diferidos. **2 migraciones nuevas:** `20261105000953` (D3, SiteId) y `20261105001255` (D7, DNI único por empresa+sede). Sin push ni merge.
 - **Fase 5 parte 1 (Sesión 8): CERRADA (2026-11-04)** en `feat/sesion-6` (código `d33e101`; commit de docs por el orquestador). ADR-009 `Accepted`. Piezas A–E y G; F (calendario) diferida a parte 2. Sin push ni merge. Ver la entrada de cierre arriba de todo.
 - **Fase 5 parte 2 (Sesión 9): CERRADA (2026-11-04)** en `feat/sesion-6`: pieza F (calendario semanal de Clases en grilla de 7 días). **Fase 5 completa cerrada (piezas A–G).** ADR-010 pasa a `Accepted` al commitear (orquestador). Código y docs pendientes de commit del orquestador. Sin push ni merge. Ver la entrada de cierre arriba de todo.
@@ -76,13 +77,40 @@ Decisiones del usuario abiertas (ninguna bloquea el piloto con las 2 condiciones
 4. **F1-D8:** el CUIT de la empresa se edita sin PIN; decidir si se pide PIN de admin para cambiarlo.
 5. **F1-D11 (verificación):** antes de emitir claves con la versión nueva, `.\scripts\licencia.ps1 show <clave ya entregada>` debe seguir mostrándolas válidas.
 6. **F1-D1 / D2 / D3:** resolver antes de escalar. F1-D3 antes de activar el auto-update.
-7. **F2 (ADR-005 §"Decisiones a confirmar"):** (a) normalización telefónica AR de `ToWhatsAppDigits` y largo mínimo (F2-D2); (b) confirmar que el aviso automático sigue log-only en Fase 2; (c) aceptar "recordatorio iniciado" (no "entregado") en el log, porque `wa.me` no confirma entrega; (d) editor de etapas fijas o agregar/quitar etapas (UX13 c); (e) orden de Morosos por días de atraso desc (aplicado por defecto; confirmar). Además: **F2-D1 antes de prender el aviso automático** (el job registra `Automatic` aunque hoy no envía, y "último recordatorio" puede mentir) y F2-D5 (¿freno a recordatorios repetidos el mismo día?).
+7. **F2 (ADR-005 §"Decisiones a confirmar"):** (a) normalización telefónica AR de `ToWhatsAppDigits` y largo mínimo (F2-D2; **resuelto en pasada 2**: 10 dígitos nacionales, salvo el caso `00` abierto en NEW-29); (b) confirmar que el aviso automático sigue log-only en Fase 2; (c) aceptar "recordatorio iniciado" (no "entregado") en el log, porque `wa.me` no confirma entrega; (d) editor de etapas fijas o agregar/quitar etapas (UX13 c); (e) orden de Morosos por días de atraso desc (aplicado por defecto; confirmar). Además: **F2-D1 antes de prender el aviso automático** (**resuelto en pasada 2**: "último recordatorio" solo cuenta `Manual`; el job registra `Automatic` aunque hoy no envía) y F2-D5 (¿freno a recordatorios repetidos el mismo día?).
 8. Pendiente operativo: **push de `master` a `origin` y CI** (sin hacer). `origin/master` = `6d39c0a`; `master` = `e541586` (29 commits de diferencia según el orquestador, no re-contado). Lo decide el usuario. Las ramas `feat/sesion-3`, `feat/sesion-4` y `feat/sesion-5` ya están mergeadas y se pueden borrar tras el push (`feat/sesion-6` tras su commit y merge).
 9. **O10 (roles para exportar):** hoy cualquier sesión de recepción puede exportar "toda la empresa" con PII y finanzas (no hay roles finos en la UI). Liga con D11 y con la decisión 5 de ADR-007.
 
 Fuera del piloto: P-2 (saldo a favor en la ficha) sigue abierta. D1 (cobros multi-sede) quedó cerrada el 2026-11-05 (barrido pasada 1). Resto de deuda (D1–D19, F1-D4 a F1-D10, F2-D1 a F2-D8, Q3–Q9, UX1–UX17): ver `docs/TASKS.md`.
 
 Sesiones 5-8: ver tabla de fases arriba.
+
+---
+
+## [2026-11-05] Barrido de deuda (pasada 2): cluster de cobranzas/dunning (D13, F2-D1, F2-D2, F2-D6) — CERRADO
+
+**Hecho:**
+- **F2-D1 (MEDIA) cerrado.** "Último recordatorio" de Morosos cuenta solo `NotificationLog.Trigger = Manual`. Los `Automatic` del job log-only ya no muestran un recordatorio falso. El dedup del catch-up (`WasSentAsync`) sigue viendo los automáticos (no reenvía). Archivos: `GetOverdueMembersQuery.cs`, `NotificationLogRepository.cs`, `IRepositories.cs`; comentario en `DunningService.cs`.
+- **F2-D6 (BAJA) cerrado.** Se eliminó el N+1 de la lista de morosos: `GetLastForMemberAsync` se reemplazó por `GetLastManualByMembersAsync(IReadOnlyCollection<Guid>)` (una sola lectura agrupada; filtra Manual + ids; `Max(SentAt)` por socio; respeta el filtro global de empresa+sede). Mismo query que F2-D1.
+- **F2-D2 (MEDIA-BAJA) cerrado.** `WhatsAppLink.ToWhatsAppDigits` exige 10 dígitos nacionales AR tras quitar 0 troncal/9/15; respeta prefijos internacionales ≠ 54; `00` = marcado internacional; devuelve null si no arma un número válido. Un celular mal cargado deja `HasUsableMobile = false` y "Recordar" no se ofrece (antes abría WhatsApp con un número inexistente y registraba un aviso falso).
+- **D13 (BAJA) cerrado.** El paso 4 del job (limpieza de mora) corre solo el último día de la ventana de catch-up y antes del dunning (si el sender lanza, la limpieza ya quedó hecha). `RunForCompanyDayAsync` recibe `isLastDayOfWindow` (default true).
+- **Tests:** `dotnet test GymForge.sln` **1504 verdes** (Domain 107 · Application 617 · Desktop 421 · Integration 359), 0 fallos. Partiendo de 1485 (pasada 1).
+- **qa:** APROBADO CON OBSERVACIONES, sin bloqueantes.
+- **Deuda nueva:** NEW-28 (test cross-sede de `GetLastManualByMembersAsync`), NEW-29 (decidir null para `00` + 10 dígitos AR), NEW-30 (catch-up multi-día: dunning intermedio sin limpieza). Sección "Deuda del barrido de deuda, pasada 2" en TASKS.
+
+**En curso:** nada a medias. Código en el working tree **sin commit** (lo hace el orquestador; los commits de la pasada 2 todavía no existen).
+
+**Blockers:** ninguno técnico.
+
+**Próximo paso:**
+1. Orquestador: commit de código tras `dotnet test` verde (agrupado o por ítem) y commit de docs aparte; tag `DEUDA-COBROS-P2-2026-11-05`.
+2. Decisión sobre NEW-29 (qa recomienda null) antes de dar el cobro por WhatsApp como cerrado del todo.
+3. Pendientes de la pasada 1 sin cambios: NEW-24 (ux · dev), NEW-25 (qa · dev), NEW-26 (dev · ux), NEW-27 (INFO).
+
+**Tocado:**
+- Código (sin commit): `src/GymForge.Application/UseCases/Dunning/GetOverdueMembersQuery.cs`, `src/GymForge.Application/UseCases/Dunning/WhatsAppLink.cs`, `src/GymForge.Application/UseCases/Dunning/DunningService.cs`, `src/GymForge.Application/UseCases/Maintenance/DailyMaintenanceService.cs`, `src/GymForge.Application/UseCases/Maintenance/DailyMaintenanceRunner.cs`, `src/GymForge.Application/Interfaces/IRepositories.cs`, `src/GymForge.Infrastructure/Repositories/NotificationLogRepository.cs`.
+- Tests (sin commit): `tests/GymForge.Application.Tests/Dunning/WhatsAppLinkTests.cs`, `tests/GymForge.Application.Tests/Handlers/DailyMaintenanceRunnerTests.cs`, `tests/GymForge.Application.Tests/Handlers/DailyMaintenanceServiceTests.cs`, `tests/GymForge.Application.Tests/Handlers/GetOverdueMembersQueryTests.cs`, `tests/GymForge.Desktop.Tests/WhatsAppLinkSenderTests.cs`, `tests/GymForge.Integration.Tests/NotificationLogRepositoryTests.cs`.
+- Docs: `docs/PROGRESS.md`, `docs/TASKS.md`.
 
 ---
 

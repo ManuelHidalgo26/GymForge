@@ -16,7 +16,9 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 - Flujo por sesión: arqui (ADR) → dev (implementa) → qa (aprueba o veta).
 - Regla 6 de CLAUDE.md: `dotnet test` verde antes de cada commit.
 
-## Estado general (al 2026-11-04)
+## Estado general (al 2026-11-05)
+
+- **Endurecimiento para piloto (2026-11-05): CERRADO** en `feat/sesion-6` (NEW-15 vuln High `Tmds.DBus.Protocol` pin 0.21.3; NEW-16 guard de DNIs duplicados antes de migrar D7). Código **sin commit** (lo hace el orquestador). qa: APROBADO CON OBSERVACIONES. Tests **1477 verdes**. Deuda nueva NEW-19 a NEW-21 en TASKS. Ver la entrada de arriba de todo.
 
 - Sesiones 1, 2, 3 y Fase 1: **mergeadas a `master`** (merge `--no-ff` `33ba4ec`; 19 commits de `feat/sesion-3`). Local: `origin/master` quedó atrás, **sin push**. La rama `feat/sesion-3` sigue existiendo. ADR-001 a ADR-004 en `Accepted`.
 - **Fase 2 (Sesión 4): CERRADA y MERGEADA a `master`** (merge `9d44634` de `feat/sesion-4`; 3 commits: `9894c8f`, `c11770f`, `fc140c0`). ADR-005 `Accepted`. Sin push.
@@ -25,7 +27,7 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 - **Fase 4 parte 2 (Sesión 7): CERRADA (2026-11-04)** en `feat/sesion-6` (código `1f44d2c`; commit de docs por el orquestador). ADR-008 `Accepted`. Sin push ni merge. Ver la entrada de cierre arriba de todo.
 - **Limpieza de bugs/errores/warnings (2026-11-04): CERRADA** en `feat/sesion-6` (código `7bc780f`; commit de docs por el orquestador). Sin push ni merge. Ver la entrada de arriba de todo.
 - **Git (verificado en refs, 2026-11-03):** `master` = `e541586`. `origin/master` = `6d39c0a` (anterior al merge de F1 `33ba4ec`): **master está adelante de origin, sin push** (29 commits según el orquestador; no re-contado). Existen `feat/sesion-3`, `feat/sesion-4` y `feat/sesion-5` (ya mergeadas).
-- Tests: **1472 verdes al cierre del Endurecimiento final** (Domain 107 · Application 591 · Desktop 419 · Integration 355), `dotnet test GymForge.sln` exit 0, 0 omitidos, Debug y Release (2026-11-04). Piso previo: 1461 (Fase 5 parte 2, pieza F); 1456 (Fase 5 parte 1, `d33e101`); 1392 antes de la limpieza (`7bc780f`).
+- Tests: **1477 verdes al cierre del endurecimiento para piloto (2026-11-05)** (Domain 107 · Application 591 · Desktop 421 · Integration 358). Anterior: **1472 verdes al cierre del Endurecimiento final** (Domain 107 · Application 591 · Desktop 419 · Integration 355), `dotnet test GymForge.sln` exit 0, 0 omitidos, Debug y Release (2026-11-04). Piso previo: 1461 (Fase 5 parte 2, pieza F); 1456 (Fase 5 parte 1, `d33e101`); 1392 antes de la limpieza (`7bc780f`).
 - **Endurecimiento final (post-Fase 5): CERRADO (2026-11-04)** en `feat/sesion-6`: 7 commits de código (`6dd304f`, `5274395`, `ffcbbbc`, `6ec5ae4`, `e9ef7aa`, `dd294d5`, `3b4d7e9`) + commit de docs pendiente del orquestador. ADR-011 `Accepted` con plan por tiers: MUST + SHOULD entregados; D9b, D2 y UX19 diferidos. **2 migraciones nuevas:** `20261105000953` (D3, SiteId) y `20261105001255` (D7, DNI único por empresa+sede). Sin push ni merge.
 - **Fase 5 parte 1 (Sesión 8): CERRADA (2026-11-04)** en `feat/sesion-6` (código `d33e101`; commit de docs por el orquestador). ADR-009 `Accepted`. Piezas A–E y G; F (calendario) diferida a parte 2. Sin push ni merge. Ver la entrada de cierre arriba de todo.
 - **Fase 5 parte 2 (Sesión 9): CERRADA (2026-11-04)** en `feat/sesion-6`: pieza F (calendario semanal de Clases en grilla de 7 días). **Fase 5 completa cerrada (piezas A–G).** ADR-010 pasa a `Accepted` al commitear (orquestador). Código y docs pendientes de commit del orquestador. Sin push ni merge. Ver la entrada de cierre arriba de todo.
@@ -56,7 +58,7 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 - **D9b** (scope por operación en Desktop, refactor del DbContext): candidato a su propia sesión, si el usuario la quiere arrancar. Sin esto, `ValidateScopes` queda apagado en `Program.cs:54`.
 - **D2** (auth de la API): diferido. La API está apagada; reabrir solo si Kestrel sale de localhost:5000.
 - **UX19 / F3-D2** (primer carácter del lector): diferido. Necesita hardware real.
-- **NEW-16** (depurar DNIs duplicados antes de migrar D7 en base viva), **NEW-15** (`Tmds.DBus.Protocol` High en producción). NEW-14 cerrado (2026-11-04, ver entrada de arriba).
+- **NEW-15** (`Tmds.DBus.Protocol` High) y **NEW-16** (guard de DNIs duplicados antes de migrar D7): **CERRADOS (2026-11-05)**, ver entrada de arriba. Quedan NEW-19 a NEW-21 (no bloqueantes). NEW-14 cerrado (2026-11-04).
 - D12 (residuo de zona horaria), F5-D1 a F5-D4 y NEW-6 (verificación manual de exports y de F4 parte 2): siguen abiertos como estaban.
 - Decisiones del usuario abiertas (no se tocan en este cierre): D11 ampliada, O10, NEW-8 (`.editorconfig`), push y merge de `feat/sesion-6`.
 
@@ -79,6 +81,30 @@ Decisiones del usuario abiertas (ninguna bloquea el piloto con las 2 condiciones
 Fuera del piloto: P-2 (saldo a favor en la ficha) y D1 (cobros multi-sede) siguen abiertas. Resto de deuda (D1–D19, F1-D4 a F1-D10, F2-D1 a F2-D8, Q3–Q9, UX1–UX17): ver `docs/TASKS.md`.
 
 Sesiones 5-8: ver tabla de fases arriba.
+
+---
+
+## [2026-11-05] Endurecimiento para piloto (NEW-15 + NEW-16) — CERRADO
+
+**Hecho:**
+- **NEW-15 (ALTA) cerrado.** Vuln `Tmds.DBus.Protocol` (GHSA-xrw6-gwf8-vvr9, High): pin **0.21.3** en `Directory.Packages.props` (grupo Avalonia; `CentralPackageTransitivePinningEnabled` ya activo). Antes 0.21.2, transitiva de Avalonia 11.3.0 en Desktop, Desktop.Tests y Screenshots. qa verificó el GHSA con `gh api advisories/GHSA-xrw6-gwf8-vvr9`: rango vulnerable `< 0.21.3` y `>= 0.22.0, < 0.92.0`; 0.21.3 es el parche de la rama 0.21. `dotnet list GymForge.sln package --vulnerable --include-transitive`: 14 proyectos, 0 vulnerables. Compatible con Avalonia 11.3.0 (build + 421 tests headless del Desktop). Completa lo que NEW-1/NEW-10 dejaban sin verificar.
+- **NEW-16 (ALTA) cerrado.** Guard pre-migración de DNIs duplicados para la migración D7 (`20261105001255`): nuevo `src/GymForge.Infrastructure/Persistence/MemberDocumentMigrationGuard.cs` (`internal`, `EnsureNoDuplicatesAsync`; excepción pública `DuplicateMemberDocumentsBlockMigrationException`). Llamado en `InitialiseDatabaseAsync` (`InfrastructureServiceExtensions.cs`) entre `BaselineLegacyDatabaseAsync` y `MigrateAsync()`. Corre solo si la migración está pendiente y existe la tabla `Members`. SQL read-only que agrupa por `(CompanyId, SiteId, DocumentNumber)` con `HAVING COUNT(*) > 1`, excluye documento vacío, LEFT JOIN a `Sites`. Si hay duplicados: `LogCritical` + excepción con mensaje accionable (cantidad por sede y pasos: cerrar la app, backup, unificar con la versión anterior, reabrir). No toca ni borra datos.
+- **Tests nuevos (3)** en `tests/GymForge.Integration.Tests/MemberDocumentMigrationGuardTests.cs`: duplicados en la misma sede abortan (3 filas intactas, migración sigue pendiente); mismo DNI en sedes distintas migra; base nueva migra.
+- **Doc:** sección "Actualizar sobre una base viva (DNIs duplicados)" en `docs/DISTRIBUCION.md`.
+- **Tests:** `dotnet test GymForge.sln` **1477 verdes** (Domain 107 · Application 591 · Desktop 421 · Integration 358), 0 omitidos. Piso previo 1472. Build Debug y Release 0 errores, 0 advertencias.
+- **qa:** APROBADO CON OBSERVACIONES, sin bloqueantes.
+
+**En curso:** nada a medias. Código en el working tree **sin commit** (lo hace el orquestador). Ver `git status`: `Directory.Packages.props`, `docs/DISTRIBUCION.md`, `InfrastructureServiceExtensions.cs` (modificados); `MemberDocumentMigrationGuard.cs` y `MemberDocumentMigrationGuardTests.cs` (sin trackear).
+
+**Blockers:** ninguno técnico. Deuda nueva no bloqueante: NEW-19 (el fallo de arranque por DNIs duplicados solo va al log; falta diálogo), NEW-20 (base `EnsureCreated`/baselineada no recibe el índice D7 ni el guard), NEW-21 (normalizar DNI con espacios y puntos: decisión).
+
+**Próximo paso:**
+1. Orquestador: commit del pase (sugerido: `fix: [seguridad] Tmds.DBus.Protocol 0.21.3 (NEW-15)` + `feat: [db] guard de DNIs duplicados antes de migrar D7 (NEW-16)`, con docs aparte), tras `dotnet test` verde.
+2. Usuario: decisiones de siempre (D11 ampliada, O10, NEW-8, push y merge de `feat/sesion-6`) y, para la base de piloto, backup antes de migrar D7 si ya tiene datos.
+
+**Tocado:**
+- Código (sin commit): `Directory.Packages.props`; `src/GymForge.Infrastructure/InfrastructureServiceExtensions.cs`; `src/GymForge.Infrastructure/Persistence/MemberDocumentMigrationGuard.cs` (nuevo); `tests/GymForge.Integration.Tests/MemberDocumentMigrationGuardTests.cs` (nuevo).
+- Docs: `docs/DISTRIBUCION.md`, `docs/PROGRESS.md`, `docs/TASKS.md`.
 
 ---
 

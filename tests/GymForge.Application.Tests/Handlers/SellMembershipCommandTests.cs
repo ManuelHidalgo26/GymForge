@@ -24,7 +24,8 @@ public class SellMembershipCommandTests
         _calendar.TodayAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(Today);
 
     private SellMembershipCommandHandler Sut() =>
-        new(_planRepo, _chargeRepo, _membershipRepo, _memberRepo, _paymentRepo, _cashRegister, _staffRepo, _calendar);
+        new(_planRepo, _chargeRepo, _membershipRepo, _memberRepo, _paymentRepo, _cashRegister, _staffRepo, _calendar,
+            new ArrearsRelief(_memberRepo, _chargeRepo, _calendar));
 
     private static Member MakeProspect(Guid companyId, Guid siteId) =>
         Member.Create(companyId, siteId, "Juan", "Pérez", DocumentType.DNI, "30111222", Gender.Male);
@@ -129,6 +130,81 @@ public class SellMembershipCommandTests
 
         member.JoinDate.Should().Be(originalJoin);
         _memberRepo.DidNotReceive().Update(Arg.Any<Member>());
+    }
+
+    // ── Estado del socio según de dónde venga ─────────────────────────────────
+
+    private async Task<Member> SellTo(Member member, params Charge[] pendingCharges)
+    {
+        var plan = MembershipType.Create(member.CompanyId, "Mensual", MembershipBasis.Renewal, 35_000m, 1, "Month");
+        _planRepo.GetByIdAsync(plan.Id, Arg.Any<CancellationToken>()).Returns(plan);
+        _memberRepo.GetByIdAsync(member.Id, Arg.Any<CancellationToken>()).Returns(member);
+        _chargeRepo.GetPendingAsync(member.Id, Arg.Any<CancellationToken>()).Returns(pendingCharges);
+        member.ClearDomainEvents();
+
+        await Sut().Handle(new SellMembershipCommand(
+            member.CompanyId, member.SiteId, Guid.NewGuid(), null, member.Id, plan.Id, PaymentMethod.Cash),
+            CancellationToken.None);
+        return member;
+    }
+
+    private static Member MakeOverdueMember()
+    {
+        var member = MakeProspect(Guid.NewGuid(), Guid.NewGuid());
+        member.Activate(new DateOnly(2024, 1, 10));
+        member.MarkOverdue();
+        return member;
+    }
+
+    private static Charge OverdueCharge(Member member) =>
+        Charge.Create(member.CompanyId, member.SiteId, member.Id, null, ConceptType.MembershipFee,
+            "Cuota vieja", 10_000m, Today.AddDays(-30));
+
+    [Fact]
+    public async Task Handle_OverdueMemberWithOtherDebts_StaysOverdueAndEmitsNoActivationEvent()
+    {
+        var member = MakeOverdueMember();
+
+        await SellTo(member, OverdueCharge(member));
+
+        member.Status.Should().Be(MemberStatus.Overdue);
+        member.DomainEvents.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Handle_OverdueMemberWithoutOtherDebts_LeavesArrearsWithoutActivationEvent()
+    {
+        var member = MakeOverdueMember();
+
+        await SellTo(member);
+
+        member.Status.Should().Be(MemberStatus.Active);
+        member.DomainEvents.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Handle_FrozenMember_KeepsItsStatus()
+    {
+        var member = MakeProspect(Guid.NewGuid(), Guid.NewGuid());
+        member.Activate(new DateOnly(2024, 1, 10));
+        member.Freeze();
+
+        await SellTo(member);
+
+        member.Status.Should().Be(MemberStatus.Frozen);
+        member.DomainEvents.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Handle_SuspendedMember_KeepsItsStatus()
+    {
+        var member = MakeProspect(Guid.NewGuid(), Guid.NewGuid());
+        member.Suspend();
+
+        await SellTo(member);
+
+        member.Status.Should().Be(MemberStatus.Suspended);
+        member.DomainEvents.Should().BeEmpty();
     }
 
     [Fact]

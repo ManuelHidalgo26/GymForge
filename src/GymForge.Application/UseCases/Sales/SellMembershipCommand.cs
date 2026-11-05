@@ -45,6 +45,7 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
     private readonly ICashRegister _cashRegister;
     private readonly IStaffRepository _staffRepo;
     private readonly ICompanyCalendar _calendar;
+    private readonly IArrearsRelief _arrearsRelief;
 
     public SellMembershipCommandHandler(
         IMembershipTypeRepository planRepo,
@@ -54,8 +55,10 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
         IPaymentRepository paymentRepo,
         ICashRegister cashRegister,
         IStaffRepository staffRepo,
-        ICompanyCalendar calendar)
+        ICompanyCalendar calendar,
+        IArrearsRelief arrearsRelief)
     {
+        _arrearsRelief = arrearsRelief;
         _planRepo = planRepo;
         _chargeRepo = chargeRepo;
         _membershipRepo = membershipRepo;
@@ -98,12 +101,7 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
             plan.Price, cmd.Method, cmd.ShiftId, cmd.CardLast4);
         payment.Allocations.Add(PaymentAllocation.Create(payment.Id, charge.Id, plan.Price));
 
-        // El socio pasa a Activo (deja de ser prospecto / vencido).
-        if (member.Status != MemberStatus.Active)
-        {
-            member.Activate(today);
-            _memberRepo.Update(member);
-        }
+        await UpdateMemberStatusAsync(member, today, ct);
 
         await _membershipRepo.AddAsync(membership, ct);
         await _chargeRepo.AddAsync(charge, ct);
@@ -113,6 +111,27 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
 
         await _chargeRepo.SaveChangesAsync(ct);
         return PaymentDto.FromEntity(payment);
+    }
+
+    /// <summary>
+    /// Estado del socio tras la venta, según de dónde venga:
+    /// Prospect / Expired / Cancelled pasan a Active (alta o reactivación, con evento de alta);
+    /// Overdue solo sale de mora si no le quedan otras deudas vencidas (mismo mecanismo que el cobro);
+    /// Active no cambia; Frozen y Suspended NO se tocan: congelar y suspender son decisiones explícitas
+    /// del gimnasio y se levantan con descongelar / reactivar, no como efecto colateral de una venta.
+    /// </summary>
+    private async Task UpdateMemberStatusAsync(Member member, DateOnly today, CancellationToken ct)
+    {
+        switch (member.Status)
+        {
+            case MemberStatus.Prospect or MemberStatus.Expired or MemberStatus.Cancelled:
+                member.Activate(today);
+                _memberRepo.Update(member);
+                break;
+            case MemberStatus.Overdue:
+                await _arrearsRelief.ClearIfSettledAsync(member.CompanyId, member.Id, ct);
+                break;
+        }
     }
 
     /// <summary>

@@ -10,7 +10,6 @@ using GymForge.Infrastructure.Persistence;
 using GymForge.Infrastructure.Repositories;
 using GymForge.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace GymForge.Integration.Tests;
@@ -56,10 +55,11 @@ public class ReportQaTests : IAsyncLifetime
         await _db.MembershipTypes.AddAsync(plan);
         await _db.SaveChangesAsync();
 
+        var clock = new SystemClock();
         var sell = new SellMembershipCommandHandler(
             new MembershipTypeRepository(_db), new ChargeRepository(_db), new MembershipRepository(_db),
             new MemberRepository(_db), new PaymentRepository(_db), Substitute.For<ICashRegister>(), new StaffRepository(_db),
-            new CompanyCalendar(new SystemClock(), new SiteRepository(_db), NullLogger<CompanyCalendar>.Instance));
+            TestServices.Calendar(_db, clock), TestServices.ArrearsRelief(_db, clock));
         await sell.Handle(
             new SellMembershipCommand(_company.Id, _site.Id, Guid.NewGuid(), null, member.Id, plan.Id, PaymentMethod.Cash),
             CancellationToken.None);

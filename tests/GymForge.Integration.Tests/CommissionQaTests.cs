@@ -57,7 +57,8 @@ public class CommissionQaTests : IAsyncLifetime
     private SellMembershipCommandHandler SellHandler() => new(
         new MembershipTypeRepository(_db), new ChargeRepository(_db), new MembershipRepository(_db),
         new MemberRepository(_db), new PaymentRepository(_db), Substitute.For<ICashRegister>(), new StaffRepository(_db),
-        new CompanyCalendar(new SystemClock(), new SiteRepository(_db), NullLogger<CompanyCalendar>.Instance));
+        new CompanyCalendar(new SystemClock(), new SiteRepository(_db), NullLogger<CompanyCalendar>.Instance),
+        TestServices.ArrearsRelief(_db, new SystemClock()));
 
     private async Task SellAsync() =>
         await SellHandler().Handle(

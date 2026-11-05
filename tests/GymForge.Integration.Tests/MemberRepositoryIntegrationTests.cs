@@ -1,4 +1,5 @@
 using FluentAssertions;
+using GymForge.Application.Interfaces;
 using GymForge.Application.UseCases.Members;
 using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
@@ -215,6 +216,59 @@ public class MemberRepositoryIntegrationTests : IAsyncLifetime
         var act = () => _repo.SaveChangesAsync();
 
         await act.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public async Task Document_RepeatedInTheSameCompanyAndSite_IsRejectedWithAReadableError()
+    {
+        await _repo.AddAsync(NewMember("Ana", "50000001"));
+        await _repo.SaveChangesAsync();
+        await _repo.AddAsync(NewMember("Beto", "50000001"));
+
+        var act = () => _repo.SaveChangesAsync();
+
+        await act.Should().ThrowAsync<DuplicateMemberDocumentException>().WithMessage("*DNI*sede*");
+    }
+
+    [Fact]
+    public async Task Document_RepeatedInAnotherSiteOfTheSameCompany_IsAllowed()
+    {
+        var otherSite = await AddSecondSiteAsync();
+        await _repo.AddAsync(NewMember("Ana", "50000001"));
+        await _repo.AddAsync(NewMember("Beto", "50000001", site: otherSite));
+
+        var act = () => _repo.SaveChangesAsync();
+
+        await act.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public async Task Document_RepeatedInAnotherCompany_IsAllowed()
+    {
+        var otherCompany = Company.Create("Otra Empresa", "30-99999999-7");
+        var otherSite = Site.Create(otherCompany.Id, "Otra Sede", "Calle 2");
+        await _db.Companies.AddAsync(otherCompany);
+        await _db.Sites.AddAsync(otherSite);
+        await _repo.AddAsync(NewMember("Ana", "50000001"));
+        await _db.Members.AddAsync(NewMember("Beto", "50000001", site: otherSite, companyId: otherCompany.Id));
+
+        var act = () => _repo.SaveChangesAsync();
+
+        await act.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public async Task Document_ChangedToOneAlreadyInTheSite_IsRejectedWithAReadableError()
+    {
+        await _repo.AddAsync(NewMember("Ana", "50000001"));
+        var beto = NewMember("Beto", "50000002");
+        await _repo.AddAsync(beto);
+        await _repo.SaveChangesAsync();
+        beto.EditIdentity("Beto", "Test", DocumentType.DNI, "50000001", Gender.Female);
+
+        var act = () => _repo.SaveChangesAsync();
+
+        await act.Should().ThrowAsync<DuplicateMemberDocumentException>();
     }
 
     [Fact]

@@ -7,6 +7,8 @@ namespace GymForge.Infrastructure.Persistence.Configurations;
 
 public class MemberConfiguration : IEntityTypeConfiguration<Member>
 {
+    public const string UniqueDocumentIndexName = "UX_Members_CompanySiteDocument";
+
     public void Configure(EntityTypeBuilder<Member> builder)
     {
         builder.HasKey(m => m.Id);
@@ -44,7 +46,12 @@ public class MemberConfiguration : IEntityTypeConfiguration<Member>
             .HasColumnType("BLOB");
 
         // FTS5 virtual table is created via raw SQL in migration
-        builder.HasIndex(m => m.DocumentNumber).HasDatabaseName("IX_Members_Document");
+        // Un documento por socio en cada sede de la empresa (la misma persona puede ser socia de dos sedes).
+        // Reemplaza al índice plano por DNI: el prefijo (empresa, sede, documento) sirve a la misma búsqueda.
+        builder.HasIndex(m => new { m.CompanyId, m.SiteId, m.DocumentNumber })
+            .IsUnique()
+            .HasFilter("\"DocumentNumber\" <> ''")
+            .HasDatabaseName(UniqueDocumentIndexName);
         builder.HasIndex(m => m.Email).HasDatabaseName("IX_Members_Email");
         builder.HasIndex(m => new { m.CompanyId, m.SiteId, m.Status }).HasDatabaseName("IX_Members_CompanySiteStatus");
         // Credencial única por empresa (cualquier sede). El filtro deja afuera a los socios sin credencial

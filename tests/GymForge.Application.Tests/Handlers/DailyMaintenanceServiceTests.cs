@@ -364,7 +364,7 @@ public class DailyMaintenanceServiceTests
     // ── Orden, tenant y resultado ─────────────────────────────────────────────
 
     [Fact]
-    public async Task RunsThawThenExpireThenOverdueThenDunningThenClearsTheArrears_InThatOrder()
+    public async Task RunsThawThenExpireThenOverdueThenClearsTheArrearsThenDunning_InThatOrder()
     {
         var member = ActiveMember();
         member.UpdateContact(null, "+5491155550000");
@@ -374,7 +374,38 @@ public class DailyMaintenanceServiceTests
         await Sut(dunningEnabled: true).RunForCompanyDayAsync(_company, Day);
 
         // "overdue" aparece dos veces: una al marcar la mora y otra dentro del dunning (que lee el mismo listado).
-        _calls.Should().Equal("thaw", "expire", "overdue", "overdue", "dunning", "clear");
+        _calls.Should().Equal("thaw", "expire", "overdue", "clear", "overdue", "dunning");
+    }
+
+    [Fact]
+    public async Task NotTheLastDayOfTheWindow_SkipsTheArrearsClearing()
+    {
+        var settled = OverdueMember();
+        HaveMembersInArrearsStatus(settled);
+
+        var result = await Sut().RunForCompanyDayAsync(_company, Day, isLastDayOfWindow: false);
+
+        result.ArrearsCleared.Should().Be(0);
+        settled.Status.Should().Be(MemberStatus.Overdue);
+        _calls.Should().NotContain("clear");
+    }
+
+    [Fact]
+    public async Task ArrearsAreCleared_EvenIfTheDunningSenderThrows()
+    {
+        var member = ActiveMember();
+        member.UpdateContact(null, "+5491155550000");
+        _members.GetByIdAsync(member.Id, Arg.Any<CancellationToken>()).Returns(member);
+        HaveOverdue(ChargeDueDaysAgo(7, member));
+        var settled = OverdueMember();
+        HaveMembersInArrearsStatus(settled);
+        _sender.SendAsync(Arg.Any<NotificationMessage>(), Arg.Any<CancellationToken>())
+            .Returns<Task<bool>>(_ => throw new InvalidOperationException("sender caído"));
+
+        var act = () => Sut(dunningEnabled: true).RunForCompanyDayAsync(_company, Day);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        settled.Status.Should().Be(MemberStatus.Active);
     }
 
     [Fact]

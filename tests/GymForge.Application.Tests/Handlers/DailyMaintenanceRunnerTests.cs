@@ -93,6 +93,19 @@ public class DailyMaintenanceRunnerTests
     }
 
     [Fact]
+    public async Task CatchUp_ClearsTheArrearsOnlyOnTheLastDayOfTheWindow()
+    {
+        HaveCompanies(CompanyIn(ArgentinaTz));
+        _checkpoint.LastRun = Today.AddDays(-3);
+
+        await Sut().RunPendingAsync();
+
+        _processed.Should().HaveCount(3);
+        await _members.Received(1).GetByStatusAsync(
+            Arg.Any<Guid>(), MemberStatus.Overdue, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task CheckpointFarInTheFuture_IsDistrusted_ProcessesTodayAndRewritesIt()
     {
         var company = CompanyIn(ArgentinaTz);

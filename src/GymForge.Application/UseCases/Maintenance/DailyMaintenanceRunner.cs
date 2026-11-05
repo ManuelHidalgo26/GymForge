@@ -84,7 +84,7 @@ public sealed partial class DailyMaintenanceRunner : IDailyMaintenanceRunner
         {
             try
             {
-                var result = await _maintenance.RunForCompanyDayAsync(company, day, ct);
+                var result = await _maintenance.RunForCompanyDayAsync(company, day, isLastDayOfWindow: day == lastDay, ct);
                 if (result != default)
                     LogDayProcessed(
                         company.Id, day, result.Unfrozen, result.Expired, result.MarkedOverdue,

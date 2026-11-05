@@ -15,8 +15,9 @@ public readonly record struct MaintenanceDayResult(
 
 /// <summary>
 /// Mantenimiento de UNA empresa en UN día local: reactiva los congelamientos terminados, vence membresías,
-/// marca mora, dispara dunning y limpia la mora saldada, en ese orden. Idempotente: cada paso mira el
-/// estado actual, así que repetir un día no duplica.
+/// marca mora, limpia la mora saldada y dispara dunning, en ese orden. Idempotente: cada paso mira el
+/// estado actual, así que repetir un día no duplica. La limpieza de mora corre solo el último día de la
+/// ventana de catch-up y antes del dunning: así una falla del sender no la deja sin hacer.
 /// </summary>
 public sealed class DailyMaintenanceService
 {
@@ -37,8 +38,12 @@ public sealed class DailyMaintenanceService
         _tenant = tenant;
     }
 
+    /// <param name="isLastDayOfWindow">
+    /// True si es el último día de la ventana que se está procesando (el estado de mora que importa es el de
+    /// hoy, no el de los días reprocesados). Solo entonces se limpia la mora saldada.
+    /// </param>
     public async Task<MaintenanceDayResult> RunForCompanyDayAsync(
-        Company company, DateOnly localDay, CancellationToken ct = default)
+        Company company, DateOnly localDay, bool isLastDayOfWindow = true, CancellationToken ct = default)
     {
         // Las lecturas de vencimiento y mora son company-wide (IgnoreQueryFilters + CompanyId explícito);
         // el scope sin sede cierra el filtro por defecto para cualquier otra consulta del flujo.
@@ -47,8 +52,8 @@ public sealed class DailyMaintenanceService
         var unfrozen = await UnfreezeEndedFreezesAsync(company.Id, localDay, ct);
         var expired = await ExpireMembershipsAsync(company.Id, localDay, ct);
         var markedOverdue = await MarkOverdueAsync(company.Id, localDay, ct);
+        var arrearsCleared = isLastDayOfWindow ? await ClearSettledArrearsAsync(company.Id, localDay, ct) : 0;
         var dunningSent = await _dunning.RunAsync(company.Id, localDay, company.LegalName, ct);
-        var arrearsCleared = await ClearSettledArrearsAsync(company.Id, localDay, ct);
 
         return new MaintenanceDayResult(unfrozen, expired, markedOverdue, dunningSent, arrearsCleared);
     }
@@ -128,8 +133,8 @@ public sealed class DailyMaintenanceService
 
     /// <summary>
     /// Red de seguridad: el socio en mora que ya no tiene cargos vencidos con saldo vuelve a Active, aunque
-    /// el pago que lo saldó no lo haya limpiado. Así el estado se auto-sana. Va al final: los socios que
-    /// el paso de mora acaba de marcar tienen un cargo vencido y por eso no se tocan.
+    /// el pago que lo saldó no lo haya limpiado. Así el estado se auto-sana. Va después del paso de mora (los
+    /// socios que ese paso acaba de marcar tienen un cargo vencido y por eso no se tocan) y antes del dunning.
     /// </summary>
     private async Task<int> ClearSettledArrearsAsync(Guid companyId, DateOnly day, CancellationToken ct)
     {

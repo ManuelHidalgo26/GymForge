@@ -32,6 +32,13 @@ public interface IMemberRepository : IRepository<Member>
     Task<IReadOnlyList<Member>> GetByStatusAsync(Guid companyId, MemberStatus status, CancellationToken ct = default);
     /// <summary>True si el socio tiene movimientos (membresías, cobros, pagos o accesos).</summary>
     Task<bool> HasActivityAsync(Guid memberId, CancellationToken ct = default);
+    /// <summary>
+    /// Socios por estado, a hoy (reporte de altas y bajas). <paramref name="siteId"/> null = TODA la empresa:
+    /// ignora el filtro de sede pero queda acotado a <paramref name="companyId"/>. Solo trae los estados con socios.
+    /// </summary>
+    Task<IReadOnlyDictionary<MemberStatus, int>> CountByStatusAsync(Guid companyId, Guid? siteId, CancellationToken ct = default);
+    /// <summary>Socios cuya fecha de alta cae en [from, to] (ambos incluidos). <paramref name="siteId"/> null = toda la empresa.</summary>
+    Task<IReadOnlyList<Member>> GetJoinedBetweenAsync(Guid companyId, Guid? siteId, DateOnly from, DateOnly to, CancellationToken ct = default);
 }
 
 public interface IMembershipRepository : IRepository<Membership>
@@ -43,6 +50,16 @@ public interface IMembershipRepository : IRepository<Membership>
     Task<IReadOnlyList<Membership>> GetActiveExpiredAsync(Guid companyId, DateOnly asOf, CancellationToken ct = default);
     /// <summary>Membresías congeladas de la empresa (todas las sedes) cuyo congelamiento ya terminó a la fecha dada.</summary>
     Task<IReadOnlyList<Membership>> GetFreezeEndedAsync(Guid companyId, DateOnly asOf, CancellationToken ct = default);
+    /// <summary>
+    /// Membresías canceladas con la baja en [from, to) (UTC), con el socio y el plan. <paramref name="siteId"/> null =
+    /// TODA la empresa: ignora el filtro de sede pero queda acotado a <paramref name="companyId"/>.
+    /// </summary>
+    Task<IReadOnlyList<Membership>> GetCancelledBetweenAsync(Guid companyId, Guid? siteId, DateTime from, DateTime to, CancellationToken ct = default);
+    /// <summary>
+    /// Membresías vendidas con comisión (CommissionAmount &gt; 0) con el alta en [from, to) (UTC). <paramref name="siteId"/>
+    /// null = TODA la empresa: ignora el filtro de sede pero queda acotado a <paramref name="companyId"/>.
+    /// </summary>
+    Task<IReadOnlyList<Membership>> GetSoldBetweenAsync(Guid companyId, Guid? siteId, DateTime from, DateTime to, CancellationToken ct = default);
 }
 
 public interface IChargeRepository : IRepository<Charge>
@@ -66,6 +83,12 @@ public interface IPaymentRepository
     Task<decimal> SumReceivedAsync(Guid companyId, Guid siteId, DateTime from, DateTime to, CancellationToken ct = default);
     /// <summary>Pagos completados del período, con el socio cargado, más recientes primero.</summary>
     Task<IReadOnlyList<Payment>> GetByPeriodAsync(Guid companyId, Guid siteId, DateTime from, DateTime to, CancellationToken ct = default);
+    /// <summary>
+    /// Pagos completados del período para desagregar la recaudación. <paramref name="siteId"/> null = TODA la empresa
+    /// (reporte de dueño): ignora el filtro de sede pero queda acotado a <paramref name="companyId"/>. Incluye
+    /// asignaciones → cargo → membresía → plan.
+    /// </summary>
+    Task<IReadOnlyList<Payment>> GetForBreakdownAsync(Guid companyId, Guid? siteId, DateTime from, DateTime to, CancellationToken ct = default);
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
 
@@ -116,6 +139,11 @@ public interface ISaleRepository
     /// <summary>Venta por id con sus líneas cargadas (para armar el recibo de venta).</summary>
     Task<Sale?> GetByIdAsync(Guid id, CancellationToken ct = default);
     void UpdateStock(StockBySite stock);
+    /// <summary>
+    /// Líneas de venta con comisión (vendedor y monto &gt; 0) de ventas en [from, to) (UTC), con su venta cargada.
+    /// <paramref name="siteId"/> null = TODA la empresa: ignora el filtro de sede pero queda acotado a <paramref name="companyId"/>.
+    /// </summary>
+    Task<IReadOnlyList<SaleLine>> GetCommissionLinesBetweenAsync(Guid companyId, Guid? siteId, DateTime from, DateTime to, CancellationToken ct = default);
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
 
@@ -123,6 +151,8 @@ public interface IStaffRepository
 {
     Task<Staff?> GetByIdAsync(Guid id, CancellationToken ct = default);
     Task<IReadOnlyList<Staff>> GetActiveByCompanyAsync(Guid companyId, CancellationToken ct = default);
+    /// <summary>Todo el personal de la empresa, también el dado de baja (un reporte histórico necesita sus nombres).</summary>
+    Task<IReadOnlyList<Staff>> GetAllByCompanyAsync(Guid companyId, CancellationToken ct = default);
     void Update(Staff staff);
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
@@ -277,6 +307,8 @@ public enum OffsiteBackupOutcome
     /// <summary>No hay carpeta de destino configurada: no hay nada que copiar.</summary>
     NotConfigured,
     Copied,
-    /// <summary>Destino no disponible (pendrive desenchufado, red caída, sin permisos) o backup local fallido.</summary>
+    /// <summary>Destino no disponible (pendrive desenchufado, red caída, sin permisos): el backup local sí quedó hecho.</summary>
     Failed,
+    /// <summary>No se pudo crear el backup en esta PC (disco lleno, base inaccesible): no hay nada que copiar.</summary>
+    LocalBackupFailed,
 }

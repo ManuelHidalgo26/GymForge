@@ -1,5 +1,6 @@
 using FluentAssertions;
 using GymForge.Application.Interfaces;
+using GymForge.Application.Services;
 using GymForge.Application.UseCases.Licensing;
 using GymForge.Application.UseCases.Members;
 using GymForge.Domain.Entities;
@@ -11,7 +12,12 @@ namespace GymForge.Application.Tests.Handlers;
 public class CreateMemberCommandTests
 {
     private readonly IMemberRepository _repo = Substitute.For<IMemberRepository>();
+    private static readonly DateOnly Today = new(2026, 7, 21);
     private readonly CurrentLicense _license = new();
+    private readonly ICompanyCalendar _calendar = Substitute.For<ICompanyCalendar>();
+
+    public CreateMemberCommandTests() =>
+        _calendar.TodayAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(Today);
 
     private static CreateMemberCommand ValidCommand() => new(
         CompanyId: Guid.NewGuid(),
@@ -29,7 +35,7 @@ public class CreateMemberCommandTests
     public async Task Handle_PersistsMemberAndReturnsDto()
     {
         var cmd = ValidCommand();
-        var handler = new CreateMemberCommandHandler(_repo, _license);
+        var handler = new CreateMemberCommandHandler(_repo, _license, _calendar);
 
         var dto = await handler.Handle(cmd, CancellationToken.None);
 
@@ -49,10 +55,21 @@ public class CreateMemberCommandTests
     }
 
     [Fact]
+    public async Task Handle_ActivateImmediately_UsaElDiaLocalDeLaEmpresaComoFechaDeAlta()
+    {
+        var cmd = ValidCommand() with { ActivateImmediately = true };
+
+        await new CreateMemberCommandHandler(_repo, _license, _calendar).Handle(cmd, CancellationToken.None);
+
+        await _repo.Received(1).AddAsync(Arg.Is<Member>(m => m.JoinDate == Today), Arg.Any<CancellationToken>());
+        await _calendar.Received(1).TodayAsync(cmd.CompanyId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Handle_ActivateImmediately_CreatesActiveMember()
     {
         var cmd = ValidCommand() with { ActivateImmediately = true };
-        var dto = await new CreateMemberCommandHandler(_repo, _license).Handle(cmd, CancellationToken.None);
+        var dto = await new CreateMemberCommandHandler(_repo, _license, _calendar).Handle(cmd, CancellationToken.None);
 
         dto.Status.Should().Be(MemberStatus.Active);
         await _repo.Received(1).AddAsync(
@@ -67,7 +84,7 @@ public class CreateMemberCommandTests
         _repo.CountByCompanyAsync(cmd.CompanyId, Arg.Any<CancellationToken>())
             .Returns(LicenseState.FreeMaxMembers);   // ya está en el tope Free (50)
 
-        var act = () => new CreateMemberCommandHandler(_repo, _license)
+        var act = () => new CreateMemberCommandHandler(_repo, _license, _calendar)
             .Handle(cmd, CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
@@ -82,7 +99,7 @@ public class CreateMemberCommandTests
     {
         var cmd = ValidCommand() with { TagSerial = "  CARNET-77  " };
 
-        var dto = await new CreateMemberCommandHandler(_repo, _license).Handle(cmd, CancellationToken.None);
+        var dto = await new CreateMemberCommandHandler(_repo, _license, _calendar).Handle(cmd, CancellationToken.None);
 
         dto.TagSerial.Should().Be("CARNET-77");
         await _repo.Received(1).IsTagSerialInUseAsync(
@@ -98,7 +115,7 @@ public class CreateMemberCommandTests
     {
         var cmd = ValidCommand() with { TagSerial = tagSerial };
 
-        var dto = await new CreateMemberCommandHandler(_repo, _license).Handle(cmd, CancellationToken.None);
+        var dto = await new CreateMemberCommandHandler(_repo, _license, _calendar).Handle(cmd, CancellationToken.None);
 
         dto.TagSerial.Should().BeNull();
         await _repo.DidNotReceive().IsTagSerialInUseAsync(
@@ -111,7 +128,7 @@ public class CreateMemberCommandTests
         var cmd = ValidCommand() with { TagSerial = "CARNET-77" };
         _repo.IsTagSerialInUseAsync(cmd.CompanyId, "CARNET-77", null, Arg.Any<CancellationToken>()).Returns(true);
 
-        var act = () => new CreateMemberCommandHandler(_repo, _license).Handle(cmd, CancellationToken.None);
+        var act = () => new CreateMemberCommandHandler(_repo, _license, _calendar).Handle(cmd, CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*credencial*otro socio*");
         await _repo.DidNotReceive().AddAsync(Arg.Any<Member>(), Arg.Any<CancellationToken>());

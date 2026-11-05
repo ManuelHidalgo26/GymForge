@@ -1,3 +1,5 @@
+using GymForge.Domain.ValueObjects;
+
 namespace GymForge.Domain.Entities;
 
 public class Product : BaseEntity, ITenantScoped, IAuditable
@@ -38,6 +40,14 @@ public class Product : BaseEntity, ITenantScoped, IAuditable
         SalePrice = salePrice;
         CostPrice = costPrice;
         Barcode = barcode;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    /// <summary>Porcentaje (0 a 100) que gana el vendedor por cada venta de este producto.</summary>
+    public void SetCommissionPct(decimal pct)
+    {
+        Commission.EnsureValidPct(pct, nameof(pct));
+        CommissionStaffPct = pct;
         UpdatedAt = DateTime.UtcNow;
     }
 
@@ -140,6 +150,7 @@ public class SaleLine : BaseEntity
     public decimal TaxRate { get; private set; } = 0.21m;
     public decimal LineTotal => (UnitPrice * Quantity) - Discount;
     public Guid? CommissionStaffId { get; private set; }
+    public decimal CommissionAmount { get; private set; }
 
     public Sale Sale { get; private set; } = null!;
 
@@ -147,4 +158,12 @@ public class SaleLine : BaseEntity
 
     public static SaleLine Create(Guid saleId, string description, decimal quantity, decimal unitPrice, decimal taxRate = 0.21m) =>
         new() { SaleId = saleId, Description = description, Quantity = quantity, UnitPrice = unitPrice, TaxRate = taxRate };
+
+    /// <summary>Congela la comisión de la venta: quién vendió y cuánto le toca (no se recalcula si cambia el %).</summary>
+    public void SetCommission(Guid staffId, decimal amount)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(amount);
+        CommissionStaffId = staffId;
+        CommissionAmount = amount;
+    }
 }

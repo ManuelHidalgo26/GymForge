@@ -1,6 +1,7 @@
 using FluentValidation;
 using GymForge.Application.DTOs;
 using GymForge.Application.Interfaces;
+using GymForge.Application.UseCases.Commissions;
 using GymForge.Domain.Entities;
 using MediatR;
 
@@ -27,7 +28,8 @@ public class GetProductsWithStockQueryHandler
 
 public record CreateProductCommand(
     Guid CompanyId, string Sku, string Name,
-    decimal SalePrice, decimal CostPrice, string? Barcode) : IRequest<ProductRowDto>;
+    decimal SalePrice, decimal CostPrice, string? Barcode,
+    decimal CommissionPct = 0m) : IRequest<ProductRowDto>;
 
 public class CreateProductCommandValidator : AbstractValidator<CreateProductCommand>
 {
@@ -37,6 +39,7 @@ public class CreateProductCommandValidator : AbstractValidator<CreateProductComm
         RuleFor(x => x.Name).NotEmpty().MaximumLength(120).WithMessage("El nombre es obligatorio.");
         RuleFor(x => x.SalePrice).GreaterThan(0).WithMessage("El precio de venta debe ser positivo.");
         RuleFor(x => x.CostPrice).GreaterThanOrEqualTo(0).WithMessage("El costo no puede ser negativo.");
+        RuleFor(x => x.CommissionPct).ValidCommissionPct();
     }
 }
 
@@ -54,6 +57,7 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
         var product = Product.Create(cmd.CompanyId, sku, cmd.Name.Trim(), cmd.SalePrice, cmd.CostPrice);
         if (!string.IsNullOrWhiteSpace(cmd.Barcode))
             product.Update(product.Name, product.SalePrice, product.CostPrice, cmd.Barcode.Trim());
+        product.SetCommissionPct(cmd.CommissionPct);
 
         await _repo.AddAsync(product, ct);
         await _repo.SaveChangesAsync(ct);
@@ -65,7 +69,8 @@ public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand,
 
 public record UpdateProductCommand(
     Guid CompanyId, Guid ProductId, string Name,
-    decimal SalePrice, decimal CostPrice, string? Barcode) : IRequest<ProductRowDto>;
+    decimal SalePrice, decimal CostPrice, string? Barcode,
+    decimal CommissionPct) : IRequest<ProductRowDto>;
 
 public class UpdateProductCommandValidator : AbstractValidator<UpdateProductCommand>
 {
@@ -74,6 +79,7 @@ public class UpdateProductCommandValidator : AbstractValidator<UpdateProductComm
         RuleFor(x => x.Name).NotEmpty().MaximumLength(120).WithMessage("El nombre es obligatorio.");
         RuleFor(x => x.SalePrice).GreaterThan(0).WithMessage("El precio de venta debe ser positivo.");
         RuleFor(x => x.CostPrice).GreaterThanOrEqualTo(0).WithMessage("El costo no puede ser negativo.");
+        RuleFor(x => x.CommissionPct).ValidCommissionPct();
     }
 }
 
@@ -90,6 +96,7 @@ public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand,
 
         product.Update(cmd.Name.Trim(), cmd.SalePrice, cmd.CostPrice,
             string.IsNullOrWhiteSpace(cmd.Barcode) ? null : cmd.Barcode.Trim());
+        product.SetCommissionPct(cmd.CommissionPct);
         await _repo.SaveChangesAsync(ct);
         return ProductRowDto.FromEntity(product, null);
     }

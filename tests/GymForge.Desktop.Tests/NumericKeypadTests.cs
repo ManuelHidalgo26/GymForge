@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Headless.XUnit;
 using Avalonia.Data;
 using CommunityToolkit.Mvvm.ComponentModel;
 using FluentAssertions;
@@ -74,7 +75,7 @@ public class NumericKeypadTests
 
     // ── El control ────────────────────────────────────────────────────────────
 
-    [Fact]
+    [AvaloniaFact]
     public void Control_DigitsAppend_AndBackspaceRemovesTheLast()
     {
         var keypad = new NumericKeypad();
@@ -87,7 +88,7 @@ public class NumericKeypadTests
         keypad.Text.Should().Be("12");
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Control_RespectsMaxLength()
     {
         var keypad = new NumericKeypad { MaxLength = 3 };
@@ -97,7 +98,7 @@ public class NumericKeypadTests
         keypad.Text.Should().Be("987");
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Control_Enter_RaisesEnteredOnce_AndLeavesTheTextAlone()
     {
         var keypad = new NumericKeypad { Text = "30111222" };
@@ -110,7 +111,7 @@ public class NumericKeypadTests
         keypad.Text.Should().Be("30111222");
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Control_Mask_ChangesTheDisplayButNotTheText()
     {
         var keypad = new NumericKeypad { Mask = true };
@@ -125,7 +126,7 @@ public class NumericKeypadTests
         keypad.FindControl<TextBlock>("Display")!.Text.Should().Be("12");
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Control_Display_FollowsTextChangesMadeOutsideTheKeypad()
     {
         var keypad = new NumericKeypad();
@@ -135,7 +136,7 @@ public class NumericKeypadTests
         keypad.FindControl<TextBlock>("Display")!.Text.Should().Be("4567");
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Control_NullText_IsTreatedAsEmpty()
     {
         var keypad = new NumericKeypad { Text = "12" };
@@ -146,7 +147,7 @@ public class NumericKeypadTests
         keypad.FindControl<TextBlock>("Display")!.Text.Should().BeEmpty();
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Control_Text_BindsTwoWayToAViewModelProperty()
     {
         var holder = new PinHolder { Pin = "12" };

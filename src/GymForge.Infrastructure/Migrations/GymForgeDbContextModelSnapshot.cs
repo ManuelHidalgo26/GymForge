@@ -229,6 +229,9 @@ namespace GymForge.Infrastructure.Migrations
                     b.Property<decimal?>("ShouldersCm")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid>("SiteId")
+                        .HasColumnType("TEXT");
+
                     b.Property<decimal?>("SubscapularMm")
                         .HasColumnType("TEXT");
 
@@ -257,6 +260,9 @@ namespace GymForge.Infrastructure.Migrations
                         .HasColumnType("DECIMAL(6,2)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "SiteId")
+                        .HasDatabaseName("IX_BodyMeasurements_CompanySite");
 
                     b.HasIndex("MemberId", "MeasuredAt")
                         .HasDatabaseName("IX_BodyMeasurements_MemberDate");
@@ -304,6 +310,9 @@ namespace GymForge.Infrastructure.Migrations
                     b.Property<Guid?>("PaymentChargeId")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid>("SiteId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -319,6 +328,9 @@ namespace GymForge.Infrastructure.Migrations
 
                     b.HasIndex("ClassScheduleId", "Status")
                         .HasDatabaseName("IX_Bookings_ScheduleStatus");
+
+                    b.HasIndex("CompanyId", "SiteId")
+                        .HasDatabaseName("IX_Bookings_CompanySite");
 
                     b.HasIndex("MemberId", "Status")
                         .HasDatabaseName("IX_Bookings_MemberStatus");
@@ -863,9 +875,6 @@ namespace GymForge.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DocumentNumber")
-                        .HasDatabaseName("IX_Members_Document");
-
                     b.HasIndex("Email")
                         .HasDatabaseName("IX_Members_Email");
 
@@ -875,6 +884,11 @@ namespace GymForge.Infrastructure.Migrations
                         .IsUnique()
                         .HasDatabaseName("UX_Members_CompanyTagSerial")
                         .HasFilter("\"TagSerial\" IS NOT NULL AND \"TagSerial\" <> ''");
+
+                    b.HasIndex("CompanyId", "SiteId", "DocumentNumber")
+                        .IsUnique()
+                        .HasDatabaseName("UX_Members_CompanySiteDocument")
+                        .HasFilter("\"DocumentNumber\" <> ''");
 
                     b.HasIndex("CompanyId", "SiteId", "Status")
                         .HasDatabaseName("IX_Members_CompanySiteStatus");
@@ -1402,6 +1416,9 @@ namespace GymForge.Infrastructure.Migrations
                     b.Property<string>("Notes")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid>("SiteId")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateOnly>("StartDate")
                         .HasColumnType("TEXT");
 
@@ -1418,6 +1435,9 @@ namespace GymForge.Infrastructure.Migrations
 
                     b.HasIndex("MemberId")
                         .HasDatabaseName("IX_Routines_Member");
+
+                    b.HasIndex("CompanyId", "SiteId")
+                        .HasDatabaseName("IX_Routines_CompanySite");
 
                     b.ToTable("Routines", (string)null);
                 });
@@ -1615,6 +1635,9 @@ namespace GymForge.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
+
+                    b.Property<decimal>("CommissionAmount")
+                        .HasColumnType("DECIMAL(18,2)");
 
                     b.Property<Guid?>("CommissionStaffId")
                         .HasColumnType("TEXT");
@@ -1944,10 +1967,16 @@ namespace GymForge.Infrastructure.Migrations
                     b.Property<int?>("Rpe")
                         .HasColumnType("INTEGER");
 
+                    b.Property<Guid>("SiteId")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CompanyId", "SiteId")
+                        .HasDatabaseName("IX_WorkoutLogs_CompanySite");
 
                     b.HasIndex("MemberId", "PerformedAt")
                         .HasDatabaseName("IX_WorkoutLogs_MemberPerformedAt");

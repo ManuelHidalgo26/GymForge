@@ -20,6 +20,18 @@ public class SaleRepository : ISaleRepository
 
     public void UpdateStock(StockBySite stock) => _db.StockBySite.Update(stock);
 
+    // Reporte de comisiones: la línea no tiene empresa ni sede propias, las toma de su venta.
+    public async Task<IReadOnlyList<SaleLine>> GetCommissionLinesBetweenAsync(
+        Guid companyId, Guid? siteId, DateTime from, DateTime to, CancellationToken ct = default) =>
+        await _db.SaleLines
+            .AsNoTracking()
+            .IgnoreQueryFilters()
+            .Include(l => l.Sale)
+            .Where(l => l.Sale.CompanyId == companyId && (siteId == null || l.Sale.SiteId == siteId) &&
+                        l.CommissionStaffId != null && l.CommissionAmount > 0 &&
+                        l.Sale.SaleDatetime >= from && l.Sale.SaleDatetime < to)
+            .ToListAsync(ct);
+
     public async Task<int> SaveChangesAsync(CancellationToken ct = default) =>
         await _db.SaveChangesAsync(ct);
 }

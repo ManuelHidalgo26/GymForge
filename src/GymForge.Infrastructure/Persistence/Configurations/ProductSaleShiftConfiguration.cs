@@ -75,6 +75,7 @@ public class SaleLineConfiguration : IEntityTypeConfiguration<SaleLine>
         builder.Property(l => l.UnitPrice).HasColumnType("DECIMAL(18,2)");
         builder.Property(l => l.Discount).HasColumnType("DECIMAL(18,2)");
         builder.Property(l => l.TaxRate).HasColumnType("DECIMAL(5,4)");
+        builder.Property(l => l.CommissionAmount).HasColumnType("DECIMAL(18,2)");
 
         builder.Ignore(l => l.LineTotal);
         builder.ToTable("SaleLines");

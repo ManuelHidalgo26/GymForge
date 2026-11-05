@@ -64,7 +64,7 @@ public class FreezePolicyIntegrationTests : IAsyncLifetime
         var repo = new MembershipRepository(_db);
         var sites = new SiteRepository(_db);
 
-        await new FreezeMembershipCommandHandler(repo, sites).Handle(
+        await FreezeSut(repo, sites).Handle(
             new FreezeMembershipCommand(ms.Id, new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 31), "Viaje"),
             CancellationToken.None);
         _db.ChangeTracker.Clear();
@@ -87,7 +87,7 @@ public class FreezePolicyIntegrationTests : IAsyncLifetime
     public async Task Unfreeze_At2200Argentina_GivesBackTheSameDaysAsDuringTheDay()
     {
         var ms = await AddActiveMembershipAsync();
-        await new FreezeMembershipCommandHandler(new MembershipRepository(_db), new SiteRepository(_db)).Handle(
+        await FreezeSut(new MembershipRepository(_db), new SiteRepository(_db)).Handle(
             new FreezeMembershipCommand(ms.Id, new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 31), "Viaje"),
             CancellationToken.None);
         _db.ChangeTracker.Clear();
@@ -101,6 +101,10 @@ public class FreezePolicyIntegrationTests : IAsyncLifetime
         active.EndDate.Should().Be(new DateOnly(2027, 1, 10));
     }
 
+    // Los congelamientos de estas pruebas empiezan el 01/03/2026: el reloj arranca ese día (no puede ser futuro).
+    private FreezeMembershipCommandHandler FreezeSut(MembershipRepository repo, SiteRepository sites) =>
+        new(repo, sites, TestServices.Calendar(_db, FakeClock.OnDay(new DateOnly(2026, 3, 1))));
+
     private Task UnfreezeAsync(Guid membershipId, FakeClock clock) =>
         new UnfreezeMembershipCommandHandler(new MembershipRepository(_db), TestServices.Calendar(_db, clock))
             .Handle(new UnfreezeMembershipCommand(membershipId), CancellationToken.None);
@@ -112,7 +116,7 @@ public class FreezePolicyIntegrationTests : IAsyncLifetime
         await _db.SaveChangesAsync();
         var ms = await AddActiveMembershipAsync();
 
-        var act = () => new FreezeMembershipCommandHandler(new MembershipRepository(_db), new SiteRepository(_db)).Handle(
+        var act = () => FreezeSut(new MembershipRepository(_db), new SiteRepository(_db)).Handle(
             new FreezeMembershipCommand(ms.Id, new DateOnly(2026, 3, 1), new DateOnly(2026, 3, 31), "Viaje"),
             CancellationToken.None);
 

@@ -18,11 +18,14 @@ public record CreateMembershipCommand(
 
 public class CreateMembershipCommandValidator : AbstractValidator<CreateMembershipCommand>
 {
-    public CreateMembershipCommandValidator()
+    public CreateMembershipCommandValidator(ICompanyCalendar calendar)
     {
         RuleFor(x => x.MemberId).NotEmpty();
         RuleFor(x => x.MembershipTypeId).NotEmpty();
-        RuleFor(x => x.StartDate).GreaterThanOrEqualTo(DateOnly.FromDateTime(DateTime.Today.AddDays(-1)));
+        // Hasta ayer (del gimnasio) para tolerar el alta cargada pasada la medianoche.
+        RuleFor(x => x.StartDate).MustAsync(async (cmd, start, ct) =>
+            start >= (await calendar.TodayAsync(cmd.CompanyId, ct)).AddDays(-1))
+            .WithMessage("La fecha de inicio no puede ser anterior a ayer.");
     }
 }
 
@@ -85,11 +88,13 @@ public class FreezeMembershipCommandHandler : IRequestHandler<FreezeMembershipCo
 {
     private readonly IMembershipRepository _repo;
     private readonly ISiteRepository _sites;
+    private readonly ICompanyCalendar _calendar;
 
-    public FreezeMembershipCommandHandler(IMembershipRepository repo, ISiteRepository sites)
+    public FreezeMembershipCommandHandler(IMembershipRepository repo, ISiteRepository sites, ICompanyCalendar calendar)
     {
         _repo = repo;
         _sites = sites;
+        _calendar = calendar;
     }
 
     public async Task<MembershipDto> Handle(FreezeMembershipCommand cmd, CancellationToken ct)
@@ -98,11 +103,23 @@ public class FreezeMembershipCommandHandler : IRequestHandler<FreezeMembershipCo
             ?? throw new KeyNotFoundException($"Membresía {cmd.MembershipId} no encontrada.");
         var company = await _sites.GetCompanyAsync(ms.CompanyId, ct)
             ?? throw new KeyNotFoundException($"Empresa {ms.CompanyId} no encontrada.");
+        EnsureStartCountsAgainstThisYear(cmd.FreezeStart, _calendar.TodayFor(company));
 
         ms.Freeze(cmd.FreezeStart, cmd.FreezeEnd, cmd.Reason, company.MaxFreezeDaysPerYear);
         _repo.Update(ms);
         await _repo.SaveChangesAsync(ct);
         return MembershipDto.FromEntity(ms);
+    }
+
+    /// <summary>
+    /// El cupo es anual y se lleva por el año de <c>FreezeStart</c>: una fecha de otro año (o futura) permitiría
+    /// pisar el conteo del año en curso alternando fechas.
+    /// </summary>
+    private static void EnsureStartCountsAgainstThisYear(DateOnly freezeStart, DateOnly today)
+    {
+        if (freezeStart.Year != today.Year || freezeStart > today)
+            throw new InvalidOperationException(
+                "El congelamiento tiene que empezar hoy o antes, dentro del año en curso (el cupo es anual).");
     }
 }
 

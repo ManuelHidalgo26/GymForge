@@ -74,11 +74,12 @@ public class ClassSchedule : BaseEntity, ISiteScoped
         };
 }
 
-public class Booking : BaseEntity, ITenantScoped, IAuditable
+public class Booking : BaseEntity, ISiteScoped, IAuditable
 {
     public Guid MemberId { get; private set; }
     public Guid ClassScheduleId { get; private set; }
     public Guid CompanyId { get; private set; }
+    public Guid SiteId { get; private set; }
     public BookingType BookingType { get; private set; }
     public BookingStatus Status { get; private set; } = BookingStatus.Booked;
     public int? WaitlistPosition { get; private set; }
@@ -95,12 +96,14 @@ public class Booking : BaseEntity, ITenantScoped, IAuditable
 
     public static Booking Create(
         Guid companyId,
+        Guid siteId,
         Guid memberId,
         Guid classScheduleId,
         BookingChannel channel = BookingChannel.FrontDesk) =>
         new()
         {
             CompanyId = companyId,
+            SiteId = siteId,
             MemberId = memberId,
             ClassScheduleId = classScheduleId,
             BookingChannel = channel,
@@ -110,12 +113,14 @@ public class Booking : BaseEntity, ITenantScoped, IAuditable
 
     public static Booking CreateWaitlisted(
         Guid companyId,
+        Guid siteId,
         Guid memberId,
         Guid classScheduleId,
         int position) =>
         new()
         {
             CompanyId = companyId,
+            SiteId = siteId,
             MemberId = memberId,
             ClassScheduleId = classScheduleId,
             Status = BookingStatus.Waitlisted,

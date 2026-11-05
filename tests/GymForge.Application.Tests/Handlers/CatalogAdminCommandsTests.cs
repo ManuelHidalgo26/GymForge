@@ -57,13 +57,52 @@ public class CatalogAdminCommandsTests
     }
 
     [Fact]
+    public async Task DeleteSite_OfAnotherCompany_IsRejectedAsIfItDidNotExist()
+    {
+        var site = MakeSite(out _);
+
+        var act = () => new DeleteSiteCommandHandler(_siteRepo).Handle(
+            new DeleteSiteCommand(Guid.NewGuid(), site.Id), CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*no existe*");
+        site.IsActive.Should().BeTrue();
+        _siteRepo.DidNotReceive().RemoveSite(Arg.Any<Site>());
+        await _siteRepo.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task UpdateSite_OfAnotherCompany_IsRejectedAndNothingChanges()
+    {
+        var site = MakeSite(out _);
+
+        var act = () => new UpdateSiteCommandHandler(_siteRepo).Handle(
+            new UpdateSiteCommand(Guid.NewGuid(), site.Id, "Hackeada", "Otra calle 9"), CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*no existe*");
+        site.Name.Should().Be("Sede Test");
+        await _siteRepo.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task UpdateSite_OfTheSameCompany_Updates()
+    {
+        var site = MakeSite(out var companyId);
+
+        await new UpdateSiteCommandHandler(_siteRepo).Handle(
+            new UpdateSiteCommand(companyId, site.Id, "Norte", "Av. 1"), CancellationToken.None);
+
+        site.Name.Should().Be("Norte");
+        await _siteRepo.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task DeleteSite_LastActiveSite_Throws()
     {
         var site = MakeSite(out var companyId);
         _siteRepo.CountActiveSitesAsync(companyId, Arg.Any<CancellationToken>()).Returns(1);
 
         var act = () => new DeleteSiteCommandHandler(_siteRepo).Handle(
-            new DeleteSiteCommand(site.Id), CancellationToken.None);
+            new DeleteSiteCommand(companyId, site.Id), CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
@@ -76,7 +115,7 @@ public class CatalogAdminCommandsTests
         _siteRepo.SiteHasDataAsync(site.Id, Arg.Any<CancellationToken>()).Returns(true);
 
         var deleted = await new DeleteSiteCommandHandler(_siteRepo).Handle(
-            new DeleteSiteCommand(site.Id), CancellationToken.None);
+            new DeleteSiteCommand(companyId, site.Id), CancellationToken.None);
 
         deleted.Should().BeFalse();
         site.IsActive.Should().BeFalse();
@@ -91,7 +130,7 @@ public class CatalogAdminCommandsTests
         _siteRepo.SiteHasDataAsync(site.Id, Arg.Any<CancellationToken>()).Returns(false);
 
         var deleted = await new DeleteSiteCommandHandler(_siteRepo).Handle(
-            new DeleteSiteCommand(site.Id), CancellationToken.None);
+            new DeleteSiteCommand(companyId, site.Id), CancellationToken.None);
 
         deleted.Should().BeTrue();
         _siteRepo.Received(1).RemoveSite(site);

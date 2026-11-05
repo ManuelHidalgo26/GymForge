@@ -37,7 +37,8 @@
         <Border Grid.Row="1" Classes="Toolbar" IsVisible="{Binding IsFormOpen}">
             <StackPanel Spacing="10">
                 <TextBlock Text="{Binding FormTitle}" FontSize="13" FontWeight="SemiBold" />
-                <StackPanel Orientation="Horizontal" Spacing="10">
+                <!-- WrapPanel: con ocho campos el formulario no entra en una sola línea en ventanas angostas -->
+                <WrapPanel ItemSpacing="10" LineSpacing="10">
                     <StackPanel Spacing="4">
                         <TextBlock Text="SKU *" Classes="FormLabel" />
                         <TextBox Text="{Binding Sku}" Watermark="Ej: PROT-1KG" Width="140"
@@ -58,10 +59,19 @@
                                        FormatString="C0" Width="150" />
                     </StackPanel>
                     <StackPanel Spacing="4">
+                        <TextBlock Text="% comisión del vendedor" Classes="FormLabel" />
+                        <NumericUpDown Value="{Binding CommissionPct}" Minimum="0" Maximum="100" Increment="0.5"
+                                       FormatString="0.##" Width="150"
+                                       ToolTip.Tip="Porcentaje del vendedor sobre la venta (sin IVA). 0 = usa el % de productos de cada vendedor."
+                                       AutomationProperties.Name="Porcentaje de comisión del vendedor. 0 usa el porcentaje de productos de cada vendedor." />
+                        <TextBlock Classes="FormLabel" FontSize="11" TextWrapping="Wrap" MaxWidth="150"
+                                   Text="Si es 0%, rige el % general del vendedor." />
+                    </StackPanel>
+                    <StackPanel Spacing="4">
                         <TextBlock Text="Código de barras" Classes="FormLabel" />
                         <TextBox Text="{Binding Barcode}" Watermark="(opcional)" Width="160" />
                     </StackPanel>
-                </StackPanel>
+                </WrapPanel>
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <Button Content="Guardar" Command="{Binding SaveCommand}" Classes="Primary" />
                     <Button Content="Cancelar" Command="{Binding CancelFormCommand}" Classes="Ghost" />
@@ -106,6 +116,17 @@
                 <DataGridTextColumn Header="Producto" Binding="{Binding Name}" Width="*" />
                 <DataGridTextColumn Header="Precio" Binding="{Binding SalePrice, StringFormat={}{0:C}}" Width="120" />
                 <DataGridTextColumn Header="Costo" Binding="{Binding CostPrice, StringFormat={}{0:C}}" Width="120" />
+                <DataGridTemplateColumn Header="% comisión" Width="140" SortMemberPath="CommissionPct">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:DataType="dto:ProductRowDto">
+                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center" Margin="12,0">
+                                <TextBlock Text="{Binding CommissionPct, StringFormat={}{0:0.##}%}" Classes="Numeric" />
+                                <TextBlock Text="(general)" Classes="FormLabel" IsVisible="{Binding UsesSellerCommission}"
+                                           ToolTip.Tip="Sin porcentaje propio: rige el % general del vendedor." />
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
 
                 <!-- Stock con aviso de reposición -->
                 <DataGridTemplateColumn Header="Stock" Width="130" SortMemberPath="StockQty">
@@ -126,22 +147,17 @@
                 <DataGridTemplateColumn Header="Estado" Width="100" SortMemberPath="IsActive">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:ProductRowDto">
-                            <Border Classes="Pill" Margin="4,0">
-                                <Border.Background>
-                                    <SolidColorBrush Color="{Binding IsActive, Converter={StaticResource ActiveColorConverter}}" Opacity="0.15" />
-                                </Border.Background>
-                                <TextBlock Text="{Binding IsActive, Converter={StaticResource ActiveLabelConverter}}">
-                                    <TextBlock.Foreground>
-                                        <SolidColorBrush Color="{Binding IsActive, Converter={StaticResource ActiveColorConverter}}" />
-                                    </TextBlock.Foreground>
-                                </TextBlock>
+                            <Border Classes="Pill" Margin="4,0"
+                                    Classes.success="{Binding IsActive, Converter={StaticResource StatusTone}, ConverterParameter=success}"
+                                    Classes.neutral="{Binding IsActive, Converter={StaticResource StatusTone}, ConverterParameter=neutral}">
+                                <TextBlock Text="{Binding IsActive, Converter={StaticResource ActiveLabelConverter}}" />
                             </Border>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
 
                 <!-- Acciones -->
-                <DataGridTemplateColumn Header="" Width="190" IsReadOnly="True">
+                <DataGridTemplateColumn Header="Acciones" Width="190" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:ProductRowDto">
                             <StackPanel Orientation="Horizontal" Spacing="4" Margin="4,0">

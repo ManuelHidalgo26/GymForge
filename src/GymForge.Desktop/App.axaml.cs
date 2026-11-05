@@ -37,13 +37,13 @@ public class App : Avalonia.Application
         if (PlatformSettings is { } ps)
             ps.ColorValuesChanged += (_, _) => SyncThemeFlag();
 
-        // Aplicar el color de marca del gimnasio (persistido) antes de mostrar la ventana.
-        if (Services is not null)
-            ApplyBrandAccent(Services.GetRequiredService<SessionContext>().BrandColorHex);
-
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var session = Services.GetRequiredService<SessionContext>();
+
+            // Aplicar el color de marca del gimnasio (persistido) antes de mostrar la ventana.
+            ApplyBrandAccent(session.BrandColorHex);
+
             if (session.NeedsOnboarding)
                 desktop.MainWindow = BuildOnboardingWindow(desktop);
             else
@@ -75,16 +75,34 @@ public class App : Avalonia.Application
     }
 
     /// <summary>Aplica el color de acento de la marca del gimnasio a FluentAvalonia
-    /// (recalcula los tonos Light/Dark). Hex inválido → cae al indigo por defecto.</summary>
+    /// (recalcula los tonos Light/Dark) y re-tiñe los tokens propios que dependen de la marca: tinte de
+    /// fondo, texto de acento legible y texto sobre el acento. Hex inválido → cae al indigo por defecto.</summary>
     public static void ApplyBrandAccent(string? hex)
     {
         if (Current is null) return;
         var faTheme = Current.Styles.OfType<FluentAvaloniaTheme>().FirstOrDefault();
         if (faTheme is null) return;
 
-        faTheme.CustomAccentColor = Color.TryParse(hex, out var color)
-            ? color
-            : Color.Parse(SessionContext.DefaultBrandColorHex);
+        var accent = BrandPalette.Resolve(hex);
+        faTheme.CustomAccentColor = accent;
+
+        var colors = BrandPalette.For(accent);
+        ApplyThemeBrushes(ThemeVariant.Light, colors.Light, colors.OnAccent);
+        ApplyThemeBrushes(ThemeVariant.Dark, colors.Dark, colors.OnAccent);
+    }
+
+    /// <summary>Muta in-place los brushes declarados en Colors.axaml: los consumidores (DynamicResource) se repintan solos.</summary>
+    private static void ApplyThemeBrushes(ThemeVariant variant, BrandThemeColors theme, Color onAccent)
+    {
+        SetBrushColor("AccentTintBrush", variant, theme.Tint);
+        SetBrushColor("AccentTextBrush", variant, theme.Text);
+        SetBrushColor("AccentForegroundBrush", variant, onAccent);
+    }
+
+    private static void SetBrushColor(string key, ThemeVariant variant, Color color)
+    {
+        if (Current!.TryGetResource(key, variant, out var resource) && resource is SolidColorBrush brush)
+            brush.Color = color;
     }
 
     private void SyncThemeFlag()

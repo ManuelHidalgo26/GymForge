@@ -79,7 +79,7 @@ public class DatabaseBackupService : IDatabaseBackup
     private OffsiteBackupOutcome BackupAndCopyOffsite(string reason)
     {
         var backup = CreateLocalBackup(reason);
-        return backup is null ? OffsiteBackupOutcome.Failed : CopyOffsite(backup);
+        return backup is null ? OffsiteBackupOutcome.LocalBackupFailed : CopyOffsite(backup);
     }
 
     /// <summary>Crea el backup local y rota los viejos. Devuelve su ruta, o null si no se pudo crear.</summary>
@@ -131,6 +131,7 @@ public class DatabaseBackupService : IDatabaseBackup
         {
             var offsiteDir = Path.Combine(dir, OffsiteFolderName);
             Directory.CreateDirectory(offsiteDir);
+            DeleteOrphanTemps(offsiteDir);
             CopyAtomically(backupPath, Path.Combine(offsiteDir, Path.GetFileName(backupPath)));
             Rotate(offsiteDir);
 
@@ -162,6 +163,15 @@ public class DatabaseBackupService : IDatabaseBackup
         {
             try { File.Delete(temp); } catch { /* destino ya inaccesible: se informa el error original */ }
             throw;
+        }
+    }
+
+    /// <summary>Borra los temporales propios que dejó una copia interrumpida (pendrive retirado a mitad de camino).</summary>
+    private static void DeleteOrphanTemps(string dir)
+    {
+        foreach (var orphan in Directory.GetFiles(dir, BackupFilePattern + ".tmp"))
+        {
+            try { File.Delete(orphan); } catch { /* best-effort: se reintenta en la próxima copia */ }
         }
     }
 

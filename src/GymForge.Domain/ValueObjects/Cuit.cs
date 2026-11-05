@@ -31,7 +31,7 @@ public sealed record Cuit
 
     private static string DigitsOf(string value) => value.Replace("-", "").Trim();
 
-    private static bool IsElevenDigits(string digits) => digits.Length == 11 && digits.All(char.IsDigit);
+    private static bool IsElevenDigits(string digits) => digits.Length == 11 && digits.All(char.IsAsciiDigit);
 
     private static bool HasValidCheckDigit(string digits)
     {

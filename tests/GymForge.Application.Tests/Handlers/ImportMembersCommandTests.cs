@@ -1,5 +1,6 @@
 using FluentAssertions;
 using GymForge.Application.Interfaces;
+using GymForge.Application.Services;
 using GymForge.Application.UseCases.Licensing;
 using GymForge.Application.UseCases.Members;
 using GymForge.Domain.Entities;
@@ -12,8 +13,13 @@ public class ImportMembersCommandTests
 {
     private readonly IMemberRepository _repo = Substitute.For<IMemberRepository>();
     private readonly CurrentLicense _license = new();
+    private readonly ICompanyCalendar _calendar = Substitute.For<ICompanyCalendar>();
+    private static readonly DateOnly Today = new(2026, 7, 21);
 
-    private ImportMembersCommandHandler Sut() => new(_repo, _license);
+    public ImportMembersCommandTests() =>
+        _calendar.TodayAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(Today);
+
+    private ImportMembersCommandHandler Sut() => new(_repo, _license, _calendar);
 
     private static ImportMemberRow Row(string doc, string first = "Ana", string last = "García") =>
         new(first, last, doc, null, null, null);
@@ -42,6 +48,17 @@ public class ImportMembersCommandTests
         await _repo.Received(1).AddAsync(
             Arg.Is<Member>(m => m.Status == MemberStatus.Active && m.Source == MemberSource.Other),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_ImportedMembers_TienenComoAltaElDiaLocalDeLaEmpresa()
+    {
+        var cmd = new ImportMembersCommand(Guid.NewGuid(), Guid.NewGuid(), new[] { Row("1") });
+
+        await Sut().Handle(cmd, CancellationToken.None);
+
+        await _repo.Received(1).AddAsync(Arg.Is<Member>(m => m.JoinDate == Today), Arg.Any<CancellationToken>());
+        await _calendar.Received(1).TodayAsync(cmd.CompanyId, Arg.Any<CancellationToken>());
     }
 
     [Fact]

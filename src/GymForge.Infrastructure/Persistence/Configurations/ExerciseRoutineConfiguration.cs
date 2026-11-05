@@ -37,6 +37,7 @@ public class RoutineConfiguration : IEntityTypeConfiguration<Routine>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(r => r.MemberId).HasDatabaseName("IX_Routines_Member");
+        builder.HasIndex(r => new { r.CompanyId, r.SiteId }).HasDatabaseName("IX_Routines_CompanySite");
         builder.ToTable("Routines");
     }
 }
@@ -96,6 +97,7 @@ public class WorkoutLogConfiguration : IEntityTypeConfiguration<WorkoutLog>
     {
         builder.HasKey(w => w.Id);
         builder.HasIndex(w => new { w.MemberId, w.PerformedAt }).HasDatabaseName("IX_WorkoutLogs_MemberPerformedAt");
+        builder.HasIndex(w => new { w.CompanyId, w.SiteId }).HasDatabaseName("IX_WorkoutLogs_CompanySite");
         builder.ToTable("WorkoutLogs");
     }
 }
@@ -116,6 +118,7 @@ public class BodyMeasurementConfiguration : IEntityTypeConfiguration<BodyMeasure
         builder.Ignore(b => b.WaistToHeightRatio);
 
         builder.HasIndex(b => new { b.MemberId, b.MeasuredAt }).HasDatabaseName("IX_BodyMeasurements_MemberDate");
+        builder.HasIndex(b => new { b.CompanyId, b.SiteId }).HasDatabaseName("IX_BodyMeasurements_CompanySite");
         builder.ToTable("BodyMeasurements");
     }
 }

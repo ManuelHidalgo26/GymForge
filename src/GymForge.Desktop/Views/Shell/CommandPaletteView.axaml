@@ -1,0 +1,49 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:fa="using:FluentAvalonia.UI.Controls"
+             xmlns:vm="using:GymForge.Desktop.Views.Shell"
+             x:Class="GymForge.Desktop.Views.Shell.CommandPaletteView"
+             x:DataType="vm:CommandPaletteViewModel"
+             AutomationProperties.Name="Paleta de comandos">
+
+    <!-- Búsqueda arriba y resultados abajo. Teclado (↑/↓/Enter/Escape) en el code-behind: la paleta lo atiende
+         aunque el foco esté en la lista. El foco inicial y su devolución al cerrar los resuelve ctl:ModalHost. -->
+    <StackPanel Spacing="12" Width="540">
+
+        <TextBox x:Name="SearchBox"
+                 Text="{Binding Query}"
+                 Watermark="Escribí para buscar una sección o acción…"
+                 AutomationProperties.Name="Buscar una sección o acción">
+            <TextBox.InnerLeftContent>
+                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Find}" FontSize="16" Margin="10,0,0,0" />
+            </TextBox.InnerLeftContent>
+        </TextBox>
+
+        <ListBox x:Name="ResultsList"
+                 ItemsSource="{Binding Results}"
+                 SelectedItem="{Binding Selected}"
+                 MaxHeight="340"
+                 AutomationProperties.Name="Resultados"
+                 IsVisible="{Binding !HasNoResults}">
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="vm:PaletteCommand">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" Margin="4,2">
+                        <fa:SymbolIcon Symbol="{Binding Icon}" FontSize="16" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Text="{Binding Title}" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="2" Text="{Binding Group}" Classes="FormLabel" FontSize="11.5"
+                                   VerticalAlignment="Center" />
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <TextBlock Text="No encontramos nada con esa búsqueda." Classes="EmptyBody" FontSize="13" Margin="0,16"
+                   IsVisible="{Binding HasNoResults}" />
+
+        <Border Classes="Divider" />
+        <TextBlock Text="↑ ↓ para moverte  ·  Enter para abrir  ·  Esc para cerrar" Classes="FormLabel"
+                   FontSize="11.5" />
+
+    </StackPanel>
+
+</UserControl>

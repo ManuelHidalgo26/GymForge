@@ -111,7 +111,7 @@ public class CreateSiteCommandHandler : IRequestHandler<CreateSiteCommand, SiteD
     }
 }
 
-public record UpdateSiteCommand(Guid SiteId, string Name, string Address, string? Phone = null) : IRequest<SiteDto>;
+public record UpdateSiteCommand(Guid CompanyId, Guid SiteId, string Name, string Address, string? Phone = null) : IRequest<SiteDto>;
 
 public class UpdateSiteCommandValidator : AbstractValidator<UpdateSiteCommand>
 {
@@ -129,8 +129,9 @@ public class UpdateSiteCommandHandler : IRequestHandler<UpdateSiteCommand, SiteD
 
     public async Task<SiteDto> Handle(UpdateSiteCommand cmd, CancellationToken ct)
     {
-        var site = await _repo.GetSiteAsync(cmd.SiteId, ct)
-            ?? throw new InvalidOperationException("La sede no existe.");
+        var site = await _repo.GetSiteAsync(cmd.SiteId, ct);
+        if (site is null || site.CompanyId != cmd.CompanyId)
+            throw new InvalidOperationException("La sede no existe.");
 
         site.Update(cmd.Name.Trim(), cmd.Address.Trim(), cmd.Phone?.Trim());
         await _repo.SaveChangesAsync(ct);
@@ -142,7 +143,7 @@ public class UpdateSiteCommandHandler : IRequestHandler<UpdateSiteCommand, SiteD
 /// Elimina una sede. Devuelve true si se borró definitivamente (sin datos);
 /// false si tenía datos y se desactivó para conservar el historial.
 /// </summary>
-public record DeleteSiteCommand(Guid SiteId) : IRequest<bool>;
+public record DeleteSiteCommand(Guid CompanyId, Guid SiteId) : IRequest<bool>;
 
 public class DeleteSiteCommandHandler : IRequestHandler<DeleteSiteCommand, bool>
 {
@@ -151,8 +152,9 @@ public class DeleteSiteCommandHandler : IRequestHandler<DeleteSiteCommand, bool>
 
     public async Task<bool> Handle(DeleteSiteCommand cmd, CancellationToken ct)
     {
-        var site = await _repo.GetSiteAsync(cmd.SiteId, ct)
-            ?? throw new InvalidOperationException("La sede no existe.");
+        var site = await _repo.GetSiteAsync(cmd.SiteId, ct);
+        if (site is null || site.CompanyId != cmd.CompanyId)
+            throw new InvalidOperationException("La sede no existe.");
 
         if (await _repo.CountActiveSitesAsync(site.CompanyId, ct) <= 1)
             throw new InvalidOperationException("No se puede eliminar la única sede del gimnasio.");

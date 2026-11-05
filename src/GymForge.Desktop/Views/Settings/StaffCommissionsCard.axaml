@@ -1,0 +1,67 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:fa="using:FluentAvalonia.UI.Controls"
+             xmlns:vm="using:GymForge.Desktop.ViewModels.Settings"
+             x:Class="GymForge.Desktop.Views.Settings.StaffCommissionsCard"
+             x:DataType="vm:StaffCommissionsViewModel">
+
+    <!-- Comisiones del personal: se le da como DataContext el StaffCommissionsViewModel (DataContext="{Binding Commissions}").
+         Porcentajes de 0 a 100 (10 = 10%). Misma estructura que "Cobranzas y recordatorios": título + descripción,
+         divider, una fila Inset por persona. La nota de PT va en un InfoBar (no en texto tenue). -->
+    <Border Classes="Card" Padding="24">
+        <StackPanel Spacing="16">
+
+            <StackPanel Spacing="3">
+                <TextBlock Text="Comisiones del personal" FontSize="15" FontWeight="SemiBold" />
+                <TextBlock Classes="FormLabel" TextWrapping="Wrap"
+                           Text="Porcentaje que gana cada persona sobre lo que vende. Se calcula y se guarda al momento de la venta: cambiar un porcentaje no modifica las ventas anteriores. En productos, el porcentaje propio del producto (en Productos) tiene prioridad sobre este." />
+            </StackPanel>
+
+            <Border Classes="Divider" />
+
+            <ItemsControl ItemsSource="{Binding Staff}" AutomationProperties.Name="Comisiones por persona">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Spacing="12" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:StaffCommissionEditor">
+                        <Border Classes="Inset">
+                            <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="12">
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Spacing="2">
+                                    <TextBlock Text="{Binding FullName}" FontSize="13" FontWeight="SemiBold"
+                                               TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Classes="Feedback" Classes.success="{Binding Saved}" Classes.danger="{Binding !Saved}"
+                                               Text="{Binding Message}"
+                                               IsVisible="{Binding Message, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                               AutomationProperties.LiveSetting="Polite" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Membresías (%)" Classes="FormLabel" />
+                                    <NumericUpDown Value="{Binding PctMemberships}" Minimum="0" Maximum="100" Increment="0.5"
+                                                   FormatString="0.##" Width="130"
+                                                   AutomationProperties.Name="Comisión por membresías, en porcentaje" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Spacing="4">
+                                    <TextBlock Text="Productos (%)" Classes="FormLabel" />
+                                    <NumericUpDown Value="{Binding PctProducts}" Minimum="0" Maximum="100" Increment="0.5"
+                                                   FormatString="0.##" Width="130"
+                                                   AutomationProperties.Name="Comisión por productos, en porcentaje" />
+                                </StackPanel>
+                                <Button Grid.Column="3" VerticalAlignment="Bottom" Classes="Secondary" Content="Guardar"
+                                        AutomationProperties.Name="Guardar comisiones de esta persona"
+                                        Command="{Binding $parent[UserControl].((vm:StaffCommissionsViewModel)DataContext).SaveCommand}"
+                                        CommandParameter="{Binding}" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <fa:InfoBar IsOpen="True" IsClosable="False" Severity="Informational"
+                        Title="Personal training todavía no genera comisión"
+                        Message="Va a estar disponible cuando se agregue la venta de PT: hoy no hay una venta de PT sobre la cual calcularla." />
+        </StackPanel>
+    </Border>
+</UserControl>

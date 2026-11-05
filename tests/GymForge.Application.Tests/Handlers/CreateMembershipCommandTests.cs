@@ -1,5 +1,6 @@
 using FluentAssertions;
 using GymForge.Application.Interfaces;
+using GymForge.Application.Services;
 using GymForge.Application.UseCases.Memberships;
 using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
@@ -54,5 +55,36 @@ public class CreateMembershipCommandTests
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
         await _membershipRepo.DidNotReceive().AddAsync(Arg.Any<Membership>(), Arg.Any<CancellationToken>());
+    }
+}
+
+public class CreateMembershipCommandValidatorTests
+{
+    private static readonly DateOnly Today = new(2026, 7, 21);
+    private readonly ICompanyCalendar _calendar = Substitute.For<ICompanyCalendar>();
+
+    private CreateMembershipCommandValidator Sut()
+    {
+        _calendar.TodayAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(Today);
+        return new CreateMembershipCommandValidator(_calendar);
+    }
+
+    private static CreateMembershipCommand Command(DateOnly start) =>
+        new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), start);
+
+    [Fact]
+    public async Task Validate_InicioAyerDelGimnasio_EsValido()
+    {
+        var result = await Sut().ValidateAsync(Command(Today.AddDays(-1)));
+
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Validate_InicioAnteriorAAyerDelGimnasio_EsInvalido()
+    {
+        var result = await Sut().ValidateAsync(Command(Today.AddDays(-2)));
+
+        result.IsValid.Should().BeFalse();
     }
 }

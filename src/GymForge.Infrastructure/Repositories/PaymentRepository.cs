@@ -30,11 +30,25 @@ public class PaymentRepository : IPaymentRepository
     public async Task<IReadOnlyList<Payment>> GetByPeriodAsync(
         Guid companyId, Guid siteId, DateTime from, DateTime to, CancellationToken ct = default) =>
         await _db.Payments
+            .AsNoTracking()
             .Include(p => p.Member)
             .Where(p => p.CompanyId == companyId && p.SiteId == siteId &&
                         p.ReceivedAt >= from && p.ReceivedAt < to &&
                         p.Status == PaymentStatus.Completed)
             .OrderByDescending(p => p.ReceivedAt)
+            .ToListAsync(ct);
+
+    // Reporte de dueño: IgnoreQueryFilters solo abre la sede; el CompanyId explícito mantiene el límite de empresa.
+    public async Task<IReadOnlyList<Payment>> GetForBreakdownAsync(
+        Guid companyId, Guid? siteId, DateTime from, DateTime to, CancellationToken ct = default) =>
+        await _db.Payments
+            .AsNoTracking()
+            .IgnoreQueryFilters()
+            .Include(p => p.Allocations).ThenInclude(a => a.Charge)
+                .ThenInclude(c => c.Membership!).ThenInclude(m => m.MembershipType)
+            .Where(p => p.CompanyId == companyId && (siteId == null || p.SiteId == siteId) &&
+                        p.ReceivedAt >= from && p.ReceivedAt < to &&
+                        p.Status == PaymentStatus.Completed)
             .ToListAsync(ct);
 
     public async Task<int> SaveChangesAsync(CancellationToken ct = default) =>

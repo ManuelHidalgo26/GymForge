@@ -35,8 +35,11 @@ public class MembershipRepository : IMembershipRepository
             .OrderByDescending(m => m.StartDate)
             .FirstOrDefaultAsync(ct);
 
+    // Lecturas de pantalla y reportes (solo mostrar): sin tracking, así no quedan instancias viejas en el contexto de
+    // larga vida de Desktop. Las que alimentan una escritura (GetByIdAsync, GetCurrentActiveAsync, los jobs) siguen trackeadas.
     public async Task<IReadOnlyList<Membership>> GetByMemberAsync(Guid memberId, CancellationToken ct = default) =>
         await _db.Memberships
+            .AsNoTracking()
             .Include(m => m.MembershipType)
             .Where(m => m.MemberId == memberId)
             .OrderByDescending(m => m.StartDate)
@@ -46,6 +49,7 @@ public class MembershipRepository : IMembershipRepository
     public async Task<IReadOnlyList<Membership>> GetExpiringAsync(
         Guid companyId, DateOnly from, DateOnly to, CancellationToken ct = default) =>
         await _db.Memberships
+            .AsNoTracking()
             .IgnoreQueryFilters()
             .Include(m => m.Member)
             .Include(m => m.MembershipType)
@@ -79,5 +83,28 @@ public class MembershipRepository : IMembershipRepository
                 m.Status == MembershipStatus.Frozen &&
                 m.FreezeEnd != null &&
                 m.FreezeEnd <= asOf)
+            .ToListAsync(ct);
+
+    // Reporte de dueño: IgnoreQueryFilters solo abre la sede; el CompanyId explícito mantiene el límite de empresa.
+    public async Task<IReadOnlyList<Membership>> GetCancelledBetweenAsync(
+        Guid companyId, Guid? siteId, DateTime from, DateTime to, CancellationToken ct = default) =>
+        await _db.Memberships
+            .AsNoTracking()
+            .IgnoreQueryFilters()
+            .Include(m => m.Member)
+            .Include(m => m.MembershipType)
+            .Where(m => m.CompanyId == companyId && (siteId == null || m.SiteId == siteId) &&
+                        m.CancelDate >= from && m.CancelDate < to)
+            .ToListAsync(ct);
+
+    // Reporte de comisiones: mismo patrón que GetCancelledBetweenAsync (sede abierta, empresa acotada).
+    public async Task<IReadOnlyList<Membership>> GetSoldBetweenAsync(
+        Guid companyId, Guid? siteId, DateTime from, DateTime to, CancellationToken ct = default) =>
+        await _db.Memberships
+            .AsNoTracking()
+            .IgnoreQueryFilters()
+            .Where(m => m.CompanyId == companyId && (siteId == null || m.SiteId == siteId) &&
+                        m.SoldByStaffId != null && m.CommissionAmount > 0 &&
+                        m.CreatedAt >= from && m.CreatedAt < to)
             .ToListAsync(ct);
 }

@@ -21,7 +21,15 @@ public record MemberDto(
     string? TagSerial,
     DateOnly? JoinDate,
     bool HasFingerprint,
-    DateTime CreatedAt)
+    DateTime CreatedAt,
+    bool MarketingConsent,
+    string? EmergencyName,
+    string? EmergencyPhone,
+    string? EmergencyRelation,
+    string? MedicalConditions,
+    string? Medications,
+    string? Allergies,
+    BloodType BloodType)
 {
     public static MemberDto FromEntity(Member m) => new(
         m.Id, m.SiteId, m.FirstName, m.LastName, m.FullName,
@@ -29,7 +37,9 @@ public record MemberDto(
         m.BirthDate, m.Age, m.Gender, m.Status, m.PhotoUrl,
         m.TagSerial, m.JoinDate,
         m.FingerprintTemplate is { Length: > 0 },
-        m.CreatedAt);
+        m.CreatedAt, m.MarketingConsent,
+        m.EmergencyName, m.EmergencyPhone, m.EmergencyRelation,
+        m.MedicalConditions, m.Medications, m.Allergies, m.BloodType);
 }
 
 public record PagedResult<T>(

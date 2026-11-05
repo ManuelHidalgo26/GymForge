@@ -110,28 +110,70 @@
                         Severity="Error" Title="Error" Message="{Binding ErrorMessage}" IsClosable="False" />
 
             <!-- Agenda de la semana -->
-            <ListBox Grid.Column="0" Margin="0,0,12,0"
-                     ItemsSource="{Binding Schedules}"
-                     SelectedItem="{Binding SelectedSchedule}"
-                     Background="Transparent">
-                <ListBox.ItemTemplate>
-                    <DataTemplate x:DataType="cls:ScheduleRowDto">
-                        <Grid ColumnDefinitions="Auto,*,Auto" Margin="4">
-                            <Border Grid.Column="0" Classes="IconChip" VerticalAlignment="Center">
-                                <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Calendar}" />
-                            </Border>
-                            <StackPanel Grid.Column="1" Spacing="2" Margin="12,0" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding ClassName}" FontWeight="SemiBold" />
-                                <TextBlock Text="{Binding Start, StringFormat='ddd dd/MM · HH:mm'}"
-                                           Classes="FormLabel" />
-                            </StackPanel>
-                            <Border Grid.Column="2" Classes="Pill" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding Occupancy}" />
-                            </Border>
-                        </Grid>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+            <ScrollViewer Grid.Column="0" Margin="0,0,12,0" HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Disabled" IsVisible="{Binding !IsEmpty}">
+                <ItemsControl ItemsSource="{Binding WeekDays}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Rows="1" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:ScheduleDayVm">
+                            <Grid RowDefinitions="Auto,*" MinWidth="120" Margin="0,0,6,0">
+                                <Border Grid.Row="0" Classes="Inset" Classes.today="{Binding IsToday}"
+                                        Padding="8,6" Margin="0,0,0,6">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <TextBlock Text="{Binding DayName}" FontWeight="SemiBold" TextAlignment="Center" />
+                                        <TextBlock Text="{Binding DateLabel}" Classes="FormLabel" TextAlignment="Center" />
+                                    </StackPanel>
+                                </Border>
+                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                    <Grid>
+                                        <TextBlock Text="—" Classes="FormLabel" HorizontalAlignment="Center"
+                                                   AutomationProperties.Name="Sin horarios este día"
+                                                   IsVisible="{Binding IsEmpty}" />
+                                        <ItemsControl ItemsSource="{Binding Schedules}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="cls:ScheduleRowDto">
+                                                    <Button Classes="ScheduleChip" HorizontalAlignment="Stretch"
+                                                            HorizontalContentAlignment="Left" Margin="0,0,0,6"
+                                                            Command="{Binding $parent[UserControl].((vm:ClassesViewModel)DataContext).SelectScheduleCommand}"
+                                                            CommandParameter="{Binding}">
+                                                        <Classes.selected>
+                                                            <MultiBinding Converter="{StaticResource ValuesEqual}">
+                                                                <Binding />
+                                                                <Binding Path="$parent[UserControl].((vm:ClassesViewModel)DataContext).SelectedSchedule" />
+                                                            </MultiBinding>
+                                                        </Classes.selected>
+                                                        <!-- Nombre accesible completo: el layout en columnas no dice el día por sí solo (es-AR). -->
+                                                        <AutomationProperties.Name>
+                                                            <MultiBinding StringFormat="{}{0}, {1:dddd dd/MM HH:mm}, {2} de {3} cupos reservados">
+                                                                <Binding Path="ClassName" />
+                                                                <Binding Path="Start" />
+                                                                <Binding Path="BookedCount" />
+                                                                <Binding Path="Capacity" />
+                                                            </MultiBinding>
+                                                        </AutomationProperties.Name>
+                                                        <StackPanel Spacing="3">
+                                                            <TextBlock Text="{Binding Start, StringFormat='HH:mm'}"
+                                                                       FontWeight="SemiBold" />
+                                                            <TextBlock Text="{Binding ClassName}" TextTrimming="CharacterEllipsis" />
+                                                            <Border Classes="Pill neutral" HorizontalAlignment="Left">
+                                                                <TextBlock Text="{Binding Occupancy}" />
+                                                            </Border>
+                                                        </StackPanel>
+                                                    </Button>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </Grid>
+                                </ScrollViewer>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
 
             <!-- Estado vacío de la agenda -->
             <StackPanel Grid.Column="0" Classes="EmptyState" IsVisible="{Binding IsEmpty}">

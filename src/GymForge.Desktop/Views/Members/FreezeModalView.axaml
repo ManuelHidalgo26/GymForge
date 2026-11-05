@@ -20,8 +20,7 @@
 
             <!-- Membresía + cupo anual: medidor + frase. El texto va en color secundario (no Opacity)
                  para mantener contraste AA sobre el fondo tenue en light y dark. -->
-            <Border CornerRadius="8" Padding="12"
-                    Background="{DynamicResource SubtleFillColorSecondaryBrush}">
+            <Border Classes="Inset">
                 <StackPanel Spacing="8">
                     <TextBlock Text="{Binding MembershipTypeName}"
                                FontWeight="SemiBold" FontSize="13" />

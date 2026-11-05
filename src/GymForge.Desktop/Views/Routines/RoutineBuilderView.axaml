@@ -12,7 +12,7 @@
     <Grid RowDefinitions="Auto,Auto,Auto,*">
 
         <!-- ── Selector de socio ───────────────────────────────────────────── -->
-        <Border Grid.Row="0" Classes="Toolbar">
+        <Border Grid.Row="0" Classes="Toolbar" IsVisible="{Binding ShowMemberPicker}">
             <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                 <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Contact}" FontSize="20" VerticalAlignment="Center" />
                 <TextBlock Text="Socio" Classes="FormLabel" VerticalAlignment="Center" />
@@ -39,11 +39,15 @@
         <Grid Grid.Row="3" ColumnDefinitions="300,*" Margin="16,12" IsVisible="{Binding HasMember}">
 
             <!-- Columna izquierda: rutinas del socio -->
-            <DockPanel Grid.Column="0" Margin="0,0,12,0">
+            <!-- La columna es una card a toda altura: con pocas rutinas (o ninguna) queda un panel definido
+                 en vez de un hueco vacío al lado del detalle. -->
+            <Border Grid.Column="0" Classes="Card" Padding="16,14" Margin="0,0,12,0">
+            <DockPanel>
                 <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-                    <TextBlock Text="Rutinas" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    <TextBlock Text="Rutinas" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
                     <Button DockPanel.Dock="Right" HorizontalAlignment="Right" Classes="Primary"
-                            Command="{Binding OpenRoutineFormCommand}">
+                            Command="{Binding OpenRoutineFormCommand}"
+                            AutomationProperties.Name="Nueva rutina">
                         <StackPanel Orientation="Horizontal" Spacing="6">
                             <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Add}" FontSize="14" />
                             <TextBlock Text="Nueva" />
@@ -51,8 +55,10 @@
                     </Button>
                 </DockPanel>
 
+                <Border DockPanel.Dock="Top" Classes="Divider" Margin="0,0,0,8" />
+
                 <!-- Form nueva rutina -->
-                <Border DockPanel.Dock="Top" Classes="Card" Margin="0,0,0,8" IsVisible="{Binding IsRoutineFormOpen}">
+                <Border DockPanel.Dock="Top" Classes="Inset" Margin="0,0,0,8" IsVisible="{Binding IsRoutineFormOpen}">
                     <StackPanel Spacing="8">
                         <TextBlock Text="Nueva rutina" FontWeight="SemiBold" />
                         <TextBox Text="{Binding RoutineName}" Watermark="Nombre (ej: Full Body)" />
@@ -94,6 +100,7 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
             </DockPanel>
+            </Border>
 
             <!-- Columna derecha: detalle de la rutina -->
             <Border Grid.Column="1" Classes="Card" IsVisible="{Binding HasRoutine}">

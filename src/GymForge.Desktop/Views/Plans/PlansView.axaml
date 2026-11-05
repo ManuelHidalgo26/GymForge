@@ -101,20 +101,15 @@
                 <DataGridTemplateColumn Header="Estado" Width="110" SortMemberPath="IsActive">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:MembershipTypeDto">
-                            <Border Classes="Pill" Margin="4,0">
-                                <Border.Background>
-                                    <SolidColorBrush Color="{Binding IsActive, Converter={StaticResource ActiveColorConverter}}" Opacity="0.15" />
-                                </Border.Background>
-                                <TextBlock Text="{Binding IsActive, Converter={StaticResource ActiveLabelConverter}}">
-                                    <TextBlock.Foreground>
-                                        <SolidColorBrush Color="{Binding IsActive, Converter={StaticResource ActiveColorConverter}}" />
-                                    </TextBlock.Foreground>
-                                </TextBlock>
+                            <Border Classes="Pill" Margin="4,0"
+                                    Classes.success="{Binding IsActive, Converter={StaticResource StatusTone}, ConverterParameter=success}"
+                                    Classes.neutral="{Binding IsActive, Converter={StaticResource StatusTone}, ConverterParameter=neutral}">
+                                <TextBlock Text="{Binding IsActive, Converter={StaticResource ActiveLabelConverter}}" />
                             </Border>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="" Width="120">
+                <DataGridTemplateColumn Header="Acciones" Width="120">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="dto:MembershipTypeDto">
                             <Button Classes="Ghost" Margin="4,2"

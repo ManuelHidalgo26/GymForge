@@ -2,6 +2,8 @@ using GymForge.Application.Interfaces;
 using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
 using GymForge.Infrastructure.Persistence;
+using GymForge.Infrastructure.Persistence.Configurations;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
 namespace GymForge.Infrastructure.Repositories;
@@ -25,8 +27,24 @@ public class MemberRepository : IMemberRepository
     public void Update(Member entity) => _db.Members.Update(entity);
     public void Remove(Member entity) => _db.Members.Remove(entity);
 
-    public async Task<int> SaveChangesAsync(CancellationToken ct = default) =>
-        await _db.SaveChangesAsync(ct);
+    public async Task<int> SaveChangesAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            return await _db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex) when (IsDuplicateDocument(ex))
+        {
+            throw new DuplicateMemberDocumentException(ex);
+        }
+    }
+
+    // SQLite informa "UNIQUE constraint failed: Members.CompanyId, Members.SiteId, Members.DocumentNumber"
+    // (o "... index 'UX_...'"); se distingue del índice único de la credencial por el nombre de la columna/índice.
+    private static bool IsDuplicateDocument(DbUpdateException ex) =>
+        ex.InnerException is SqliteException { SqliteErrorCode: 19 } sqlite &&
+        (sqlite.Message.Contains("Members.DocumentNumber", StringComparison.Ordinal) ||
+         sqlite.Message.Contains(MemberConfiguration.UniqueDocumentIndexName, StringComparison.Ordinal));
 
     public async Task<Member?> FindByDocumentAsync(
         DocumentType docType, string docNumber, Guid companyId, CancellationToken ct = default) =>
@@ -118,5 +136,24 @@ public class MemberRepository : IMemberRepository
         await _db.Members
             .IgnoreQueryFilters()
             .Where(m => m.CompanyId == companyId && m.Status == status)
+            .ToListAsync(ct);
+
+    // Reportes de dueño: IgnoreQueryFilters solo abre la sede; el CompanyId explícito mantiene el límite de empresa.
+    public async Task<IReadOnlyDictionary<MemberStatus, int>> CountByStatusAsync(
+        Guid companyId, Guid? siteId, CancellationToken ct = default) =>
+        await _db.Members
+            .IgnoreQueryFilters()
+            .Where(m => m.CompanyId == companyId && (siteId == null || m.SiteId == siteId))
+            .GroupBy(m => m.Status)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.Status, x => x.Count, ct);
+
+    public async Task<IReadOnlyList<Member>> GetJoinedBetweenAsync(
+        Guid companyId, Guid? siteId, DateOnly from, DateOnly to, CancellationToken ct = default) =>
+        await _db.Members
+            .AsNoTracking()
+            .IgnoreQueryFilters()
+            .Where(m => m.CompanyId == companyId && (siteId == null || m.SiteId == siteId) &&
+                        m.JoinDate >= from && m.JoinDate <= to)
             .ToListAsync(ct);
 }

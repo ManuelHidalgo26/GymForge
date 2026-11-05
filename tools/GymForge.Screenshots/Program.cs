@@ -13,6 +13,7 @@ using GymForge.Application.UseCases.Charges;
 using GymForge.Application.UseCases.Dunning;
 using GymForge.Application.UseCases.Licensing;
 using GymForge.Application.UseCases.Members;
+using GymForge.Application.UseCases.Reports;
 using GymForge.Application.UseCases.Sales;
 using GymForge.Application.UseCases.Staff;
 using GymForge.Desktop;
@@ -147,8 +148,60 @@ Capture("08-planes", new GymForge.Desktop.Views.Plans.PlansView { DataContext = 
 
 // Reportes: recaudación del mes con los pagos del seed
 var reportsVm = new GymForge.Desktop.ViewModels.Reports.ReportsViewModel(
-    mediator2, session, sp.GetRequiredService<GymForge.Desktop.Services.ReceiptService>());
+    mediator2, session, sp.GetRequiredService<GymForge.Desktop.Services.ReceiptService>(),
+    sp.GetRequiredService<GymForge.Application.Services.ICompanyCalendar>(),
+    sp.GetRequiredService<GymForge.Desktop.Services.IReportExportService>(),
+    sp.GetRequiredService<IClock>());
+Pump(reportsVm.LoadCommand.ExecuteAsync(null));
 Capture("09-reportes", new GymForge.Desktop.Views.Reports.ReportsView { DataContext = reportsVm }, 1180, 760, outDir);
+
+// Los otros tres reportes del hub (desagregada y altas/bajas con alcance de toda la empresa)
+reportsVm.CompanyWide = true;
+foreach (var (kind, shot) in new[]
+         {
+             (GymForge.Desktop.ViewModels.Reports.ReportKind.RevenueBreakdown, "09b-reportes-desagregada"),
+             (GymForge.Desktop.ViewModels.Reports.ReportKind.Overdue, "09c-reportes-morosos"),
+             (GymForge.Desktop.ViewModels.Reports.ReportKind.MemberFlow, "09d-reportes-altas-bajas"),
+         })
+{
+    reportsVm.SelectedReport = kind;
+    Pump(reportsVm.LoadCommand.ExecuteAsync(null));
+    Capture(shot, new GymForge.Desktop.Views.Reports.ReportsView { DataContext = reportsVm }, 1180, 760, outDir);
+}
+
+// Los mismos reportes como archivos exportables (PDF y Excel) para revisar el layout
+{
+    var reportToday = DateOnly.FromDateTime(DateTime.Today);
+    var reportFrom = new DateOnly(reportToday.Year, reportToday.Month, 1);
+    var siteContext = WaitFor(mediator2.Send(new GetReportContextQuery(session.CompanyId, session.SiteId)));
+    var companyContext = WaitFor(mediator2.Send(new GetReportContextQuery(session.CompanyId, null)));
+    var nowUtc = DateTime.UtcNow;
+    var exporter = sp.GetRequiredService<IReportExporter>();
+
+    ReportDocument[] sampleReports =
+    [
+        ReportBuilders.Payments(
+            WaitFor(mediator2.Send(new GetPaymentsReportQuery(session.CompanyId, session.SiteId, reportFrom, reportToday))),
+            reportFrom, reportToday, siteContext, nowUtc),
+        ReportBuilders.Breakdown(
+            WaitFor(mediator2.Send(new GetRevenueBreakdownQuery(session.CompanyId, null, reportFrom, reportToday))),
+            reportFrom, reportToday, companyContext, nowUtc),
+        ReportBuilders.Overdue(
+            WaitFor(mediator2.Send(new GetOverdueMembersQuery(session.CompanyId, session.SiteId, reportToday))),
+            reportToday, siteContext, nowUtc),
+        ReportBuilders.Flow(
+            WaitFor(mediator2.Send(new GetMemberFlowQuery(session.CompanyId, null, reportFrom, reportToday))),
+            reportFrom, reportToday, companyContext, nowUtc),
+    ];
+
+    foreach (var report in sampleReports)
+        foreach (var format in new[] { ReportFormat.Pdf, ReportFormat.Xlsx })
+        {
+            var file = $"{report.FileStem}.{exporter.Extension(format)}";
+            File.WriteAllBytes(Path.Combine(outDir, file), exporter.Export(report, format));
+            Console.WriteLine($"  {file}");
+        }
+}
 
 // Configuración: datos del gimnasio + sedes
 GymForge.Desktop.ViewModels.Settings.SettingsViewModel NewSettingsViewModel() => new(
@@ -182,7 +235,7 @@ liveLicense.State = licenseBeforeMismatch;
 
 // Clases v2: agenda semanal con un horario seleccionado y sus reservas
 var classesVm = new GymForge.Desktop.ViewModels.Classes.ClassesViewModel(
-    mediator2, sp.GetRequiredService<IMemberRepository>(), session);
+    mediator2, sp.GetRequiredService<IMemberRepository>(), session, sp.GetRequiredService<GymForge.Application.Services.ICompanyCalendar>());
 Pump(classesVm.LoadCommand.ExecuteAsync(null));
 classesVm.SelectedSchedule = classesVm.Schedules.FirstOrDefault(s => s.Id == sampleScheduleId)
     ?? classesVm.Schedules.FirstOrDefault();
@@ -435,6 +488,26 @@ var shellBrand = new GymForge.Desktop.Views.Shell.MainWindow
 CaptureWindow("17-marca-verde", shellBrand, outDir);
 GymForge.Desktop.App.ApplyBrandAccent("#6366F1");
 
+// Paleta de comandos (Ctrl+K): abierta, filtrada sin acentos, sin resultados y con un acento claro (amarillo).
+var shellVm = sp.GetRequiredService<GymForge.Desktop.Views.Shell.MainWindowViewModel>();
+var shellPalette = new GymForge.Desktop.Views.Shell.MainWindow { DataContext = shellVm, Width = 1366, Height = 800 };
+shellPalette.Show();
+shellVm.Palette.OpenCommand.Execute(null);
+SaveFrame("38-paleta-abierta", shellPalette, outDir);
+shellVm.Palette.Query = "configuracion";
+SaveFrame("38-paleta-filtrada", shellPalette, outDir);
+shellVm.Palette.Query = "zzz";
+SaveFrame("38-paleta-vacia", shellPalette, outDir);
+shellVm.Palette.CloseCommand.Execute(null);
+GymForge.Desktop.App.ApplyBrandAccent("#FACC15");
+shellVm.Palette.OpenCommand.Execute(null);
+SaveFrame("38-paleta-marca-amarilla", shellPalette, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+SaveFrame("38-paleta-marca-amarilla-dark", shellPalette, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+shellPalette.Close();
+GymForge.Desktop.App.ApplyBrandAccent("#6366F1");
+
 // Auto-actualización: el origen simulado pasa a ofrecer una versión nueva y el shell muestra el aviso.
 // La ventana ya busca sola al abrirse; acá se fuerza la búsqueda para dejar el estado "lista" listo antes.
 sp.GetRequiredService<SampleUpdateService>().NextCheck = UpdateCheckResult.Found(new AvailableUpdate("0.4.0"));
@@ -478,6 +551,52 @@ Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVari
 
 Pump(detailVm.ReactivateMembershipCommand.ExecuteAsync(detailVm.Memberships.First(m => m.Status == MembershipStatus.Frozen)));
 Capture("23-socio-membresia-reactivada", new MemberDetailView { DataContext = detailVm }, 1180, 720, outDir);
+
+// ── Fase 4 parte 2: editar socio, rutinas en la ficha y comisiones ───────────────────────────────────────
+var commissionMember = membersVm.Members.First(m => m.Status == MemberStatus.Active);
+var editVm = sp.GetRequiredService<MemberDetailViewModel>();
+Pump(editVm.LoadAsync(commissionMember));
+editVm.StartEditCommand.Execute(null);
+Capture("33-ficha-editar", new MemberDetailView { DataContext = editVm }, 1180, 1700, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+Capture("33-ficha-editar-dark", new MemberDetailView { DataContext = editVm }, 1180, 1700, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+editVm.Edit.CancelCommand.Execute(null);
+Pump(editVm.SwitchTabCommand.ExecuteAsync(MemberDetailTab.Routines));
+for (int i = 0; i < 15; i++) { Dispatcher.UIThread.RunJobs(); Thread.Sleep(10); }  // carga de las rutinas del socio
+Capture("34-ficha-rutinas", new MemberDetailView { DataContext = editVm }, 1180, 820, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+Capture("34-ficha-rutinas-dark", new MemberDetailView { DataContext = editVm }, 1180, 820, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+
+// Comisiones: tarifa del cajero + una venta de membresía y una de producto que generen comisión.
+WaitFor(mediator2.Send(new UpdateStaffCommissionsCommand(session.CompanyId, staff.Id, 10m, 5m)));
+var paidPlan = WaitFor(mediator2.Send(new GetMembershipTypesQuery(session.CompanyId))).First(p => p.Price > 0);
+WaitFor(mediator2.Send(new SellMembershipCommand(
+    session.CompanyId, session.SiteId, staff.Id, shift.Id, commissionMember.Id, paidPlan.Id, PaymentMethod.Cash)));
+var commissionProduct = productsVm.Products.First(p => p.Sku == "AGUA-500");
+WaitFor(mediator2.Send(new SellProductCommand(
+    session.CompanyId, session.SiteId, staff.Id, shift.Id, commissionProduct.Id, 2m, null, PaymentMethod.Cash)));
+
+var settingsWithCommissions = NewSettingsViewModel();
+Pump(settingsWithCommissions.LoadCommand.ExecuteAsync(null));
+Capture("35-config-comisiones", new GymForge.Desktop.Views.Settings.SettingsView { DataContext = settingsWithCommissions }, 1180, 3600, outDir);
+
+Pump(productsVm.LoadCommand.ExecuteAsync(null));
+productsVm.EditProductCommand.Execute(productsVm.Products.First(p => p.Sku == "AGUA-500"));
+Capture("36-productos-comision", new GymForge.Desktop.Views.Products.ProductsView { DataContext = productsVm }, 1180, 760, outDir);
+
+reportsVm.CompanyWide = false;
+reportsVm.SelectedReport = GymForge.Desktop.ViewModels.Reports.ReportKind.StaffCommissions;
+Pump(reportsVm.LoadCommand.ExecuteAsync(null));
+Capture("37-reportes-comisiones", new GymForge.Desktop.Views.Reports.ReportsView { DataContext = reportsVm }, 1180, 760, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+Capture("37-reportes-comisiones-dark", new GymForge.Desktop.Views.Reports.ReportsView { DataContext = reportsVm }, 1180, 760, outDir);
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+Check("comisiones: el reporte suma la membresía y el producto del cajero",
+    reportsVm.CommissionRows.Count == 1 && reportsVm.CommissionRows[0].MembershipCommission > 0
+    && reportsVm.CommissionRows[0].ProductCommission > 0
+    && reportsVm.CommissionsTotal == reportsVm.CommissionRows[0].Total);
 
 // Onboarding de primer arranque (asistente de configuración inicial).
 var onboardingVm = sp.GetRequiredService<GymForge.Desktop.ViewModels.Onboarding.OnboardingViewModel>();

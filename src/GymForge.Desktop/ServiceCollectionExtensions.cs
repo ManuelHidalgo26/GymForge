@@ -63,6 +63,10 @@ public static class ServiceCollectionExtensions
         // Genera y abre el recibo PDF de cada cobro
         services.AddSingleton<ReceiptService>();
 
+        // ── Reportes ──────────────────────────────────────────────────────────
+        // Exporta un reporte a PDF/Excel con el diálogo nativo de guardado
+        services.AddSingleton<IReportExportService, ReportExportService>();
+
         // ── WhatsApp ──────────────────────────────────────────────────────────
         // Abre los links wa.me de los recordatorios de cobranza (el handler arma el link, la UI lo abre)
         services.AddSingleton<IWhatsAppLinkSender, WhatsAppLinkSender>();

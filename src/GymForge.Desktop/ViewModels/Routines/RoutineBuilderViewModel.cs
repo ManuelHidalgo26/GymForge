@@ -14,7 +14,8 @@ namespace GymForge.Desktop.ViewModels.Routines;
 
 /// <summary>
 /// Armador de rutinas por socio: elegir socio → crear/ver rutinas → agregar días
-/// y ejercicios (de la biblioteca) con series y repeticiones.
+/// y ejercicios (de la biblioteca) con series y repeticiones. En el hub elige el socio con un buscador; embebido en
+/// la ficha (<see cref="InitForMemberAsync"/>) el socio ya viene dado y el buscador se oculta.
 /// </summary>
 public partial class RoutineBuilderViewModel : ObservableObject
 {
@@ -31,6 +32,9 @@ public partial class RoutineBuilderViewModel : ObservableObject
 
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private string? _errorMessage;
+
+    /// <summary>true en el hub (se elige el socio); false embebido en la ficha, donde el socio ya está dado.</summary>
+    [ObservableProperty] private bool _showMemberPicker = true;
 
     // Form: nueva rutina
     [ObservableProperty] private bool _isRoutineFormOpen;
@@ -67,7 +71,8 @@ public partial class RoutineBuilderViewModel : ObservableObject
         OnPropertyChanged(nameof(HasMember));
         SelectedRoutine = null;
         Detail = null;
-        _ = LoadRoutinesAsync();
+        if (ShowMemberPicker)
+            _ = LoadRoutinesAsync();
     }
 
     partial void OnSelectedRoutineChanged(RoutineDto? value) => _ = LoadDetailAsync();
@@ -77,7 +82,8 @@ public partial class RoutineBuilderViewModel : ObservableObject
     {
         // Idempotente: se dispara al asignar el DataContext (code-behind). Si ya
         // cargamos socios/ejercicios, no recargar para no pisar la selección.
-        if (Members.Count > 0) return;
+        // Embebido en la ficha no hay buscador: el socio y los ejercicios los carga InitForMemberAsync.
+        if (!ShowMemberPicker || Members.Count > 0) return;
 
         IsLoading = true;
         ErrorMessage = null;
@@ -85,10 +91,36 @@ public partial class RoutineBuilderViewModel : ObservableObject
         {
             var members = await _memberRepo.GetPagedAsync(_session.CompanyId, _session.SiteId, 1, 500, ct: ct);
             Members = new ObservableCollection<MemberDto>(members.Select(MemberDto.FromEntity));
-            Exercises = new ObservableCollection<ExerciseDto>(
-                await _mediator.Send(new SearchExercisesQuery(null, null), ct));
+            await LoadExercisesAsync(ct);
         }
         finally { IsLoading = false; }
+    }
+
+    /// <summary>
+    /// Modo embebido (ficha del socio): fija el socio, carga solo los ejercicios de la biblioteca y las rutinas de
+    /// ese socio, y oculta el buscador. No trae la lista de socios.
+    /// </summary>
+    public async Task InitForMemberAsync(MemberDto member, CancellationToken ct = default)
+    {
+        ShowMemberPicker = false;
+        IsLoading = true;
+        ErrorMessage = null;
+        try
+        {
+            SelectedMember = member;
+            SelectedRoutine = null;
+            await LoadExercisesAsync(ct);
+            await LoadRoutinesAsync(ct);
+        }
+        catch (Exception ex) { ErrorMessage = ex.Message; }
+        finally { IsLoading = false; }
+    }
+
+    private async Task LoadExercisesAsync(CancellationToken ct)
+    {
+        if (Exercises.Count > 0) return;
+        Exercises = new ObservableCollection<ExerciseDto>(
+            await _mediator.Send(new SearchExercisesQuery(null, null), ct));
     }
 
     private async Task LoadRoutinesAsync(CancellationToken ct = default)

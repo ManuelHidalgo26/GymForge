@@ -88,6 +88,22 @@ public class Member : BaseEntity, ISiteScoped, IAuditable
         ? (int)((DateTime.Today - BirthDate.Value.ToDateTime(TimeOnly.MinValue)).TotalDays / 365.25)
         : null;
 
+    /// <summary>Corrige los datos de identidad del socio (no cambia estado, sede ni fecha de alta).</summary>
+    public void EditIdentity(
+        string firstName, string lastName, DocumentType documentType, string documentNumber, Gender gender)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(firstName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(lastName);
+        ArgumentException.ThrowIfNullOrWhiteSpace(documentNumber);
+
+        FirstName = firstName;
+        LastName = lastName;
+        DocumentType = documentType;
+        DocumentNumber = documentNumber;
+        Gender = gender;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void UpdateContact(string? email, string? mobile)
     {
         Email = email;
@@ -187,11 +203,20 @@ public class Member : BaseEntity, ISiteScoped, IAuditable
         UpdatedAt = DateTime.UtcNow;
     }
 
-    public void UpdateEmergencyContact(string name, string phone, string relation)
+    public void UpdateEmergencyContact(string? name, string? phone, string? relation)
     {
         EmergencyName = name;
         EmergencyPhone = phone;
         EmergencyRelation = relation;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void UpdateMedicalInfo(string? conditions, string? medications, string? allergies, BloodType bloodType)
+    {
+        MedicalConditions = conditions;
+        Medications = medications;
+        Allergies = allergies;
+        BloodType = bloodType;
         UpdatedAt = DateTime.UtcNow;
     }
 }

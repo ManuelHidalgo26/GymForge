@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using FluentAssertions;
 using GymForge.Desktop.Services;
@@ -70,7 +71,7 @@ public class WedgeKeyboardListenerTests
         return events;
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Listener_ABurstWithEnter_RaisesScannedWithTheCode_AndSwallowsAllButTheFirstKey()
     {
         var view = new Border();
@@ -85,7 +86,7 @@ public class WedgeKeyboardListenerTests
         events.Skip(1).Should().OnlyContain(e => e.Handled, "el resto, y el Enter, se tragan");
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Listener_SlowTyping_IsNeverSwallowedNorScanned()
     {
         var view = new Border();
@@ -109,7 +110,7 @@ public class WedgeKeyboardListenerTests
         enter.Handled.Should().BeFalse("el Enter manual lo maneja el control de siempre");
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Listener_KeysWithoutACharacter_AreIgnored()
     {
         var view = new Border();
@@ -129,7 +130,7 @@ public class WedgeKeyboardListenerTests
         scans.Should().BeEmpty("solo hay 2 caracteres: menos del mínimo");
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Listener_AfterDispose_StopsListening()
     {
         var view = new Border();
@@ -144,7 +145,7 @@ public class WedgeKeyboardListenerTests
         events.Should().OnlyContain(e => !e.Handled);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void ForWindowOf_AViewNotInsideAWindow_ListensOnTheViewItself()
     {
         // Sin ventana no hay TopLevel (en un test no hay plataforma de render): cae a la propia vista. Con ventana
@@ -160,7 +161,7 @@ public class WedgeKeyboardListenerTests
         scans.Should().Equal("7791234567890");
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void Listener_SeesKeysEvenWhenAnotherHandlerAlreadyHandledThem()
     {
         var view = new Border();

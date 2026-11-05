@@ -1,6 +1,7 @@
 using FluentValidation;
 using GymForge.Application.DTOs;
 using GymForge.Application.Interfaces;
+using GymForge.Application.Services;
 using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
 using MediatR;
@@ -28,15 +29,13 @@ public class CreateMemberCommandValidator : AbstractValidator<CreateMemberComman
 {
     public CreateMemberCommandValidator()
     {
-        RuleFor(x => x.FirstName).NotEmpty().MaximumLength(100);
-        RuleFor(x => x.LastName).NotEmpty().MaximumLength(100);
-        RuleFor(x => x.DocumentNumber).NotEmpty().MaximumLength(20);
-        RuleFor(x => x.Email).EmailAddress().When(x => !string.IsNullOrEmpty(x.Email));
-        RuleFor(x => x.Mobile).MaximumLength(30);
+        RuleFor(x => x.FirstName).ValidName();
+        RuleFor(x => x.LastName).ValidName();
+        RuleFor(x => x.DocumentNumber).ValidDocumentNumber();
+        RuleFor(x => x.Email).ValidEmail();
+        RuleFor(x => x.Mobile).ValidPhone();
         RuleFor(x => x.TagSerial).MaximumLength(CredentialEnrollment.MaxLength);
-        RuleFor(x => x.BirthDate)
-            .Must(d => !d.HasValue || d.Value <= DateOnly.FromDateTime(DateTime.Today.AddYears(-5)))
-            .WithMessage("La fecha de nacimiento parece incorrecta.");
+        RuleFor(x => x.BirthDate).ValidBirthDate();
     }
 }
 
@@ -44,11 +43,13 @@ public class CreateMemberCommandHandler : IRequestHandler<CreateMemberCommand, M
 {
     private readonly IMemberRepository _repo;
     private readonly Licensing.CurrentLicense _license;
+    private readonly ICompanyCalendar _calendar;
 
-    public CreateMemberCommandHandler(IMemberRepository repo, Licensing.CurrentLicense license)
+    public CreateMemberCommandHandler(IMemberRepository repo, Licensing.CurrentLicense license, ICompanyCalendar calendar)
     {
         _repo = repo;
         _license = license;
+        _calendar = calendar;
     }
 
     public async Task<MemberDto> Handle(CreateMemberCommand cmd, CancellationToken ct)
@@ -81,7 +82,7 @@ public class CreateMemberCommandHandler : IRequestHandler<CreateMemberCommand, M
         // Alta directa como socio activo (mostrador); sin esto queda Prospecto
         // hasta que compre una membresía.
         if (cmd.ActivateImmediately)
-            member.Activate(DateOnly.FromDateTime(DateTime.Today));
+            member.Activate(await _calendar.TodayAsync(cmd.CompanyId, ct));
 
         await _repo.AddAsync(member, ct);
         await _repo.SaveChangesAsync(ct);

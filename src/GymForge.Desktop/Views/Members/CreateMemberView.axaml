@@ -260,7 +260,8 @@
                         <Border Width="100" Height="100" CornerRadius="50"
                                 Background="{DynamicResource SubtleFillColorSecondaryBrush}"
                                 HorizontalAlignment="Center">
-                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Permissions}" FontSize="44" Opacity="0.3"
+                            <fa:SymbolIcon Symbol="{x:Static fa:Symbol.Permissions}" FontSize="44"
+                                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center" />
                         </Border>

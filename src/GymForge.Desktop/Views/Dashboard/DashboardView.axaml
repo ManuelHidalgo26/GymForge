@@ -72,7 +72,7 @@
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                         </Grid>
                         <TextBlock Text="{Binding TotalActiveMembers}" FontSize="30" FontWeight="Bold" Classes="Numeric" />
-                        <TextBlock Text="{Binding MembersSubtitle}" Classes="Caption" />
+                        <TextBlock Text="{Binding MembersSubtitle}" Classes="FormLabel" />
                     </StackPanel>
                 </Border>
 
@@ -90,7 +90,7 @@
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                         </Grid>
                         <TextBlock Text="{Binding CheckInsToday}" FontSize="30" FontWeight="Bold" Classes="Numeric" />
-                        <TextBlock Text="{Binding CheckInsSubtitle}" Classes="Caption" />
+                        <TextBlock Text="{Binding CheckInsSubtitle}" Classes="FormLabel" />
                     </StackPanel>
                 </Border>
 
@@ -108,7 +108,7 @@
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
                         </Grid>
                         <TextBlock Text="{Binding OverdueMembers}" FontSize="30" FontWeight="Bold" Classes="Numeric" />
-                        <TextBlock Text="{Binding OverdueSubtitle}" Classes="Caption" />
+                        <TextBlock Text="{Binding OverdueSubtitle}" Classes="FormLabel" />
                     </StackPanel>
                 </Border>
 
@@ -128,11 +128,11 @@
                         <TextBlock FontSize="30" FontWeight="Bold" Classes="Numeric">
                             <Run Text="$" /><Run Text="{Binding RevenueThisMonth, StringFormat={}{0:N0}}" />
                         </TextBlock>
-                        <Border CornerRadius="99" Padding="8,2" HorizontalAlignment="Left"
+                        <Border Classes="Pill"
                                 IsVisible="{Binding HasRevenueTrend}"
-                                Background="{Binding RevenueTrendUp, Converter={StaticResource ActiveColorBrushConverter}, ConverterParameter=tint}">
-                            <TextBlock Text="{Binding RevenueTrendText}" FontSize="11" FontWeight="SemiBold"
-                                       Foreground="{Binding RevenueTrendUp, Converter={StaticResource ActiveColorBrushConverter}}" />
+                                Classes.success="{Binding RevenueTrendUp}"
+                                Classes.danger="{Binding !RevenueTrendUp}">
+                            <TextBlock Text="{Binding RevenueTrendText}" />
                         </Border>
                     </StackPanel>
                 </Border>
@@ -147,58 +147,83 @@
                         <Grid ColumnDefinitions="*,Auto">
                             <StackPanel Spacing="2">
                                 <TextBlock Text="Recaudación" Classes="SectionTitle" />
-                                <TextBlock Text="Últimos 30 días" FontSize="11.5"
-                                           Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                                <TextBlock Text="Últimos 30 días" FontSize="11.5" Classes="FormLabel" />
                             </StackPanel>
                             <StackPanel Grid.Column="1" Spacing="2" HorizontalAlignment="Right">
                                 <TextBlock Text="{Binding Revenue30DaysTotal}" FontSize="18" FontWeight="Bold"
                                            HorizontalAlignment="Right" Classes="Numeric" />
-                                <TextBlock Text="total del período" FontSize="10.5" HorizontalAlignment="Right"
-                                           Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                                <TextBlock Text="Total del período" FontSize="11.5" HorizontalAlignment="Right"
+                                           Classes="FormLabel" />
                             </StackPanel>
                         </Grid>
 
-                        <!-- Área + línea de recaudación (el Viewbox estira el sistema
-                             virtual 300×130 al ancho de la card); barras transparentes
-                             encima para los tooltips por día. -->
-                        <Grid Height="130">
-                            <Viewbox Stretch="Fill">
-                                <Canvas Width="300" Height="130">
-                                    <Path Data="{Binding RevenueAreaGeometry}"
-                                          Fill="{DynamicResource SystemAccentColor}" Opacity="0.95">
-                                        <Path.OpacityMask>
-                                            <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
-                                                <GradientStop Color="#59FFFFFF" Offset="0" />
-                                                <GradientStop Color="#00FFFFFF" Offset="1" />
-                                            </LinearGradientBrush>
-                                        </Path.OpacityMask>
-                                    </Path>
-                                    <Path Data="{Binding RevenueLineGeometry}"
-                                          Stroke="{DynamicResource SystemAccentColor}"
-                                          StrokeThickness="1.5"
-                                          StrokeLineCap="Round" StrokeJoin="Round" />
-                                </Canvas>
-                            </Viewbox>
+                        <!-- Eje Y + plot. Las etiquetas de monto van en un gutter fijo a la izquierda, FUERA del Viewbox
+                             (dentro se deformarían al estirar). Las guías horizontales sí van dentro: son líneas de 1 px en
+                             el sistema virtual 300×130 y el estiramiento es solo horizontal.
+                             Área + línea de recaudación sobre el Viewbox; barras transparentes encima para los tooltips por día. -->
+                        <Grid ColumnDefinitions="Auto,*" RowDefinitions="145,Auto" ColumnSpacing="6" RowSpacing="6">
 
-                            <ItemsControl ItemsSource="{Binding RevenueBars}">
+                            <ItemsControl Grid.Column="0" Width="64" ItemsSource="{Binding AxisTicks}"
+                                          AutomationProperties.Name="Eje de montos del gráfico de recaudación">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
-                                        <UniformGrid Rows="1" Columns="30" />
+                                        <Canvas Height="145" />
                                     </ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
+                                <ItemsControl.Styles>
+                                    <Style Selector="ItemsControl > ContentPresenter" x:DataType="vm:AxisTickVm">
+                                        <Setter Property="Canvas.Top" Value="{Binding LabelTop}" />
+                                        <Setter Property="Width" Value="64" />
+                                    </Style>
+                                </ItemsControl.Styles>
                                 <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="vm:RevenueBarVm">
-                                        <Grid ToolTip.Tip="{Binding Tooltip}" Background="Transparent" />
+                                    <DataTemplate x:DataType="vm:AxisTickVm">
+                                        <TextBlock Text="{Binding Label}" Classes="FormLabel Numeric"
+                                                   FontSize="10.5" TextAlignment="Right" />
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
-                        </Grid>
 
-                        <Grid ColumnDefinitions="*,Auto">
-                            <TextBlock Text="{Binding ChartFromLabel}" FontSize="10.5"
-                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                            <TextBlock Grid.Column="1" Text="{Binding ChartToLabel}" FontSize="10.5"
-                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                            <Grid Grid.Column="1" Grid.Row="0" Margin="0,8,0,7">
+                                <Viewbox Stretch="Fill">
+                                    <Canvas Width="300" Height="130">
+                                        <Path Data="{Binding RevenueGuideGeometry}"
+                                              Stroke="{DynamicResource SurfaceBorderBrush}"
+                                              StrokeThickness="1" />
+                                        <Path Data="{Binding RevenueAreaGeometry}"
+                                              Fill="{DynamicResource SystemAccentColor}" Opacity="0.95">
+                                            <Path.OpacityMask>
+                                                <LinearGradientBrush StartPoint="0%,0%" EndPoint="0%,100%">
+                                                    <GradientStop Color="#59FFFFFF" Offset="0" />
+                                                    <GradientStop Color="#00FFFFFF" Offset="1" />
+                                                </LinearGradientBrush>
+                                            </Path.OpacityMask>
+                                        </Path>
+                                        <Path Data="{Binding RevenueLineGeometry}"
+                                              Stroke="{DynamicResource SystemAccentColor}"
+                                              StrokeThickness="1.5"
+                                              StrokeLineCap="Round" StrokeJoin="Round" />
+                                    </Canvas>
+                                </Viewbox>
+
+                                <ItemsControl ItemsSource="{Binding RevenueBars}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <UniformGrid Rows="1" Columns="30" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:RevenueBarVm">
+                                            <Grid ToolTip.Tip="{Binding Tooltip}" Background="Transparent" />
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Grid>
+
+                            <Grid Grid.Column="1" Grid.Row="1" ColumnDefinitions="*,Auto">
+                                <TextBlock Text="{Binding ChartFromLabel}" Classes="FormLabel" FontSize="10.5" />
+                                <TextBlock Grid.Column="1" Text="{Binding ChartToLabel}" Classes="FormLabel" FontSize="10.5" />
+                            </Grid>
                         </Grid>
                     </StackPanel>
                 </Border>
@@ -210,8 +235,8 @@
                     <Border Classes="Card">
                         <StackPanel Spacing="10">
                             <TextBlock Text="Vencen esta semana" Classes="SectionTitle" />
-                            <TextBlock Text="Sin vencimientos en los próximos 7 días 🎉" FontSize="12"
-                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                            <TextBlock Text="No hay vencimientos en los próximos 7 días." FontSize="12"
+                                       Classes="FormLabel"
                                        IsVisible="{Binding HasNoExpiring}" />
                             <ItemsControl ItemsSource="{Binding ExpiringRows}">
                                 <ItemsControl.ItemTemplate>
@@ -224,7 +249,7 @@
                                                 <TextBlock Text="{Binding MemberName}" FontSize="12.5" FontWeight="SemiBold"
                                                            TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding PlanName}" FontSize="11"
-                                                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                           Classes="FormLabel"
                                                            TextTrimming="CharacterEllipsis" />
                                             </StackPanel>
                                             <TextBlock Grid.Column="2" Classes="when" Classes.urgent="{Binding IsUrgent}"
@@ -240,8 +265,8 @@
                     <Border Classes="Card">
                         <StackPanel Spacing="10">
                             <TextBlock Text="Actividad de hoy" Classes="SectionTitle" />
-                            <TextBlock Text="Todavía no hubo accesos hoy" FontSize="12"
-                                       Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                            <TextBlock Text="Todavía no hubo ingresos hoy." FontSize="12"
+                                       Classes="FormLabel"
                                        IsVisible="{Binding HasNoAccess}" />
                             <ItemsControl ItemsSource="{Binding AccessRows}">
                                 <ItemsControl.ItemTemplate>
@@ -254,7 +279,8 @@
                                                 <TextBlock Text="{Binding MemberName}" FontSize="12.5" FontWeight="SemiBold"
                                                            TextTrimming="CharacterEllipsis" />
                                                 <TextBlock Text="{Binding StatusLabel}" FontSize="11"
-                                                           Foreground="{Binding Granted, Converter={StaticResource ActiveColorBrushConverter}}" />
+                                                           Classes.success="{Binding Granted}"
+                                                           Classes.danger="{Binding !Granted}" />
                                             </StackPanel>
                                             <TextBlock Grid.Column="3" Text="{Binding TimeLabel}" FontSize="11.5"
                                                        VerticalAlignment="Center"

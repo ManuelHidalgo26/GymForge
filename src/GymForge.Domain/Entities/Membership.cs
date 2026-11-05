@@ -73,6 +73,15 @@ public class Membership : BaseEntity, ISiteScoped, IAuditable
         };
     }
 
+    /// <summary>Congela la comisión de la venta: quién vendió y cuánto le toca (no se recalcula si cambia el %).</summary>
+    public void SetCommission(Guid staffId, decimal amount)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(amount);
+        SoldByStaffId = staffId;
+        CommissionAmount = amount;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
     public void Activate()
     {
         if (Status != MembershipStatus.PendingActivation && Status != MembershipStatus.Trial)

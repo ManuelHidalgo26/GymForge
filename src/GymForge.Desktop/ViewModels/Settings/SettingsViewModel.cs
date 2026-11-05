@@ -36,6 +36,9 @@ public partial class SettingsViewModel : ObservableObject
     private readonly IMachineFingerprint _fingerprint;
     private Guid? _editingSiteId;   // null = agregando
 
+    /// <summary>Card "Comisiones del personal": su propio VM, para no seguir engordando este.</summary>
+    public StaffCommissionsViewModel Commissions { get; }
+
     // Datos del gimnasio
     [ObservableProperty] private string _legalName = string.Empty;
     [ObservableProperty] private string _taxId = string.Empty;
@@ -99,6 +102,10 @@ public partial class SettingsViewModel : ObservableObject
     public bool HasThisPcCode => !string.IsNullOrEmpty(ThisPcCode);
     public string ThisPcCodeDisplay => HasThisPcCode ? ThisPcCode : "No disponible";
 
+    /// <summary>Feedback inline de "Copiar" (junto al botón): se prende al copiar y se apaga solo.</summary>
+    [ObservableProperty] private bool _thisPcCodeCopied;
+    private static readonly TimeSpan CopiedFeedbackDuration = TimeSpan.FromSeconds(2.5);
+
     // Versión y actualizaciones: el estado vive en UpdateViewModel (compartido con el aviso del shell).
     public UpdateViewModel Updates { get; }
     [ObservableProperty] private string _updateFeedDisplay = string.Empty;
@@ -142,6 +149,7 @@ public partial class SettingsViewModel : ObservableObject
         _fingerprint = fingerprint;
         Updates = updates;
         _dunning = dunning;
+        Commissions = new StaffCommissionsViewModel(mediator, session);
     }
 
     [RelayCommand]
@@ -172,6 +180,8 @@ public partial class SettingsViewModel : ObservableObject
             _dunning.Stages.OrderBy(s => s.DaysOverdue).Select(s => new DunningStageEditor(s)));
 
         IsDefaultPinInUse = await _mediator.Send(new CheckDefaultPinQuery(_session.CompanyId), ct);
+
+        await Commissions.LoadAsync(ct);
 
         UpdateFeedDisplay = string.IsNullOrWhiteSpace(_localSettings.UpdateFeedUrl)
             ? "sin configurar"
@@ -357,7 +367,7 @@ public partial class SettingsViewModel : ObservableObject
 
             if (_editingSiteId is { } id)
             {
-                await _mediator.Send(new UpdateSiteCommand(id, NewSiteName, NewSiteAddress, phone));
+                await _mediator.Send(new UpdateSiteCommand(_session.CompanyId, id, NewSiteName, NewSiteAddress, phone));
                 message = "Sede actualizada.";
             }
             else
@@ -387,7 +397,7 @@ public partial class SettingsViewModel : ObservableObject
         SiteSaved = false;
         try
         {
-            var deleted = await _mediator.Send(new DeleteSiteCommand(site.Id));
+            var deleted = await _mediator.Send(new DeleteSiteCommand(_session.CompanyId, site.Id));
             SiteSaved = true;
             SiteMessage = deleted
                 ? "Sede eliminada."
@@ -458,8 +468,15 @@ public partial class SettingsViewModel : ObservableObject
         if (MainClipboard() is not { } clipboard) return;
 
         await clipboard.SetTextAsync(ThisPcCode);
-        LicenseSaved = true;
-        LicenseMessage = "Código de esta PC copiado.";
+        await ShowThisPcCodeCopiedAsync(CopiedFeedbackDuration);
+    }
+
+    /// <summary>Muestra "Copiado" junto al botón durante <paramref name="duration"/> y lo oculta.</summary>
+    public async Task ShowThisPcCodeCopiedAsync(TimeSpan duration)
+    {
+        ThisPcCodeCopied = true;
+        await Task.Delay(duration);
+        ThisPcCodeCopied = false;
     }
 
     // ── Datos: exportar / importar ──────────────────────────────────────────
@@ -632,6 +649,8 @@ public partial class SettingsViewModel : ObservableObject
         {
             OffsiteBackupOutcome.Copied => "Copia externa lista.",
             OffsiteBackupOutcome.NotConfigured => "Elegí primero la carpeta de destino.",
+            OffsiteBackupOutcome.LocalBackupFailed =>
+                "No se pudo crear el resguardo en esta PC (revisá el espacio en disco), así que no se copió nada al destino externo.",
             _ => "No se pudo copiar. Revisá que el pendrive o la carpeta estén disponibles; el resguardo en esta PC sí quedó hecho.",
         };
         await RefreshOffsiteStatusAsync();

@@ -3,10 +3,12 @@ using FluentValidation;
 using FluentValidation.Results;
 using GymForge.Application.DTOs;
 using GymForge.Application.Interfaces;
+using GymForge.Application.Services;
 using GymForge.Application.UseCases.Members;
 using GymForge.Desktop.Services;
 using GymForge.Desktop.ViewModels.Charges;
 using GymForge.Desktop.ViewModels.Members;
+using GymForge.Desktop.ViewModels.Routines;
 using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
 using MediatR;
@@ -34,11 +36,13 @@ public class MemberDetailViewModelPhotoTests
         var session = await TestSession.InitializedAsync(company, [Site.Create(company.Id, "Central", "Calle 1")]);
         var scopeFactory = Substitute.For<IServiceScopeFactory>();
         var chargeRepo = Substitute.For<IChargeRepository>();
-        var charges = new ChargesViewModel(chargeRepo, _mediator, session, new ReceiptService(scopeFactory));
+        var charges = new ChargesViewModel(
+            chargeRepo, _mediator, session, new ReceiptService(scopeFactory), Substitute.For<ICompanyCalendar>());
 
         var vm = new MemberDetailViewModel(
             _mediator, Substitute.For<IMembershipRepository>(), Substitute.For<IAccessLogRepository>(),
-            chargeRepo, charges, session, _picker, _photoStore);
+            charges, new RoutineBuilderViewModel(_mediator, Substitute.For<IMemberRepository>(), session),
+            session, _picker, _photoStore);
         await vm.LoadAsync(_member);
         return (vm, company);
     }

@@ -4,6 +4,7 @@ using GymForge.Application.Interfaces;
 using GymForge.Application.Services;
 using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
+using GymForge.Domain.ValueObjects;
 using MediatR;
 
 namespace GymForge.Application.UseCases.Sales;
@@ -42,6 +43,8 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
     private readonly IMemberRepository _memberRepo;
     private readonly IPaymentRepository _paymentRepo;
     private readonly ICashRegister _cashRegister;
+    private readonly IStaffRepository _staffRepo;
+    private readonly ICompanyCalendar _calendar;
 
     public SellMembershipCommandHandler(
         IMembershipTypeRepository planRepo,
@@ -49,7 +52,9 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
         IMembershipRepository membershipRepo,
         IMemberRepository memberRepo,
         IPaymentRepository paymentRepo,
-        ICashRegister cashRegister)
+        ICashRegister cashRegister,
+        IStaffRepository staffRepo,
+        ICompanyCalendar calendar)
     {
         _planRepo = planRepo;
         _chargeRepo = chargeRepo;
@@ -57,6 +62,8 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
         _memberRepo = memberRepo;
         _paymentRepo = paymentRepo;
         _cashRegister = cashRegister;
+        _staffRepo = staffRepo;
+        _calendar = calendar;
     }
 
     public async Task<PaymentDto> Handle(SellMembershipCommand cmd, CancellationToken ct)
@@ -70,11 +77,19 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
         if (plan.Price <= 0)
             throw new InvalidOperationException("El plan seleccionado no tiene costo; no requiere cobro.");
 
-        var today = DateOnly.FromDateTime(DateTime.Today);
+        var today = await _calendar.TodayAsync(cmd.CompanyId, ct);
+
+        // Membresía activa según la duración del plan. Va primero: la cuota se vincula a ella para que los
+        // reportes atribuyan lo cobrado al plan.
+        var membership = Membership.Create(
+            cmd.CompanyId, cmd.SiteId, cmd.MemberId, plan.Id,
+            today, plan.CalculateEndDate(today), soldByStaffId: cmd.CashierId);
+        membership.Activate();
+        await FreezeCommissionAsync(membership, cmd, plan.Price, ct);
 
         // Cuota + pago que la salda.
         var charge = Charge.Create(
-            cmd.CompanyId, cmd.SiteId, cmd.MemberId, null,
+            cmd.CompanyId, cmd.SiteId, cmd.MemberId, membership.Id,
             ConceptType.MembershipFee, $"Cuota {plan.Name}", plan.Price, today);
         charge.ApplyPayment(plan.Price);
 
@@ -83,12 +98,6 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
             plan.Price, cmd.Method, cmd.ShiftId, cmd.CardLast4);
         payment.Allocations.Add(PaymentAllocation.Create(payment.Id, charge.Id, plan.Price));
 
-        // Membresía activa según la duración del plan.
-        var membership = Membership.Create(
-            cmd.CompanyId, cmd.SiteId, cmd.MemberId, plan.Id,
-            today, plan.CalculateEndDate(today), soldByStaffId: cmd.CashierId);
-        membership.Activate();
-
         // El socio pasa a Activo (deja de ser prospecto / vencido).
         if (member.Status != MemberStatus.Active)
         {
@@ -96,13 +105,24 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
             _memberRepo.Update(member);
         }
 
-        await _chargeRepo.AddAsync(charge, ct);
         await _membershipRepo.AddAsync(membership, ct);
+        await _chargeRepo.AddAsync(charge, ct);
         await _paymentRepo.AddAsync(payment, ct);
         await _cashRegister.PostIfCashAsync(
             cmd.Method, cmd.ShiftId, CashMovementCategory.Membership, plan.Price, payment.Id, ct);
 
         await _chargeRepo.SaveChangesAsync(ct);
         return PaymentDto.FromEntity(payment);
+    }
+
+    /// <summary>
+    /// Congela la comisión del cajero que vende: % de membresías que tiene hoy sobre el precio del plan. Un cajero
+    /// inexistente o de otra empresa no gana comisión, pero la venta sigue.
+    /// </summary>
+    private async Task FreezeCommissionAsync(Membership membership, SellMembershipCommand cmd, decimal price, CancellationToken ct)
+    {
+        var seller = await SellerLookup.FindAsync(_staffRepo, cmd.CompanyId, cmd.CashierId, ct);
+        var pct = seller?.CommissionPctMemberships ?? 0m;
+        membership.SetCommission(cmd.CashierId, Commission.Calculate(price, pct));
     }
 }

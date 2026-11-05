@@ -140,7 +140,7 @@ public class BookMemberCommandHandler : IRequestHandler<BookMemberCommand, Booki
         if (schedule.IsFull)
             throw new InvalidOperationException("La clase está completa.");
 
-        var booking = Booking.Create(cmd.CompanyId, cmd.MemberId, cmd.ScheduleId);
+        var booking = Booking.Create(cmd.CompanyId, schedule.SiteId, cmd.MemberId, cmd.ScheduleId);
         await _repo.AddBookingAsync(booking, ct);
         await _repo.SaveChangesAsync(ct);
 

@@ -5,10 +5,10 @@ using GymForge.Domain.Enums;
 namespace GymForge.Desktop.Converters;
 
 /// <summary>
-/// Estado de socio (<see cref="MemberStatus"/>) o de membresía (<see cref="MembershipStatus"/>) →
-/// ¿pertenece al tono semántico pedido en <c>ConverterParameter</c>? Alimenta las clases de
-/// <c>Border.Pill</c> (success, warning, danger, info, neutral, accent), que ya resuelven
-/// fondo y texto con los tokens de Colors.axaml en light y dark (contraste AA).
+/// Estado de socio (<see cref="MemberStatus"/>), de membresía (<see cref="MembershipStatus"/>), de cobro
+/// (<see cref="ChargeStatus"/>) o un bool "activo" → ¿pertenece al tono semántico pedido en
+/// <c>ConverterParameter</c>? Alimenta las clases de <c>Border.Pill</c> (success, warning, danger, info,
+/// neutral, accent), que ya resuelven fondo y texto con los tokens de Colors.axaml en light y dark (AA).
 /// Uso: <c>Classes.success="{Binding Status, Converter={StaticResource StatusTone}, ConverterParameter=success}"</c>.
 /// Un estado cae en un solo tono, así que nunca hay dos clases de tono activas a la vez.
 /// </summary>
@@ -42,6 +42,17 @@ public class StatusToneConverter : IValueConverter
             MembershipStatus.Trial => "accent",
             _ => "neutral"
         },
+        ChargeStatus charge => charge switch
+        {
+            ChargeStatus.Paid => "success",
+            ChargeStatus.Pending => "warning",
+            ChargeStatus.PartiallyPaid => "warning",
+            ChargeStatus.Overdue => "warning",
+            ChargeStatus.Billed => "info",
+            ChargeStatus.Refunded => "danger",
+            _ => "neutral"
+        },
+        bool active => active ? "success" : "neutral",
         _ => "neutral"
     };
 }

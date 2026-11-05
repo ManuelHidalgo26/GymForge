@@ -1,7 +1,6 @@
-using System.Globalization;
 using GymForge.Application.DTOs;
 using GymForge.Application.Interfaces;
-using GymForge.Domain.Enums;
+using GymForge.Application.Services;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -16,49 +15,9 @@ public class ReceiptPdfGenerator : IReceiptPdfWriter
 {
     static ReceiptPdfGenerator() => QuestPDF.Settings.License = LicenseType.Community;
 
-    // Formato del negocio: $35.000,00 (es-AR con el símbolo pegado al número).
-    private static readonly NumberFormatInfo ArsFormat = BuildArsFormat();
-
-    private static NumberFormatInfo BuildArsFormat()
-    {
-        var nfi = (NumberFormatInfo)CultureInfo.GetCultureInfo("es-AR").NumberFormat.Clone();
-        nfi.CurrencySymbol = "$";
-        nfi.CurrencyPositivePattern = 0; // $n
-        nfi.CurrencyNegativePattern = 1; // -$n
-        return nfi;
-    }
-
-    private static string Money(decimal value) => value.ToString("C2", ArsFormat);
-
-    // Hex de marca válido (#RRGGBB) o el indigo por defecto para QuestPDF.
-    private static string BrandColor(string? hex) =>
-        !string.IsNullOrWhiteSpace(hex)
-        && System.Text.RegularExpressions.Regex.IsMatch(hex, "^#[0-9a-fA-F]{6}$")
-            ? hex.ToUpperInvariant()
-            : "#6366F1";
-
-    private static byte[]? TryLoadLogo(string? path)
-    {
-        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return null;
-        try { return File.ReadAllBytes(path); }
-        catch { return null; }
-    }
-
     private static string MethodLabel(ReceiptDto r)
     {
-        var label = r.Method switch
-        {
-            PaymentMethod.Cash => "Efectivo",
-            PaymentMethod.CreditCard => "Tarjeta de crédito",
-            PaymentMethod.DebitCard => "Tarjeta de débito",
-            PaymentMethod.BankTransfer => "Transferencia",
-            PaymentMethod.DirectDebit => "Débito automático",
-            PaymentMethod.MercadoPago => "Mercado Pago",
-            PaymentMethod.Voucher => "Voucher",
-            PaymentMethod.AccountCredit => "Saldo a favor",
-            PaymentMethod.Cheque => "Cheque",
-            _ => r.Method.ToString(),
-        };
+        var label = SpanishLabels.For(r.Method);
 
         if (!string.IsNullOrEmpty(r.CardLast4))
         {
@@ -77,25 +36,12 @@ public class ReceiptPdfGenerator : IReceiptPdfWriter
             page.Margin(28);
             page.DefaultTextStyle(t => t.FontSize(10).FontColor(Colors.Grey.Darken4));
 
-            var brand = BrandColor(r.BrandColorHex);
-            var logo = TryLoadLogo(r.LogoPath);
+            var brand = ReportFormatting.BrandColor(r.BrandColorHex);
+            var logo = ReportFormatting.TryLoadLogo(r.LogoPath);
 
             page.Header().Row(row =>
             {
-                row.RelativeItem().Row(head =>
-                {
-                    if (logo is not null)
-                        head.ConstantItem(46).Height(46).AlignMiddle().Image(logo).FitArea();
-
-                    head.RelativeItem().PaddingLeft(logo is not null ? 10 : 0).Column(col =>
-                    {
-                        col.Item().Text(r.GymName).FontSize(16).Bold();
-                        if (!string.IsNullOrEmpty(r.GymTaxId))
-                            col.Item().Text($"CUIT {r.GymTaxId}").FontColor(Colors.Grey.Darken1);
-                        if (!string.IsNullOrEmpty(r.SiteName))
-                            col.Item().Text(r.SiteName).FontColor(Colors.Grey.Darken1);
-                    });
-                });
+                row.RelativeItem().BrandBlock(r.GymName, r.GymTaxId, r.SiteName, logo);
 
                 row.ConstantItem(160).Column(col =>
                 {
@@ -145,7 +91,7 @@ public class ReceiptPdfGenerator : IReceiptPdfWriter
                         table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2)
                             .PaddingVertical(5).Text(item.Description);
                         table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2)
-                            .PaddingVertical(5).AlignRight().Text(Money(item.Amount));
+                            .PaddingVertical(5).AlignRight().Text(ReportFormatting.Money(item.Amount));
                     }
 
                     if (r.OnAccount > 0)
@@ -153,14 +99,14 @@ public class ReceiptPdfGenerator : IReceiptPdfWriter
                         table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2)
                             .PaddingVertical(5).Text("Pago a cuenta");
                         table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2)
-                            .PaddingVertical(5).AlignRight().Text(Money(r.OnAccount));
+                            .PaddingVertical(5).AlignRight().Text(ReportFormatting.Money(r.OnAccount));
                     }
                 });
 
                 col.Item().AlignRight().Text(t =>
                 {
                     t.Span("TOTAL   ").FontSize(12).SemiBold();
-                    t.Span(Money(r.Total)).FontSize(16).Bold().FontColor(brand);
+                    t.Span(ReportFormatting.Money(r.Total)).FontSize(16).Bold().FontColor(brand);
                 });
 
                 col.Item().Text(t =>

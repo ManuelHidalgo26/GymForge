@@ -1,5 +1,6 @@
 using FluentAssertions;
 using GymForge.Application.Interfaces;
+using GymForge.Application.Services;
 using GymForge.Application.UseCases.Licensing;
 using GymForge.Domain.Entities;
 using Microsoft.Extensions.Logging;
@@ -18,12 +19,13 @@ public class ActivateLicenseCommandTests
     private readonly ISiteRepository _repo = Substitute.For<ISiteRepository>();
     private readonly ILicenseService _licenses = Substitute.For<ILicenseService>();
     private readonly CurrentLicense _current = new();
-    private readonly IClock _clock = Substitute.For<IClock>();
+    private readonly ICompanyCalendar _calendar = Substitute.For<ICompanyCalendar>();
     private readonly CapturingLogger<ActivateLicenseCommandHandler> _log = new();
 
-    private ActivateLicenseCommandHandler Sut() => new(_repo, _licenses, _current, _clock, _log);
+    private ActivateLicenseCommandHandler Sut() => new(_repo, _licenses, _current, _calendar, _log);
 
-    public ActivateLicenseCommandTests() => _clock.Today.Returns(Today);
+    public ActivateLicenseCommandTests() =>
+        _calendar.TodayAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(Today);
 
     private Company CompanyWithTaxId(string taxId)
     {

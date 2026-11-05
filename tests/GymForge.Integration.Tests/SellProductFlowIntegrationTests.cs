@@ -56,7 +56,7 @@ public class SellProductFlowIntegrationTests : IAsyncLifetime
 
         var handler = new SellProductCommandHandler(
             new ProductRepository(_db), new SaleRepository(_db),
-            new PaymentRepository(_db), new CashRegister(shiftRepo));
+            new PaymentRepository(_db), new CashRegister(shiftRepo), new StaffRepository(_db));
 
         var dto = await handler.Handle(new SellProductCommand(
             _companyId, _siteId, Guid.NewGuid(), shift.Id,
@@ -86,5 +86,30 @@ public class SellProductFlowIntegrationTests : IAsyncLifetime
             m.Type == CashMovementType.Income &&
             m.Category == CashMovementCategory.Sale &&
             m.Amount == 3_630m);
+    }
+
+    [Fact]
+    public async Task SellProduct_FreezesTheCommissionInTheSaleLine_AndAChangeOfPercentageDoesNotRewriteIt()
+    {
+        var product = Product.Create(_companyId, "BARRA", "Barra proteica", 1_000m);
+        product.SetCommissionPct(10m);
+        var seller = Staff.Create(_companyId, "Caro", "Vendedora", StaffRole.Receptionist, "hash");
+        await _db.Products.AddAsync(product);
+        await _db.Staff.AddAsync(seller);
+        await _db.SaveChangesAsync();
+        var handler = new SellProductCommandHandler(
+            new ProductRepository(_db), new SaleRepository(_db), new PaymentRepository(_db),
+            new CashRegister(new ShiftRepository(_db)), new StaffRepository(_db));
+
+        await handler.Handle(new SellProductCommand(
+            _companyId, _siteId, seller.Id, null, product.Id, Quantity: 3, MemberId: null, PaymentMethod.Cash),
+            CancellationToken.None);
+        product.SetCommissionPct(50m);
+        await _db.SaveChangesAsync();
+        _db.ChangeTracker.Clear();
+
+        var line = await _db.Sales.SelectMany(s => s.Lines).SingleAsync();
+        line.CommissionAmount.Should().Be(300m, "10% de 3.000, congelado al vender");
+        line.CommissionStaffId.Should().Be(seller.Id);
     }
 }

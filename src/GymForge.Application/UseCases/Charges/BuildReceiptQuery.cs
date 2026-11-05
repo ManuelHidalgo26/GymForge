@@ -1,5 +1,6 @@
 using GymForge.Application.DTOs;
 using GymForge.Application.Interfaces;
+using GymForge.Application.Services;
 using GymForge.Domain.Enums;
 using MediatR;
 
@@ -67,7 +68,7 @@ public class BuildReceiptQueryHandler : IRequestHandler<BuildReceiptQuery, Recei
         }
 
         var onAccount = payment.Amount - items.Sum(i => i.Amount);
-        var issuedAt = ToCompanyLocal(payment.ReceivedAt, company?.Timezone);
+        var issuedAt = CompanyTime.ToLocal(payment.ReceivedAt, company?.Timezone);
 
         return new ReceiptDto(
             Code: $"REC-{issuedAt:yyyyMMdd}-{payment.Id.ToString("N")[..8].ToUpperInvariant()}",
@@ -102,19 +103,4 @@ public class BuildReceiptQueryHandler : IRequestHandler<BuildReceiptQuery, Recei
         DocumentType.CE => "Cédula",
         _ => type.ToString(),
     };
-
-    /// <summary>ReceivedAt se guarda en UTC; el recibo se emite en la hora del gimnasio.</summary>
-    private static DateTime ToCompanyLocal(DateTime utc, string? timezone)
-    {
-        try
-        {
-            var tz = TimeZoneInfo.FindSystemTimeZoneById(
-                string.IsNullOrWhiteSpace(timezone) ? "Argentina Standard Time" : timezone);
-            return TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), tz);
-        }
-        catch (TimeZoneNotFoundException)
-        {
-            return utc.ToLocalTime();
-        }
-    }
 }

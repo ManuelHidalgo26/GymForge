@@ -37,7 +37,7 @@ public class ClassScheduleCommandsTests
     {
         var schedule = ClassSchedule.Create(_companyId, _siteId, Guid.NewGuid(),
             new DateTime(2026, 6, 17, 18, 0, 0), new DateTime(2026, 6, 17, 19, 0, 0), capacity: 1);
-        schedule.Bookings.Add(Booking.Create(_companyId, Guid.NewGuid(), schedule.Id));
+        schedule.Bookings.Add(Booking.Create(_companyId, _siteId, Guid.NewGuid(), schedule.Id));
         _repo.GetScheduleAsync(schedule.Id, Arg.Any<CancellationToken>()).Returns(schedule);
         _members.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(SampleMember());
 
@@ -53,7 +53,7 @@ public class ClassScheduleCommandsTests
         var memberId = Guid.NewGuid();
         var schedule = ClassSchedule.Create(_companyId, _siteId, Guid.NewGuid(),
             new DateTime(2026, 6, 17, 18, 0, 0), new DateTime(2026, 6, 17, 19, 0, 0), capacity: 10);
-        schedule.Bookings.Add(Booking.Create(_companyId, memberId, schedule.Id));
+        schedule.Bookings.Add(Booking.Create(_companyId, _siteId, memberId, schedule.Id));
         _repo.GetScheduleAsync(schedule.Id, Arg.Any<CancellationToken>()).Returns(schedule);
         _members.GetByIdAsync(memberId, Arg.Any<CancellationToken>()).Returns(SampleMember());
 
@@ -83,7 +83,7 @@ public class ClassScheduleCommandsTests
     [Fact]
     public async Task CancelBooking_SetsStatusCancelled()
     {
-        var booking = Booking.Create(_companyId, Guid.NewGuid(), Guid.NewGuid());
+        var booking = Booking.Create(_companyId, _siteId, Guid.NewGuid(), Guid.NewGuid());
         _repo.GetBookingAsync(booking.Id, Arg.Any<CancellationToken>()).Returns(booking);
 
         await new CancelBookingCommandHandler(_repo).Handle(

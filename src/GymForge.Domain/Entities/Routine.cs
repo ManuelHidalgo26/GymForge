@@ -2,11 +2,12 @@ using GymForge.Domain.Enums;
 
 namespace GymForge.Domain.Entities;
 
-public class Routine : BaseEntity, ITenantScoped
+public class Routine : BaseEntity, ISiteScoped
 {
     public Guid MemberId { get; private set; }
     public Guid? TrainerId { get; private set; }
     public Guid CompanyId { get; private set; }
+    public Guid SiteId { get; private set; }
     public string Name { get; private set; } = string.Empty;
     public WorkoutGoal Goal { get; private set; }
     public DateOnly StartDate { get; private set; }
@@ -24,6 +25,7 @@ public class Routine : BaseEntity, ITenantScoped
 
     public static Routine Create(
         Guid companyId,
+        Guid siteId,
         Guid memberId,
         string name,
         WorkoutGoal goal,
@@ -35,6 +37,7 @@ public class Routine : BaseEntity, ITenantScoped
         return new Routine
         {
             CompanyId = companyId,
+            SiteId = siteId,
             MemberId = memberId,
             Name = name,
             Goal = goal,

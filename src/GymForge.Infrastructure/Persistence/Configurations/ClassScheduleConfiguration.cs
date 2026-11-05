@@ -70,6 +70,8 @@ public class BookingConfiguration : IEntityTypeConfiguration<Booking>
             .HasDatabaseName("IX_Bookings_MemberStatus");
         builder.HasIndex(b => new { b.ClassScheduleId, b.Status })
             .HasDatabaseName("IX_Bookings_ScheduleStatus");
+        builder.HasIndex(b => new { b.CompanyId, b.SiteId })
+            .HasDatabaseName("IX_Bookings_CompanySite");
 
         builder.ToTable("Bookings");
     }

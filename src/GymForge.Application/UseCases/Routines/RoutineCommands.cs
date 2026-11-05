@@ -49,18 +49,24 @@ public class CreateRoutineCommandValidator : AbstractValidator<CreateRoutineComm
 public class CreateRoutineCommandHandler : IRequestHandler<CreateRoutineCommand, RoutineDto>
 {
     private readonly IRoutineRepository _repo;
+    private readonly IMemberRepository _members;
     private readonly ICompanyCalendar _calendar;
 
-    public CreateRoutineCommandHandler(IRoutineRepository repo, ICompanyCalendar calendar)
+    public CreateRoutineCommandHandler(
+        IRoutineRepository repo, IMemberRepository members, ICompanyCalendar calendar)
     {
         _repo = repo;
+        _members = members;
         _calendar = calendar;
     }
 
     public async Task<RoutineDto> Handle(CreateRoutineCommand cmd, CancellationToken ct)
     {
+        var member = await _members.GetByIdAsync(cmd.MemberId, ct)
+            ?? throw new InvalidOperationException("El socio seleccionado no existe.");
+
         var routine = Routine.Create(
-            cmd.CompanyId, cmd.MemberId, cmd.Name.Trim(), cmd.Goal,
+            cmd.CompanyId, member.SiteId, cmd.MemberId, cmd.Name.Trim(), cmd.Goal,
             await _calendar.TodayAsync(cmd.CompanyId, ct), cmd.FrequencyPerWeek);
         await _repo.AddRoutineAsync(routine, ct);
         await _repo.SaveChangesAsync(ct);

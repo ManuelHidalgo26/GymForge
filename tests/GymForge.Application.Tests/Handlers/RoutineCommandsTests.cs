@@ -12,30 +12,47 @@ public class RoutineCommandsTests
 {
     private readonly IRoutineRepository _repo = Substitute.For<IRoutineRepository>();
     private readonly Guid _companyId = Guid.NewGuid();
+    private readonly Guid _siteId = Guid.NewGuid();
     private readonly Guid _memberId = Guid.NewGuid();
+    private readonly IMemberRepository _members = Substitute.For<IMemberRepository>();
     private readonly ICompanyCalendar _calendar = Substitute.For<ICompanyCalendar>();
     private static readonly DateOnly Today = new(2026, 7, 21);
 
-    public RoutineCommandsTests() =>
+    public RoutineCommandsTests()
+    {
         _calendar.TodayAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(Today);
+        var member = Member.Create(_companyId, _siteId, "Ana", "Lopez", DocumentType.DNI, "30111222", Gender.Female);
+        _members.GetByIdAsync(_memberId, Arg.Any<CancellationToken>()).Returns(member);
+    }
 
     [Fact]
     public async Task CreateRoutine_PersistsAndReturnsDto()
     {
-        var dto = await new CreateRoutineCommandHandler(_repo, _calendar).Handle(
+        var dto = await new CreateRoutineCommandHandler(_repo, _members, _calendar).Handle(
             new CreateRoutineCommand(_companyId, _memberId, "Full Body", WorkoutGoal.Hypertrophy, 3),
             CancellationToken.None);
 
         dto.Name.Should().Be("Full Body");
         dto.FrequencyPerWeek.Should().Be(3);
         await _repo.Received(1).AddRoutineAsync(
-            Arg.Is<Routine>(r => r.MemberId == _memberId && r.Name == "Full Body"), Arg.Any<CancellationToken>());
+            Arg.Is<Routine>(r => r.MemberId == _memberId && r.Name == "Full Body" && r.SiteId == _siteId),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CreateRoutine_SocioInexistente_Throws()
+    {
+        var act = () => new CreateRoutineCommandHandler(_repo, _members, _calendar).Handle(
+            new CreateRoutineCommand(_companyId, Guid.NewGuid(), "Full Body", WorkoutGoal.Hypertrophy, 3),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*socio*");
     }
 
     [Fact]
     public async Task CreateRoutine_EmpiezaElDiaLocalDeLaEmpresa()
     {
-        await new CreateRoutineCommandHandler(_repo, _calendar).Handle(
+        await new CreateRoutineCommandHandler(_repo, _members, _calendar).Handle(
             new CreateRoutineCommand(_companyId, _memberId, "Full Body", WorkoutGoal.Hypertrophy, 3),
             CancellationToken.None);
 
@@ -45,7 +62,7 @@ public class RoutineCommandsTests
     [Fact]
     public async Task AddRoutineDay_NumbersSequentially()
     {
-        var routine = Routine.Create(_companyId, _memberId, "Full", WorkoutGoal.Strength,
+        var routine = Routine.Create(_companyId, _siteId, _memberId, "Full", WorkoutGoal.Strength,
             DateOnly.FromDateTime(DateTime.Today), 3);
         routine.Days.Add(RoutineDay.Create(routine.Id, 1, "Día 1"));
         _repo.GetWithDaysAsync(routine.Id, Arg.Any<CancellationToken>()).Returns(routine);
@@ -60,7 +77,7 @@ public class RoutineCommandsTests
     [Fact]
     public async Task AddRoutineItem_CreatesItemWithSets()
     {
-        var routine = Routine.Create(_companyId, _memberId, "Full", WorkoutGoal.Hypertrophy,
+        var routine = Routine.Create(_companyId, _siteId, _memberId, "Full", WorkoutGoal.Hypertrophy,
             DateOnly.FromDateTime(DateTime.Today), 3);
         var day = RoutineDay.Create(routine.Id, 1, "Día 1");
         typeof(RoutineDay).GetProperty(nameof(RoutineDay.Routine))!.SetValue(day, routine);
@@ -77,7 +94,7 @@ public class RoutineCommandsTests
     [Fact]
     public async Task AddRoutineItem_WrongTenant_Throws()
     {
-        var routine = Routine.Create(Guid.NewGuid(), _memberId, "Full", WorkoutGoal.Hypertrophy,
+        var routine = Routine.Create(Guid.NewGuid(), _siteId, _memberId, "Full", WorkoutGoal.Hypertrophy,
             DateOnly.FromDateTime(DateTime.Today), 3);
         var day = RoutineDay.Create(routine.Id, 1, "Día 1");
         typeof(RoutineDay).GetProperty(nameof(RoutineDay.Routine))!.SetValue(day, routine);
@@ -92,7 +109,7 @@ public class RoutineCommandsTests
     [Fact]
     public async Task GetRoutineDetail_SummarizesSets()
     {
-        var routine = Routine.Create(_companyId, _memberId, "Full", WorkoutGoal.Hypertrophy,
+        var routine = Routine.Create(_companyId, _siteId, _memberId, "Full", WorkoutGoal.Hypertrophy,
             DateOnly.FromDateTime(DateTime.Today), 3);
         var day = RoutineDay.Create(routine.Id, 1, "Día 1");
         var item = RoutineItem.Create(day.Id, Guid.NewGuid(), 1);

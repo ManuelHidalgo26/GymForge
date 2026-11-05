@@ -2,10 +2,11 @@ using GymForge.Domain.Enums;
 
 namespace GymForge.Domain.Entities;
 
-public class BodyMeasurement : BaseEntity, ITenantScoped
+public class BodyMeasurement : BaseEntity, ISiteScoped
 {
     public Guid MemberId { get; private set; }
     public Guid CompanyId { get; private set; }
+    public Guid SiteId { get; private set; }
     public DateTime MeasuredAt { get; private set; }
     public Guid? TakenByStaffId { get; private set; }
     public BodyMeasurementMethod Method { get; private set; }
@@ -67,6 +68,7 @@ public class BodyMeasurement : BaseEntity, ITenantScoped
 
     public static BodyMeasurement Create(
         Guid companyId,
+        Guid siteId,
         Guid memberId,
         DateTime measuredAt,
         BodyMeasurementMethod method,
@@ -75,6 +77,7 @@ public class BodyMeasurement : BaseEntity, ITenantScoped
         return new BodyMeasurement
         {
             CompanyId = companyId,
+            SiteId = siteId,
             MemberId = memberId,
             MeasuredAt = measuredAt,
             Method = method,

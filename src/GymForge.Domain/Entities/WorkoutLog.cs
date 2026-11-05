@@ -1,10 +1,11 @@
 namespace GymForge.Domain.Entities;
 
-public class WorkoutLog : BaseEntity, ITenantScoped
+public class WorkoutLog : BaseEntity, ISiteScoped
 {
     public Guid MemberId { get; private set; }
     public Guid RoutineItemId { get; private set; }
     public Guid CompanyId { get; private set; }
+    public Guid SiteId { get; private set; }
     public DateTime PerformedAt { get; private set; }
     public string ActualSetsJson { get; private set; } = "[]";
     public string ActualRepsJson { get; private set; } = "[]";
@@ -19,6 +20,7 @@ public class WorkoutLog : BaseEntity, ITenantScoped
 
     public static WorkoutLog Create(
         Guid companyId,
+        Guid siteId,
         Guid memberId,
         Guid routineItemId,
         DateTime performedAt,
@@ -28,6 +30,7 @@ public class WorkoutLog : BaseEntity, ITenantScoped
         new()
         {
             CompanyId = companyId,
+            SiteId = siteId,
             MemberId = memberId,
             RoutineItemId = routineItemId,
             PerformedAt = performedAt,

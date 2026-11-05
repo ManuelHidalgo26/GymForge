@@ -18,7 +18,7 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 
 ## Estado general (al 2026-11-05)
 
-- **Endurecimiento para piloto (2026-11-05): CERRADO** en `feat/sesion-6` (NEW-15 vuln High `Tmds.DBus.Protocol` pin 0.21.3; NEW-16 guard de DNIs duplicados antes de migrar D7). Código **sin commit** (lo hace el orquestador). qa: APROBADO CON OBSERVACIONES. Tests **1477 verdes**. Deuda nueva NEW-19 a NEW-21 en TASKS. Ver la entrada de arriba de todo.
+- **Endurecimiento para piloto (2026-11-05): CERRADO** en `feat/sesion-6` (NEW-15 vuln High `Tmds.DBus.Protocol` pin 0.21.3; NEW-16 guard de DNIs duplicados antes de migrar D7). Código **sin commit** (lo hace el orquestador). qa: APROBADO CON OBSERVACIONES. Tests **1477 verdes**. Deuda nueva NEW-19 a NEW-21 en TASKS. La revisión de seguridad automática marcó PII (DNIs) en el log del guard; corregido el mismo día enmascarando el DNI y dejando el log con conteos (dev → qa APROBADO; deuda NEW-22/23). Ver la entrada de arriba de todo.
 
 - Sesiones 1, 2, 3 y Fase 1: **mergeadas a `master`** (merge `--no-ff` `33ba4ec`; 19 commits de `feat/sesion-3`). Local: `origin/master` quedó atrás, **sin push**. La rama `feat/sesion-3` sigue existiendo. ADR-001 a ADR-004 en `Accepted`.
 - **Fase 2 (Sesión 4): CERRADA y MERGEADA a `master`** (merge `9d44634` de `feat/sesion-4`; 3 commits: `9894c8f`, `c11770f`, `fc140c0`). ADR-005 `Accepted`. Sin push.

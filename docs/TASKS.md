@@ -211,13 +211,15 @@ Diferidos con estado (filas originales): **D2** (auth de la API, en "Deuda de la
 
 ### Deuda del endurecimiento para piloto (2026-11-05)
 
-Origen: pase de endurecimiento para el piloto (NEW-15 y NEW-16 cerrados, ver DONE `PILOTO-END-2026-11-05`). qa: APROBADO CON OBSERVACIONES, sin bloqueantes. Ninguna de estas bloquea el piloto. Numeración NEW-19 en adelante (NEW-15 a NEW-18 ya estaban usados).
+Origen: pase de endurecimiento para el piloto (NEW-15 y NEW-16 cerrados, ver DONE `PILOTO-END-2026-11-05`). qa: APROBADO CON OBSERVACIONES, sin bloqueantes. Ninguna de estas bloquea el piloto. Numeración NEW-19 en adelante (NEW-15 a NEW-18 ya estaban usados). La revisión de seguridad automática marcó PII (DNIs) en el log del guard de NEW-16; **corregido (2026-11-05)** enmascarando el DNI (solo los últimos 3 dígitos) y dejando el `LogCritical` con conteos (dev → qa APROBADO; 1477 verdes).
 
 | # | Sev | Tarea | Dónde | Dueño propuesto |
 |---|---|---|---|---|
 | NEW-19 | MEDIA | **Fallo de arranque por DNIs duplicados solo va al log.** `Program.cs` del Desktop hace `Log.Fatal` y sale: recepción no ve nada. Agregar un diálogo/MessageBox al arranque que muestre `DuplicateMemberDocumentsBlockMigrationException` antes del piloto con datos reales. Mitigación actual: la sección "Actualizar sobre una base viva (DNIs duplicados)" de `docs/DISTRIBUCION.md`. | `src/GymForge.Desktop/Program.cs`; `src/GymForge.Infrastructure/Persistence/MemberDocumentMigrationGuard.cs`; `docs/DISTRIBUCION.md` | dev · ux |
 | NEW-20 | BAJA | **Base legacy baselineada no recibe el índice único D7 ni el guard.** Una base `EnsureCreated` que pasa por `BaselineLegacyDatabaseAsync` no corre el guard de `MigrateAsync` y no tiene `UX_Members_CompanySiteDocument`. Evaluar crear el índice en el baseline o documentar que las bases `EnsureCreated` no son soportadas. | `src/GymForge.Infrastructure/InfrastructureServiceExtensions.cs` (`InitialiseDatabaseAsync`, `BaselineLegacyDatabaseAsync`) | dev |
 | NEW-21 | BAJA | **Normalización del DNI pendiente (decisión).** Hoy "30.111.222" y "30111222" no se consideran duplicados (y no rompen el índice). Definir si se normaliza (quitar espacios y puntos) en alta, edición e importación CSV. | `CreateMemberCommand`, `UpdateMemberCommand`, `ImportMembersCommand`, `MemberCsvParser` | dev · usuario (decisión) |
+| NEW-22 | BAJA (test) | **Sin test directo de los bordes de `Mask`.** El enmascarado de DNI (últimos 3 dígitos) se prueba solo de forma indirecta con un DNI de 8 dígitos. Agregar un test parametrizado de 7, 8 y ≤3 dígitos (p. ej. `Mask` internal con `InternalsVisibleTo`, o una base con DNIs de largos distintos). | `src/GymForge.Infrastructure/Persistence/MemberDocumentMigrationGuard.cs`; `tests/GymForge.Integration.Tests/MemberDocumentMigrationGuardTests.cs` | dev · qa |
+| NEW-23 | INFO | **Criterio de enmascarado al sumar campos al mensaje del guard.** Si alguna vez se agregan nombre, mail u otro dato de socio al mensaje del guard, pasarlos por el mismo criterio de enmascarado que el DNI. | `src/GymForge.Infrastructure/Persistence/MemberDocumentMigrationGuard.cs` | dev |
 
 ### Fases siguientes (detalle en `docs/PROGRESS.md`)
 

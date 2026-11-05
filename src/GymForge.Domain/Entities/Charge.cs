@@ -77,6 +77,12 @@ public class Charge : BaseEntity, ISiteScoped, IAuditable
     }
 
     /// <summary>
+    /// Se le puede imputar plata: un cargo saldado, dado de baja o reembolsado no se revive cobrándolo
+    /// ni aplicándole saldo a favor.
+    /// </summary>
+    public bool IsCollectable => Status is not (ChargeStatus.Paid or ChargeStatus.WrittenOff or ChargeStatus.Refunded);
+
+    /// <summary>
     /// Cargo vencido a la fecha dada y con saldo pendiente: lo único que mantiene a un socio en mora.
     /// Se mira la fecha y el saldo, no <see cref="ChargeStatus.Overdue"/>: un pago parcial deja el
     /// cargo en PartiallyPaid aunque siga vencido.
@@ -84,7 +90,7 @@ public class Charge : BaseEntity, ISiteScoped, IAuditable
     public bool IsInArrears(DateOnly asOf) =>
         DueDate < asOf
         && AmountOutstanding > 0
-        && Status is not (ChargeStatus.Paid or ChargeStatus.WrittenOff or ChargeStatus.Refunded);
+        && IsCollectable;
 
     public void WriteOff(string reason)
     {

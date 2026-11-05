@@ -95,6 +95,7 @@ public class ProcessPaymentCommandHandler : IRequestHandler<ProcessPaymentComman
 
         var pendingCharges = await ChargeSelection.LoadAsync(
             _chargeRepo, cmd.CompanyId, cmd.MemberId, cmd.ChargeIds, ct);
+        EnsureRequestedChargesAreCollectable(pendingCharges, cmd.ChargeIds);
 
         // Allocate payment oldest-first
         decimal remaining = cmd.Amount;
@@ -124,6 +125,28 @@ public class ProcessPaymentCommandHandler : IRequestHandler<ProcessPaymentComman
         await _chargeRepo.SaveChangesAsync(ct);
         return PaymentDto.FromEntity(payment);
     }
+
+    /// <summary>
+    /// Los cargos pedidos por id se rechazan si ya no admiten cobro (saldados, dados de baja o reembolsados):
+    /// imputarles plata los "revive". Sin ids se auto-imputa a los pendientes, que ya vienen filtrados.
+    /// </summary>
+    private static void EnsureRequestedChargesAreCollectable(
+        IEnumerable<Charge> charges, IReadOnlyList<Guid>? requestedIds)
+    {
+        if (requestedIds is not { Count: > 0 }) return;
+
+        var blocked = charges.FirstOrDefault(c => !c.IsCollectable);
+        if (blocked is not null)
+            throw new InvalidOperationException(
+                $"El cargo \"{blocked.Description}\" está {Describe(blocked.Status)} y no admite cobro.");
+    }
+
+    private static string Describe(ChargeStatus status) => status switch
+    {
+        ChargeStatus.Paid => "saldado",
+        ChargeStatus.WrittenOff => "dado de baja",
+        _ => "reembolsado",
+    };
 
     /// <summary>
     /// El excedente no se pierde: queda como saldo a favor del socio. Se agrega al mismo DbContext que el

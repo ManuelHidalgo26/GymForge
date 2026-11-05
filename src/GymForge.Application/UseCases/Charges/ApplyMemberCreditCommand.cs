@@ -2,7 +2,6 @@ using FluentValidation;
 using GymForge.Application.Interfaces;
 using GymForge.Application.Services;
 using GymForge.Domain.Entities;
-using GymForge.Domain.Enums;
 using MediatR;
 
 namespace GymForge.Application.UseCases.Charges;
@@ -52,7 +51,7 @@ public class ApplyMemberCreditCommandHandler : IRequestHandler<ApplyMemberCredit
             _chargeRepo, cmd.CompanyId, cmd.MemberId, cmd.ChargeIds, ct);
 
         var remaining = balance;
-        foreach (var charge in charges.Where(IsCollectable).OrderBy(c => c.DueDate))
+        foreach (var charge in charges.Where(c => c.IsCollectable).OrderBy(c => c.DueDate))
         {
             if (remaining <= 0) break;
 
@@ -80,8 +79,4 @@ public class ApplyMemberCreditCommandHandler : IRequestHandler<ApplyMemberCredit
         await _arrearsRelief.ClearIfSettledAsync(cmd.CompanyId, cmd.MemberId, ct);
         await _chargeRepo.SaveChangesAsync(ct);
     }
-
-    /// <summary>Un cargo dado de baja o reembolsado no se revive aplicándole saldo a favor.</summary>
-    private static bool IsCollectable(Charge charge) =>
-        charge.Status is not (ChargeStatus.Paid or ChargeStatus.WrittenOff or ChargeStatus.Refunded);
 }

@@ -84,6 +84,38 @@ public class ProcessPaymentCommandTests
         Charge.Create(companyId, siteId, memberId, null,
             ConceptType.MembershipFee, "Cuota", 10_000m, new DateOnly(2026, 4, 1));
 
+    // ── Cargos explícitos: solo los que admiten cobro ────────────────────────
+
+    private async Task AssertExplicitChargeIsRejectedAsync(Action<Charge> bringToStatus, ChargeStatus expected)
+    {
+        var companyId = Guid.NewGuid();
+        var siteId = Guid.NewGuid();
+        var memberId = Guid.NewGuid();
+        var charge = ChargeOf(companyId, siteId, memberId);
+        bringToStatus(charge);
+        charge.Status.Should().Be(expected);
+        _chargeRepo.GetByIdAsync(charge.Id, Arg.Any<CancellationToken>()).Returns(charge);
+
+        var act = () => Sut().Handle(
+            CmdForCharges(companyId, siteId, memberId, charge.Id), CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*no admite cobro*");
+        charge.Status.Should().Be(expected);
+        charge.AmountPaid.Should().Be(0m);
+        await _paymentRepo.DidNotReceive().AddAsync(Arg.Any<Payment>(), Arg.Any<CancellationToken>());
+        await _chargeRepo.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public Task Handle_ExplicitWrittenOffCharge_ThrowsAndDoesNotAllocate() =>
+        AssertExplicitChargeIsRejectedAsync(c => c.WriteOff("incobrable"), ChargeStatus.WrittenOff);
+
+    [Fact]
+    public Task Handle_ExplicitRefundedCharge_ThrowsAndDoesNotAllocate() =>
+        AssertExplicitChargeIsRejectedAsync(
+            c => typeof(Charge).GetProperty(nameof(Charge.Status))!.SetValue(c, ChargeStatus.Refunded),
+            ChargeStatus.Refunded);
+
     [Fact]
     public async Task Handle_ExplicitChargesOfTheMember_AllocatesThem()
     {

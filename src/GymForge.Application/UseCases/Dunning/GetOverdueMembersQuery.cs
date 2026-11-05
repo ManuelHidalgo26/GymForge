@@ -6,7 +6,10 @@ namespace GymForge.Application.UseCases.Dunning;
 
 /// <param name="HasUsableMobile">False si el socio no tiene un celular del que se pueda armar un link de WhatsApp.</param>
 /// <param name="CurrentStageLabel">Etapa vigente según la antigüedad de su deuda más vieja (la primera si todavía no llegó a ninguna).</param>
-/// <param name="LastReminderAt">Último recordatorio registrado al socio (UTC). Null si nunca se le avisó.</param>
+/// <param name="LastReminderAt">
+/// Último recordatorio MANUAL del operador al socio (UTC). Null si el operador nunca le avisó: los avisos del
+/// job automático no cuentan mientras el sender solo loguee y no entregue nada.
+/// </param>
 public record OverdueMemberDto(
     Guid MemberId, string FullName, string? Mobile, bool HasUsableMobile,
     decimal TotalOutstanding, DateOnly OldestDueDate, int DaysOverdue, int ChargeCount,
@@ -33,14 +36,15 @@ public class GetOverdueMembersQueryHandler
 
     public async Task<IReadOnlyList<OverdueMemberDto>> Handle(GetOverdueMembersQuery query, CancellationToken ct)
     {
-        var arrears = (await _charges.GetOverdueBySiteAsync(query.CompanyId, query.SiteId, query.AsOf, ct))
+        var arrearsByMember = (await _charges.GetOverdueBySiteAsync(query.CompanyId, query.SiteId, query.AsOf, ct))
             .Where(c => c.IsInArrears(query.AsOf))
-            .GroupBy(c => c.MemberId);
+            .GroupBy(c => c.MemberId)
+            .ToList();
 
-        // Lecturas secuenciales: comparten DbContext.
-        var rows = new List<OverdueMemberDto>();
-        foreach (var memberCharges in arrears)
-            rows.Add(await ToRowAsync(memberCharges.ToList(), query.AsOf, ct));
+        var lastReminders = await _log.GetLastManualByMembersAsync(
+            arrearsByMember.Select(g => g.Key).ToList(), ct);
+
+        var rows = arrearsByMember.Select(g => ToRow(g.ToList(), query.AsOf, lastReminders));
 
         return rows
             .OrderByDescending(r => r.DaysOverdue)
@@ -49,18 +53,19 @@ public class GetOverdueMembersQueryHandler
             .ToList();
     }
 
-    private async Task<OverdueMemberDto> ToRowAsync(List<Charge> charges, DateOnly asOf, CancellationToken ct)
+    private OverdueMemberDto ToRow(
+        List<Charge> charges, DateOnly asOf, IReadOnlyDictionary<Guid, DateTime> lastReminders)
     {
         var member = charges[0].Member;
         var oldestDue = charges.Min(c => c.DueDate);
         var daysOverdue = asOf.DayNumber - oldestDue.DayNumber;
         var stage = _config.CurrentStageFor(daysOverdue) ?? _config.FirstStage;
-        var lastReminder = await _log.GetLastForMemberAsync(member.Id, ct);
+        DateTime? lastReminder = lastReminders.TryGetValue(member.Id, out var sentAt) ? sentAt : null;
 
         return new OverdueMemberDto(
             member.Id, member.FullName, member.Mobile,
             HasUsableMobile: WhatsAppLink.ToWhatsAppDigits(member.Mobile) is not null,
             charges.Sum(c => c.AmountOutstanding), oldestDue, daysOverdue, charges.Count,
-            stage.Label, lastReminder?.SentAt);
+            stage.Label, lastReminder);
     }
 }

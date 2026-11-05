@@ -102,21 +102,44 @@ public class NotificationLogRepositoryTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetLastForMember_DevuelveElMasReciente()
+    public async Task GetLastManualByMembers_DevuelveElMasRecientePorSocio_EnUnaLectura()
     {
-        var first = ManualFor(_memberA1);
-        await AppendAsync(first);
+        var anaVieja = ManualFor(_memberA1);
+        await AppendAsync(anaVieja);
         await Task.Delay(20);
-        var second = ManualFor(_memberA1);
-        await AppendAsync(second);
+        var anaNueva = ManualFor(_memberA1);
+        var otroSocioA1 = MemberAt(_companyA, _siteA1, "Dora", "40000004");
+        await _db.Members.AddAsync(otroSocioA1);
+        await _db.SaveChangesAsync();
+        var dora = ManualFor(otroSocioA1);
+        await AppendAsync(anaNueva, dora);
 
-        (await _repo.GetLastForMemberAsync(_memberA1.Id))!.Id.Should().Be(second.Id);
+        var last = await _repo.GetLastManualByMembersAsync([_memberA1.Id, otroSocioA1.Id]);
+
+        last.Should().HaveCount(2);
+        last[_memberA1.Id].Should().Be(anaNueva.SentAt).And.BeAfter(anaVieja.SentAt);
+        last[otroSocioA1.Id].Should().Be(dora.SentAt);
     }
 
     [Fact]
-    public async Task GetLastForMember_SinAvisos_DevuelveNull()
+    public async Task GetLastManualByMembers_IgnoraLosAvisosAutomaticos()
     {
-        (await _repo.GetLastForMemberAsync(_memberA1.Id)).Should().BeNull();
+        var manual = ManualFor(_memberA1);
+        await AppendAsync(manual);
+        await Task.Delay(20);
+        await AppendAsync(AutomaticFor(_memberA1, Guid.NewGuid(), stage: 7));   // más nuevo, pero no entregó nada
+
+        var last = await _repo.GetLastManualByMembersAsync([_memberA1.Id]);
+
+        last[_memberA1.Id].Should().Be(manual.SentAt);
+    }
+
+    [Fact]
+    public async Task GetLastManualByMembers_SoloAutomaticosOSinAvisos_NoFigura()
+    {
+        await AppendAsync(AutomaticFor(_memberA1, Guid.NewGuid(), stage: 7));
+
+        (await _repo.GetLastManualByMembersAsync([_memberA1.Id])).Should().BeEmpty();
     }
 
     [Fact]
@@ -161,7 +184,7 @@ public class NotificationLogRepositoryTests : IAsyncLifetime
         using (_tenant.BeginScope(_companyB.Id, _siteB1.Id))
         {
             (await _repo.GetByMemberAsync(_memberA1.Id)).Should().BeEmpty("el aviso es de otra empresa");
-            (await _repo.GetLastForMemberAsync(_memberA1.Id)).Should().BeNull();
+            (await _repo.GetLastManualByMembersAsync([_memberA1.Id])).Should().BeEmpty();
             (await _repo.GetByMemberAsync(_memberB1.Id)).Should().ContainSingle();
         }
 

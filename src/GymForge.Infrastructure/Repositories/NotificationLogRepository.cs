@@ -1,5 +1,6 @@
 using GymForge.Application.Interfaces;
 using GymForge.Domain.Entities;
+using GymForge.Domain.Enums;
 using GymForge.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,11 +29,13 @@ public class NotificationLogRepository : INotificationLogRepository
             .Take(take)
             .ToListAsync(ct);
 
-    public async Task<NotificationLog?> GetLastForMemberAsync(Guid memberId, CancellationToken ct = default) =>
+    public async Task<IReadOnlyDictionary<Guid, DateTime>> GetLastManualByMembersAsync(
+        IReadOnlyCollection<Guid> memberIds, CancellationToken ct = default) =>
         await _db.NotificationLogs
-            .Where(n => n.MemberId == memberId)
-            .OrderByDescending(n => n.SentAt)
-            .FirstOrDefaultAsync(ct);
+            .Where(n => n.Trigger == NotificationTrigger.Manual && memberIds.Contains(n.MemberId))
+            .GroupBy(n => n.MemberId)
+            .Select(g => new { MemberId = g.Key, LastSentAt = g.Max(n => n.SentAt) })
+            .ToDictionaryAsync(x => x.MemberId, x => x.LastSentAt, ct);
 
     // Company-wide: el job corre sin sede, así que el filtro por defecto no aplica. El límite es el CompanyId.
     public async Task<bool> WasSentAsync(

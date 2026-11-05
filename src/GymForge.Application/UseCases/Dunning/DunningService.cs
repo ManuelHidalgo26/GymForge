@@ -73,7 +73,8 @@ public class DunningService
         return await _members.GetByIdAsync(charge.MemberId, ct);
     }
 
-    /// <summary>Deja traza del aviso en la sede del cargo. El canal es el configurado, aunque hoy el sender solo loguee.</summary>
+    /// <summary>Deja traza del aviso en la sede del cargo. El canal es el configurado, aunque hoy el sender solo loguee:
+    /// por eso la pantalla de morosos no cuenta estos avisos como "último recordatorio".</summary>
     private async Task RegisterAsync(Charge charge, DunningStage stage, string toPhone, CancellationToken ct)
     {
         await _log.AppendAsync(

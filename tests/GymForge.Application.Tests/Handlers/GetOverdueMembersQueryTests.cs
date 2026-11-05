@@ -17,6 +17,8 @@ public class GetOverdueMembersQueryTests
     private readonly INotificationLogRepository _log = Substitute.For<INotificationLogRepository>();
     private readonly DunningConfig _config = new();
 
+    public GetOverdueMembersQueryTests() => HaveLastManualReminders();
+
     private GetOverdueMembersQueryHandler Handler() => new(_charges, _log, _config);
 
     private Task<IReadOnlyList<OverdueMemberDto>> RunAsync() =>
@@ -139,20 +141,49 @@ public class GetOverdueMembersQueryTests
         rows.Single(r => r.MemberId == vieja.Id).CurrentStageLabel.Should().Be("Mi segunda");
     }
 
+    private void HaveLastManualReminders(params (Guid MemberId, DateTime SentAt)[] reminders) =>
+        _log.GetLastManualByMembersAsync(Arg.Any<IReadOnlyCollection<Guid>>(), Arg.Any<CancellationToken>())
+            .Returns(reminders.ToDictionary(r => r.MemberId, r => r.SentAt));
+
     [Fact]
-    public async Task ElUltimoRecordatorioSaleDelLog_YEsNullSiNuncaSeAviso()
+    public async Task ElUltimoRecordatorioEsElManual_YEsNullSiElOperadorNuncaAviso()
     {
         var avisada = NewMember("Ana", "11 2345-6789");
         var sinAviso = NewMember("Beto", "11 1111-1111");
         HaveOverdue(ChargeOf(avisada, 10), ChargeOf(sinAviso, 10));
-        var reminder = NotificationLog.Manual(
-            CompanyId, SiteId, avisada.Id, null, NotificationChannel.WhatsApp, 7, "11 2345-6789");
-        _log.GetLastForMemberAsync(avisada.Id, Arg.Any<CancellationToken>()).Returns(reminder);
+        var sentAt = new DateTime(2026, 7, 20, 15, 0, 0, DateTimeKind.Utc);
+        HaveLastManualReminders((avisada.Id, sentAt));
 
         var rows = await RunAsync();
 
-        rows.Single(r => r.MemberId == avisada.Id).LastReminderAt.Should().Be(reminder.SentAt);
+        rows.Single(r => r.MemberId == avisada.Id).LastReminderAt.Should().Be(sentAt);
         rows.Single(r => r.MemberId == sinAviso.Id).LastReminderAt.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UnAvisoSoloAutomatico_NoCuentaComoUltimoRecordatorio()
+    {
+        // El repositorio solo devuelve recordatorios manuales: un socio con avisos automáticos no figura.
+        var soloAutomatico = NewMember("Ana", "11 2345-6789");
+        HaveOverdue(ChargeOf(soloAutomatico, 10));
+        HaveLastManualReminders();
+
+        (await RunAsync()).Single().LastReminderAt.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task PideLosUltimosRecordatoriosEnUnaSolaLecturaParaTodosLosMorosos()
+    {
+        var socios = Enumerable.Range(1, 4).Select(i => NewMember($"Socio{i}", "11 2345-6789")).ToList();
+        HaveOverdue(socios.Select(m => ChargeOf(m, 10)).ToArray());
+        HaveLastManualReminders((socios[1].Id, new DateTime(2026, 7, 19, 10, 0, 0, DateTimeKind.Utc)));
+
+        var rows = await RunAsync();
+
+        await _log.Received(1).GetLastManualByMembersAsync(
+            Arg.Is<IReadOnlyCollection<Guid>>(ids => ids.Count == 4 && socios.All(m => ids.Contains(m.Id))),
+            Arg.Any<CancellationToken>());
+        rows.Count(r => r.LastReminderAt is not null).Should().Be(1);
     }
 
     [Fact]

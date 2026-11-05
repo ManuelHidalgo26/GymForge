@@ -216,8 +216,13 @@ public interface INotificationLogRepository
     /// <summary>Avisos del socio, del más reciente al más antiguo. Filtrado por tenant.</summary>
     Task<IReadOnlyList<NotificationLog>> GetByMemberAsync(Guid memberId, int take = 50, CancellationToken ct = default);
 
-    /// <summary>Último aviso al socio (para "último recordatorio: hace N días"). Filtrado por tenant.</summary>
-    Task<NotificationLog?> GetLastForMemberAsync(Guid memberId, CancellationToken ct = default);
+    /// <summary>
+    /// Último recordatorio MANUAL (iniciado por el operador) de cada socio dado, en una sola lectura agrupada.
+    /// Los avisos automáticos no cuentan: hoy el sender solo loguea y no le llegó nada al socio. Los socios sin
+    /// recordatorio manual no figuran. Filtrado por tenant (empresa + sede).
+    /// </summary>
+    Task<IReadOnlyDictionary<Guid, DateTime>> GetLastManualByMembersAsync(
+        IReadOnlyCollection<Guid> memberIds, CancellationToken ct = default);
 
     /// <summary>
     /// Dedup del job: ¿ya se envió ESTA etapa para ESTE cargo? Company-wide a propósito (el job corre

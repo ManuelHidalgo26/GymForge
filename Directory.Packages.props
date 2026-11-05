@@ -5,6 +5,8 @@
   </PropertyGroup>
 
   <ItemGroup Label="Avalonia UI">
+    <!-- Transitiva de Avalonia (Linux/DBus, viaja igual en el exe): GHSA-xrw6-gwf8-vvr9 (High) afecta < 0.21.3 y >= 0.22.0 < 0.92.0. 0.21.3 es la primera parcheada de la familia 0.21 que trae Avalonia 11.3.0. -->
+    <PackageVersion Include="Tmds.DBus.Protocol" Version="0.21.3" />
     <PackageVersion Include="Avalonia" Version="11.3.0" />
     <PackageVersion Include="Avalonia.Desktop" Version="11.3.0" />
     <PackageVersion Include="Avalonia.Diagnostics" Version="11.3.0" />

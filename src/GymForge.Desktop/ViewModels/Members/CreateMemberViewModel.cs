@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GymForge.Application.DTOs;
+using GymForge.Application.Interfaces;
 using GymForge.Application.UseCases.Catalog;
 using GymForge.Application.UseCases.Members;
 using GymForge.Application.UseCases.Sales;
@@ -162,6 +163,10 @@ public partial class CreateMemberViewModel : ObservableObject
             }
 
             MemberCreated?.Invoke(_createdMember);
+        }
+        catch (DuplicateMemberDocumentException dup)
+        {
+            ErrorMessage = dup.Message;
         }
         catch (FluentValidation.ValidationException vex)
         {

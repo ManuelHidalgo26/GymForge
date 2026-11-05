@@ -30,7 +30,7 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 - **Fase 5 parte 1 (Sesión 8): CERRADA (2026-11-04)** en `feat/sesion-6` (código `d33e101`; commit de docs por el orquestador). ADR-009 `Accepted`. Piezas A–E y G; F (calendario) diferida a parte 2. Sin push ni merge. Ver la entrada de cierre arriba de todo.
 - **Fase 5 parte 2 (Sesión 9): CERRADA (2026-11-04)** en `feat/sesion-6`: pieza F (calendario semanal de Clases en grilla de 7 días). **Fase 5 completa cerrada (piezas A–G).** ADR-010 pasa a `Accepted` al commitear (orquestador). Código y docs pendientes de commit del orquestador. Sin push ni merge. Ver la entrada de cierre arriba de todo.
 - Rama de trabajo: `feat/sesion-6` desde `master` (`e541586`): `aa9c8d7` y `6f3124e` (F4 parte 1), `1f44d2c` y `a55e935` (F4 parte 2, con docs), `7bc780f` (limpieza), `d33e101` (Fase 5 parte 1) y la pieza F de Fase 5 parte 2 (código y docs, **pendientes de commit del orquestador**). `.gitignore` ignora `*.lnk` y `*.pfx`.
-- Abierto en `docs/TASKS.md`: **0 bloqueadores técnicos de piloto**. Decisiones de política abiertas: **D11 ampliada** (PII en exports y en el snapshot de DELETE) y **O10** (roles para exportar y ver comisiones). Siguen abiertos, entre otros: UX11, Q2, D11/Q4, D12 (residuo), F1-D8, F1-D11, P-2, D1, D2 (diferida), D5, D6, D8, **D9b** (su propia sesión), D10, D13–D15, D17, D19 (ver TASKS), F1-D1 a F1-D3, F1-D5, F1-D7, F1-D8, F1-D10, F1-D11, F2-D1 a F2-D8, F3-D1 a F3-D7, Q3–Q8, UX1–UX4, UX6–UX17, UX19 (diferido), UX21–UX24, UX34, NEW-2 a NEW-6, NEW-8, NEW-14 a NEW-18, O5, O8, O10, O11(c), O12, UX26–UX33, F4-D1 a F4-D4, y la fase F6. **Cerrados en el endurecimiento (2026-11-04): D3, D7, D9a, NEW-9, NEW-10, NEW-12 (ver DONE `END-CIERRE`).** Lo cerrado en la limpieza está en DONE `LIMP-CIERRE`.
+- Abierto en `docs/TASKS.md`: **0 bloqueadores técnicos de piloto**. Decisiones de política abiertas: **D11 ampliada** (PII en exports y en el snapshot de DELETE) y **O10** (roles para exportar y ver comisiones). Siguen abiertos, entre otros: UX11, Q2, D11/Q4, D12 (residuo), F1-D8, F1-D11, P-2, D1, D2 (diferida), D5, D6, D8, **D9b** (su propia sesión), D10, D13–D15, D17, D19 (ver TASKS), F1-D1 a F1-D3, F1-D5, F1-D7, F1-D8, F1-D10, F1-D11, F2-D1 a F2-D8, F3-D1 a F3-D7, Q3–Q8, UX1–UX4, UX6–UX17, UX19 (diferido), UX21–UX24, UX34, NEW-2 a NEW-6, NEW-8, NEW-15 a NEW-18, O5, O8, O10, O11(c), O12, UX26–UX33, F4-D1 a F4-D4, y la fase F6. **Cerrados en el endurecimiento (2026-11-04): D3, D7, D9a, NEW-9, NEW-10, NEW-12 (ver DONE `END-CIERRE`).** Lo cerrado en la limpieza está en DONE `LIMP-CIERRE`.
 
 ## Roadmap por fases
 
@@ -56,7 +56,7 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 - **D9b** (scope por operación en Desktop, refactor del DbContext): candidato a su propia sesión, si el usuario la quiere arrancar. Sin esto, `ValidateScopes` queda apagado en `Program.cs:54`.
 - **D2** (auth de la API): diferido. La API está apagada; reabrir solo si Kestrel sale de localhost:5000.
 - **UX19 / F3-D2** (primer carácter del lector): diferido. Necesita hardware real.
-- **NEW-14** (mensaje amigable de DNI duplicado en alta y edición), **NEW-16** (depurar DNIs duplicados antes de migrar D7 en base viva), **NEW-15** (`Tmds.DBus.Protocol` High en producción).
+- **NEW-16** (depurar DNIs duplicados antes de migrar D7 en base viva), **NEW-15** (`Tmds.DBus.Protocol` High en producción). NEW-14 cerrado (2026-11-04, ver entrada de arriba).
 - D12 (residuo de zona horaria), F5-D1 a F5-D4 y NEW-6 (verificación manual de exports y de F4 parte 2): siguen abiertos como estaban.
 - Decisiones del usuario abiertas (no se tocan en este cierre): D11 ampliada, O10, NEW-8 (`.editorconfig`), push y merge de `feat/sesion-6`.
 
@@ -79,6 +79,25 @@ Decisiones del usuario abiertas (ninguna bloquea el piloto con las 2 condiciones
 Fuera del piloto: P-2 (saldo a favor en la ficha) y D1 (cobros multi-sede) siguen abiertas. Resto de deuda (D1–D19, F1-D4 a F1-D10, F2-D1 a F2-D8, Q3–Q9, UX1–UX17): ver `docs/TASKS.md`.
 
 Sesiones 5-8: ver tabla de fases arriba.
+
+---
+
+## [2026-11-04] NEW-14 cerrado — mensaje amigable de DNI duplicado (alta y edición)
+
+**Hecho:**
+- **NEW-14 cerrado** en `feat/sesion-6` (seguimiento de D7). Fix de UI: `catch (DuplicateMemberDocumentException dup) { ErrorMessage = dup.Message; }` antes del catch genérico en `CreateMemberViewModel.SaveAsync` y `MemberEditViewModel.SaveAsync`. Ahora recepción ve "Ya existe un socio con ese DNI en esta sede." sin el prefijo "Error al guardar:".
+- **Tests:** 2 nuevos en `tests/GymForge.Desktop.Tests/DuplicateDocumentViewModelTests.cs` (alta y edición). `dotnet test` Desktop **421/421** verdes (eran 419). qa: APROBADO sin observaciones.
+- Sin cambios en repositorio, excepción ni handlers. Multi-tenant y append-only sin impacto.
+
+**En curso:** nada a medias. Código sin commitear (`git status`: 2 VMs modificados y test nuevo sin trackear); el commit lo decide el orquestador.
+
+**Blockers:** ninguno nuevo. NEW-16 (depurar DNIs duplicados antes de migrar D7 en base viva) y NEW-15 siguen abiertos.
+
+**Próximo paso:** commit del fix (`fix: [socios] mensaje amigable de DNI duplicado`) tras `dotnet test` verde; el resto de la deuda, sin cambios.
+
+**Tocado:**
+- Docs: `docs/PROGRESS.md`, `docs/TASKS.md`.
+- Código (sin commitear): `src/GymForge.Desktop/ViewModels/Members/CreateMemberViewModel.cs`, `src/GymForge.Desktop/ViewModels/Members/MemberEditViewModel.cs`, `tests/GymForge.Desktop.Tests/DuplicateDocumentViewModelTests.cs` (nuevo).
 
 ---
 

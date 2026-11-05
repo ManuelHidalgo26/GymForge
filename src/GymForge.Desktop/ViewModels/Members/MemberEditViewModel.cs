@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GymForge.Application.DTOs;
+using GymForge.Application.Interfaces;
 using GymForge.Application.UseCases.Members;
 using GymForge.Desktop.Services;
 using GymForge.Domain.Enums;
@@ -107,6 +108,10 @@ public partial class MemberEditViewModel : ObservableObject
 
             IsEditing = false;
             Saved?.Invoke(saved);
+        }
+        catch (DuplicateMemberDocumentException dup)
+        {
+            ErrorMessage = dup.Message;
         }
         catch (FluentValidation.ValidationException vex)
         {

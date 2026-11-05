@@ -66,7 +66,11 @@ public interface IChargeRepository : IRepository<Charge>
 {
     Task<decimal> SumOutstandingAsync(Guid memberId, CancellationToken ct = default);
     Task<IReadOnlyList<Charge>> GetPendingAsync(Guid memberId, CancellationToken ct = default);
-    /// <summary>Mora de la empresa completa (todas las sedes): la usa el job. Incluye el socio.</summary>
+    /// <summary>
+    /// Mora de la empresa completa (todas las sedes): SOLO para dunning y mantenimiento. Las lecturas de UI
+    /// (Dashboard, Cobros) usan <see cref="GetOverdueBySiteAsync"/>: el cobro exige que el cargo sea de la sede activa.
+    /// Incluye el socio.
+    /// </summary>
     Task<IReadOnlyList<Charge>> GetOverdueAsync(Guid companyId, DateOnly asOf, CancellationToken ct = default);
     /// <summary>
     /// Mora de UNA sede (pantalla de morosos): empresa y sede explícitas, no depende del tenant ambiente.

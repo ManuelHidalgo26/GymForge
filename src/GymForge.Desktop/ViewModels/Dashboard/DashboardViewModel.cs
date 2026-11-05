@@ -146,8 +146,8 @@ public partial class DashboardViewModel : ObservableObject
             CheckInsSubtitle = $"ayer: {yesterdayLogs.Count(l => l.AccessGranted)}";
 
             // ── Mora real: cobros vencidos impagos ──────────────────────────
-            var overdueCharges = await repos.Charges.GetOverdueAsync(
-                _session.CompanyId, today);
+            var overdueCharges = await repos.Charges.GetOverdueBySiteAsync(
+                _session.CompanyId, _session.SiteId, today);
             OverdueMembers = overdueCharges.Select(c => c.MemberId).Distinct().Count();
             var owed = overdueCharges.Sum(c => c.AmountOutstanding);
             OverdueSubtitle = owed > 0 ? $"deben ${owed:N0} en total" : "sin deuda vencida";

@@ -45,7 +45,8 @@ public class ZonaHorariaViewModelsTests
     {
         await ArrangeAsync();
         var chargeRepo = Substitute.For<IChargeRepository>();
-        chargeRepo.GetOverdueAsync(_company.Id, Today, Arg.Any<CancellationToken>()).Returns(new List<Charge>());
+        chargeRepo.GetOverdueBySiteAsync(_company.Id, _session.SiteId, Today, Arg.Any<CancellationToken>())
+            .Returns(new List<Charge>());
         var sut = new ChargesViewModel(
             chargeRepo, _mediator, _session, new ReceiptService(Substitute.For<IServiceScopeFactory>()), _calendar)
         {
@@ -54,7 +55,10 @@ public class ZonaHorariaViewModelsTests
 
         await sut.LoadAsync();
 
-        await chargeRepo.Received().GetOverdueAsync(_company.Id, Today, Arg.Any<CancellationToken>());
+        await chargeRepo.Received().GetOverdueBySiteAsync(
+            _company.Id, _session.SiteId, Today, Arg.Any<CancellationToken>());
+        await chargeRepo.DidNotReceive().GetOverdueAsync(
+            Arg.Any<Guid>(), Arg.Any<DateOnly>(), Arg.Any<CancellationToken>());
     }
 
     // ── Clases ───────────────────────────────────────────────────────────────
@@ -108,7 +112,8 @@ public class ZonaHorariaViewModelsTests
         logs.GetBySiteAsync(Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(new List<AccessLog>());
         var charges = Substitute.For<IChargeRepository>();
-        charges.GetOverdueAsync(_company.Id, Today, Arg.Any<CancellationToken>()).Returns(new List<Charge>());
+        charges.GetOverdueBySiteAsync(_company.Id, _session.SiteId, Today, Arg.Any<CancellationToken>())
+            .Returns(new List<Charge>());
         var payments = Substitute.For<IPaymentRepository>();
         payments.GetByPeriodAsync(_company.Id, Arg.Any<Guid>(), Arg.Any<DateTime>(), Arg.Any<DateTime>(), Arg.Any<CancellationToken>())
             .Returns(new List<Payment>());
@@ -131,7 +136,8 @@ public class ZonaHorariaViewModelsTests
 
         await logs.Received(1).GetBySiteAsync(
             _session.SiteId, Utc(Today), Utc(Today.AddDays(1)), Arg.Any<CancellationToken>());
-        await charges.Received(1).GetOverdueAsync(_company.Id, Today, Arg.Any<CancellationToken>());
+        await charges.Received(1).GetOverdueBySiteAsync(
+            _company.Id, _session.SiteId, Today, Arg.Any<CancellationToken>());
         await memberships.Received(1).GetExpiringAsync(_company.Id, Today, Today.AddDays(7), Arg.Any<CancellationToken>());
         sut.TodayLabel.Should().Contain("22");
     }

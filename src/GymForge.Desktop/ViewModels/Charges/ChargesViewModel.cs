@@ -72,15 +72,15 @@ public partial class ChargesViewModel : ObservableObject
             if (_filterMemberId.HasValue)
             {
                 raw = StatusFilter == ChargeStatusFilter.Overdue
-                    ? (await _chargeRepo.GetOverdueAsync(_session.CompanyId, today, ct))
+                    ? (await _chargeRepo.GetOverdueBySiteAsync(_session.CompanyId, _session.SiteId, today, ct))
                         .Where(c => c.MemberId == _filterMemberId).ToList()
                     : await _chargeRepo.GetPendingAsync(_filterMemberId.Value, ct);
             }
             else
             {
                 raw = StatusFilter == ChargeStatusFilter.Overdue
-                    ? await _chargeRepo.GetOverdueAsync(_session.CompanyId, today, ct)
-                    : await _chargeRepo.GetOverdueAsync(_session.CompanyId, DateOnly.MaxValue, ct);
+                    ? await _chargeRepo.GetOverdueBySiteAsync(_session.CompanyId, _session.SiteId, today, ct)
+                    : await _chargeRepo.GetOverdueBySiteAsync(_session.CompanyId, _session.SiteId, DateOnly.MaxValue, ct);
             }
 
             Charges = new ObservableCollection<ChargeRowVm>(

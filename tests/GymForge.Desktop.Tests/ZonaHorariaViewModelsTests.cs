@@ -115,8 +115,17 @@ public class ZonaHorariaViewModelsTests
         var memberships = Substitute.For<IMembershipRepository>();
         memberships.GetExpiringAsync(_company.Id, Today, Today.AddDays(7), Arg.Any<CancellationToken>())
             .Returns(new List<Membership>());
+        var scoped = new ServiceCollection();
+        scoped.AddScoped(_ => Substitute.For<IMemberRepository>());
+        scoped.AddScoped(_ => payments);
+        scoped.AddScoped(_ => logs);
+        scoped.AddScoped(_ => charges);
+        scoped.AddScoped(_ => memberships);
+        scoped.AddScoped(_ => sites);
+        scoped.AddScoped(_ => _calendar);
+        using var provider = scoped.BuildServiceProvider();
         var sut = new DashboardViewModel(
-            Substitute.For<IMemberRepository>(), payments, logs, charges, memberships, _session, sites, _calendar);
+            provider.GetRequiredService<IServiceScopeFactory>(), _session);
 
         await sut.LoadCommand.ExecuteAsync(null);
 

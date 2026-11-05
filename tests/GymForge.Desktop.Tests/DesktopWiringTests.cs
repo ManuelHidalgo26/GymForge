@@ -58,7 +58,7 @@ public class DesktopWiringTests
         var services = new ServiceCollection();
         services.AddGymForgeDesktop("Data Source=:memory:");
 
-        var build = () => services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true }).Dispose();
+        var build = () => services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }).Dispose();
 
         build.Should().NotThrow();
     }

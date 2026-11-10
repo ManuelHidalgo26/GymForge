@@ -93,6 +93,17 @@ public class ValidateSwipeUseCase : IValidateSwipeUseCase
             return Deny(Guid.Empty, string.Empty, null, AccessDenialReason.TagUnknown);
         }
 
+        // 1b. Estado del socio (ortogonal a la membresía): allowlist fail-closed. Overdue entra: la deuda
+        //     la resuelve StopOnOweAmount más abajo, no el estado.
+        if (!CanEnter(member.Status))
+        {
+            var reason = member.Status == MemberStatus.Suspended
+                ? AccessDenialReason.Suspended
+                : AccessDenialReason.MemberInactive;
+            await AppendDenied(request, member.Id, reason, ct);
+            return Deny(member.Id, member.FullName, member.PhotoUrl, reason);
+        }
+
         // 2. Membresía activa
         var membership = await _membershipRepo.GetCurrentActiveAsync(member.Id, ct);
         if (membership is null)
@@ -189,6 +200,9 @@ public class ValidateSwipeUseCase : IValidateSwipeUseCase
 
         return membership.IsExpired(await _calendar.TodayAsync(companyId, ct));
     }
+
+    private static bool CanEnter(MemberStatus status) =>
+        status is MemberStatus.Active or MemberStatus.Overdue;
 
     private static AccessDecision Deny(
         Guid memberId,

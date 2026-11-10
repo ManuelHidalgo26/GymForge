@@ -50,6 +50,7 @@ public class FreezeAtTheDoorTests : IAsyncLifetime
         var plan = MembershipType.Create(_company.Id, "Mensual", MembershipBasis.Renewal, 35_000m, 1, "Month");
         var member = Member.Create(_company.Id, _site.Id, "Ana", "García", DocumentType.DNI, "30123456", Gender.Female);
         member.EnrollTag(Tag);
+        member.Activate(_today);   // el Gatekeeper solo deja pasar a socios Active u Overdue
         var ms = Membership.Create(_company.Id, _site.Id, member.Id, plan.Id, _today.AddMonths(-1), _today.AddMonths(2));
         ms.Activate();
         await _db.MembershipTypes.AddAsync(plan);

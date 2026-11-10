@@ -66,11 +66,14 @@ public class GatekeeperIntegrationTests : IAsyncLifetime
     private ValidateSwipeRequest TagSwipe(string tag) =>
         new(tag, AccessMethod.RfidCard, DoorId, _siteId, _companyId);
 
-    private async Task SeedMemberWithVisitPackAsync(string tag, int visits, Guid siteId)
+    private async Task SeedMemberWithVisitPackAsync(
+        string tag, int visits, Guid siteId, Action<Member>? configureMember = null)
     {
         var plan = MembershipType.Create(_companyId, "Pack de visitas", MembershipBasis.VisitPack, 10_000m);
         var member = Member.Create(_companyId, siteId, "Ana", "García", DocumentType.DNI, "30123456", Gender.Female);
         member.EnrollTag(tag);
+        member.Activate(DateOnly.FromDateTime(DateTime.UtcNow));
+        configureMember?.Invoke(member);
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var membership = Membership.Create(
@@ -88,6 +91,7 @@ public class GatekeeperIntegrationTests : IAsyncLifetime
         var plan = MembershipType.Create(_companyId, "Mensual", MembershipBasis.Renewal, 35_000m, 1, "Month");
         var member = Member.Create(_companyId, _siteId, "Ana", "García", DocumentType.DNI, "30123456", Gender.Female);
         member.EnrollTag(tag);
+        member.Activate(DateOnly.FromDateTime(DateTime.UtcNow));
         var membership = Membership.Create(
             _companyId, _siteId, member.Id, plan.Id, endDate.AddMonths(-1), endDate);
         membership.Activate();
@@ -144,6 +148,24 @@ public class GatekeeperIntegrationTests : IAsyncLifetime
         var persisted = await _db.Memberships.IgnoreQueryFilters().SingleAsync();
         persisted.VisitsRemaining.Should().Be(9);
         (await _db.AccessLogs.IgnoreQueryFilters().CountAsync(a => a.AccessGranted)).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task SuspendedMember_WithActiveVisitPack_IsDenied_LogsItWithTheMember_AndKeepsTheVisits()
+    {
+        await SeedMemberWithVisitPackAsync("TAG-SUSP", visits: 10, _siteId, m => m.Suspend());
+
+        var result = await CreateGatekeeper().ValidateSwipeAsync(TagSwipe("TAG-SUSP"));
+
+        result.Granted.Should().BeFalse();
+        result.DenialReason.Should().Be(AccessDenialReason.Suspended);
+        _db.ChangeTracker.Clear();
+        var member = await _db.Members.IgnoreQueryFilters().SingleAsync();
+        var log = await _db.AccessLogs.IgnoreQueryFilters().SingleAsync();
+        log.MemberId.Should().Be(member.Id);
+        log.AccessGranted.Should().BeFalse();
+        log.DenialReason.Should().Be(AccessDenialReason.Suspended);
+        (await _db.Memberships.IgnoreQueryFilters().SingleAsync()).VisitsRemaining.Should().Be(10);
     }
 
     // ── Anti-passback: solo cuenta la última entrada CONCEDIDA ────────────────

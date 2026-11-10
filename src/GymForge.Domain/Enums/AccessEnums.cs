@@ -29,5 +29,7 @@ public enum AccessDenialReason
     GenderRestricted,
     AlreadyInside,
     NoVisitsLeft,
-    Suspended
+    Suspended,
+    // Siempre al final: DenialReason se persiste como int.
+    MemberInactive
 }

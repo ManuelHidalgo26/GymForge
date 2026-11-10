@@ -4,6 +4,7 @@ using GymForge.Application.Services;
 using GymForge.Application.UseCases.Access;
 using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
+using GymForge.Domain.Events;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using NSubstitute.ReturnsExtensions;
@@ -107,6 +108,97 @@ public class GatekeeperTests
         await _accessLogRepo.Received(1).AppendAsync(
             Arg.Is<AccessLog>(a => a.AccessGranted && a.Direction == AccessDirection.In),
             Arg.Any<CancellationToken>());
+    }
+
+    // ── Estado del socio: allowlist {Active, Overdue}, corta antes de cualquier consulta de membresía ──
+
+    private async Task<AccessDecision> SwipeAsync(Member member, Membership? membership)
+    {
+        _clock.Now = new DateTime(2026, 4, 21, 10, 0, 0, DateTimeKind.Utc);
+        _memberRepo.FindByTagSerialAsync("TAG001", Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(member);
+        _membershipRepo.GetCurrentActiveAsync(member.Id, Arg.Any<CancellationToken>()).Returns(membership);
+        _chargeRepo.SumOutstandingAsync(member.Id, Arg.Any<CancellationToken>()).Returns(0m);
+        _accessLogRepo.GetLastGrantedAsync(member.Id, 1, Arg.Any<CancellationToken>()).ReturnsNull();
+
+        return await CreateSut().ValidateSwipeAsync(
+            new ValidateSwipeRequest("TAG001", AccessMethod.RfidCard, 1, Guid.NewGuid(), Guid.NewGuid()));
+    }
+
+    private async Task AssertDeniedByMemberStatusAsync(
+        Member member, AccessDenialReason reason, Membership? membership)
+    {
+        var result = await SwipeAsync(member, membership);
+
+        result.Granted.Should().BeFalse();
+        result.DenialReason.Should().Be(reason);
+        result.MemberId.Should().Be(member.Id);
+        await _accessLogRepo.Received(1).AppendAsync(
+            Arg.Is<AccessLog>(a => !a.AccessGranted && a.MemberId == member.Id && a.DenialReason == reason),
+            Arg.Any<CancellationToken>());
+        _membershipRepo.ReceivedCalls().Should().BeEmpty("el estado del socio corta antes de mirar la membresía");
+        await _eventBus.DidNotReceiveWithAnyArgs().PublishAsync<MemberCheckedIn>(default!);
+    }
+
+    [Fact]
+    public async Task SuspendedMember_WithActiveMembership_IsDeniedAsSuspended_WithoutConsumingAVisit()
+    {
+        var member = MakeActiveMember();
+        member.Suspend();
+        var pack = MakeActiveMembership(member.Id, visitsRemaining: 5);
+
+        await AssertDeniedByMemberStatusAsync(member, AccessDenialReason.Suspended, pack);
+
+        pack.VisitsRemaining.Should().Be(5);
+    }
+
+    [Fact]
+    public async Task FrozenMember_WithActiveMembership_IsDeniedAsMemberInactive()
+    {
+        var member = MakeActiveMember();
+        member.Freeze();
+
+        await AssertDeniedByMemberStatusAsync(
+            member, AccessDenialReason.MemberInactive, MakeActiveMembership(member.Id));
+    }
+
+    [Fact]
+    public async Task CancelledMember_WithActiveMembership_IsDeniedAsMemberInactive()
+    {
+        var member = MakeActiveMember();
+        member.Cancel();
+
+        await AssertDeniedByMemberStatusAsync(
+            member, AccessDenialReason.MemberInactive, MakeActiveMembership(member.Id));
+    }
+
+    [Fact]
+    public async Task ProspectMember_IsDeniedAsMemberInactive()
+    {
+        var prospect = Member.Create(Guid.NewGuid(), Guid.NewGuid(), "Pía", "Gómez", DocumentType.DNI, "99999999", Gender.Female);
+
+        await AssertDeniedByMemberStatusAsync(
+            prospect, AccessDenialReason.MemberInactive, MakeActiveMembership(prospect.Id));
+    }
+
+    [Fact]
+    public async Task SuspendedMember_WithoutActiveMembership_IsDeniedAsSuspended_NotAsIncompleteMembership()
+    {
+        var member = MakeActiveMember();
+        member.Suspend();
+
+        await AssertDeniedByMemberStatusAsync(member, AccessDenialReason.Suspended, membership: null);
+    }
+
+    [Fact]
+    public async Task OverdueMember_BelowTheStopAmount_IsGranted()
+    {
+        var member = MakeActiveMember();
+        member.MarkOverdue();
+        member.Status.Should().Be(MemberStatus.Overdue);
+
+        var result = await SwipeAsync(member, MakeActiveMembership(member.Id));
+
+        result.Granted.Should().BeTrue("la deuda la resuelve StopOnOweAmount, no el estado");
     }
 
     [Fact]

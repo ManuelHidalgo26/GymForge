@@ -25,6 +25,7 @@ public static class AccessMessages
         AccessDenialReason.AlreadyInside        => "Ya registrado como presente",
         AccessDenialReason.NoVisitsLeft         => "Pack de visitas agotado",
         AccessDenialReason.Suspended            => "Acceso suspendido — ver recepción",
+        AccessDenialReason.MemberInactive       => "Cuenta inactiva — ver recepción",
         _                                       => "Acceso denegado",
     };
 

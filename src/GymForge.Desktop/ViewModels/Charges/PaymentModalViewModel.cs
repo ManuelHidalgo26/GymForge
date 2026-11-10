@@ -98,6 +98,11 @@ public partial class PaymentModalViewModel : ObservableObject
         {
             ErrorMessage = string.Join("\n", vex.Errors.Select(e => e.ErrorMessage));
         }
+        catch (InvalidOperationException ioex)
+        {
+            // Reglas de negocio del handler (cargo saldado / dado de baja / reembolsado): el mensaje ya es para el cajero.
+            ErrorMessage = ioex.Message;
+        }
         catch (Exception ex)
         {
             ErrorMessage = $"Error al registrar pago: {ex.Message}";

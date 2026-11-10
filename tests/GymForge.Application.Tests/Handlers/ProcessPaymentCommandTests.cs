@@ -28,7 +28,12 @@ public class ProcessPaymentCommandTests
 
     private ProcessPaymentCommandHandler Sut() => new(
         _chargeRepo, _paymentRepo, _cashRegister, _creditRepo,
-        new ArrearsRelief(_memberRepo, _chargeRepo, _calendar));
+        new ArrearsRelief(_memberRepo, _chargeRepo, _calendar), _memberRepo);
+
+    /// <summary>Stubea que el socio existe en esa empresa y sede (guard del pago a cuenta).</summary>
+    private void GivenMemberIn(Guid companyId, Guid siteId, Guid memberId) =>
+        _memberRepo.GetByIdAsync(memberId, Arg.Any<CancellationToken>()).Returns(
+            Member.Create(companyId, siteId, "Ana", "García", DocumentType.DNI, "30111222", Gender.Female));
 
     private static ProcessPaymentCommand Cmd(decimal amount, PaymentMethod method, string? last4 = null) =>
         new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
@@ -41,6 +46,7 @@ public class ProcessPaymentCommandTests
         var siteId = Guid.NewGuid();
         var memberId = Guid.NewGuid();
         var shiftId = Guid.NewGuid();
+        GivenMemberIn(companyId, siteId, memberId);
 
         var older = Charge.Create(companyId, siteId, memberId, null,
             ConceptType.MembershipFee, "Cuota marzo", 10_000m, new DateOnly(2026, 3, 1));
@@ -177,6 +183,67 @@ public class ProcessPaymentCommandTests
         await _paymentRepo.DidNotReceive().AddAsync(Arg.Any<Payment>(), Arg.Any<CancellationToken>());
     }
 
+    // ── Pago a cuenta (sin cargos): el socio tiene que ser del tenant ────────
+
+    private Task<PaymentDto> PayOnAccountAsync(Guid companyId, Guid siteId, Guid memberId) =>
+        Sut().Handle(
+            new ProcessPaymentCommand(companyId, siteId, memberId, Guid.NewGuid(),
+                Amount: 5_000m, Method: PaymentMethod.Cash, ShiftId: null),
+            CancellationToken.None);
+
+    private async Task AssertNothingWasWrittenAsync()
+    {
+        await _paymentRepo.DidNotReceive().AddAsync(Arg.Any<Payment>(), Arg.Any<CancellationToken>());
+        await _creditRepo.DidNotReceive().AddAsync(Arg.Any<MemberCreditMovement>(), Arg.Any<CancellationToken>());
+        await _cashRegister.DidNotReceiveWithAnyArgs().PostIfCashAsync(default, default, default, default, default, default);
+        await _chargeRepo.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_OnAccountPayment_MemberOfAnotherCompany_IsRejected()
+    {
+        var memberId = Guid.NewGuid();
+        GivenMemberIn(companyId: Guid.NewGuid(), _siteId, memberId);
+
+        var act = () => PayOnAccountAsync(_companyId, _siteId, memberId);
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*no existe en esta sede*");
+        await AssertNothingWasWrittenAsync();
+    }
+
+    [Fact]
+    public async Task Handle_OnAccountPayment_MemberOfAnotherSite_IsRejected()
+    {
+        var memberId = Guid.NewGuid();
+        GivenMemberIn(_companyId, siteId: Guid.NewGuid(), memberId);
+
+        var act = () => PayOnAccountAsync(_companyId, _siteId, memberId);
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*no existe en esta sede*");
+        await AssertNothingWasWrittenAsync();
+    }
+
+    [Fact]
+    public async Task Handle_OnAccountPayment_UnknownMember_IsRejected()
+    {
+        var act = () => PayOnAccountAsync(_companyId, _siteId, Guid.NewGuid());
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*no existe en esta sede*");
+        await AssertNothingWasWrittenAsync();
+    }
+
+    [Fact]
+    public async Task Handle_OnAccountPayment_OwnMember_IsAccepted()
+    {
+        var memberId = Guid.NewGuid();
+        GivenMemberIn(_companyId, _siteId, memberId);
+
+        var dto = await PayOnAccountAsync(_companyId, _siteId, memberId);
+
+        dto.Amount.Should().Be(5_000m);
+        await _paymentRepo.Received(1).AddAsync(Arg.Any<Payment>(), Arg.Any<CancellationToken>());
+    }
+
     // ── Excedente → saldo a favor ────────────────────────────────────────────
 
     [Fact]
@@ -188,6 +255,7 @@ public class ProcessPaymentCommandTests
         var charge = Charge.Create(companyId, siteId, memberId, null,
             ConceptType.MembershipFee, "Cuota", 35_000m, new DateOnly(2026, 4, 1));
         _chargeRepo.GetPendingAsync(memberId, Arg.Any<CancellationToken>()).Returns(new List<Charge> { charge });
+        GivenMemberIn(companyId, siteId, memberId);
 
         var dto = await Sut().Handle(
             new ProcessPaymentCommand(companyId, siteId, memberId, Guid.NewGuid(),
@@ -208,10 +276,11 @@ public class ProcessPaymentCommandTests
     public async Task Handle_Overpayment_CreditIsQueuedBeforeTheSingleSave()
     {
         var memberId = Guid.NewGuid();
+        GivenMemberIn(_companyId, _siteId, memberId);
         _chargeRepo.GetPendingAsync(memberId, Arg.Any<CancellationToken>()).Returns(new List<Charge>());
 
         await Sut().Handle(
-            new ProcessPaymentCommand(Guid.NewGuid(), Guid.NewGuid(), memberId, Guid.NewGuid(),
+            new ProcessPaymentCommand(_companyId, _siteId, memberId, Guid.NewGuid(),
                 Amount: 5_000m, Method: PaymentMethod.Cash, ShiftId: null),
             CancellationToken.None);
 
@@ -229,10 +298,11 @@ public class ProcessPaymentCommandTests
     public async Task Handle_NoPendingCharges_WholeAmountBecomesCredit()
     {
         var memberId = Guid.NewGuid();
+        GivenMemberIn(_companyId, _siteId, memberId);
         _chargeRepo.GetPendingAsync(memberId, Arg.Any<CancellationToken>()).Returns(new List<Charge>());
 
         await Sut().Handle(
-            new ProcessPaymentCommand(Guid.NewGuid(), Guid.NewGuid(), memberId, Guid.NewGuid(),
+            new ProcessPaymentCommand(_companyId, _siteId, memberId, Guid.NewGuid(),
                 Amount: 5_000m, Method: PaymentMethod.Cash, ShiftId: null),
             CancellationToken.None);
 
@@ -248,6 +318,7 @@ public class ProcessPaymentCommandTests
         var memberId = Guid.NewGuid();
         var charge = ChargeOf(companyId, siteId, memberId);
         _chargeRepo.GetPendingAsync(memberId, Arg.Any<CancellationToken>()).Returns(new List<Charge> { charge });
+        GivenMemberIn(companyId, siteId, memberId);
 
         await Sut().Handle(
             new ProcessPaymentCommand(companyId, siteId, memberId, Guid.NewGuid(),

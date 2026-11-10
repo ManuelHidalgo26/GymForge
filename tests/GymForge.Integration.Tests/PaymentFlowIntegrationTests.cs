@@ -78,7 +78,7 @@ public class PaymentFlowIntegrationTests : IAsyncLifetime
             new PaymentRepository(_db),
             new CashRegister(new ShiftRepository(_db)),
             new MemberCreditRepository(_db),
-            TestServices.ArrearsRelief(_db, new SystemClock()));
+            TestServices.ArrearsRelief(_db, new SystemClock()), new MemberRepository(_db));
 
         await handler.Handle(new ProcessPaymentCommand(
             _companyId, _site.Id, member.Id, Guid.NewGuid(),

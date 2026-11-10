@@ -43,7 +43,7 @@ public class MemberCreditFlowIntegrationTests : IAsyncLifetime
 
     private ProcessPaymentCommandHandler PaymentHandler() => new(
         new ChargeRepository(_db), new PaymentRepository(_db),
-        new CashRegister(new ShiftRepository(_db)), CreditRepo(), TestServices.ArrearsRelief(_db, _clock));
+        new CashRegister(new ShiftRepository(_db)), CreditRepo(), TestServices.ArrearsRelief(_db, _clock), new MemberRepository(_db));
 
     private ApplyMemberCreditCommandHandler ApplyHandler() =>
         new(new ChargeRepository(_db), CreditRepo(), TestServices.ArrearsRelief(_db, _clock));

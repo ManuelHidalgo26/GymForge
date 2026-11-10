@@ -84,7 +84,7 @@ public class TenantAdversarialIntegrationTests : IAsyncLifetime
 
     private ProcessPaymentCommandHandler PaymentHandler() => new(
         new ChargeRepository(_db), new PaymentRepository(_db), new CashRegister(new ShiftRepository(_db)),
-        new MemberCreditRepository(_db), TestServices.ArrearsRelief(_db, FakeClock.OnDay(AsOf)));
+        new MemberCreditRepository(_db), TestServices.ArrearsRelief(_db, FakeClock.OnDay(AsOf)), new MemberRepository(_db));
 
     private static ProcessPaymentCommand PayCommand(Guid companyId, Guid siteId, Guid memberId, params Guid[] chargeIds) =>
         new(companyId, siteId, memberId, Guid.NewGuid(), 10_000m, PaymentMethod.Cash, ShiftId: null,

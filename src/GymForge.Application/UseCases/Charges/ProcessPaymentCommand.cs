@@ -73,21 +73,26 @@ public class ProcessPaymentCommandHandler : IRequestHandler<ProcessPaymentComman
     private readonly ICashRegister _cashRegister;
     private readonly IMemberCreditRepository _memberCreditRepo;
     private readonly IArrearsRelief _arrearsRelief;
+    private readonly IMemberRepository _memberRepo;
 
     public ProcessPaymentCommandHandler(
         IChargeRepository chargeRepo, IPaymentRepository paymentRepo,
         ICashRegister cashRegister, IMemberCreditRepository memberCreditRepo,
-        IArrearsRelief arrearsRelief)
+        IArrearsRelief arrearsRelief, IMemberRepository memberRepo)
     {
         _chargeRepo = chargeRepo;
         _paymentRepo = paymentRepo;
         _cashRegister = cashRegister;
         _memberCreditRepo = memberCreditRepo;
         _arrearsRelief = arrearsRelief;
+        _memberRepo = memberRepo;
     }
 
     public async Task<PaymentDto> Handle(ProcessPaymentCommand cmd, CancellationToken ct)
     {
+        if (cmd.ChargeIds is not { Count: > 0 })
+            await EnsureMemberBelongsToTenantAsync(cmd, ct);
+
         var payment = Payment.Create(
             cmd.CompanyId, cmd.SiteId, cmd.MemberId,
             cmd.CashierId, cmd.Amount, cmd.Method,
@@ -124,6 +129,17 @@ public class ProcessPaymentCommandHandler : IRequestHandler<ProcessPaymentComman
 
         await _chargeRepo.SaveChangesAsync(ct);
         return PaymentDto.FromEntity(payment);
+    }
+
+    /// <summary>
+    /// Un pago a cuenta (sin cargos puntuales) no tiene cargos que lo aten a un socio, así que el socio tiene que ser
+    /// de la empresa y sede del cobro. De otra empresa o sede se rechaza como si no existiera.
+    /// </summary>
+    private async Task EnsureMemberBelongsToTenantAsync(ProcessPaymentCommand cmd, CancellationToken ct)
+    {
+        var member = await _memberRepo.GetByIdAsync(cmd.MemberId, ct);
+        if (member is null || member.CompanyId != cmd.CompanyId || member.SiteId != cmd.SiteId)
+            throw new InvalidOperationException("El socio no existe en esta sede.");
     }
 
     /// <summary>

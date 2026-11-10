@@ -90,7 +90,7 @@ public class CommissionQaTests : IAsyncLifetime
 
         await new ProcessPaymentCommandHandler(
                 new ChargeRepository(_db), new PaymentRepository(_db), Substitute.For<ICashRegister>(),
-                new MemberCreditRepository(_db), TestServices.ArrearsRelief(_db, new SystemClock()))
+                new MemberCreditRepository(_db), TestServices.ArrearsRelief(_db, new SystemClock()), new MemberRepository(_db))
             .Handle(new ProcessPaymentCommand(
                 _company.Id, _centro.Id, _member.Id, _seller.Id, 10_000m, PaymentMethod.Cash, ShiftId: null,
                 ChargeIds: [extra.Id]), CancellationToken.None);

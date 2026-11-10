@@ -43,7 +43,7 @@ public class ArrearsFlowIntegrationTests : IAsyncLifetime
     private ProcessPaymentCommandHandler PaymentHandler() => new(
         new ChargeRepository(_db), new PaymentRepository(_db),
         new CashRegister(new ShiftRepository(_db)), new MemberCreditRepository(_db),
-        TestServices.ArrearsRelief(_db, _clock));
+        TestServices.ArrearsRelief(_db, _clock), new MemberRepository(_db));
 
     private ApplyMemberCreditCommandHandler ApplyCreditHandler() => new(
         new ChargeRepository(_db), new MemberCreditRepository(_db), TestServices.ArrearsRelief(_db, _clock));

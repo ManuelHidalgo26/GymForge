@@ -108,6 +108,7 @@ public static class InfrastructureServiceExtensions
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<GymForgeDbContext>>();
         await MemberDocumentMigrationGuard.EnsureNoDuplicatesAsync(db, logger);
         await db.Database.MigrateAsync();
+        await EnableWriteAheadLoggingAsync(db);
         await MemberStatusReconciliation.ReconcileAsync(db, backup, logger);
         await seeder.SeedAsync();
 
@@ -118,6 +119,14 @@ public static class InfrastructureServiceExtensions
         // Snapshot diario (no duplica si ya hay uno de hoy), con la base ya sana y migrada.
         backup.BackupIfDue();
     }
+
+    /// <summary>
+    /// SQLite local en WAL (CLAUDE.md): lectores y escritor no se bloquean entre sí (la UI y el mantenimiento diario
+    /// escriben a la vez). Las migraciones no lo dejan activado, así que se fuerza en cada arranque: el modo se
+    /// guarda en el archivo, de modo que es idempotente y también corrige bases viejas o importadas.
+    /// </summary>
+    private static Task EnableWriteAheadLoggingAsync(GymForgeDbContext db) =>
+        db.Database.ExecuteSqlRawAsync("PRAGMA journal_mode = WAL");
 
     // Versión informativa que se registra en __EFMigrationsHistory al hacer baseline.
     private const string MigrationProductVersion = "9.0.4";

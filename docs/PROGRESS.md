@@ -18,6 +18,7 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 
 ## Estado general (al 2026-11-10)
 
+- **Reconciliación de estado de socio (NEW-31 / O-3, 2026-11-10): CERRADO.** Commit `d7852bf` en `master`, sin push. Socios `Prospect` con membresía `Active` se reparan en el arranque. qa: APROBADO CON OBSERVACIONES, sin bloqueantes. Tests **1541 verdes** (Domain 107 · Application 624 · Desktop 431 · Integration 379). Deuda nueva: NEW-37 a NEW-39 (BAJA). Ver la entrada de arriba de todo.
 - **Barrido de deuda (pasada 3, 2026-11-10): CERRADO.** Cerrados **NEW-24, NEW-25 (fix de seguridad del Gatekeeper, con addendum ADR-002), NEW-26, NEW-27, NEW-28 y NEW-29**. Commits de código en `master` (`6111ac2`, `afd4079`, `b94bc71`, `a6682b3`, `d3794e3`), sin push ni merge; docs en el commit del orquestador. qa: APROBADO CON OBSERVACIONES, sin bloqueantes. Tests **1523 verdes** (Domain 107 · Application 624 · Desktop 431 · Integration 361). Deuda nueva: **NEW-31 (O-3, MEDIA: socios Prospect con membresía Active en bases legadas; confirmar o reconciliar antes de operar)** y NEW-32 a NEW-36. Ver la entrada de arriba de todo.
 - **Barrido de deuda (pasada 2, 2026-11-05): CERRADO** (tag previsto `DEUDA-COBROS-P2-2026-11-05`). Cerrados **D13, F2-D1, F2-D2 y F2-D6** (cluster de cobranzas/dunning). Código en el working tree **sin commit** (lo hace el orquestador). qa: APROBADO CON OBSERVACIONES, sin bloqueantes. Tests **1504 verdes** (Domain 107 · Application 617 · Desktop 421 · Integration 359). Deuda nueva: NEW-28 a NEW-30. Ver la entrada de arriba de todo.
 - **Barrido de deuda (pasada 1, 2026-11-05): CERRADO** (tag `DEUDA-COBROS-2026-11-05`). Cerrados **D1, D10, D14 y D15**. Código en el working tree **sin commit** (lo hace el orquestador). qa: APROBADO CON OBSERVACIONES, sin bloqueantes. Tests **1485 verdes** (Domain 107 · Application 599 · Desktop 421 · Integration 358), 0 fallos, 0 omitidos. Deuda nueva no bloqueante: NEW-24 a NEW-27. El cluster de cobranzas/dunning (D13, F2-D1, F2-D2, F2-D6) queda para la pasada 2. Ver la entrada de arriba de todo.
@@ -31,7 +32,7 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 - **Fase 4 parte 2 (Sesión 7): CERRADA (2026-11-04)** en `feat/sesion-6` (código `1f44d2c`; commit de docs por el orquestador). ADR-008 `Accepted`. Sin push ni merge. Ver la entrada de cierre arriba de todo.
 - **Limpieza de bugs/errores/warnings (2026-11-04): CERRADA** en `feat/sesion-6` (código `7bc780f`; commit de docs por el orquestador). Sin push ni merge. Ver la entrada de arriba de todo.
 - **Git (verificado en refs, 2026-11-03):** `master` = `e541586`. `origin/master` = `6d39c0a` (anterior al merge de F1 `33ba4ec`): **master está adelante de origin, sin push** (29 commits según el orquestador; no re-contado). Existen `feat/sesion-3`, `feat/sesion-4` y `feat/sesion-5` (ya mergeadas).
-- Tests: **1504 verdes al cierre del barrido de deuda, pasada 2 (2026-11-05)** (Domain 107 · Application 617 · Desktop 421 · Integration 359). Anterior: **1485 verdes al cierre del barrido de deuda, pasada 1 (2026-11-05)** (Domain 107 · Application 599 · Desktop 421 · Integration 358). Anterior: **1477 verdes al cierre del endurecimiento para piloto (2026-11-05)** (Domain 107 · Application 591 · Desktop 421 · Integration 358). Anterior: **1472 verdes al cierre del Endurecimiento final** (Domain 107 · Application 591 · Desktop 419 · Integration 355), `dotnet test GymForge.sln` exit 0, 0 omitidos, Debug y Release (2026-11-04). Piso previo: 1461 (Fase 5 parte 2, pieza F); 1456 (Fase 5 parte 1, `d33e101`); 1392 antes de la limpieza (`7bc780f`).
+- Tests: **1541 verdes al cierre de la reconciliación NEW-31 (2026-11-10)** (Domain 107 · Application 624 · Desktop 431 · Integration 379). Anterior: **1523 verdes al cierre de la pasada 3 (2026-11-10)** (Domain 107 · Application 624 · Desktop 431 · Integration 361). Anterior: **1504 verdes al cierre del barrido de deuda, pasada 2 (2026-11-05)** (Domain 107 · Application 617 · Desktop 421 · Integration 359). Anterior: **1485 verdes al cierre del barrido de deuda, pasada 1 (2026-11-05)** (Domain 107 · Application 599 · Desktop 421 · Integration 358). Anterior: **1477 verdes al cierre del endurecimiento para piloto (2026-11-05)** (Domain 107 · Application 591 · Desktop 421 · Integration 358). Anterior: **1472 verdes al cierre del Endurecimiento final** (Domain 107 · Application 591 · Desktop 419 · Integration 355), `dotnet test GymForge.sln` exit 0, 0 omitidos, Debug y Release (2026-11-04). Piso previo: 1461 (Fase 5 parte 2, pieza F); 1456 (Fase 5 parte 1, `d33e101`); 1392 antes de la limpieza (`7bc780f`).
 - **Endurecimiento final (post-Fase 5): CERRADO (2026-11-04)** en `feat/sesion-6`: 7 commits de código (`6dd304f`, `5274395`, `ffcbbbc`, `6ec5ae4`, `e9ef7aa`, `dd294d5`, `3b4d7e9`) + commit de docs pendiente del orquestador. ADR-011 `Accepted` con plan por tiers: MUST + SHOULD entregados; D9b, D2 y UX19 diferidos. **2 migraciones nuevas:** `20261105000953` (D3, SiteId) y `20261105001255` (D7, DNI único por empresa+sede). Sin push ni merge.
 - **Fase 5 parte 1 (Sesión 8): CERRADA (2026-11-04)** en `feat/sesion-6` (código `d33e101`; commit de docs por el orquestador). ADR-009 `Accepted`. Piezas A–E y G; F (calendario) diferida a parte 2. Sin push ni merge. Ver la entrada de cierre arriba de todo.
 - **Fase 5 parte 2 (Sesión 9): CERRADA (2026-11-04)** en `feat/sesion-6`: pieza F (calendario semanal de Clases en grilla de 7 días). **Fase 5 completa cerrada (piezas A–G).** ADR-010 pasa a `Accepted` al commitear (orquestador). Código y docs pendientes de commit del orquestador. Sin push ni merge. Ver la entrada de cierre arriba de todo.
@@ -52,12 +53,12 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 
 ## Qué sigue
 
-**Pendiente visible (pasada 3, 2026-11-10): NEW-31 (O-3, MEDIA).** Bases de piloto anteriores al commit que activa al socio al vender membresía pueden tener socios `Prospect` con membresía `Active`; el Gatekeeper ahora los deniega en el kiosk con "Cuenta inactiva — ver recepción". Antes de operar con una base legada: consulta de solo lectura para contarlos. Si hay, reconciliación puntual (Prospect con membresía Active → Active) con backup previo; si no, cerrar confirmando que no hay datos legados. Dueño: dev · usuario (confirmar datos reales).
+**NEW-31 (O-3, MEDIA) cerrado el 2026-11-10** (commit `d7852bf`): la reconciliación del arranque repara solos los socios `Prospect` con membresía `Active`. Ya no hay pendiente de código por este tema. La base de piloto real no se consultó; si hubo afectados, queda la línea de log `Reconciliación de estado de socio` en `%LOCALAPPDATA%\GymForge\logs`.
 
-**Próximo paso (pasada 3, 2026-11-10):**
-1. **NEW-31 (O-3):** ver arriba. Es lo primero.
-2. Usuario: decidir si la venta a socio Suspended pide confirmación bloqueante (NEW-36, producto). Las deudas NEW-32 a NEW-35 son bajas.
-3. Orquestador: commit de docs de la pasada 3 (PROGRESS, TASKS, `docs/adr/README.md`, `docs/adr/ADR-002-addendum-estado-socio-gatekeeper.md`).
+**Próximo paso (2026-11-10, tras NEW-31):**
+1. Orquestador: commit de docs de la reconciliación (`docs/PROGRESS.md`, `docs/TASKS.md`, `docs/adr/README.md`, `docs/adr/ADR-002-addendum-reconciliacion-estado-socio.md`).
+2. Usuario: decidir NEW-36 (confirmación bloqueante al vender a un socio Suspended, producto). Deuda baja pendiente: NEW-32 a NEW-35 y NEW-37 a NEW-39.
+3. Usuario: decisiones abiertas de la lista de abajo (D11 ampliada, O10, UX11, Q2/D9, push y merge de `feat/sesion-6`).
 
 **Próximo paso (tras el Endurecimiento final, 2026-11-04):**
 1. **Orquestador:** commit de código de la pieza F (`feat: [clases] agenda semanal en grilla de 7 dias`) y commit de docs aparte (ADR-010 a `Accepted`, `docs/adr/README.md`, entrada de arriba de todo y `docs/TASKS.md`).
@@ -92,6 +93,32 @@ Decisiones del usuario abiertas (ninguna bloquea el piloto con las 2 condiciones
 Fuera del piloto: P-2 (saldo a favor en la ficha) sigue abierta. D1 (cobros multi-sede) quedó cerrada el 2026-11-05 (barrido pasada 1). Resto de deuda (D1–D19, F1-D4 a F1-D10, F2-D1 a F2-D8, Q3–Q9, UX1–UX17): ver `docs/TASKS.md`.
 
 Sesiones 5-8: ver tabla de fases arriba.
+
+---
+
+## [2026-11-10] Reconciliación de estado de socio (NEW-31 / O-3) — CERRADO
+
+**Hecho:**
+- **NEW-31 (O-3, MEDIA) cerrado.** En el arranque, `MemberStatusReconciliation.ReconcileAsync` promueve a `Active` a los socios `Prospect` con ≥1 membresía `Active` (bases legadas anteriores a D14). Va en `InfrastructureServiceExtensions.InitialiseDatabaseAsync` entre `MigrateAsync()` y el seed. UPDATE SQL directo (no `Member.Activate()`: no emite eventos "activado ahora" falsos ni inventa `JoinDate`). Idempotente, cross-tenant, sin AuditLog, sin migración EF. Backup `pre-reconciliacion-estado-socio` solo si hay afectados. Log con conteo, sin PII. No toca Suspended/Frozen/Expired/Cancelled ni Prospect sin membresía activa.
+- **Desviación corregida en el ADR:** el addendum de arqui proponía persistir los enums como `int` (`(int)MemberStatus.Active`). Es incorrecto: `MemberConfiguration` y `MembershipConfiguration` usan `HasConversion<string>()`, así que el estado se guarda como texto. Con `int` el UPDATE habría sido un no-op silencioso. Implementado con los nombres de enum parametrizados, con un test que ancla el formato. ADR corregido (`docs/adr/ADR-002-addendum-reconciliacion-estado-socio.md`).
+- **Tests:** `dotnet test GymForge.sln` **1541 verdes** (Domain 107 · Application 624 · Desktop 431 · Integration 379), 0 fallos. Baseline 1523. qa: APROBADO CON OBSERVACIONES, sin bloqueantes.
+- **Commit de código:** `d7852bf` en `master` (sin push ni merge).
+- **Deuda nueva (todas BAJA):** NEW-37 (backup best-effort; usar `BackupOffsiteNow`), NEW-38 (COUNT y UPDATE sin transacción), NEW-39 (el nombre del backup no incluye el `reason`). **O-2 queda como nota en F1-D1** (la reconciliación del boot también dispara `CopyOffsite` síncrono, una sola vez). Sección "Deuda de la reconciliación O-3" en TASKS.
+
+**En curso:** nada a medias en código. Docs listos para el commit del orquestador: `docs/PROGRESS.md`, `docs/TASKS.md`, `docs/adr/README.md` y `docs/adr/ADR-002-addendum-reconciliacion-estado-socio.md` (este último sin trackear hasta ese commit).
+
+**Blockers:**
+- Técnicos: ninguno.
+- Datos reales: no se consultó la base de piloto. La reparación corre sola en el arranque. Si hubo socios afectados, queda una línea `Reconciliación de estado de socio: N socio(s) ...` en `%LOCALAPPDATA%\GymForge\logs`; esa línea confirma que había datos legados.
+
+**Próximo paso:**
+1. Orquestador: commit de docs de esta reconciliación (ver "En curso").
+2. Usuario: decidir NEW-36 (confirmación bloqueante al vender a un socio Suspended) y las decisiones abiertas de "Qué sigue".
+3. Opcional, dev: NEW-37 (`BackupOffsiteNow` con abort y warning) si se quiere más rigor antes de escalar.
+
+**Tocado:**
+- Código (commit `d7852bf`): `src/GymForge.Infrastructure/Persistence/MemberStatusReconciliation.cs` (nuevo); `src/GymForge.Infrastructure/InfrastructureServiceExtensions.cs:111`; `tests/GymForge.Integration.Tests/MemberStatusReconciliationTests.cs`; `tests/GymForge.Integration.Tests/GatekeeperIntegrationTests.cs`.
+- Docs: `docs/PROGRESS.md`; `docs/TASKS.md`; `docs/adr/README.md`; `docs/adr/ADR-002-addendum-reconciliacion-estado-socio.md`.
 
 ---
 

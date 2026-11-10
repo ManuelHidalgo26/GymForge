@@ -57,7 +57,7 @@ public class DunningService
             var context = new DunningContext(
                 member.FirstName, gymName, charge.AmountOutstanding, charge.DueDate, daysOverdue);
             var body = DunningMessageRenderer.Render(stage.Template, context);
-            if (!await _sender.SendAsync(new NotificationMessage(member.Mobile, body), ct)) continue;
+            if (!await _sender.SendAsync(new NotificationMessage(member.Id, member.Mobile, body), ct)) continue;
 
             await RegisterAsync(charge, stage, member.Mobile, ct);
             sent++;

@@ -12,8 +12,9 @@ public class LogNotificationSender : INotificationSender
 {
     public Task<bool> SendAsync(NotificationMessage message, CancellationToken ct = default)
     {
-        Log.Information("[Notificación {Channel} → {Phone}] {Body}",
-            message.Channel, message.ToPhone, message.Body);
+        // Sin teléfono, nombre ni saldo: el log de archivo no debe acumular datos personales (Ley 25.326).
+        Log.Information("[Notificación {Channel}] socio {MemberId} registrada sin enviar",
+            message.Channel, message.MemberId);
         return Task.FromResult(true);
     }
 }

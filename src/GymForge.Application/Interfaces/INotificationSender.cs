@@ -4,6 +4,7 @@ namespace GymForge.Application.Interfaces;
 
 /// <summary>Mensaje saliente a un socio (recordatorio de cobro/vencimiento).</summary>
 public record NotificationMessage(
+    Guid MemberId,
     string ToPhone,
     string Body,
     NotificationChannel Channel = NotificationChannel.WhatsApp);

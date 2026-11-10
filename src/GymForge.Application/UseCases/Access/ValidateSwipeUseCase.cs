@@ -114,7 +114,7 @@ public class ValidateSwipeUseCase : IValidateSwipeUseCase
 
         if (await IsPastEndDateAsync(membership, request.CompanyId, ct))
         {
-            await AppendDenied(request, member.Id, AccessDenialReason.Expired, ct);
+            await AppendDenied(request, member.Id, AccessDenialReason.Expired, ct, membership.Id);
             return Deny(member.Id, member.FullName, member.PhotoUrl, AccessDenialReason.Expired);
         }
 
@@ -122,7 +122,7 @@ public class ValidateSwipeUseCase : IValidateSwipeUseCase
         var owing = await _chargeRepo.SumOutstandingAsync(member.Id, ct);
         if (owing > _config.StopOnOweAmount)
         {
-            await AppendDenied(request, member.Id, AccessDenialReason.Owing, ct);
+            await AppendDenied(request, member.Id, AccessDenialReason.Owing, ct, membership.Id);
             return Deny(member.Id, member.FullName, member.PhotoUrl, AccessDenialReason.Owing, owing);
         }
 
@@ -133,7 +133,7 @@ public class ValidateSwipeUseCase : IValidateSwipeUseCase
 
         if (!membership.MembershipType.IsTimeAllowed(localNow))
         {
-            await AppendDenied(request, member.Id, AccessDenialReason.OutOfHours, ct);
+            await AppendDenied(request, member.Id, AccessDenialReason.OutOfHours, ct, membership.Id);
             return Deny(member.Id, member.FullName, member.PhotoUrl, AccessDenialReason.OutOfHours, owing);
         }
 
@@ -141,7 +141,7 @@ public class ValidateSwipeUseCase : IValidateSwipeUseCase
         if (membership.MembershipType.AllowedDoorIds.Count > 0 &&
             !membership.MembershipType.AllowedDoorIds.Contains(request.DoorId))
         {
-            await AppendDenied(request, member.Id, AccessDenialReason.DoorNotAllowed, ct);
+            await AppendDenied(request, member.Id, AccessDenialReason.DoorNotAllowed, ct, membership.Id);
             return Deny(member.Id, member.FullName, member.PhotoUrl, AccessDenialReason.DoorNotAllowed, owing);
         }
 
@@ -150,14 +150,14 @@ public class ValidateSwipeUseCase : IValidateSwipeUseCase
         if (last is { Direction: AccessDirection.In } &&
             last.SwipedAt > _clock.Now.AddMinutes(-_config.AntiPassbackMinutes))
         {
-            await AppendDenied(request, member.Id, AccessDenialReason.AlreadyInside, ct);
+            await AppendDenied(request, member.Id, AccessDenialReason.AlreadyInside, ct, membership.Id);
             return Deny(member.Id, member.FullName, member.PhotoUrl, AccessDenialReason.AlreadyInside, owing);
         }
 
         // 7. Visitas restantes (pack)
         if (membership.VisitsRemaining is 0)
         {
-            await AppendDenied(request, member.Id, AccessDenialReason.NoVisitsLeft, ct);
+            await AppendDenied(request, member.Id, AccessDenialReason.NoVisitsLeft, ct, membership.Id);
             return Deny(member.Id, member.FullName, member.PhotoUrl, AccessDenialReason.NoVisitsLeft, owing);
         }
 
@@ -216,14 +216,15 @@ public class ValidateSwipeUseCase : IValidateSwipeUseCase
         ValidateSwipeRequest request,
         Guid? memberId,
         AccessDenialReason reason,
-        CancellationToken ct)
+        CancellationToken ct,
+        Guid? membershipId = null)
     {
         var log = memberId.HasValue
             ? AccessLog.Denied(
                 request.CompanyId, request.SiteId,
                 memberId.Value, request.DoorId,
                 request.Method, reason,
-                request.Credential)
+                request.Credential, membershipId)
             : AccessLog.DeniedUnknown(
                 request.CompanyId, request.SiteId,
                 request.DoorId, request.Method, reason,

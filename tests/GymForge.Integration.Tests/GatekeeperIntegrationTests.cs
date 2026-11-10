@@ -133,6 +133,7 @@ public class GatekeeperIntegrationTests : IAsyncLifetime
         var log = await _db.AccessLogs.IgnoreQueryFilters().SingleAsync();
         log.AccessGranted.Should().BeFalse();
         log.DenialReason.Should().Be(AccessDenialReason.Expired);
+        log.MembershipId.Should().Be((await _db.Memberships.IgnoreQueryFilters().SingleAsync()).Id);
     }
 
     [Fact]

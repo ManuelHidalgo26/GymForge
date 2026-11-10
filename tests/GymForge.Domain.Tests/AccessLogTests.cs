@@ -37,5 +37,18 @@ public class AccessLogTests
 
         log.MemberId.Should().Be(memberId);
         log.AccessGranted.Should().BeFalse();
+        log.MembershipId.Should().BeNull("no hubo membresía involucrada");
+    }
+
+    [Fact]
+    public void Denied_WithAMembership_KeepsTheMembershipId()
+    {
+        var membershipId = Guid.NewGuid();
+
+        var log = AccessLog.Denied(
+            Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 1, AccessMethod.RfidCard, AccessDenialReason.Expired,
+            membershipId: membershipId);
+
+        log.MembershipId.Should().Be(membershipId);
     }
 }

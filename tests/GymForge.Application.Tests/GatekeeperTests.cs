@@ -190,6 +190,19 @@ public class GatekeeperTests
     }
 
     [Fact]
+    public async Task DeniedByAnInvolvedMembership_RecordsTheMembershipId()
+    {
+        var member = MakeActiveMember();
+        var expired = MakeActiveMembership(
+            member.Id, start: new DateOnly(2026, 3, 1), end: new DateOnly(2026, 4, 20));   // SwipeAsync fija "hoy" = 21/04/2026
+
+        (await SwipeAsync(member, expired)).DenialReason.Should().Be(AccessDenialReason.Expired);
+
+        await _accessLogRepo.Received(1).AppendAsync(
+            Arg.Is<AccessLog>(a => !a.AccessGranted && a.MembershipId == expired.Id), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task OverdueMember_BelowTheStopAmount_IsGranted()
     {
         var member = MakeActiveMember();

@@ -48,6 +48,7 @@ public class AccessLog : BaseEntity, ISiteScoped
         };
     }
 
+    /// <summary>Acceso denegado a un socio. <paramref name="membershipId"/>: la membresía involucrada, si la hubo.</summary>
     public static AccessLog Denied(
         Guid companyId,
         Guid siteId,
@@ -55,13 +56,15 @@ public class AccessLog : BaseEntity, ISiteScoped
         int doorId,
         AccessMethod method,
         AccessDenialReason reason,
-        string? tagSerial = null)
+        string? tagSerial = null,
+        Guid? membershipId = null)
     {
         return new AccessLog
         {
             CompanyId = companyId,
             SiteId = siteId,
             MemberId = memberId,
+            MembershipId = membershipId,
             DoorId = doorId,
             Method = method,
             Direction = AccessDirection.In,

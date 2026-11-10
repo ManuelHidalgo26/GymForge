@@ -13,7 +13,8 @@ namespace GymForge.Infrastructure.Persistence;
 ///   auditoría (en el boot no hay cajero), por eso no escribe AuditLog. Cada socio se promueve solo por SUS membresías.
 /// - UPDATE y no Member.Activate(): evita eventos "activado ahora" falsos y no obliga a inventar una JoinDate.
 /// - Solo Prospect: Suspended/Frozen/Expired/Cancelled son sanciones o bajas explícitas y no se pisan.
-/// - Idempotente (el WHERE Prospect deja de matchear) y con backup previo solo si hay algo que reparar.
+/// - Idempotente (el WHERE Prospect deja de matchear) y con backup previo solo si hay algo que reparar. Si el backup
+///   falla (devuelve false) se loguea un warning y se repara igual: abortar dejaría la recepción sin abrir.
 /// Los estados se persisten como texto (nombre del enum), no como int: los literales salen de los enums.
 /// </summary>
 internal static class MemberStatusReconciliation
@@ -30,18 +31,24 @@ internal static class MemberStatusReconciliation
         var active = MemberStatus.Active.ToString();
         var activeMembership = MembershipStatus.Active.ToString();
 
-        var affected = await db.Database.SqlQuery<int>(
+        var anyToFix = await db.Database.SqlQuery<int>(
             $"""
-            SELECT COUNT(*) AS Value FROM Members
-            WHERE Status = {prospect}
-              AND EXISTS (SELECT 1 FROM Memberships ms WHERE ms.MemberId = Members.Id AND ms.Status = {activeMembership})
-            """).SingleAsync(ct);
-        if (affected == 0)
+            SELECT EXISTS (
+                SELECT 1 FROM Members
+                WHERE Status = {prospect}
+                  AND EXISTS (SELECT 1 FROM Memberships ms WHERE ms.MemberId = Members.Id AND ms.Status = {activeMembership})
+            ) AS Value
+            """).SingleAsync(ct) == 1;
+        if (!anyToFix)
             return;
 
-        backup.BackupNow(BackupReason);
+        // Best-effort: si no se pudo respaldar se avisa pero se sigue, para no dejar la recepción sin abrir.
+        // El cambio es reversible (Active -> Prospect) y la base ya pasó por EnsureHealthy.
+        if (!backup.BackupNow(BackupReason))
+            logger.LogWarning(
+                "Reconciliación de estado de socio: no se pudo crear el backup previo; se continúa sin respaldo");
 
-        await db.Database.ExecuteSqlInterpolatedAsync(
+        var affected = await db.Database.ExecuteSqlInterpolatedAsync(
             $"""
             UPDATE Members SET Status = {active}, UpdatedAt = {DateTime.UtcNow}
             WHERE Status = {prospect}

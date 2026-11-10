@@ -4,7 +4,7 @@ using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
 using GymForge.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
 
 namespace GymForge.Integration.Tests;
@@ -32,8 +32,25 @@ public class MemberStatusReconciliationTests : IAsyncLifetime
         await _db.DisposeAsync();
     }
 
+    private readonly CapturingLogger _logger = new();
+
+    public MemberStatusReconciliationTests() =>
+        _backup.BackupNow(Arg.Any<string>()).Returns(true);
+
     private Task ReconcileAsync() =>
-        MemberStatusReconciliation.ReconcileAsync(_db, _backup, NullLogger.Instance, CancellationToken.None);
+        MemberStatusReconciliation.ReconcileAsync(_db, _backup, _logger, CancellationToken.None);
+
+    private sealed class CapturingLogger : ILogger
+    {
+        public List<(LogLevel Level, string Message)> Entries { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter) => Entries.Add((logLevel, formatter(state, exception)));
+    }
 
     private async Task<(Company Company, Site Site)> SeedTenantAsync(string name)
     {
@@ -162,6 +179,44 @@ public class MemberStatusReconciliationTests : IAsyncLifetime
         await ReconcileAsync();
 
         _backup.DidNotReceive().BackupNow(Arg.Any<string>());
+    }
+
+    [Fact]
+    public async Task LogueaLasFilasRealmenteAfectadas()
+    {
+        var tenant = await SeedTenantAsync("Gym A");
+        await SeedMemberAsync(tenant, MemberStatus.Prospect, MembershipStatus.Active);
+        await SeedMemberAsync(tenant, MemberStatus.Prospect, MembershipStatus.Active);
+        await SeedMemberAsync(tenant, MemberStatus.Prospect, membershipStatus: null);
+
+        await ReconcileAsync();
+
+        _logger.Entries.Should().ContainSingle(e => e.Level == LogLevel.Information)
+            .Which.Message.Should().Contain("2 socio(s)");
+    }
+
+    [Fact]
+    public async Task SiElBackupFalla_AvisaPeroRepara()
+    {
+        _backup.BackupNow(Arg.Any<string>()).Returns(false);
+        var tenant = await SeedTenantAsync("Gym A");
+        var id = await SeedMemberAsync(tenant, MemberStatus.Prospect, MembershipStatus.Active);
+
+        await ReconcileAsync();
+
+        _logger.Entries.Should().Contain(e => e.Level == LogLevel.Warning && e.Message.Contains("backup"));
+        (await StatusOfAsync(id)).Should().Be(nameof(MemberStatus.Active), "no se deja la recepción sin abrir");
+    }
+
+    [Fact]
+    public async Task SiElBackupSale_NoHayWarning()
+    {
+        var tenant = await SeedTenantAsync("Gym A");
+        await SeedMemberAsync(tenant, MemberStatus.Prospect, MembershipStatus.Active);
+
+        await ReconcileAsync();
+
+        _logger.Entries.Should().NotContain(e => e.Level == LogLevel.Warning);
     }
 
     [Fact]

@@ -13,6 +13,60 @@ namespace GymForge.Integration.Tests;
 /// </summary>
 public class DatabaseBackupServiceTests
 {
+    [Theory]
+    [InlineData("pre-reconciliacion-estado-socio", "-pre-reconciliacion-estado-socio.db")]
+    [InlineData("cierre de caja", "-cierre-de-caja.db")]
+    [InlineData("a/b\\c:d*?", "-a-b-c-d.db")]
+    [InlineData("???", "-manual.db")]
+    public void BackupNow_PutsTheSanitizedReasonInTheFileName_AndReportsSuccess(string reason, string expectedSuffix)
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "gymforge_backup_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        var connStr = $"Data Source={Path.Combine(dir, "gymforge.db")}";
+
+        try
+        {
+            using (var c = new SqliteConnection(connStr))
+            {
+                c.Open();
+                using var cmd = c.CreateCommand();
+                cmd.CommandText = "CREATE TABLE t(id INTEGER PRIMARY KEY)";
+                cmd.ExecuteNonQuery();
+            }
+            SqliteConnection.ClearAllPools();
+
+            var svc = new DatabaseBackupService(connStr, Substitute.For<ILogger<DatabaseBackupService>>());
+
+            svc.BackupNow(reason).Should().BeTrue();
+
+            Directory.GetFiles(Path.Combine(dir, "backups"), "gymforge-*.db").Should().ContainSingle()
+                .Which.Should().EndWith(expectedSuffix);
+        }
+        finally
+        {
+            SqliteConnection.ClearAllPools();
+            try { Directory.Delete(dir, recursive: true); } catch { /* limpieza best-effort */ }
+        }
+    }
+
+    [Fact]
+    public void BackupNow_WhenTheDatabaseDoesNotExist_ReportsFailure()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "gymforge_backup_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        var svc = new DatabaseBackupService(
+            $"Data Source={Path.Combine(dir, "gymforge.db")}", Substitute.For<ILogger<DatabaseBackupService>>());
+
+        try
+        {
+            svc.BackupNow("test").Should().BeFalse();
+        }
+        finally
+        {
+            try { Directory.Delete(dir, recursive: true); } catch { /* limpieza best-effort */ }
+        }
+    }
+
     [Fact]
     public void EnsureHealthy_RestoresFromBackup_WhenDatabaseIsCorrupt()
     {

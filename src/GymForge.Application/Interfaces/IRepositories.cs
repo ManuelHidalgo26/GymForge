@@ -303,8 +303,10 @@ public interface IDatabaseBackup
     /// <summary>
     /// Crea un backup ya (p. ej. al cerrar caja). El motivo va al log. Si hay un destino externo
     /// configurado (<see cref="ILocalSettings.OffsiteBackupDir"/>) también lo copia ahí.
+    /// Devuelve true si el backup local quedó hecho (la copia externa no cuenta); false si no se pudo crear.
+    /// Nunca lanza: quien necesite un respaldo antes de mutar decide qué hacer con el false.
     /// </summary>
-    void BackupNow(string reason = "manual");
+    bool BackupNow(string reason = "manual");
 
     /// <summary>"Copiar ahora": crea un backup nuevo y lo copia ya al destino externo, informando cómo salió.</summary>
     OffsiteBackupOutcome BackupOffsiteNow();

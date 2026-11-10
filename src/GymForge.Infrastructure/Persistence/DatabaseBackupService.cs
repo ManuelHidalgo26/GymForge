@@ -72,7 +72,8 @@ public class DatabaseBackupService : IDatabaseBackup
         BackupNow("diario");
     }
 
-    public void BackupNow(string reason = "manual") => BackupAndCopyOffsite(reason);
+    public bool BackupNow(string reason = "manual") =>
+        BackupAndCopyOffsite(reason) != OffsiteBackupOutcome.LocalBackupFailed;
 
     public OffsiteBackupOutcome BackupOffsiteNow() => BackupAndCopyOffsite("externo manual");
 
@@ -89,7 +90,7 @@ public class DatabaseBackupService : IDatabaseBackup
         {
             if (!File.Exists(_dbPath)) return null;
             Directory.CreateDirectory(_backupDir);
-            var dest = Path.Combine(_backupDir, $"gymforge-{DateTime.Now:yyyyMMdd-HHmmss}.db");
+            var dest = Path.Combine(_backupDir, $"gymforge-{DateTime.Now:yyyyMMdd-HHmmss}-{Slug(reason)}.db");
 
             using (var source = new SqliteConnection(_connectionString))
             using (var destination = new SqliteConnection($"Data Source={dest}"))
@@ -108,6 +109,17 @@ public class DatabaseBackupService : IDatabaseBackup
             _logger.LogError(ex, "No se pudo crear el backup de la base.");
             return null;
         }
+    }
+
+    /// <summary>
+    /// El motivo en el nombre del archivo: minúsculas ASCII, el resto colapsado a un guion. Siempre sigue
+    /// matcheando <see cref="BackupFilePattern"/>, así que la rotación y la búsqueda del último backup no cambian.
+    /// </summary>
+    private static string Slug(string reason)
+    {
+        var chars = reason.ToLowerInvariant().Select(c => char.IsAsciiLetterOrDigit(c) ? c : '-').ToArray();
+        var slug = string.Join('-', new string(chars).Split('-', StringSplitOptions.RemoveEmptyEntries));
+        return slug.Length == 0 ? "manual" : slug;
     }
 
     /// <summary>

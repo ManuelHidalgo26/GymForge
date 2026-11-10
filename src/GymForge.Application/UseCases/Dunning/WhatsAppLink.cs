@@ -45,6 +45,10 @@ public static class WhatsAppLink
     /// se puede armar un número válido (muy corto, sin área, o más de 15 dígitos de E.164). Ver las limitaciones
     /// en las observaciones de la clase.
     /// </summary>
+    /// <remarks>
+    /// Un número extranjero de exactamente 10 dígitos cargado con prefijo "00" se descarta (devuelve null): se
+    /// confunde con un número nacional argentino mal cargado con el 00 de más. Cargado con "+" sí se acepta.
+    /// </remarks>
     public static string? ToWhatsAppDigits(
         string? rawPhone, string countryCode = DefaultCountryCode, string mobilePrefix = DefaultMobilePrefix)
     {

@@ -79,6 +79,11 @@ public class UpdateExerciseCommandHandler : IRequestHandler<UpdateExerciseComman
         var exercise = await _repo.GetByIdAsync(cmd.Id, ct)
             ?? throw new InvalidOperationException("El ejercicio no existe.");
 
+        // La biblioteca global es compartida por todas las empresas: ninguna puede modificarla.
+        if (exercise.IsGlobal)
+            throw new InvalidOperationException(
+                "Los ejercicios de la biblioteca global no se pueden modificar; solo los propios del gimnasio.");
+
         exercise.Update(cmd.Name.Trim(), cmd.Muscle, cmd.Equipment, cmd.Movement, cmd.Difficulty);
         await _repo.SaveChangesAsync(ct);
         return ExerciseDto.FromEntity(exercise);
@@ -98,6 +103,11 @@ public class DeleteExerciseCommandHandler : IRequestHandler<DeleteExerciseComman
     {
         var exercise = await _repo.GetByIdAsync(cmd.Id, ct)
             ?? throw new InvalidOperationException("El ejercicio no existe.");
+
+        // La biblioteca global es compartida por todas las empresas: ninguna puede borrarla.
+        if (exercise.IsGlobal)
+            throw new InvalidOperationException(
+                "Los ejercicios de la biblioteca global no se pueden eliminar; solo los propios del gimnasio.");
 
         if (await _repo.IsInUseAsync(cmd.Id, ct))
             throw new InvalidOperationException(

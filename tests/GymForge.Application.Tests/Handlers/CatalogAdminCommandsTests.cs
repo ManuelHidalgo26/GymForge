@@ -17,7 +17,8 @@ public class CatalogAdminCommandsTests
     [Fact]
     public async Task UpdateExercise_ChangesFields()
     {
-        var ex = Exercise.Create("Press plano", MuscleGroup.Chest, Equipment.Barbell, MovementType.Compound);
+        var ex = Exercise.Create(
+            "Press plano", MuscleGroup.Chest, Equipment.Barbell, MovementType.Compound, tenantId: Guid.NewGuid());
         _exRepo.GetByIdAsync(ex.Id, Arg.Any<CancellationToken>()).Returns(ex);
 
         var dto = await new UpdateExerciseCommandHandler(_exRepo).Handle(
@@ -31,17 +32,61 @@ public class CatalogAdminCommandsTests
     }
 
     [Fact]
+    public async Task UpdateExercise_Global_IsRejected_BecauseTheLibraryIsSharedAcrossCompanies()
+    {
+        var global = Exercise.Create("Press plano", MuscleGroup.Chest, Equipment.Barbell, MovementType.Compound);
+        _exRepo.GetByIdAsync(global.Id, Arg.Any<CancellationToken>()).Returns(global);
+
+        var act = () => new UpdateExerciseCommandHandler(_exRepo).Handle(
+            new UpdateExerciseCommand(global.Id, "Renombrado", MuscleGroup.Back,
+                Equipment.Dumbbell, MovementType.Isolation, 5), CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*biblioteca global*");
+        global.Name.Should().Be("Press plano");
+        await _exRepo.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task DeleteExercise_InUse_Throws()
     {
-        var ex = Exercise.Create("Sentadilla", MuscleGroup.Quads, Equipment.Barbell, MovementType.Compound);
+        var ex = Exercise.Create(
+            "Sentadilla propia", MuscleGroup.Quads, Equipment.Barbell, MovementType.Compound, tenantId: Guid.NewGuid());
         _exRepo.GetByIdAsync(ex.Id, Arg.Any<CancellationToken>()).Returns(ex);
         _exRepo.IsInUseAsync(ex.Id, Arg.Any<CancellationToken>()).Returns(true);
 
         var act = () => new DeleteExerciseCommandHandler(_exRepo).Handle(
             new DeleteExerciseCommand(ex.Id), CancellationToken.None);
 
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*usado en rutinas*");
         _exRepo.DidNotReceive().Remove(Arg.Any<Exercise>());
+    }
+
+    [Fact]
+    public async Task DeleteExercise_Global_IsRejected_BecauseTheLibraryIsSharedAcrossCompanies()
+    {
+        var global = Exercise.Create("Sentadilla", MuscleGroup.Quads, Equipment.Barbell, MovementType.Compound);
+        _exRepo.GetByIdAsync(global.Id, Arg.Any<CancellationToken>()).Returns(global);
+
+        var act = () => new DeleteExerciseCommandHandler(_exRepo).Handle(
+            new DeleteExerciseCommand(global.Id), CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*biblioteca global*");
+        _exRepo.DidNotReceive().Remove(Arg.Any<Exercise>());
+        await _exRepo.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task DeleteExercise_OwnedByTheCompany_IsRemoved()
+    {
+        var own = Exercise.Create(
+            "Remo propio", MuscleGroup.Back, Equipment.Cable, MovementType.Compound, tenantId: Guid.NewGuid());
+        _exRepo.GetByIdAsync(own.Id, Arg.Any<CancellationToken>()).Returns(own);
+        _exRepo.IsInUseAsync(own.Id, Arg.Any<CancellationToken>()).Returns(false);
+
+        await new DeleteExerciseCommandHandler(_exRepo).Handle(new DeleteExerciseCommand(own.Id), CancellationToken.None);
+
+        _exRepo.Received(1).Remove(own);
+        await _exRepo.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 
     // ── Sedes ───────────────────────────────────────────────────────────────

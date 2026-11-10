@@ -35,7 +35,7 @@ public class PaymentModalViewModelTests
         var vm = await SutAsync();
         var message = $"El cargo \"Cuota\" está {state} y no admite cobro.";
         _mediator.Send(Arg.Any<ProcessPaymentCommand>(), Arg.Any<CancellationToken>())
-            .ThrowsAsync(new InvalidOperationException(message));
+            .ThrowsAsync(new ChargeNotCollectableException(message));
         var registered = false;
         vm.PaymentRegistered += _ => registered = true;
 
@@ -44,6 +44,18 @@ public class PaymentModalViewModelTests
         vm.ErrorMessage.Should().Be(message);
         registered.Should().BeFalse();
         vm.IsSaving.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Confirm_WhenATechnicalInvalidOperationHappens_KeepsTheGenericPrefix()
+    {
+        var vm = await SutAsync();
+        _mediator.Send(Arg.Any<ProcessPaymentCommand>(), Arg.Any<CancellationToken>())
+            .ThrowsAsync(new InvalidOperationException("Sequence contains no elements"));
+
+        await vm.ConfirmCommand.ExecuteAsync(null);
+
+        vm.ErrorMessage.Should().Be("Error al registrar pago: Sequence contains no elements");
     }
 
     [Fact]

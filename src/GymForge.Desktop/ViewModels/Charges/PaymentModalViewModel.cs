@@ -98,10 +98,11 @@ public partial class PaymentModalViewModel : ObservableObject
         {
             ErrorMessage = string.Join("\n", vex.Errors.Select(e => e.ErrorMessage));
         }
-        catch (InvalidOperationException ioex)
+        catch (ChargeNotCollectableException ex)
         {
-            // Reglas de negocio del handler (cargo saldado / dado de baja / reembolsado): el mensaje ya es para el cajero.
-            ErrorMessage = ioex.Message;
+            // Regla de negocio (cargo saldado / dado de baja / reembolsado): el mensaje ya es para el cajero.
+            // Cualquier otra InvalidOperationException (técnica) cae en el catch genérico con prefijo.
+            ErrorMessage = ex.Message;
         }
         catch (Exception ex)
         {

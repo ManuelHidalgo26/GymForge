@@ -137,7 +137,7 @@ public class ProcessPaymentCommandHandler : IRequestHandler<ProcessPaymentComman
 
         var blocked = charges.FirstOrDefault(c => !c.IsCollectable);
         if (blocked is not null)
-            throw new InvalidOperationException(
+            throw new ChargeNotCollectableException(
                 $"El cargo \"{blocked.Description}\" está {Describe(blocked.Status)} y no admite cobro.");
     }
 

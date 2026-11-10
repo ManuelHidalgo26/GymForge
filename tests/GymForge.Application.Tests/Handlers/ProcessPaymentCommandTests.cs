@@ -99,7 +99,7 @@ public class ProcessPaymentCommandTests
         var act = () => Sut().Handle(
             CmdForCharges(companyId, siteId, memberId, charge.Id), CancellationToken.None);
 
-        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*no admite cobro*");
+        await act.Should().ThrowAsync<ChargeNotCollectableException>().WithMessage("*no admite cobro*");
         charge.Status.Should().Be(expected);
         charge.AmountPaid.Should().Be(0m);
         await _paymentRepo.DidNotReceive().AddAsync(Arg.Any<Payment>(), Arg.Any<CancellationToken>());

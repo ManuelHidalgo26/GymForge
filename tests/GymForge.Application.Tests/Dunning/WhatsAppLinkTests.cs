@@ -52,14 +52,15 @@ public class WhatsAppLinkTests
     [Theory]
     [InlineData("00 54 9 11 2345 6789", "5491123456789")]  // 00 + código de país argentino: se normaliza
     [InlineData("0054 11 2345 6789", "5491123456789")]
-    [InlineData("00 11 2345 6789", "1123456789")]          // 00 + algo que no es 54: se lee como internacional (código 1)
     public void ToWhatsAppDigits_ConDobleCeroInicial_LoTomaComoPrefijoInternacional(string raw, string expected)
     {
         WhatsAppLink.ToWhatsAppDigits(raw).Should().Be(expected);
     }
 
     [Theory]
-    [InlineData("+55 11")]                                 // extranjero demasiado corto
+    [InlineData("00 11 2345 6789")]                        // 00 + 10 dígitos nacionales: error de carga, no código de país 1
+    [InlineData("0011 2345 6789")]
+    [InlineData("+55 11")]                               // extranjero demasiado corto
     [InlineData("+54 4555 0000")]                          // argentino internacional sin área
     [InlineData("+55 11 91234-5678 / +55 11 98765-4321")]  // dos números: pasa los 15 dígitos
     public void ToWhatsAppDigits_InternacionalInvalido_DevuelveNull(string raw)

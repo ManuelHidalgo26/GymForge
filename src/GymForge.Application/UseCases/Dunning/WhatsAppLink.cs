@@ -51,13 +51,14 @@ public static class WhatsAppLink
         var phone = (rawPhone ?? string.Empty).Trim();
         var digits = new string(phone.Where(char.IsAsciiDigit).ToArray());
 
-        var declaresInternational = phone.StartsWith('+') || digits.StartsWith(InternationalDialPrefix, StringComparison.Ordinal);
-        if (digits.StartsWith(InternationalDialPrefix, StringComparison.Ordinal))
+        var hasDialPrefix = digits.StartsWith(InternationalDialPrefix, StringComparison.Ordinal);
+        var declaresInternational = phone.StartsWith('+') || hasDialPrefix;
+        if (hasDialPrefix)
             digits = digits[InternationalDialPrefix.Length..];
 
         var hasCountryCode = digits.StartsWith(countryCode, StringComparison.Ordinal);
         if (declaresInternational && !hasCountryCode)
-            return ForeignNumber(digits);
+            return IsMisTypedNationalNumber(digits, hasDialPrefix) ? null : ForeignNumber(digits);
 
         var national = hasCountryCode ? digits[countryCode.Length..] : digits;
         national = RemoveTrunkPrefix(national);
@@ -66,6 +67,13 @@ public static class WhatsAppLink
 
         return national.Length == NationalNumberLength ? countryCode + mobilePrefix + national : null;
     }
+
+    /// <summary>
+    /// "00" seguido de exactamente 10 dígitos es casi seguro un número nacional con el 00 de más (error de carga),
+    /// no un número extranjero de código 1: se descarta en vez de mandar el aviso a un destino equivocado.
+    /// </summary>
+    private static bool IsMisTypedNationalNumber(string digitsAfterDialPrefix, bool hasDialPrefix) =>
+        hasDialPrefix && digitsAfterDialPrefix.Length == NationalNumberLength;
 
     /// <summary>Número de otro país: se respeta como vino, con largo E.164 válido.</summary>
     private static string? ForeignNumber(string digits) =>

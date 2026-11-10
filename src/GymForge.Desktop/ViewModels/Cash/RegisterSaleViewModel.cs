@@ -50,6 +50,12 @@ public partial class RegisterSaleViewModel : ObservableObject
     // Aviso de lo que hizo el último escaneo (producto elegido, socio elegido).
     [ObservableProperty] private string? _scanMessage;
 
+    /// <summary>
+    /// Aviso informativo tras vender una membresía a un socio congelado o suspendido: la venta se concreta pero
+    /// el socio no se reactiva solo (ver <c>SellMembershipCommand</c>). Lo muestra quien abrió el modal.
+    /// </summary>
+    [ObservableProperty] private string? _postSaleNotice;
+
     public IReadOnlyList<PaymentMethod> Methods { get; } = Enum.GetValues<PaymentMethod>().ToList();
 
     public bool IsMembership
@@ -204,6 +210,7 @@ public partial class RegisterSaleViewModel : ObservableObject
                 payment = await _mediator.Send(new SellMembershipCommand(
                     _session.CompanyId, _session.SiteId, cashierId, _session.OpenShiftId,
                     SelectedMember.Id, SelectedPlan.Id, Method, last4), ct);
+                PostSaleNotice = NoticeForMemberStatus(SelectedMember.Status);
             }
             else
             {
@@ -235,6 +242,14 @@ public partial class RegisterSaleViewModel : ObservableObject
             IsSaving = false;
         }
     }
+
+    // La venta no cambia el estado de un socio congelado o suspendido, así que el estado cargado sigue vigente.
+    private static string? NoticeForMemberStatus(MemberStatus status) => status switch
+    {
+        MemberStatus.Frozen => "El socio sigue congelado. Descongelalo desde su ficha.",
+        MemberStatus.Suspended => "El socio sigue suspendido. Reactivalo desde su ficha.",
+        _ => null
+    };
 
     [RelayCommand]
     private void Cancel() => Cancelled?.Invoke();

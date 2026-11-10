@@ -35,6 +35,8 @@ public partial class CashViewModel : ObservableObject
     [ObservableProperty] private string _closeNotes = string.Empty;
     [ObservableProperty] private ShiftDto? _currentShift;
     [ObservableProperty] private string? _statusMessage;
+    /// <summary>Aviso informativo (no es un error) que deja la última venta; se limpia al recargar la caja.</summary>
+    [ObservableProperty] private string? _noticeMessage;
     [ObservableProperty] private bool _isBusy;
     [ObservableProperty] private bool _isDefaultPinInUse;
 
@@ -69,6 +71,7 @@ public partial class CashViewModel : ObservableObject
             IsSaleModalOpen = false;
             SaleModal = null;
             await LoadAsync();   // refresca el turno: el movimiento de caja ya impactó
+            NoticeMessage = modal.PostSaleNotice;
         };
         modal.Cancelled += () =>
         {
@@ -93,6 +96,7 @@ public partial class CashViewModel : ObservableObject
     public async Task LoadAsync(CancellationToken ct = default)
     {
         StatusMessage = null;
+        NoticeMessage = null;
         await RefreshDefaultPinAsync(ct);
         if (_session.SiteId == Guid.Empty) return;
 

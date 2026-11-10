@@ -135,6 +135,18 @@ public class NotificationLogRepositoryTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task GetLastManualByMembers_NoCruzaSedesDeLaMismaEmpresa()
+    {
+        await AppendAsync(ManualFor(_memberA2));   // aviso manual escrito en la sede A2
+
+        // Parado en A1 (misma empresa), el aviso de la sede A2 no figura.
+        (await _repo.GetLastManualByMembersAsync([_memberA2.Id])).Should().BeEmpty("el aviso es de otra sede");
+
+        using (_tenant.BeginScope(_companyA.Id, _siteA2.Id))
+            (await _repo.GetLastManualByMembersAsync([_memberA2.Id])).Should().ContainKey(_memberA2.Id);
+    }
+
+    [Fact]
     public async Task GetLastManualByMembers_SoloAutomaticosOSinAvisos_NoFigura()
     {
         await AppendAsync(AutomaticFor(_memberA1, Guid.NewGuid(), stage: 7));

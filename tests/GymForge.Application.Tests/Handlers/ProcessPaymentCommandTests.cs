@@ -110,6 +110,8 @@ public class ProcessPaymentCommandTests
     public Task Handle_ExplicitWrittenOffCharge_ThrowsAndDoesNotAllocate() =>
         AssertExplicitChargeIsRejectedAsync(c => c.WriteOff("incobrable"), ChargeStatus.WrittenOff);
 
+    // Reflexión a propósito: el dominio todavía no tiene una transición hacia Refunded (Status tiene private set).
+    // Cuando exista el flujo real de reembolso, ese método reemplaza esta reflexión.
     [Fact]
     public Task Handle_ExplicitRefundedCharge_ThrowsAndDoesNotAllocate() =>
         AssertExplicitChargeIsRejectedAsync(

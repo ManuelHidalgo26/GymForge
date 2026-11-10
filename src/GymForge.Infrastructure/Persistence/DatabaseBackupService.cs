@@ -72,15 +72,39 @@ public class DatabaseBackupService : IDatabaseBackup
         BackupNow("diario");
     }
 
-    public bool BackupNow(string reason = "manual") =>
-        BackupAndCopyOffsite(reason) != OffsiteBackupOutcome.LocalBackupFailed;
+    /// <summary>Última copia externa disparada por <see cref="BackupNow"/>. Solo la esperan los tests.</summary>
+    internal Task PendingOffsiteCopy { get; private set; } = Task.CompletedTask;
 
-    public OffsiteBackupOutcome BackupOffsiteNow() => BackupAndCopyOffsite("externo manual");
-
-    private OffsiteBackupOutcome BackupAndCopyOffsite(string reason)
+    /// <summary>
+    /// Backup local síncrono (true = quedó hecho). La copia externa sigue en segundo plano: una carpeta de red
+    /// caída puede colgar decenas de segundos y esto corre en el arranque y en el hilo de UI (cierre de caja).
+    /// </summary>
+    public bool BackupNow(string reason = "manual")
     {
         var backup = CreateLocalBackup(reason);
+        if (backup is null) return false;
+
+        PendingOffsiteCopy = Task.Run(() => CopyOffsiteInBackground(backup));
+        return true;
+    }
+
+    public OffsiteBackupOutcome BackupOffsiteNow()
+    {
+        var backup = CreateLocalBackup("externo manual");
         return backup is null ? OffsiteBackupOutcome.LocalBackupFailed : CopyOffsite(backup);
+    }
+
+    /// <summary>Fire-and-forget: nada se propaga (ni como UnobservedTaskException); el resultado no se informa.</summary>
+    private void CopyOffsiteInBackground(string backupPath)
+    {
+        try
+        {
+            CopyOffsite(backupPath);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Falló la copia del backup al destino externo en segundo plano.");
+        }
     }
 
     /// <summary>Crea el backup local y rota los viejos. Devuelve su ruta, o null si no se pudo crear.</summary>

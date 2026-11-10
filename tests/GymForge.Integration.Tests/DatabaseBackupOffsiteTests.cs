@@ -50,6 +50,15 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
         _settings.OffsiteBackupDir = Pendrive;
     }
 
+    /// <summary>La copia externa corre en segundo plano: se espera para poder afirmar sobre su resultado.</summary>
+    private bool BackupNowAndWait()
+    {
+        var service = NewService();
+        var localOk = service.BackupNow("test");
+        service.PendingOffsiteCopy.Wait();
+        return localOk;
+    }
+
     private string[] LocalBackups() =>
         Directory.Exists(LocalBackupsDir) ? Directory.GetFiles(LocalBackupsDir, "gymforge-*.db") : [];
 
@@ -91,7 +100,7 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
     {
         PlugInPendrive();
 
-        NewService().BackupNow("test");
+        BackupNowAndWait();
 
         var localBackup = LocalBackups().Should().ContainSingle().Which;
         var copy = OffsiteFiles().Should().ContainSingle("solo el backup, sin temporales").Which;
@@ -105,7 +114,7 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
         PlugInPendrive();
         var before = DateTime.UtcNow;
 
-        NewService().BackupNow("test");
+        BackupNowAndWait();
 
         _settings.LastOffsiteBackupUtc.Should().BeOnOrAfter(before).And.BeOnOrBefore(DateTime.UtcNow);
         _settings.SaveCount.Should().Be(1);
@@ -117,7 +126,7 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
         PlugInPendrive();
         var oldNames = SeedOldOffsiteBackups(12);
 
-        NewService().BackupNow("test");
+        BackupNowAndWait();
 
         var kept = OffsiteFiles().Select(Path.GetFileName).ToList();
         kept.Should().HaveCount(10);
@@ -134,7 +143,7 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
         var ajeno = Path.Combine(OffsiteDir, "notas.txt");
         File.WriteAllText(ajeno, "no tocar");
 
-        NewService().BackupNow("test");
+        BackupNowAndWait();
 
         File.Exists(ajeno).Should().BeTrue();
     }
@@ -144,7 +153,9 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
     {
         PlugInPendrive();
 
-        NewService().BackupIfDue();
+        var service = NewService();
+        service.BackupIfDue();
+        service.PendingOffsiteCopy.Wait();
 
         OffsiteFiles().Should().ContainSingle();
     }
@@ -155,8 +166,10 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
         PlugInPendrive();
         var service = NewService();
         service.BackupIfDue();
+        service.PendingOffsiteCopy.Wait();
 
         service.BackupIfDue();
+        service.PendingOffsiteCopy.Wait();
 
         OffsiteFiles().Should().ContainSingle();
         _settings.SaveCount.Should().Be(1);
@@ -172,7 +185,7 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
     {
         _settings.OffsiteBackupDir = dir;
 
-        var backup = () => NewService().BackupNow("test");
+        var backup = () => BackupNowAndWait();
 
         backup.Should().NotThrow();
         LocalBackups().Should().ContainSingle();
@@ -197,7 +210,7 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
         // Pendrive desenchufado (o letra de unidad tomada por otro disco): la carpeta configurada no está.
         _settings.OffsiteBackupDir = Pendrive;
 
-        var backup = () => NewService().BackupNow("test");
+        var backup = () => BackupNowAndWait();
 
         backup.Should().NotThrow();
         LocalBackups().Should().ContainSingle("el backup local ya quedó hecho");
@@ -212,7 +225,7 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
         PlugInPendrive();
         File.WriteAllText(OffsiteDir, "x");   // un archivo ocupa el lugar de la subcarpeta de resguardos
 
-        var backup = () => NewService().BackupNow("test");
+        var backup = () => BackupNowAndWait();
 
         backup.Should().NotThrow();
         LocalBackups().Should().ContainSingle();
@@ -227,9 +240,48 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
         _settings.OffsiteBackupDir = Pendrive;   // sin crear: no está enchufado
         _settings.LastOffsiteBackupUtc = lastSuccess;
 
-        NewService().BackupNow("test");
+        BackupNowAndWait();
 
         _settings.LastOffsiteBackupUtc.Should().Be(lastSuccess);
+    }
+
+    [Fact]
+    public void BackupNow_ConDestinoCaido_DevuelveTrueDelLocalYNoPropagaNada()
+    {
+        _settings.OffsiteBackupDir = Pendrive;   // no está enchufado
+        var service = NewService();
+
+        service.BackupNow("test").Should().BeTrue();
+
+        service.PendingOffsiteCopy.Wait();
+        service.PendingOffsiteCopy.IsFaulted.Should().BeFalse();
+    }
+
+    [Fact]
+    public void BackupNow_SiLaCopiaExternaLanza_NoFallaYLoLoguea()
+    {
+        PlugInPendrive();
+        var settings = Substitute.For<ILocalSettings>();
+        settings.OffsiteBackupDir.Returns(Pendrive);
+        settings.When(x => x.Save()).Do(_ => throw new InvalidOperationException("boom"));
+        var service = new DatabaseBackupService(ConnectionString, _logger, settings);
+
+        service.BackupNow("test").Should().BeTrue();
+
+        service.PendingOffsiteCopy.Wait();
+        service.PendingOffsiteCopy.IsFaulted.Should().BeFalse();
+        WarningShouldHaveBeenLogged();
+    }
+
+    [Fact]
+    public void BackupNow_SinBaseLocal_DevuelveFalse()
+    {
+        PlugInPendrive();
+        SqliteConnection.ClearAllPools();
+        File.Delete(Path.Combine(DataDir, "gymforge.db"));
+
+        BackupNowAndWait().Should().BeFalse();
+        OffsiteFiles().Should().BeEmpty();
     }
 
     // ── "Copiar ahora" ────────────────────────────────────────────────────────

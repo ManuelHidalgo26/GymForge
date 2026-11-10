@@ -149,7 +149,7 @@ public sealed class MemberPhotoStoreTests : IDisposable
     }
 
     [Fact]
-    public void Save_ANewPhotoInAnotherFormat_LeavesNoOrphanOfThePreviousOne()
+    public void Save_ANewPhotoInAnotherFormat_KeepsThePreviousOneUntilDeleteOtherFormatsIsCalled()
     {
         var memberId = Guid.NewGuid();
         var png = Store().Save(memberId, Png);
@@ -157,8 +157,35 @@ public sealed class MemberPhotoStoreTests : IDisposable
         var jpg = Store().Save(memberId, Jpeg);
 
         jpg.Should().EndWith(".jpg");
+        File.Exists(png).Should().BeTrue("el socio sigue apuntando al .png hasta que se persista el .jpg");
+        Directory.GetFiles(Path.Combine(_root, "fotos")).Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void DeleteOtherFormats_LeavesNoOrphanOfThePreviousFormat()
+    {
+        var memberId = Guid.NewGuid();
+        var png = Store().Save(memberId, Png);
+        var jpg = Store().Save(memberId, Jpeg);
+
+        Store().DeleteOtherFormats(memberId, jpg);
+
         File.Exists(png).Should().BeFalse();
         Directory.GetFiles(Path.Combine(_root, "fotos")).Should().ContainSingle().Which.Should().Be(jpg);
+    }
+
+    [Fact]
+    public void Save_WhenTheFinalWriteFails_KeepsThePreviousPhotoAndLeavesNoTemp()
+    {
+        var memberId = Guid.NewGuid();
+        var png = Store().Save(memberId, Png);
+        Directory.CreateDirectory(Path.Combine(_root, "fotos", $"{memberId}.jpg"));   // el destino no se puede reemplazar
+
+        var act = () => Store().Save(memberId, Jpeg);
+
+        act.Should().Throw<Exception>();
+        File.ReadAllBytes(png).Should().Equal(Png, "la foto anterior no se borra si la nueva no quedó firme");
+        Directory.GetFiles(Path.Combine(_root, "fotos"), "*.tmp").Should().BeEmpty();
     }
 
     [Fact]

@@ -68,6 +68,21 @@ public class MemberDetailViewModelPhotoTests
         vm.Member.PhotoUrl.Should().Be(PhotoPath);
         vm.Photo.HasPendingImage.Should().BeFalse("ya se guardó");
         vm.Photo.Message.Should().BeNull();
+        _photoStore.Received(1).DeleteOtherFormats(_member.Id, PhotoPath);
+    }
+
+    [Fact]
+    public async Task PickPhoto_WhenTheCommandFails_DoesNotDeleteThePreviousFormat()
+    {
+        var (vm, _) = await SutAsync();
+        _picker.PickFileAsync(Arg.Any<CancellationToken>()).Returns(Jpeg);
+        _photoStore.Save(_member.Id, Arg.Any<byte[]>()).Returns(PhotoPath);
+        _mediator.Send(Arg.Any<UpdateMemberPhotoCommand>(), Arg.Any<CancellationToken>())
+            .Throws(new InvalidOperationException("db caída"));
+
+        await vm.Photo.PickCommand.ExecuteAsync(null);
+
+        _photoStore.DidNotReceiveWithAnyArgs().DeleteOtherFormats(default, default!);
     }
 
     [Fact]

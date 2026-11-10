@@ -68,6 +68,7 @@ public class CreateMemberViewModelPhotoTests
                 c.CompanyId == company.Id && c.MemberId == _created.Id && c.PhotoPath == PhotoPath),
             Arg.Any<CancellationToken>());
         vm.Photo.HasPendingImage.Should().BeFalse("ya se guardó");
+        _photoStore.Received(1).DeleteOtherFormats(_created.Id, PhotoPath);
         vm.ErrorMessage.Should().BeNull();
         created.Should().ContainSingle().Which.Id.Should().Be(_created.Id);
     }

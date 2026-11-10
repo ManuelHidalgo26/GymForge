@@ -105,6 +105,7 @@ public partial class MemberDetailViewModel : ObservableObject
         {
             var path = _photoStore.Save(Member.Id, image);
             Member = await _mediator.Send(new UpdateMemberPhotoCommand(_session.CompanyId, Member.Id, path));
+            _photoStore.DeleteOtherFormats(Member.Id, path);
             Photo.MarkSaved();
         }
         catch (Exception ex)

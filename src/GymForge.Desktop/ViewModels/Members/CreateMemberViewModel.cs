@@ -197,6 +197,7 @@ public partial class CreateMemberViewModel : ObservableObject
         {
             var path = _photoStore.Save(memberId, image);
             await _mediator.Send(new UpdateMemberPhotoCommand(_session.CompanyId, memberId, path), ct);
+            _photoStore.DeleteOtherFormats(memberId, path);
             Photo.MarkSaved();
             return true;
         }

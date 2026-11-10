@@ -52,7 +52,7 @@ internal static class MemberDocumentMigrationGuard
             ? new string(MaskChar, VisibleDocumentDigits)
             : new string(MaskChar, document.Length - VisibleDocumentDigits) + document[^VisibleDocumentDigits..];
 
-    private static async Task<bool> MembersTableExistsAsync(GymForgeDbContext db) =>
+    internal static async Task<bool> MembersTableExistsAsync(GymForgeDbContext db) =>
         (await db.Database
             .SqlQueryRaw<int>("SELECT COUNT(*) AS \"Value\" FROM sqlite_master WHERE type = 'table' AND name = 'Members'")
             .SingleAsync()) > 0;

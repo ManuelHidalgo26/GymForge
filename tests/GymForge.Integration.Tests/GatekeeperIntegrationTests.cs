@@ -7,6 +7,7 @@ using GymForge.Infrastructure.Persistence;
 using GymForge.Infrastructure.Repositories;
 using GymForge.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace GymForge.Integration.Tests;
@@ -166,6 +167,25 @@ public class GatekeeperIntegrationTests : IAsyncLifetime
         log.AccessGranted.Should().BeFalse();
         log.DenialReason.Should().Be(AccessDenialReason.Suspended);
         (await _db.Memberships.IgnoreQueryFilters().SingleAsync()).VisitsRemaining.Should().Be(10);
+    }
+
+    [Fact]
+    public async Task LegacyProspectWithActiveMembership_IsDeniedUntilReconciled_ThenEnters()
+    {
+        // Base legada previa a D14: plan vendido y socio que quedó en Prospect.
+        await SeedMemberWithVisitPackAsync("TAG-LEGACY", visits: 10, _siteId);
+        await _db.Database.ExecuteSqlInterpolatedAsync(
+            $"UPDATE Members SET Status = {nameof(MemberStatus.Prospect)}");
+        _db.ChangeTracker.Clear();
+
+        var before = await CreateGatekeeper().ValidateSwipeAsync(TagSwipe("TAG-LEGACY"));
+        before.DenialReason.Should().Be(AccessDenialReason.MemberInactive);
+
+        await MemberStatusReconciliation.ReconcileAsync(
+            _db, Substitute.For<IDatabaseBackup>(), NullLogger.Instance, CancellationToken.None);
+        _db.ChangeTracker.Clear();
+
+        (await CreateGatekeeper().ValidateSwipeAsync(TagSwipe("TAG-LEGACY"))).Granted.Should().BeTrue();
     }
 
     // ── Anti-passback: solo cuenta la última entrada CONCEDIDA ────────────────

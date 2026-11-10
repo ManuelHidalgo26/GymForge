@@ -105,9 +105,10 @@ public static class InfrastructureServiceExtensions
         backup.EnsureHealthy();
 
         await BaselineLegacyDatabaseAsync(db);
-        await MemberDocumentMigrationGuard.EnsureNoDuplicatesAsync(
-            db, scope.ServiceProvider.GetRequiredService<ILogger<GymForgeDbContext>>());
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<GymForgeDbContext>>();
+        await MemberDocumentMigrationGuard.EnsureNoDuplicatesAsync(db, logger);
         await db.Database.MigrateAsync();
+        await MemberStatusReconciliation.ReconcileAsync(db, backup, logger);
         await seeder.SeedAsync();
 
         // Datos de demo para probar a mano (opt-in por env var).

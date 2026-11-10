@@ -16,8 +16,9 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 - Flujo por sesión: arqui (ADR) → dev (implementa) → qa (aprueba o veta).
 - Regla 6 de CLAUDE.md: `dotnet test` verde antes de cada commit.
 
-## Estado general (al 2026-11-05)
+## Estado general (al 2026-11-10)
 
+- **Barrido de deuda (pasada 3, 2026-11-10): CERRADO.** Cerrados **NEW-24, NEW-25 (fix de seguridad del Gatekeeper, con addendum ADR-002), NEW-26, NEW-27, NEW-28 y NEW-29**. Commits de código en `master` (`6111ac2`, `afd4079`, `b94bc71`, `a6682b3`, `d3794e3`), sin push ni merge; docs en el commit del orquestador. qa: APROBADO CON OBSERVACIONES, sin bloqueantes. Tests **1523 verdes** (Domain 107 · Application 624 · Desktop 431 · Integration 361). Deuda nueva: **NEW-31 (O-3, MEDIA: socios Prospect con membresía Active en bases legadas; confirmar o reconciliar antes de operar)** y NEW-32 a NEW-36. Ver la entrada de arriba de todo.
 - **Barrido de deuda (pasada 2, 2026-11-05): CERRADO** (tag previsto `DEUDA-COBROS-P2-2026-11-05`). Cerrados **D13, F2-D1, F2-D2 y F2-D6** (cluster de cobranzas/dunning). Código en el working tree **sin commit** (lo hace el orquestador). qa: APROBADO CON OBSERVACIONES, sin bloqueantes. Tests **1504 verdes** (Domain 107 · Application 617 · Desktop 421 · Integration 359). Deuda nueva: NEW-28 a NEW-30. Ver la entrada de arriba de todo.
 - **Barrido de deuda (pasada 1, 2026-11-05): CERRADO** (tag `DEUDA-COBROS-2026-11-05`). Cerrados **D1, D10, D14 y D15**. Código en el working tree **sin commit** (lo hace el orquestador). qa: APROBADO CON OBSERVACIONES, sin bloqueantes. Tests **1485 verdes** (Domain 107 · Application 599 · Desktop 421 · Integration 358), 0 fallos, 0 omitidos. Deuda nueva no bloqueante: NEW-24 a NEW-27. El cluster de cobranzas/dunning (D13, F2-D1, F2-D2, F2-D6) queda para la pasada 2. Ver la entrada de arriba de todo.
 
@@ -50,6 +51,13 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 | 6 — AFIP + hardware físico | +3-5 (opcional) | WSFE/WSAA/CAE, sidecars reales ZKTeco | OPCIONAL |
 
 ## Qué sigue
+
+**Pendiente visible (pasada 3, 2026-11-10): NEW-31 (O-3, MEDIA).** Bases de piloto anteriores al commit que activa al socio al vender membresía pueden tener socios `Prospect` con membresía `Active`; el Gatekeeper ahora los deniega en el kiosk con "Cuenta inactiva — ver recepción". Antes de operar con una base legada: consulta de solo lectura para contarlos. Si hay, reconciliación puntual (Prospect con membresía Active → Active) con backup previo; si no, cerrar confirmando que no hay datos legados. Dueño: dev · usuario (confirmar datos reales).
+
+**Próximo paso (pasada 3, 2026-11-10):**
+1. **NEW-31 (O-3):** ver arriba. Es lo primero.
+2. Usuario: decidir si la venta a socio Suspended pide confirmación bloqueante (NEW-36, producto). Las deudas NEW-32 a NEW-35 son bajas.
+3. Orquestador: commit de docs de la pasada 3 (PROGRESS, TASKS, `docs/adr/README.md`, `docs/adr/ADR-002-addendum-estado-socio-gatekeeper.md`).
 
 **Próximo paso (tras el Endurecimiento final, 2026-11-04):**
 1. **Orquestador:** commit de código de la pieza F (`feat: [clases] agenda semanal en grilla de 7 dias`) y commit de docs aparte (ADR-010 a `Accepted`, `docs/adr/README.md`, entrada de arriba de todo y `docs/TASKS.md`).
@@ -84,6 +92,37 @@ Decisiones del usuario abiertas (ninguna bloquea el piloto con las 2 condiciones
 Fuera del piloto: P-2 (saldo a favor en la ficha) sigue abierta. D1 (cobros multi-sede) quedó cerrada el 2026-11-05 (barrido pasada 1). Resto de deuda (D1–D19, F1-D4 a F1-D10, F2-D1 a F2-D8, Q3–Q9, UX1–UX17): ver `docs/TASKS.md`.
 
 Sesiones 5-8: ver tabla de fases arriba.
+
+---
+
+## [2026-11-10] Barrido de deuda (pasada 3): NEW-24 a NEW-29 (incl. fix de seguridad NEW-25) — CERRADO
+
+**Hecho:**
+- **NEW-25 (fix de SEGURIDAD) cerrado.** El Gatekeeper no validaba `Member.Status`: un socio Suspended/Frozen con membresía Active entraba (vector abierto por D14). Fix: allowlist fail-closed `{Active, Overdue}` en `ValidateSwipeUseCase`, apenas se resuelve el socio y antes del gate de membresía. Suspended → `AccessDenialReason.Suspended` (ya existía); Frozen/Prospect/Expired/Cancelled y futuros → nuevo `AccessDenialReason.MemberInactive` ("Cuenta inactiva — ver recepción"), agregado al final del enum (ordinal 10). El denegado es un INSERT en AccessLog; no decrementa visitas. Diseño en el addendum `docs/adr/ADR-002-addendum-estado-socio-gatekeeper.md` (arqui, `Accepted`). Hoy ningún flujo deja un socio Prospect con membresía Active, así que es defensa en profundidad; ver O-3 (NEW-31) por bases legadas.
+- **NEW-24 (feat) cerrado.** Aviso no bloqueante en Caja al vender una membresía a un socio Frozen/Suspended ("se reactiva desde su ficha"). `RegisterSaleViewModel.PostSaleNotice` + `CashViewModel.NoticeMessage` + banner en `CashView.axaml`. Sin cambios en command ni DTO. La confirmación bloqueante para Suspended queda como follow-up de producto (NEW-36).
+- **NEW-26 (fix) cerrado.** La pantalla de cobro muestra el mensaje del guard `IsCollectable` (saldado / dado de baja / reembolsado) sin tragarlo: `catch (InvalidOperationException)` antes del genérico en `PaymentModalViewModel`. Residuo en NEW-33.
+- **NEW-29 (fix) cerrado.** `WhatsAppLink.ToWhatsAppDigits` devuelve null para `00` + 10 dígitos AR (error de carga, no código de país 1). Residuo de documentación en NEW-32.
+- **NEW-27 (info) cerrado.** Comentario en el test de Refunded que setea el estado por reflexión.
+- **NEW-28 (test) cerrado.** Test cross-sede dentro de la misma empresa para `GetLastManualByMembersAsync`.
+- **Tests:** `dotnet test GymForge.sln` **1523 verdes** (Domain 107 · Application 624 · Desktop 431 · Integration 361), 0 fallos. Baseline previa 1504 (pasada 2).
+- **qa:** APROBADO CON OBSERVACIONES, sin bloqueantes.
+- **Commits de código en `master` (sin push ni merge):** `6111ac2` (NEW-25), `afd4079` (NEW-29), `b94bc71` (NEW-26), `a6682b3` (NEW-24), `d3794e3` (NEW-28 y NEW-27). Docs de esta entrada (PROGRESS, TASKS, `docs/adr/README.md` y el addendum) en el commit de docs del orquestador.
+- **Deuda nueva:** NEW-31 a NEW-36 (sección "Deuda del barrido de deuda, pasada 3" en TASKS). **NEW-31 (O-3, MEDIA) es la más importante.**
+
+**En curso:** nada a medias en código. Working tree sin pendientes de esta pasada salvo el commit de docs.
+
+**Blockers:**
+- Técnicos: ninguno (1523 verdes; qa sin bloqueantes).
+- Dato a confirmar antes de operar con una base de piloto anterior: **NEW-31 (O-3)**. Bases previas al commit que activa al socio al vender membresía pueden tener socios `Prospect` con membresía `Active`. El allowlist ahora los deniega en el kiosk con "Cuenta inactiva — ver recepción". No se sabe si existen datos reales legados (no verificado en esta sesión).
+
+**Próximo paso:**
+1. **NEW-31 (MEDIA, primero):** consulta de solo lectura sobre la base de piloto: contar socios `Prospect` con membresía `Active`. Si hay filas, decidir una reconciliación puntual al arrancar (Prospect con membresía Active → Active) con backup previo. Si no hay, cerrarlo confirmando que no hay datos legados.
+2. Decisiones de producto: confirmación bloqueante al vender a un socio Suspended (NEW-36).
+3. Deuda baja: NEW-32 (remarks de `WhatsAppLink`), NEW-33 (excepción de negocio para el cobro), NEW-34 (cobertura E2E cuando haya UI de suspensión), NEW-35 (line endings).
+
+**Tocado:**
+- Código (commits `6111ac2`, `afd4079`, `b94bc71`, `a6682b3`, `d3794e3`): `src/GymForge.Domain/Enums/AccessEnums.cs`; `src/GymForge.Application/UseCases/Access/ValidateSwipeUseCase.cs`; `src/GymForge.Application/UseCases/Access/AccessQueries.cs`; `src/GymForge.Application/UseCases/Dunning/WhatsAppLink.cs`; `src/GymForge.Desktop/ViewModels/Charges/PaymentModalViewModel.cs`; `src/GymForge.Desktop/ViewModels/Cash/RegisterSaleViewModel.cs`; `src/GymForge.Desktop/ViewModels/Cash/CashViewModel.cs`; `src/GymForge.Desktop/Views/Cash/CashView.axaml`; tests del Gatekeeper, de WhatsAppLink, de cobro y de cross-sede de NotificationLog.
+- Docs (commit de docs): `docs/PROGRESS.md`, `docs/TASKS.md`, `docs/adr/README.md`, `docs/adr/ADR-002-addendum-estado-socio-gatekeeper.md` (untracked al cierre; lo commitea el orquestador).
 
 ---
 

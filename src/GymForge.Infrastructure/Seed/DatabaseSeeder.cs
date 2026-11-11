@@ -71,7 +71,7 @@ public class DatabaseSeeder
         var mensual = MembershipType.Create(company.Id, "Mensual", MembershipBasis.Renewal, 35_000m, 1, "Month");
         var trimestral = MembershipType.Create(company.Id, "Trimestral", MembershipBasis.Renewal, 90_000m, 3, "Month");
         var anual = MembershipType.Create(company.Id, "Anual", MembershipBasis.Renewal, 320_000m, 12, "Month");
-        var visitas10 = MembershipType.Create(company.Id, "Pack 10 Visitas", MembershipBasis.VisitPack, 28_000m);
+        var visitas10 = MembershipType.Create(company.Id, "Pack 10 Visitas", MembershipBasis.VisitPack, 28_000m, visitsIncluded: 10);
         var trial = MembershipType.Create(company.Id, "Trial 7 días", MembershipBasis.Trial, 0m, 7, "Day");
 
         await _db.MembershipTypes.AddRangeAsync([mensual, trimestral, anual, visitas10, trial], ct);

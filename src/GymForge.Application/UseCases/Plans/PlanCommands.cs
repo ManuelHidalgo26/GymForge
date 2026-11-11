@@ -28,7 +28,8 @@ public record CreatePlanCommand(
     MembershipBasis Basis,
     decimal Price,
     int DurationValue,
-    string DurationUnit) : IRequest<MembershipTypeDto>;
+    string DurationUnit,
+    int? VisitsIncluded = null) : IRequest<MembershipTypeDto>;
 
 public class CreatePlanCommandValidator : AbstractValidator<CreatePlanCommand>
 {
@@ -39,6 +40,9 @@ public class CreatePlanCommandValidator : AbstractValidator<CreatePlanCommand>
         RuleFor(x => x.DurationValue).GreaterThan(0).WithMessage("La duración debe ser positiva.");
         RuleFor(x => x.DurationUnit).Must(u => u is "Day" or "Month" or "Year")
             .WithMessage("La unidad debe ser Día, Mes o Año.");
+        When(x => x.Basis == MembershipBasis.VisitPack, () =>
+            RuleFor(x => x.VisitsIncluded).NotNull().GreaterThan(0)
+                .WithMessage("Indicá cuántas visitas incluye el pack."));
     }
 }
 
@@ -50,7 +54,8 @@ public class CreatePlanCommandHandler : IRequestHandler<CreatePlanCommand, Membe
     public async Task<MembershipTypeDto> Handle(CreatePlanCommand cmd, CancellationToken ct)
     {
         var plan = MembershipType.Create(
-            cmd.CompanyId, cmd.Name.Trim(), cmd.Basis, cmd.Price, cmd.DurationValue, cmd.DurationUnit);
+            cmd.CompanyId, cmd.Name.Trim(), cmd.Basis, cmd.Price, cmd.DurationValue, cmd.DurationUnit,
+            cmd.VisitsIncluded);
         await _repo.AddAsync(plan, ct);
         await _repo.SaveChangesAsync(ct);
         return MembershipTypeDto.FromEntity(plan);

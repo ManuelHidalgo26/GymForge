@@ -283,7 +283,7 @@ public class TenantAdversarialIntegrationTests : IAsyncLifetime
     [Fact]
     public async Task Gatekeeper_TagOfAnotherCompany_IsUnknown_AndTouchesNothingOfThatCompany()
     {
-        var plan = MembershipType.Create(_companyB.Id, "Pack B", MembershipBasis.VisitPack, 10_000m);
+        var plan = MembershipType.Create(_companyB.Id, "Pack B", MembershipBasis.VisitPack, 10_000m, visitsIncluded: 10);
         _memberB1.EnrollTag("TAG-B");
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var membership = Membership.Create(

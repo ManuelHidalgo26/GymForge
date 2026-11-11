@@ -31,7 +31,7 @@ public class RegisterSaleViewModelNoticeTests
         {
             SelectedMember = MemberWithStatus(memberStatus),
             SelectedPlan = new MembershipTypeDto(
-                Guid.NewGuid(), "Mensual", 35_000m, "1 mes", MembershipBasis.Renewal, true),
+                Guid.NewGuid(), "Mensual", 35_000m, "1 mes", MembershipBasis.Renewal, true, VisitsIncluded: null),
         };
     }
 

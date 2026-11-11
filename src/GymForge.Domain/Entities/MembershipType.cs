@@ -15,6 +15,7 @@ public class MembershipType : BaseEntity, ITenantScoped, IAuditable
     public string AllowedDoorIdsJson { get; private set; } = "[]";
     public string AllowedClassTypesJson { get; private set; } = "[]";
     public int? ClassCreditsIncluded { get; private set; }
+    public int? VisitsIncluded { get; private set; }
     public int PtSessionsIncluded { get; private set; }
     public string? ScheduleRestrictionJson { get; private set; }
     public int? AgeMin { get; private set; }
@@ -44,10 +45,13 @@ public class MembershipType : BaseEntity, ITenantScoped, IAuditable
         MembershipBasis basis,
         decimal price,
         int durationValue = 1,
-        string durationUnit = "Month")
+        string durationUnit = "Month",
+        int? visitsIncluded = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         if (price < 0) throw new ArgumentException("Price cannot be negative.");
+        if (basis == MembershipBasis.VisitPack && visitsIncluded is not > 0)
+            throw new ArgumentException("Un pack de visitas requiere una cantidad de visitas mayor a cero.");
 
         return new MembershipType
         {
@@ -56,9 +60,17 @@ public class MembershipType : BaseEntity, ITenantScoped, IAuditable
             Basis = basis,
             Price = price,
             DurationValue = durationValue,
-            DurationUnit = durationUnit
+            DurationUnit = durationUnit,
+            VisitsIncluded = basis == MembershipBasis.VisitPack ? visitsIncluded : null
         };
     }
+
+    /// <summary>Visitas con las que arranca una membresía de este plan; null si no es un pack de visitas.</summary>
+    public int? InitialVisits() => Basis == MembershipBasis.VisitPack
+        ? (VisitsIncluded is > 0
+            ? VisitsIncluded
+            : throw new InvalidOperationException("El pack de visitas no tiene configurada la cantidad de visitas. Editá o recreá el plan."))
+        : null;
 
     /// <summary>Vencimiento = inicio + duración del plan. Una unidad desconocida cuenta como meses.</summary>
     public DateOnly? CalculateEndDate(DateOnly start) => DurationUnit switch

@@ -41,6 +41,40 @@ public class CreateMembershipCommandTests
     }
 
     [Fact]
+    public async Task Handle_VisitPack_SiembraLasVisitasDelPlan()
+    {
+        var membership = await HandleCapturingMembershipAsync(MembershipBasis.VisitPack, visits: 10);
+
+        membership.VisitsRemaining.Should().Be(10);
+    }
+
+    [Fact]
+    public async Task Handle_PlanPorTiempo_NoTieneVisitas()
+    {
+        var membership = await HandleCapturingMembershipAsync(MembershipBasis.Renewal, visits: null);
+
+        membership.VisitsRemaining.Should().BeNull();
+    }
+
+    private async Task<Membership> HandleCapturingMembershipAsync(MembershipBasis basis, int? visits)
+    {
+        var companyId = Guid.NewGuid();
+        var siteId = Guid.NewGuid();
+        var plan = MembershipType.Create(companyId, "Plan", basis, 10_000m, visitsIncluded: visits);
+        var member = MakeMember(companyId, siteId);
+        _memberRepo.GetByIdAsync(member.Id, Arg.Any<CancellationToken>()).Returns(member);
+        _planRepo.GetByIdAsync(plan.Id, Arg.Any<CancellationToken>()).Returns(plan);
+        Membership? created = null;
+        await _membershipRepo.AddAsync(Arg.Do<Membership>(m => created = m), Arg.Any<CancellationToken>());
+
+        await Sut().Handle(
+            new CreateMembershipCommand(companyId, siteId, member.Id, plan.Id, new DateOnly(2026, 3, 15)),
+            CancellationToken.None);
+
+        return created!;
+    }
+
+    [Fact]
     public async Task Handle_UnknownPlan_ThrowsAndPersistsNothing()
     {
         var companyId = Guid.NewGuid();

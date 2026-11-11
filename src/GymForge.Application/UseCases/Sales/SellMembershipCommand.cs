@@ -86,7 +86,8 @@ public class SellMembershipCommandHandler : IRequestHandler<SellMembershipComman
         // reportes atribuyan lo cobrado al plan.
         var membership = Membership.Create(
             cmd.CompanyId, cmd.SiteId, cmd.MemberId, plan.Id,
-            today, plan.CalculateEndDate(today), soldByStaffId: cmd.CashierId);
+            today, plan.CalculateEndDate(today),
+            visitsRemaining: plan.InitialVisits(), soldByStaffId: cmd.CashierId);
         membership.Activate();
         await FreezeCommissionAsync(membership, cmd, plan.Price, ct);
 

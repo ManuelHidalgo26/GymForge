@@ -5,11 +5,11 @@ namespace GymForge.Application.DTOs;
 
 public record MembershipTypeDto(
     Guid Id, string Name, decimal Price, string DurationLabel,
-    MembershipBasis Basis, bool IsActive)
+    MembershipBasis Basis, bool IsActive, int? VisitsIncluded)
 {
     public static MembershipTypeDto FromEntity(MembershipType m) =>
         new(m.Id, m.Name, m.Price, $"{m.DurationValue} {UnitEs(m.DurationUnit, m.DurationValue)}",
-            m.Basis, m.IsActive);
+            m.Basis, m.IsActive, m.VisitsIncluded);
 
     private static string UnitEs(string unit, int v) => unit switch
     {

@@ -135,7 +135,7 @@ public class CreateMemberViewModelPhotoTests
     public async Task Save_WhenTheChargeFailsAfterThePhotoWasSaved_TheRetryDoesNotSaveThePhotoAgain()
     {
         var (vm, _, _) = await SutAsync();
-        var plan = new MembershipTypeDto(Guid.NewGuid(), "Mensual", 35_000m, "1 mes", MembershipBasis.Renewal, true);
+        var plan = new MembershipTypeDto(Guid.NewGuid(), "Mensual", 35_000m, "1 mes", MembershipBasis.Renewal, true, VisitsIncluded: null);
         vm.Plans = [plan];
         vm.ChargeNow = true;
         vm.SelectedPlan = plan;

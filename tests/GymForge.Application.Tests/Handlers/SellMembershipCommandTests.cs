@@ -90,6 +90,39 @@ public class SellMembershipCommandTests
     }
 
     [Fact]
+    public async Task Handle_VisitPack_LaMembresiaVendidaTraeLasVisitasDelPlan()
+    {
+        var membership = await SellCapturingMembershipAsync(MembershipBasis.VisitPack, visits: 10);
+
+        membership.VisitsRemaining.Should().Be(10);
+    }
+
+    [Fact]
+    public async Task Handle_PlanPorTiempo_LaMembresiaVendidaNoTieneVisitas()
+    {
+        var membership = await SellCapturingMembershipAsync(MembershipBasis.Renewal, visits: null);
+
+        membership.VisitsRemaining.Should().BeNull();
+    }
+
+    private async Task<Membership> SellCapturingMembershipAsync(MembershipBasis basis, int? visits)
+    {
+        var companyId = Guid.NewGuid();
+        var plan = MembershipType.Create(companyId, "Plan", basis, 10_000m, visitsIncluded: visits);
+        var member = MakeProspect(companyId, Guid.NewGuid());
+        _planRepo.GetByIdAsync(plan.Id, Arg.Any<CancellationToken>()).Returns(plan);
+        _memberRepo.GetByIdAsync(member.Id, Arg.Any<CancellationToken>()).Returns(member);
+        Membership? sold = null;
+        await _membershipRepo.AddAsync(Arg.Do<Membership>(m => sold = m), Arg.Any<CancellationToken>());
+
+        await Sut().Handle(new SellMembershipCommand(
+            companyId, Guid.NewGuid(), Guid.NewGuid(), null, member.Id, plan.Id, PaymentMethod.Cash),
+            CancellationToken.None);
+
+        return sold!;
+    }
+
+    [Fact]
     public async Task Handle_LasFechasSalenDelDiaLocalDeLaEmpresa()
     {
         var companyId = Guid.NewGuid();

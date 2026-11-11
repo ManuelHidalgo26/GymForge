@@ -1126,6 +1126,9 @@ namespace GymForge.Infrastructure.Migrations
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("VisitsIncluded")
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId", "IsActive")

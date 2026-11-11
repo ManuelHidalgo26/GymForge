@@ -53,7 +53,6 @@ public class CreateMembershipCommandHandler : IRequestHandler<CreateMembershipCo
         var plan = await _planRepo.GetByIdAsync(cmd.MembershipTypeId, ct)
             ?? throw new KeyNotFoundException($"Plan {cmd.MembershipTypeId} no encontrado.");
 
-        // TODO(ADR-002): sembrar VisitsRemaining para planes VisitPack (fuera de alcance de la sesión 1).
         var membership = Membership.Create(
             cmd.CompanyId,
             cmd.SiteId,
@@ -61,6 +60,7 @@ public class CreateMembershipCommandHandler : IRequestHandler<CreateMembershipCo
             cmd.MembershipTypeId,
             cmd.StartDate,
             endDate: plan.CalculateEndDate(cmd.StartDate),
+            visitsRemaining: plan.InitialVisits(),
             soldByStaffId: cmd.SoldByStaffId);
 
         if (cmd.AutoActivate)

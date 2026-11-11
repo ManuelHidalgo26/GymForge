@@ -11,6 +11,55 @@ public class MembershipTypeTests
             Guid.NewGuid(), "Plan", MembershipBasis.Renewal, 35_000m, durationValue, durationUnit);
 
     [Fact]
+    public void Create_VisitPackConVisitas_GuardaLaCantidad()
+    {
+        var plan = MembershipType.Create(Guid.NewGuid(), "Pack", MembershipBasis.VisitPack, 1m, visitsIncluded: 10);
+
+        plan.VisitsIncluded.Should().Be(10);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(0)]
+    public void Create_VisitPackSinVisitasValidas_Lanza(int? visits)
+    {
+        var act = () => MembershipType.Create(Guid.NewGuid(), "Pack", MembershipBasis.VisitPack, 1m, visitsIncluded: visits);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Create_PlanPorTiempoConVisitas_NormalizaANull()
+    {
+        var plan = MembershipType.Create(Guid.NewGuid(), "Mensual", MembershipBasis.Renewal, 1m, visitsIncluded: 5);
+
+        plan.VisitsIncluded.Should().BeNull();
+    }
+
+    [Fact]
+    public void InitialVisits_VisitPack_DevuelveLaCantidad()
+    {
+        var plan = MembershipType.Create(Guid.NewGuid(), "Pack", MembershipBasis.VisitPack, 1m, visitsIncluded: 8);
+
+        plan.InitialVisits().Should().Be(8);
+    }
+
+    [Fact]
+    public void InitialVisits_PlanPorTiempo_EsNull() =>
+        PlanOf(1, "Month").InitialVisits().Should().BeNull();
+
+    [Fact]
+    public void InitialVisits_VisitPackLegadoSinVisitas_Lanza()
+    {
+        var plan = MembershipType.Create(Guid.NewGuid(), "Pack", MembershipBasis.VisitPack, 1m, visitsIncluded: 1);
+        typeof(MembershipType).GetProperty(nameof(MembershipType.VisitsIncluded))!.SetValue(plan, null);
+
+        var act = () => plan.InitialVisits();
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
     public void CalculateEndDate_OneMonth_AddsOneMonth()
     {
         var start = new DateOnly(2026, 3, 15);

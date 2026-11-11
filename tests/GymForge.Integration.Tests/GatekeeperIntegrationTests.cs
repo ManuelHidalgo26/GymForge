@@ -1,6 +1,7 @@
 using FluentAssertions;
 using GymForge.Application.Interfaces;
 using GymForge.Application.UseCases.Access;
+using GymForge.Application.UseCases.Memberships;
 using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
 using GymForge.Infrastructure.Persistence;
@@ -70,7 +71,7 @@ public class GatekeeperIntegrationTests : IAsyncLifetime
     private async Task SeedMemberWithVisitPackAsync(
         string tag, int visits, Guid siteId, Action<Member>? configureMember = null)
     {
-        var plan = MembershipType.Create(_companyId, "Pack de visitas", MembershipBasis.VisitPack, 10_000m);
+        var plan = MembershipType.Create(_companyId, "Pack de visitas", MembershipBasis.VisitPack, 10_000m, visitsIncluded: 10);
         var member = Member.Create(_companyId, siteId, "Ana", "García", DocumentType.DNI, "30123456", Gender.Female);
         member.EnrollTag(tag);
         member.Activate(DateOnly.FromDateTime(DateTime.UtcNow));
@@ -150,6 +151,31 @@ public class GatekeeperIntegrationTests : IAsyncLifetime
         var persisted = await _db.Memberships.IgnoreQueryFilters().SingleAsync();
         persisted.VisitsRemaining.Should().Be(9);
         (await _db.AccessLogs.IgnoreQueryFilters().CountAsync(a => a.AccessGranted)).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task VisitPack_CreatedThroughHandler_SeedsVisits_AndTheSwipeDecrementsToNMinusOne()
+    {
+        var plan = MembershipType.Create(_companyId, "Pack 5", MembershipBasis.VisitPack, 10_000m, visitsIncluded: 5);
+        var member = Member.Create(_companyId, _siteId, "Ana", "García", DocumentType.DNI, "30123456", Gender.Female);
+        member.EnrollTag("TAG-NEW");
+        await _db.MembershipTypes.AddAsync(plan);
+        await _db.Members.AddAsync(member);
+        await _db.SaveChangesAsync();
+        var handler = new CreateMembershipCommandHandler(
+            new MemberRepository(_db), new MembershipRepository(_db), new MembershipTypeRepository(_db));
+
+        using (_tenant.BeginScope(_companyId, _siteId))
+        {
+            await handler.Handle(
+                new CreateMembershipCommand(_companyId, _siteId, member.Id, plan.Id, DateOnly.FromDateTime(DateTime.UtcNow)),
+                CancellationToken.None);
+        }
+        var result = await CreateGatekeeper().ValidateSwipeAsync(TagSwipe("TAG-NEW"));
+
+        result.Granted.Should().BeTrue();
+        _db.ChangeTracker.Clear();
+        (await _db.Memberships.IgnoreQueryFilters().SingleAsync()).VisitsRemaining.Should().Be(4);
     }
 
     [Fact]

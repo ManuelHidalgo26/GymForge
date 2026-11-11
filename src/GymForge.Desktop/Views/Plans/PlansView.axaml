@@ -70,6 +70,10 @@
                             </ComboBox>
                         </StackPanel>
                     </StackPanel>
+                    <StackPanel Spacing="4" IsVisible="{Binding IsVisitPack}">
+                        <TextBlock Text="Visitas incluidas *" Classes="FormLabel" />
+                        <NumericUpDown Value="{Binding VisitsIncluded}" Minimum="1" Increment="1" Width="130" />
+                    </StackPanel>
                 </StackPanel>
 
                 <fa:InfoBar IsOpen="{Binding ErrorMessage, Converter={x:Static ObjectConverters.IsNotNull}}"

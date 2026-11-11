@@ -27,11 +27,15 @@ public partial class PlansViewModel : ObservableObject
     [ObservableProperty] private MembershipBasis _basis = MembershipBasis.Renewal;
     [ObservableProperty] private int _durationValue = 1;
     [ObservableProperty] private string _durationUnit = "Month";
+    [ObservableProperty] private int _visitsIncluded = DefaultVisits;
+
+    private const int DefaultVisits = 10;
 
     public IReadOnlyList<MembershipBasis> BasisOptions { get; } = Enum.GetValues<MembershipBasis>().ToList();
     public IReadOnlyList<string> DurationUnits { get; } = ["Day", "Month", "Year"];
 
     public bool IsEmpty => !IsLoading && Plans.Count == 0;
+    public bool IsVisitPack => Basis == MembershipBasis.VisitPack;
 
     public PlansViewModel(IMediator mediator, SessionContext session)
     {
@@ -41,6 +45,7 @@ public partial class PlansViewModel : ObservableObject
 
     partial void OnPlansChanged(ObservableCollection<MembershipTypeDto> value) => OnPropertyChanged(nameof(IsEmpty));
     partial void OnIsLoadingChanged(bool value) => OnPropertyChanged(nameof(IsEmpty));
+    partial void OnBasisChanged(MembershipBasis value) => OnPropertyChanged(nameof(IsVisitPack));
 
     [RelayCommand]
     public async Task LoadAsync(CancellationToken ct = default)
@@ -71,11 +76,13 @@ public partial class PlansViewModel : ObservableObject
         try
         {
             await _mediator.Send(new CreatePlanCommand(
-                _session.CompanyId, Name, Basis, Price, DurationValue, DurationUnit));
+                _session.CompanyId, Name, Basis, Price, DurationValue, DurationUnit,
+                IsVisitPack ? VisitsIncluded : null));
 
             Name = string.Empty;
             Price = 0;
             DurationValue = 1;
+            VisitsIncluded = DefaultVisits;
             IsFormOpen = false;
             await LoadAsync();
         }

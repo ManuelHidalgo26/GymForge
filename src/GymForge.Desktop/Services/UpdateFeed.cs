@@ -23,6 +23,22 @@ public static class UpdateFeed
         return string.IsNullOrWhiteSpace(buildDefault) ? null : buildDefault.Trim();
     }
 
+    /// <summary>
+    /// Versión del origen apta para logs: solo <c>esquema://host</c> para URLs, sin userinfo, puerto, ruta ni query.
+    /// Rutas UNC o locales y cualquier valor no reconocible se reemplazan por un marcador.
+    /// </summary>
+    public static string ForLog(string? url)
+    {
+        var source = url?.Trim();
+        if (string.IsNullOrEmpty(source)) return "(sin configurar)";
+        if (source.StartsWith(@"\\", StringComparison.Ordinal)) return "(UNC)";
+
+        if (!Uri.TryCreate(source, UriKind.Absolute, out var uri)) return "(origen no reconocido)";
+        if (uri.IsFile) return "(ruta local)";
+
+        return string.IsNullOrEmpty(uri.Host) ? "(origen no reconocido)" : $"{uri.Scheme}://{uri.Host}";
+    }
+
     /// <summary>Vacío es válido (sin configurar). Se aceptan https, rutas UNC y carpetas locales; http no.</summary>
     public static bool IsAllowedSource(string? value, out string? error)
     {

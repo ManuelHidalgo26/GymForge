@@ -31,6 +31,42 @@ public class UpdateFeedTests
         error.Should().Contain("https://");
     }
 
+    [Fact]
+    public void ForLog_QuitaUserinfoRutaYQuery()
+    {
+        var result = UpdateFeed.ForLog("https://user:pass@host/path?x=1");
+
+        result.Should().Be("https://host");
+        result.Should().NotContain("user").And.NotContain("pass").And.NotContain("path").And.NotContain("x=1");
+    }
+
+    [Fact]
+    public void ForLog_QuitaUserinfoTambienEnHttp()
+    {
+        UpdateFeed.ForLog("http://user:pass@host:8080/p").Should().Be("http://host");
+    }
+
+    [Fact]
+    public void ForLog_UrlSinCredenciales_QuedaIgual()
+    {
+        UpdateFeed.ForLog("https://host").Should().Be("https://host");
+    }
+
+    [Theory]
+    [InlineData(@"\\srv\share\secreto", "(UNC)")]
+    [InlineData(@"C:\releases\secreto", "(ruta local)")]
+    [InlineData(null, "(sin configurar)")]
+    [InlineData("", "(sin configurar)")]
+    [InlineData("   ", "(sin configurar)")]
+    [InlineData("user:pass@host/ruta", "(origen no reconocido)")]
+    public void ForLog_RutasYVacio_DevuelvenMarcadorSinLaRuta(string? value, string expected)
+    {
+        var result = UpdateFeed.ForLog(value);
+
+        result.Should().Be(expected);
+        result.Should().NotContain("secreto").And.NotContain("user").And.NotContain("pass");
+    }
+
     [Theory]
     [InlineData("https://override", "https://default", "https://override")]
     [InlineData(" https://override ", "https://default", "https://override")]

@@ -37,7 +37,7 @@ public sealed partial class VelopackUpdateService : IUpdateService
 
         if (!UpdateFeed.IsAllowedSource(feedUrl, out _))
         {
-            LogInsecureFeed(feedUrl);
+            LogInsecureFeed(UpdateFeed.ForLog(feedUrl));
             return UpdateCheckResult.FeedInsecure;
         }
 
@@ -49,7 +49,7 @@ public sealed partial class VelopackUpdateService : IUpdateService
         // Contrato de mejor esfuerzo: el origen puede no existir todavía, no haber red o devolver basura.
         catch (Exception ex)
         {
-            LogCheckFailed(ex, feedUrl);
+            LogCheckFailed(ex, UpdateFeed.ForLog(feedUrl));
             return UpdateCheckResult.Failed;
         }
     }

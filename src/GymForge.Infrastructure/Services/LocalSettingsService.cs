@@ -45,7 +45,13 @@ public sealed partial class LocalSettingsService : ILocalSettings
         set { lock (_saveGate) _lastOffsiteBackupUtc = value; }
     }
 
-    public string? UpdateFeedUrl { get; set; }
+    private string? _updateFeedUrl;
+
+    public string? UpdateFeedUrl
+    {
+        get { lock (_saveGate) return _updateFeedUrl; }
+        set { lock (_saveGate) _updateFeedUrl = value; }
+    }
 
     /// <summary>Escribe a un temporal y lo mueve encima: un corte a mitad de camino no deja el JSON a medias.</summary>
     public void Save()

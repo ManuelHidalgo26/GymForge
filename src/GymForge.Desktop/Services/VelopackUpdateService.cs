@@ -32,8 +32,14 @@ public sealed partial class VelopackUpdateService : IUpdateService
 
     public async Task<UpdateCheckResult> CheckAsync()
     {
-        var feedUrl = _settings.UpdateFeedUrl?.Trim();
+        var feedUrl = UpdateFeed.Resolve(_settings);
         if (string.IsNullOrEmpty(feedUrl)) return UpdateCheckResult.FeedNotConfigured;
+
+        if (!UpdateFeed.IsAllowedSource(feedUrl, out _))
+        {
+            LogInsecureFeed(feedUrl);
+            return UpdateCheckResult.FeedInsecure;
+        }
 
         try
         {
@@ -135,6 +141,10 @@ public sealed partial class VelopackUpdateService : IUpdateService
     [LoggerMessage(Level = LogLevel.Information,
         Message = "Actualizaciones: no se pudo consultar el origen {FeedUrl} (sin red o sin releases publicados todavía)")]
     private partial void LogCheckFailed(Exception ex, string feedUrl);
+
+    [LoggerMessage(Level = LogLevel.Warning,
+        Message = "Actualizaciones: se ignoró el origen {FeedUrl} por no ser seguro (se exige https o una carpeta)")]
+    private partial void LogInsecureFeed(string feedUrl);
 
     [LoggerMessage(Level = LogLevel.Warning,
         Message = "Actualizaciones: no se pudo descargar la versión {Version}")]

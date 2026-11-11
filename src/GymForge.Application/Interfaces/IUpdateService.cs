@@ -13,6 +13,8 @@ public enum UpdateCheckStatus
     Available,
     /// <summary>No se pudo consultar el origen (sin red, todavía sin releases, respuesta inválida...).</summary>
     Failed,
+    /// <summary>El origen configurado no es seguro (por ejemplo http://): se ignora sin consultar la red.</summary>
+    FeedInsecure,
 }
 
 /// <summary>Resultado de buscar actualizaciones. <see cref="Update"/> solo viene con <see cref="UpdateCheckStatus.Available"/>.</summary>
@@ -22,6 +24,7 @@ public sealed record UpdateCheckResult(UpdateCheckStatus Status, AvailableUpdate
     public static UpdateCheckResult NotInstalled { get; } = new(UpdateCheckStatus.NotInstalled);
     public static UpdateCheckResult UpToDate { get; } = new(UpdateCheckStatus.UpToDate);
     public static UpdateCheckResult Failed { get; } = new(UpdateCheckStatus.Failed);
+    public static UpdateCheckResult FeedInsecure { get; } = new(UpdateCheckStatus.FeedInsecure);
 
     public static UpdateCheckResult Found(AvailableUpdate update) => new(UpdateCheckStatus.Available, update);
 }

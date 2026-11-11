@@ -110,6 +110,10 @@ public partial class SettingsViewModel : ObservableObject
     // Versión y actualizaciones: el estado vive en UpdateViewModel (compartido con el aviso del shell).
     public UpdateViewModel Updates { get; }
     [ObservableProperty] private string _updateFeedDisplay = string.Empty;
+    [ObservableProperty] private string _updateFeedInput = string.Empty;
+    [ObservableProperty] private string _updateFeedPin = string.Empty;
+    [ObservableProperty] private string? _updateFeedMessage;
+    [ObservableProperty] private bool _updateFeedSaved;
 
     // Datos — exportar / importar (migración a otra PC)
     [ObservableProperty] private string? _dataMessage;
@@ -202,9 +206,8 @@ public partial class SettingsViewModel : ObservableObject
 
         await Commissions.LoadAsync(ct);
 
-        UpdateFeedDisplay = string.IsNullOrWhiteSpace(_localSettings.UpdateFeedUrl)
-            ? "sin configurar"
-            : _localSettings.UpdateFeedUrl;
+        UpdateFeedInput = _localSettings.UpdateFeedUrl ?? string.Empty;
+        RefreshUpdateFeedDisplay();
 
         HasBackupPassphrase = _keyStore.HasPassphrase;
         await RefreshOffsiteStatusAsync();
@@ -702,6 +705,40 @@ public partial class SettingsViewModel : ObservableObject
             "Frase guardada. Anotala y guardala APARTE (no en el mismo pendrive): si la perdés, los respaldos " +
             "cifrados no se pueden recuperar.";
         await RefreshOffsiteStatusAsync();
+    }
+
+    // ── Actualizaciones: origen ─────────────────────────────────────────────
+
+    private void RefreshUpdateFeedDisplay() =>
+        UpdateFeedDisplay = UpdateFeed.Resolve(_localSettings) ?? "sin configurar";
+
+    /// <summary>Guarda el origen de actualizaciones de esta PC. Se valida primero (sin pedir PIN) y luego se exige el PIN.</summary>
+    [RelayCommand]
+    private async Task SaveUpdateFeedAsync()
+    {
+        UpdateFeedMessage = null;
+        UpdateFeedSaved = false;
+
+        if (!UpdateFeed.IsAllowedSource(UpdateFeedInput, out var error))
+        {
+            UpdateFeedMessage = error;
+            return;
+        }
+
+        var staff = await _mediator.Send(new AuthenticateStaffCommand(_session.CompanyId, UpdateFeedPin.Trim()));
+        if (staff is null)
+        {
+            UpdateFeedMessage = "PIN incorrecto.";
+            return;
+        }
+
+        _localSettings.UpdateFeedUrl = string.IsNullOrWhiteSpace(UpdateFeedInput) ? null : UpdateFeedInput.Trim();
+        _localSettings.Save();
+
+        UpdateFeedPin = string.Empty;
+        RefreshUpdateFeedDisplay();
+        UpdateFeedSaved = true;
+        UpdateFeedMessage = "Origen guardado.";
     }
 
     private static void RestartApp()

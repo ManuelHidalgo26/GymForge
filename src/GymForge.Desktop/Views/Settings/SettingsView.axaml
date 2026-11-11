@@ -709,14 +709,26 @@
 
                         <Border Classes="Divider" />
 
-                        <!-- Origen: solo lectura. Hoy lo define la instalación (settings.json de esta PC). -->
-                        <StackPanel Spacing="4">
+                        <!-- Origen editable (https o carpeta); cambiarlo pide el PIN de administrador. -->
+                        <StackPanel Spacing="8">
                             <TextBlock Text="Origen de las actualizaciones" Classes="FormLabel" />
-                            <TextBox Text="{Binding UpdateFeedDisplay, Mode=OneWay}" IsReadOnly="True"
-                                     Classes="Mono" FontSize="12"
+                            <TextBox Text="{Binding UpdateFeedInput}" Classes="Mono" FontSize="12"
+                                     Watermark="https://… o \\servidor\carpeta (vacío = el de fábrica)"
                                      AutomationProperties.Name="Origen de las actualizaciones" />
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBox Text="{Binding UpdateFeedPin}" PasswordChar="•"
+                                         Watermark="PIN de administrador" Width="220"
+                                         AutomationProperties.Name="PIN de administrador para guardar el origen" />
+                                <Button Content="Guardar origen" Command="{Binding SaveUpdateFeedCommand}"
+                                        Classes="Primary" />
+                            </StackPanel>
                             <TextBlock Classes="FormLabel" TextWrapping="Wrap"
-                                       Text="Lo define la instalación de GymForge en esta PC; no se cambia desde acá." />
+                                       Text="{Binding UpdateFeedDisplay, StringFormat='En uso: {0}'}" />
+                            <TextBlock Text="{Binding UpdateFeedMessage}" Classes="Feedback" TextWrapping="Wrap"
+                                       Classes.success="{Binding UpdateFeedSaved}"
+                                       Classes.danger="{Binding !UpdateFeedSaved}"
+                                       IsVisible="{Binding UpdateFeedMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                       AutomationProperties.LiveSetting="Polite" />
                         </StackPanel>
                     </StackPanel>
                 </Border>

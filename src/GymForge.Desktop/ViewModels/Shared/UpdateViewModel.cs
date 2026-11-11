@@ -127,6 +127,8 @@ public sealed partial class UpdateViewModel : ObservableObject
             "Las actualizaciones automáticas están desactivadas: no hay un origen de actualizaciones configurado.",
         UpdateCheckStatus.NotInstalled =>
             "Esta copia no se instaló con el instalador de GymForge, por eso no se actualiza sola.",
+        UpdateCheckStatus.FeedInsecure =>
+            "El origen de actualizaciones no es seguro (debe ser https): se ignoró.",
         _ => SearchFailedMessage,
     };
 }

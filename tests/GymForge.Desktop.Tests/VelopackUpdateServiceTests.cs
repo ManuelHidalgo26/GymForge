@@ -35,6 +35,7 @@ public class VelopackUpdateServiceTests
     [InlineData("https://github.com/acme/gymforge")]
     [InlineData("https://updates.gymforge.invalid/releases")]
     [InlineData(@"\\servidor\actualizaciones\gymforge")]
+    [InlineData(@"C:\releases")]
     public async Task Check_FeedConfiguradoPeroAppSinInstalar_NoConsultaLaRed(string feedUrl)
     {
         // El host de tests no corre instalado por Velopack, igual que un `dotnet run` o el exe portable.
@@ -44,6 +45,16 @@ public class VelopackUpdateServiceTests
         var result = await Sut().CheckAsync();
 
         result.Should().Be(UpdateCheckResult.NotInstalled);
+    }
+
+    [Fact]
+    public async Task Check_FeedHttp_EsInseguroYNoConsultaLaRed()
+    {
+        _settings.UpdateFeedUrl.Returns("http://updates.gymforge.invalid/releases");
+
+        var result = await Sut().CheckAsync();
+
+        result.Should().Be(UpdateCheckResult.FeedInsecure);
     }
 
     [Fact]

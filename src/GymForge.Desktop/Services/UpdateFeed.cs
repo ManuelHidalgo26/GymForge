@@ -7,8 +7,8 @@ namespace GymForge.Desktop.Services;
 /// </summary>
 public static class UpdateFeed
 {
-    // Completar con la URL https del canal de releases al montarlo. NUNCA poner un token acá.
-    public const string BuildDefaultUrl = "";
+    // Canal de releases (repo público, sin token). NUNCA poner un token acá.
+    public const string BuildDefaultUrl = "https://github.com/ManuelHidalgo26/GymForge";
 
     private const string InsecureMessage =
         "El origen debe ser una URL https:// o una carpeta (por ejemplo \\\\servidor\\carpeta o C:\\releases). " +

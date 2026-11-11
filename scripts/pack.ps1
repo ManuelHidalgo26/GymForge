@@ -15,17 +15,28 @@
 #     $env:GYMFORGE_SIGN_PFX      = 'C:\ruta\gymforge.pfx'
 #     $env:GYMFORGE_SIGN_PFX_PASS = '<password>'
 #   Opcional: $env:GYMFORGE_SIGN_TIMESTAMP (default http://timestamp.digicert.com)
-param([string]$Version = "0.2.0")
+param([string]$Version)
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $pub  = Join-Path $root 'publish'
 $rel  = Join-Path $root 'releases'
+$csproj = Join-Path $root 'src\GymForge.Desktop\GymForge.Desktop.csproj'
+
+if (-not $Version) {
+    $Version = ([xml](Get-Content $csproj)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+    if (-not $Version) { throw "No se pudo leer <Version> de $csproj; pasá -Version." }
+}
+
+# FileVersion exige 4 numeros: se descarta el sufijo prerelease (0.4.0-rc.1 -> 0.4.0.0).
+$fileVersion = ($Version -replace '-.*$', '') + '.0'
 
 # 1. Publish self-contained SIN single-file (Velopack empaqueta el directorio, no un exe único).
+#    La versión del ensamblado = la del paquete (en CI viene del tag).
 dotnet publish (Join-Path $root 'src\GymForge.Desktop') `
     -c Release -r win-x64 --self-contained true `
     -p:PublishSingleFile=false `
+    -p:Version=$Version -p:FileVersion=$fileVersion `
     -o $pub
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish falló" }
 

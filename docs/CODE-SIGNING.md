@@ -111,7 +111,8 @@ $env:GYMFORGE_SIGN_TIMESTAMP = 'http://timestamp.sectigo.com'
 ```
 
 Sin ninguna de esas variables, `pack.ps1` empaqueta **sin firmar** (útil en dev) y avisa
-en amarillo.
+en amarillo. El release automatizado por CI (tag `v*`) sale **sin firmar**; el pack firmado
+es el flujo local para el pendrive del piloto.
 
 ## Verificar la firma
 

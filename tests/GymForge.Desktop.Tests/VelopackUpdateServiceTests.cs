@@ -22,13 +22,26 @@ public class VelopackUpdateServiceTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public async Task Check_SinFeedConfigurado_EsNoOp(string? feedUrl)
+    public async Task Check_SinOverride_CaeAlDefaultDeFabrica(string? feedUrl)
+    {
+        BootVelopackLikeProgramDoes();
+        _settings.UpdateFeedUrl.Returns(feedUrl);
+
+        var result = await Sut().CheckAsync();
+
+        result.Should().Be(UpdateCheckResult.NotInstalled);
+    }
+
+    [Theory]
+    [InlineData("HTTP://updates.gymforge.invalid/releases")]
+    [InlineData("  http://updates.gymforge.invalid/releases  ")]
+    public async Task Check_FeedHttpEnOtraMayusculaOConEspacios_EsInseguro(string feedUrl)
     {
         _settings.UpdateFeedUrl.Returns(feedUrl);
 
         var result = await Sut().CheckAsync();
 
-        result.Should().Be(UpdateCheckResult.FeedNotConfigured);
+        result.Should().Be(UpdateCheckResult.FeedInsecure);
     }
 
     [Theory]
@@ -63,7 +76,7 @@ public class VelopackUpdateServiceTests
         BootVelopackLikeProgramDoes();
         var sut = Sut();
         _settings.UpdateFeedUrl.Returns((string?)null);
-        (await sut.CheckAsync()).Should().Be(UpdateCheckResult.FeedNotConfigured);
+        (await sut.CheckAsync()).Should().Be(UpdateCheckResult.NotInstalled);
 
         _settings.UpdateFeedUrl.Returns("https://updates.gymforge.invalid/releases");
 

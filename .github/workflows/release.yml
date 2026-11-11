@@ -1,0 +1,66 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']          # solo tags vMAJOR.MINOR.PATCH disparan publicación
+
+permissions:
+  contents: write          # crear el GitHub Release y subir assets con GITHUB_TOKEN
+
+jobs:
+  release:
+    runs-on: windows-latest   # Desktop + sidecars son net9.0-windows (igual que ci.yml)
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Versión desde el tag
+        id: ver
+        shell: pwsh
+        env:
+          REF_NAME: ${{ github.ref_name }}   # por env, nunca interpolado en el script (inyección)
+        run: |
+          $v = $env:REF_NAME.TrimStart('v')
+          if ($v -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?$') {
+            throw "Tag inválido '$env:REF_NAME': se espera vMAJOR.MINOR.PATCH"
+          }
+          "version=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Restore
+        run: dotnet restore GymForge.sln
+
+      - name: Build
+        run: dotnet build GymForge.sln -c Release --no-restore
+
+      - name: Test (GATE — no se publica si falla)
+        run: dotnet test GymForge.sln -c Release --no-build --verbosity normal
+
+      - name: Instalar Velopack CLI (alineada al runtime)
+        shell: pwsh
+        run: |
+          dotnet tool install -g vpk --version 1.2.0   # = Velopack en Directory.Packages.props
+          "$env:USERPROFILE\.dotnet\tools" >> $env:GITHUB_PATH
+
+      - name: Empaquetar (reusa scripts/pack.ps1)
+        shell: pwsh
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: .\scripts\pack.ps1 -Version $env:VERSION
+
+      - name: Publicar en GitHub Releases
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REF_NAME: ${{ github.ref_name }}
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          vpk upload github `
+            --repoUrl https://github.com/ManuelHidalgo26/GymForge `
+            --token $env:GITHUB_TOKEN `
+            --tag $env:REF_NAME `
+            --releaseName "GymForge $env:VERSION" `
+            --publish

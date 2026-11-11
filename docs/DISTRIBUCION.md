@@ -76,7 +76,8 @@ el link a un gimnasio.
 vpk upload github --repoUrl https://github.com/ManuelHidalgo26/GymForge --publish --releaseName "GymForge 0.3.0" --tag v0.3.0
 ```
 
-Necesita `GITHUB_TOKEN` con permiso sobre el repo. Subí también el `.cer` y el
+Es el fallback manual (el camino normal es el tag `v*`, ver "Actualizaciones"). Necesita
+`GITHUB_TOKEN` con permiso sobre el repo. Subí también el `.cer` y el
 `trust-cert.ps1` como assets del release: son públicos y sin ellos el que descarga no puede
 sacarse el cartel de "Editor desconocido".
 
@@ -97,11 +98,29 @@ reconocida (ver [CODE-SIGNING.md](CODE-SIGNING.md)).
 
 ## Actualizaciones
 
-`pack.ps1` genera los paquetes de Velopack (`.nupkg` + `RELEASES`) junto al instalador, así
-que el release queda listo para auto-actualización. Hoy la app solo corre
-`VelopackApp.Build().Run()` (hooks de instalación): **todavía no busca actualizaciones sola**.
-Hasta que se agregue el `UpdateManager`, actualizar = correr el Setup nuevo encima, que
-respeta la base de datos en `%LOCALAPPDATA%\GymForge`.
+El auto-update está **activo** contra GitHub Releases del repo público (`BuildDefaultUrl` en
+`UpdateFeed.cs`, sin token). Publicar una versión = pushear un tag SemVer:
+
+```powershell
+git tag v0.4.0
+git push origin v0.4.0
+```
+
+El workflow `.github/workflows/release.yml` compila, corre los tests (si fallan no se publica),
+empaqueta con `scripts/pack.ps1` (la versión sale del tag) y sube el release con
+`vpk upload github`. El release de CI sale **sin firmar**. El tag debe ser mayor a lo que
+tengan instalado los gimnasios, o no detectan la actualización.
+
+Alcance del canal:
+
+- Sirve a las instalaciones hechas con el **`Setup.exe`** (`pack.ps1`). El exe portable
+  `dist/GymForge.exe` y `dotnet run` **no** se auto-actualizan: se actualiza corriendo el exe nuevo.
+- Los builds viejos del piloto (con la URL vacía) **no** se auto-actualizan hasta instalar
+  encima un `Setup.exe` nuevo, o cargar el origen en Config → Actualizaciones tras PIN
+  (`https://github.com/ManuelHidalgo26/GymForge`).
+- Fallback manual (desde la PC del dev, ver sección 3): `vpk upload github`.
+
+La actualización respeta la base de datos en `%LOCALAPPDATA%\GymForge`.
 
 ### Actualizar sobre una base viva (DNIs duplicados)
 

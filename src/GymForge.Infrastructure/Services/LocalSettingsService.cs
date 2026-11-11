@@ -28,9 +28,22 @@ public sealed partial class LocalSettingsService : ILocalSettings
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "GymForge", "settings.json");
 
-    public string? OffsiteBackupDir { get; set; }
+    // La copia off-site corre en el pool y la UI toca estos valores a la vez: se acceden bajo el mismo
+    // lock que Save() (reentrante) para que el JSON nunca mezcle una carpeta nueva con la fecha de la vieja.
+    private string? _offsiteBackupDir;
+    private DateTime? _lastOffsiteBackupUtc;
 
-    public DateTime? LastOffsiteBackupUtc { get; set; }
+    public string? OffsiteBackupDir
+    {
+        get { lock (_saveGate) return _offsiteBackupDir; }
+        set { lock (_saveGate) _offsiteBackupDir = value; }
+    }
+
+    public DateTime? LastOffsiteBackupUtc
+    {
+        get { lock (_saveGate) return _lastOffsiteBackupUtc; }
+        set { lock (_saveGate) _lastOffsiteBackupUtc = value; }
+    }
 
     public string? UpdateFeedUrl { get; set; }
 

@@ -212,7 +212,7 @@ GymForge.Desktop.ViewModels.Settings.SettingsViewModel NewSettingsViewModel() =>
     sp.GetRequiredService<IDataTransfer>(), sp.GetRequiredService<IDatabaseBackup>(),
     sp.GetRequiredService<ILocalSettings>(), sp.GetRequiredService<IMachineFingerprint>(),
     sp.GetRequiredService<GymForge.Desktop.ViewModels.Shared.UpdateViewModel>(),
-    sp.GetRequiredService<DunningConfig>());
+    sp.GetRequiredService<DunningConfig>(), sp.GetRequiredService<IBackupKeyStore>());
 
 Capture("10-configuracion", new GymForge.Desktop.Views.Settings.SettingsView { DataContext = NewSettingsViewModel() }, 1180, 3300, outDir);
 

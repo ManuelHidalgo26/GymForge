@@ -67,6 +67,11 @@
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
+  <ItemGroup Label="Security">
+    <!-- DPAPI para guardar la frase del respaldo cifrado en esta PC (ADR-012). First-party de Microsoft. -->
+    <PackageVersion Include="System.Security.Cryptography.ProtectedData" Version="9.0.4" />
+  </ItemGroup>
+
   <ItemGroup Label="Testing">
     <PackageVersion Include="xunit" Version="2.9.3" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="3.0.0" />

@@ -30,7 +30,7 @@ public class SettingsViewModelDunningTests
             new GatekeeperConfig(), new CurrentLicense(), Substitute.For<IDataTransfer>(),
             Substitute.For<IDatabaseBackup>(), Substitute.For<ILocalSettings>(),
             Substitute.For<IMachineFingerprint>(), new UpdateViewModel(Substitute.For<IUpdateService>()),
-            _dunning);
+            _dunning, Substitute.For<IBackupKeyStore>());
         await vm.LoadCommand.ExecuteAsync(null);
         return vm;
     }
@@ -47,7 +47,7 @@ public class SettingsViewModelDunningTests
             _mediator, Substitute.For<ISiteRepository>(), Substitute.For<IMemberRepository>(), session,
             new GatekeeperConfig(), new CurrentLicense(), Substitute.For<IDataTransfer>(),
             backup, settings, Substitute.For<IMachineFingerprint>(),
-            new UpdateViewModel(Substitute.For<IUpdateService>()), _dunning);
+            new UpdateViewModel(Substitute.For<IUpdateService>()), _dunning, Substitute.For<IBackupKeyStore>());
         await vm.LoadCommand.ExecuteAsync(null);
 
         await vm.BackupOffsiteNowCommand.ExecuteAsync(null);

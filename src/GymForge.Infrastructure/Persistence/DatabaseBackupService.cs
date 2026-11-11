@@ -8,7 +8,8 @@ namespace GymForge.Infrastructure.Persistence;
 /// Resguardo y recuperación de la base SQLite local. Hace copias consistentes con el
 /// backup API de SQLite (funciona con la base en uso), rota las viejas y, al arrancar,
 /// si la base está corrupta la archiva y restaura el último backup. Si hay un destino
-/// externo configurado (pendrive, red, carpeta sincronizada) copia ahí cada backup nuevo.
+/// externo configurado (pendrive, red, carpeta sincronizada) copia ahí cada backup nuevo, CIFRADO con la
+/// frase de acceso del respaldo (ADR-012): sin frase no se copia nada (nunca sale una base en claro).
 /// Best-effort: el backup nunca tira (no debe romper una operación de negocio).
 /// </summary>
 public class DatabaseBackupService : IDatabaseBackup
@@ -18,6 +19,10 @@ public class DatabaseBackupService : IDatabaseBackup
     private const int MaxBackups = 10;
     private const string BackupFilePattern = "gymforge-*.db";
 
+    // La copia externa va cifrada y con otra extensión: nadie la confunde con una base SQLite usable.
+    private const string OffsiteExtension = ".gfbak";
+    private const string OffsiteFilePattern = BackupFilePattern + OffsiteExtension;
+
     // Subcarpeta del destino externo: no ensucia la raíz del pendrive y permite compartir la unidad.
     private const string OffsiteFolderName = "GymForge-backups";
 
@@ -26,16 +31,20 @@ public class DatabaseBackupService : IDatabaseBackup
     private readonly string _backupDir;
     private readonly ILogger<DatabaseBackupService> _logger;
     private readonly ILocalSettings? _settings;
+    private readonly IBackupKeyStore? _keyStore;
 
     /// <param name="settings">Preferencias de esta PC. Null = sin destino externo (solo backup local).</param>
+    /// <param name="keyStore">Frase de acceso del respaldo. Null = no se puede cifrar, así que no hay copia externa.</param>
     public DatabaseBackupService(
-        string connectionString, ILogger<DatabaseBackupService> logger, ILocalSettings? settings = null)
+        string connectionString, ILogger<DatabaseBackupService> logger,
+        ILocalSettings? settings = null, IBackupKeyStore? keyStore = null)
     {
         _connectionString = connectionString;
         _dbPath = new SqliteConnectionStringBuilder(connectionString).DataSource;
         _backupDir = Path.Combine(Path.GetDirectoryName(_dbPath)!, "backups");
         _logger = logger;
         _settings = settings;
+        _keyStore = keyStore;
     }
 
     /// <summary>
@@ -125,7 +134,7 @@ public class DatabaseBackupService : IDatabaseBackup
             }
 
             _logger.LogInformation("Backup creado ({Reason}): {File}", reason, Path.GetFileName(dest));
-            Rotate(_backupDir);
+            Rotate(_backupDir, BackupFilePattern);
             return dest;
         }
         catch (Exception ex)
@@ -147,7 +156,7 @@ public class DatabaseBackupService : IDatabaseBackup
     }
 
     /// <summary>
-    /// Copia el backup al destino externo y rota las copias de ahí. Pendrive desenchufado, red caída o sin
+    /// Copia el backup cifrado al destino externo y rota las copias de ahí. Pendrive desenchufado, red caída o sin
     /// permisos se loguean y se informan, pero nunca se propagan: el backup local ya quedó hecho.
     /// </summary>
     private OffsiteBackupOutcome CopyOffsite(string backupPath)
@@ -163,13 +172,19 @@ public class DatabaseBackupService : IDatabaseBackup
             return OffsiteBackupOutcome.Failed;
         }
 
+        if (_keyStore?.GetPassphrase() is not { } passphrase)
+        {
+            _logger.LogWarning("Falta la frase de acceso del respaldo: se omite la copia externa (no se copia en claro).");
+            return OffsiteBackupOutcome.MissingPassphrase;
+        }
+
         try
         {
             var offsiteDir = Path.Combine(dir, OffsiteFolderName);
             Directory.CreateDirectory(offsiteDir);
             DeleteOrphanTemps(offsiteDir);
-            CopyAtomically(backupPath, Path.Combine(offsiteDir, Path.GetFileName(backupPath)));
-            Rotate(offsiteDir);
+            EncryptAtomically(backupPath, Path.Combine(offsiteDir, Path.GetFileName(backupPath) + OffsiteExtension), passphrase);
+            Rotate(offsiteDir, OffsiteFilePattern);
 
             _settings.LastOffsiteBackupUtc = DateTime.UtcNow;
             _settings.Save();
@@ -184,15 +199,18 @@ public class DatabaseBackupService : IDatabaseBackup
     }
 
     /// <summary>
-    /// Copia a un temporal y lo renombra: si se retira el pendrive a mitad de camino no queda un
+    /// Cifra a un temporal y lo renombra: si se retira el pendrive a mitad de camino no queda un
     /// backup trunco con nombre de válido (el temporal no matchea el patrón de backups).
     /// </summary>
-    private static void CopyAtomically(string source, string target)
+    private static void EncryptAtomically(string source, string target, string passphrase)
     {
         var temp = target + ".tmp";
         try
         {
-            File.Copy(source, temp, overwrite: true);
+            // ReadWrite: el pool de SQLite puede seguir con el archivo abierto (File.Copy tampoco lo impedía).
+            using (var plain = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (var cipher = File.Create(temp))
+                BackupCrypto.Encrypt(plain, cipher, passphrase);
             File.Move(temp, target, overwrite: true);
         }
         catch
@@ -205,7 +223,7 @@ public class DatabaseBackupService : IDatabaseBackup
     /// <summary>Borra los temporales propios que dejó una copia interrumpida (pendrive retirado a mitad de camino).</summary>
     private static void DeleteOrphanTemps(string dir)
     {
-        foreach (var orphan in Directory.GetFiles(dir, BackupFilePattern + ".tmp"))
+        foreach (var orphan in Directory.GetFiles(dir, OffsiteFilePattern + ".tmp"))
         {
             try { File.Delete(orphan); } catch { /* best-effort: se reintenta en la próxima copia */ }
         }
@@ -244,10 +262,10 @@ public class DatabaseBackupService : IDatabaseBackup
         }
     }
 
-    /// <summary>Deja los <see cref="MaxBackups"/> backups más recientes de <paramref name="dir"/> (solo los propios).</summary>
-    private static void Rotate(string dir)
+    /// <summary>Deja los <see cref="MaxBackups"/> backups más recientes de <paramref name="dir"/> que matchean <paramref name="pattern"/> (solo los propios).</summary>
+    private static void Rotate(string dir, string pattern)
     {
-        foreach (var old in Directory.GetFiles(dir, BackupFilePattern)
+        foreach (var old in Directory.GetFiles(dir, pattern)
                      .OrderByDescending(File.GetLastWriteTime)
                      .Skip(MaxBackups))
         {

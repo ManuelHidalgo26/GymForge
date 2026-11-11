@@ -14,6 +14,9 @@ namespace GymForge.Infrastructure.Persistence;
 /// para que apunten a la carpeta de la PC nueva — si no, las imágenes quedarían rotas
 /// porque el perfil de usuario de Windows es otro.
 ///
+/// El paquete sale cifrado (contenedor GFBK, ver <see cref="BackupCrypto"/>) con la frase de acceso del
+/// respaldo; al importar también se leen los .zip viejos sin cifrar.
+///
 /// No se exportan: recibos PDF (se regeneran desde la base), backups, logs ni la
 /// carpeta vendor (claves privadas del vendedor, que no son datos del gimnasio).
 /// </summary>
@@ -35,15 +38,17 @@ public class DataTransferService : IDataTransfer
     private readonly string _dbPath;
     private readonly string _dataDir;
     private readonly IDatabaseBackup _backup;
+    private readonly IBackupKeyStore _keyStore;
     private readonly ILogger<DataTransferService> _logger;
 
     public DataTransferService(
-        string connectionString, IDatabaseBackup backup, ILogger<DataTransferService> logger)
+        string connectionString, IDatabaseBackup backup, IBackupKeyStore keyStore, ILogger<DataTransferService> logger)
     {
         _connectionString = connectionString;
         _dbPath = new SqliteConnectionStringBuilder(connectionString).DataSource;
         _dataDir = Path.GetDirectoryName(_dbPath)!;
         _backup = backup;
+        _keyStore = keyStore;
         _logger = logger;
     }
 
@@ -51,14 +56,20 @@ public class DataTransferService : IDataTransfer
     {
         var limpio = new string([.. gymName.Where(char.IsLetterOrDigit)]);
         if (limpio.Length == 0) limpio = "GymForge";
-        return $"GymForge-{limpio}-{DateTime.Now:yyyy-MM-dd}.zip";
+        return $"GymForge-{limpio}-{DateTime.Now:yyyy-MM-dd}.gfbak";
     }
 
     // ── exportar ────────────────────────────────────────────────────────────
 
-    public async Task<DataPackageInfo> ExportAsync(string destinationZipPath, CancellationToken ct = default)
+    public async Task<DataPackageInfo> ExportAsync(string destinationPath, CancellationToken ct = default)
     {
+        // Sin frase no sale nada: un paquete en claro con datos de socios no debe abandonar la PC.
+        var passphrase = _keyStore.GetPassphrase()
+            ?? throw new DataPackageException(
+                "Fijá primero la frase de acceso del respaldo (Configuración) para poder exportar los datos.");
+
         var temp = NewTempDir();
+        var plainZip = temp + ".zip";
         try
         {
             var dbCopy = Path.Combine(temp, DbEntry);
@@ -77,17 +88,37 @@ public class DataTransferService : IDataTransfer
             await File.WriteAllTextAsync(
                 Path.Combine(temp, ManifestEntry), JsonSerializer.Serialize(info, JsonOpts), ct);
 
-            var dir = Path.GetDirectoryName(destinationZipPath);
-            if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
-            if (File.Exists(destinationZipPath)) File.Delete(destinationZipPath);
-            ZipFile.CreateFromDirectory(temp, destinationZipPath, CompressionLevel.Optimal, includeBaseDirectory: false);
+            ZipFile.CreateFromDirectory(temp, plainZip, CompressionLevel.Optimal, includeBaseDirectory: false);
+            await Task.Run(() => EncryptToFile(plainZip, destinationPath, passphrase), ct);
 
-            _logger.LogInformation("Datos exportados a {File}", destinationZipPath);
+            _logger.LogInformation("Datos exportados a {File}", destinationPath);
             return info;
         }
         finally
         {
             TryDeleteDir(temp);
+            TryDeleteFile(plainZip);
+        }
+    }
+
+    /// <summary>Cifra a un temporal junto al destino y lo renombra: un export interrumpido no deja un archivo trunco con el nombre final.</summary>
+    private static void EncryptToFile(string plainZip, string destinationPath, string passphrase)
+    {
+        var dir = Path.GetDirectoryName(destinationPath);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+
+        var temp = destinationPath + ".tmp";
+        try
+        {
+            using (var plain = File.OpenRead(plainZip))
+            using (var cipher = File.Create(temp))
+                BackupCrypto.Encrypt(plain, cipher, passphrase);
+            File.Move(temp, destinationPath, overwrite: true);
+        }
+        catch
+        {
+            TryDeleteFile(temp);
+            throw;
         }
     }
 
@@ -129,11 +160,68 @@ public class DataTransferService : IDataTransfer
 
     // ── inspeccionar ────────────────────────────────────────────────────────
 
-    public async Task<DataPackageInfo> InspectAsync(string zipPath, CancellationToken ct = default)
+    public bool IsEncrypted(string path)
     {
-        if (!File.Exists(zipPath))
+        if (!File.Exists(path)) return false;
+        using var stream = File.OpenRead(path);
+        return BackupCrypto.LooksEncrypted(stream);
+    }
+
+    public async Task<DataPackageInfo> InspectAsync(
+        string path, string? passphrase = null, CancellationToken ct = default)
+    {
+        using var package = await OpenPackageAsync(path, passphrase, ct);
+        return await InspectZipAsync(package.ZipPath, ct);
+    }
+
+    /// <summary>
+    /// Deja el paquete como zip legible: si viene cifrado lo descifra a un temporal (se borra al soltarlo);
+    /// si es un .zip viejo sin cifrar lo usa tal cual.
+    /// </summary>
+    private async Task<OpenedPackage> OpenPackageAsync(string path, string? passphrase, CancellationToken ct)
+    {
+        if (!File.Exists(path))
             throw new DataPackageException("No se encontró el archivo.");
 
+        if (!IsEncrypted(path)) return new OpenedPackage(path, tempDir: null);
+
+        if (string.IsNullOrEmpty(passphrase))
+            throw new DataPackageException("Este respaldo está cifrado: ingresá la frase de acceso.");
+
+        var temp = NewTempDir();
+        try
+        {
+            var plainZip = Path.Combine(temp, "paquete.zip");
+            await Task.Run(() => DecryptToFile(path, plainZip, passphrase), ct);
+            return new OpenedPackage(plainZip, temp);
+        }
+        catch
+        {
+            TryDeleteDir(temp);
+            throw;
+        }
+    }
+
+    private static void DecryptToFile(string encryptedPath, string plainPath, string passphrase)
+    {
+        using var cipher = File.OpenRead(encryptedPath);
+        using var plain = File.Create(plainPath);
+        BackupCrypto.Decrypt(cipher, plain, passphrase);
+    }
+
+    /// <summary>Zip ya legible de un paquete abierto; si salió de un descifrado, se borra con él.</summary>
+    private sealed class OpenedPackage(string zipPath, string? tempDir) : IDisposable
+    {
+        public string ZipPath { get; } = zipPath;
+
+        public void Dispose()
+        {
+            if (tempDir is not null) TryDeleteDir(tempDir);
+        }
+    }
+
+    private async Task<DataPackageInfo> InspectZipAsync(string zipPath, CancellationToken ct)
+    {
         ZipArchive archive;
         try
         {
@@ -206,10 +294,11 @@ public class DataTransferService : IDataTransfer
 
     // ── importar ────────────────────────────────────────────────────────────
 
-    public async Task ImportAsync(string zipPath, CancellationToken ct = default)
+    public async Task ImportAsync(string path, string? passphrase = null, CancellationToken ct = default)
     {
-        // Valida primero: si el paquete no sirve, los datos actuales quedan intactos.
-        var info = await InspectAsync(zipPath, ct);
+        // Valida primero (incluye descifrar): si el paquete no sirve o la frase es otra, los datos actuales quedan intactos.
+        using var package = await OpenPackageAsync(path, passphrase, ct);
+        var info = await InspectZipAsync(package.ZipPath, ct);
 
         _backup.BackupNow("pre-import");
         SqliteConnection.ClearAllPools();
@@ -217,7 +306,7 @@ public class DataTransferService : IDataTransfer
         var temp = NewTempDir();
         try
         {
-            ZipFile.ExtractToDirectory(zipPath, temp);
+            ZipFile.ExtractToDirectory(package.ZipPath, temp);
 
             // Los archivos primero: si algo falla acá, la base todavía es la vieja.
             foreach (var carpeta in UserFolders)
@@ -366,5 +455,10 @@ public class DataTransferService : IDataTransfer
     private static void TryDeleteDir(string dir)
     {
         try { Directory.Delete(dir, recursive: true); } catch { /* limpieza best-effort */ }
+    }
+
+    private static void TryDeleteFile(string path)
+    {
+        try { File.Delete(path); } catch { /* limpieza best-effort */ }
     }
 }

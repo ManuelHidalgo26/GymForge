@@ -24,7 +24,8 @@ public class SettingsViewModelCopyFeedbackTests
             Substitute.For<IMediator>(), Substitute.For<ISiteRepository>(), Substitute.For<IMemberRepository>(), session,
             new GatekeeperConfig(), new CurrentLicense(), Substitute.For<IDataTransfer>(),
             Substitute.For<IDatabaseBackup>(), Substitute.For<ILocalSettings>(),
-            Substitute.For<IMachineFingerprint>(), new UpdateViewModel(Substitute.For<IUpdateService>()), dunning);
+            Substitute.For<IMachineFingerprint>(), new UpdateViewModel(Substitute.For<IUpdateService>()), dunning,
+            Substitute.For<IBackupKeyStore>());
     }
 
     [Fact]

@@ -27,6 +27,7 @@
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" />
     <PackageReference Include="QuestPDF" />
     <PackageReference Include="ClosedXML" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" />
     <PackageReference Include="Serilog" />
     <PackageReference Include="Serilog.Sinks.File" />
     <PackageReference Include="Serilog.Sinks.Console" />

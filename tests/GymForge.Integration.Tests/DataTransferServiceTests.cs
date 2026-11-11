@@ -16,23 +16,25 @@ namespace GymForge.Integration.Tests;
 /// </summary>
 public class DataTransferServiceTests : IDisposable
 {
+    private const string Pass = InMemoryBackupKeyStore.TestPassphrase;
+
     private readonly List<string> _dirs = [];
 
     [Fact]
     public async Task Export_WritesPackage_WithDatabaseManifestAndFiles()
     {
         var gym = NewInstall("Iron Temple", members: 3, payments: 2, withLogo: true);
-        var zip = Path.Combine(NewDir(), "export.zip");
+        var package = Path.Combine(NewDir(), "export.gfbak");
 
-        var info = await gym.Service.ExportAsync(zip);
+        var info = await gym.Service.ExportAsync(package);
 
-        File.Exists(zip).Should().BeTrue();
+        File.Exists(package).Should().BeTrue();
         info.GymName.Should().Be("Iron Temple");
         info.Members.Should().Be(3);
         info.Payments.Should().Be(2);
         info.HasLogo.Should().BeTrue();
 
-        using var archive = ZipFile.OpenRead(zip);
+        using var archive = ZipFile.OpenRead(DecryptToZip(package));
         archive.GetEntry("manifest.json").Should().NotBeNull();
         archive.GetEntry("gymforge.db").Should().NotBeNull();
         archive.Entries.Should().Contain(e => e.FullName.Contains("brand/") && e.Name == "logo.png");
@@ -49,13 +51,14 @@ public class DataTransferServiceTests : IDisposable
             Directory.CreateDirectory(Path.Combine(gym.DataDir, carpeta));
             File.WriteAllText(Path.Combine(gym.DataDir, carpeta, "propio-de-esta-pc.txt"), "x");
         }
-        var zip = Path.Combine(NewDir(), "export.zip");
+        File.WriteAllText(Path.Combine(gym.DataDir, "vendor", "backup-pass.dpapi"), "frase protegida");
+        var package = Path.Combine(NewDir(), "export.gfbak");
 
-        await gym.Service.ExportAsync(zip);
+        await gym.Service.ExportAsync(package);
 
-        using var archive = ZipFile.OpenRead(zip);
+        using var archive = ZipFile.OpenRead(DecryptToZip(package));
         archive.Entries.Select(e => e.FullName).Should().NotContain(
-            name => name.Contains("settings.json") || name.Contains("propio-de-esta-pc"),
+            name => name.Contains("settings.json") || name.Contains("propio-de-esta-pc") || name.Contains("backup-pass"),
             "solo viajan la base, el logo y las fotos");
     }
 
@@ -63,14 +66,14 @@ public class DataTransferServiceTests : IDisposable
     public async Task Import_KeepsTheSettingsOfThePcItRunsOn()
     {
         var origen = NewInstall("Iron Temple", members: 1, payments: 0, withLogo: false);
-        var zip = Path.Combine(NewDir(), "mudanza.zip");
+        var zip = Path.Combine(NewDir(), "mudanza.gfbak");
         await origen.Service.ExportAsync(zip);
 
-        var destino = NewInstall("Otro Gym", members: 0, payments: 0, withLogo: false);
+        var destino = NewInstall("Otro Gym", members: 0, payments: 0, withLogo: false, passphrase: null);
         var settingsPath = Path.Combine(destino.DataDir, "settings.json");
         File.WriteAllText(settingsPath, """{"OffsiteBackupDir":"G:\\Mi-Pendrive"}""");
 
-        await destino.Service.ImportAsync(zip);
+        await destino.Service.ImportAsync(zip, Pass);
 
         File.ReadAllText(settingsPath).Should().Contain("G:\\\\Mi-Pendrive");
     }
@@ -82,13 +85,13 @@ public class DataTransferServiceTests : IDisposable
         var origen = NewInstall("Iron Temple", members: 3, payments: 2, withLogo: true);
         AddMemberPhoto(origen, "socio-1.jpg");
 
-        var zip = Path.Combine(NewDir(), "mudanza.zip");
+        var zip = Path.Combine(NewDir(), "mudanza.gfbak");
         await origen.Service.ExportAsync(zip);
 
-        // PC nueva: instalación limpia, con otro perfil de usuario.
-        var destino = NewInstall("Otro Gym", members: 0, payments: 0, withLogo: false);
+        // PC nueva: instalación limpia, con otro perfil de usuario y SIN la caché DPAPI de la vieja: solo la frase.
+        var destino = NewInstall("Otro Gym", members: 0, payments: 0, withLogo: false, passphrase: null);
 
-        await destino.Service.ImportAsync(zip);
+        await destino.Service.ImportAsync(zip, Pass);
 
         // Los datos son los del paquete, no los que había.
         Query(destino.ConnectionString, "SELECT LegalName FROM Companies LIMIT 1").Should().Be("Iron Temple");
@@ -111,12 +114,12 @@ public class DataTransferServiceTests : IDisposable
     public async Task Import_BacksUpCurrentDatabase_BeforeReplacing()
     {
         var origen = NewInstall("Iron Temple", members: 1, payments: 0, withLogo: false);
-        var zip = Path.Combine(NewDir(), "export.zip");
+        var zip = Path.Combine(NewDir(), "export.gfbak");
         await origen.Service.ExportAsync(zip);
 
         var destino = NewInstall("Gimnasio Actual", members: 7, payments: 0, withLogo: false);
 
-        await destino.Service.ImportAsync(zip);
+        await destino.Service.ImportAsync(zip, Pass);
 
         destino.Backup.Received().BackupNow(Arg.Is<string>(r => r.Contains("import")));
     }
@@ -139,8 +142,7 @@ public class DataTransferServiceTests : IDisposable
     public async Task Inspect_Rejects_PackageFromANewerVersion()
     {
         var gym = NewInstall("Iron Temple", members: 1, payments: 0, withLogo: false);
-        var zip = Path.Combine(NewDir(), "futuro.zip");
-        await gym.Service.ExportAsync(zip);
+        var zip = ExportLegacyZip(gym, "futuro.zip");
         RewriteManifest(zip, """
             {"FormatVersion":99,"AppVersion":"9.9.9","GymName":"Iron Temple",
              "ExportedAt":"2030-01-01T00:00:00","Members":1,"Payments":0,
@@ -157,8 +159,7 @@ public class DataTransferServiceTests : IDisposable
     public async Task Inspect_Rejects_PackageWithCorruptDatabase()
     {
         var gym = NewInstall("Iron Temple", members: 1, payments: 0, withLogo: false);
-        var zip = Path.Combine(NewDir(), "corrupto.zip");
-        await gym.Service.ExportAsync(zip);
+        var zip = ExportLegacyZip(gym, "corrupto.zip");
         ReplaceEntry(zip, "gymforge.db", "esto no es una base sqlite valida");
 
         var act = () => gym.Service.InspectAsync(zip);
@@ -182,13 +183,153 @@ public class DataTransferServiceTests : IDisposable
         Query(destino.ConnectionString, "SELECT LegalName FROM Companies LIMIT 1").Should().Be("Gimnasio Actual");
     }
 
+    // ── cifrado (ADR-012) ───────────────────────────────────────────────────
+
+    [Fact]
+    public async Task Export_SalePorCompletoComoGfbak_NoComoZip()
+    {
+        var gym = NewInstall("Iron Temple", members: 2, payments: 0, withLogo: true);
+        var package = Path.Combine(NewDir(), "export.gfbak");
+
+        await gym.Service.ExportAsync(package);
+
+        var bytes = File.ReadAllBytes(package);
+        bytes.Take(4).Should().Equal("GFBK"u8.ToArray());
+        System.Text.Encoding.Latin1.GetString(bytes).Should().NotContain("Iron Temple").And.NotContain("manifest.json");
+        gym.Service.IsEncrypted(package).Should().BeTrue();
+        File.Exists(package + ".tmp").Should().BeFalse("el temporal se renombra al terminar");
+    }
+
+    [Fact]
+    public async Task Export_SinFrase_EstaBloqueadoYNoDejaNingunArchivo()
+    {
+        var gym = NewInstall("Iron Temple", members: 1, payments: 0, withLogo: false, passphrase: null);
+        var package = Path.Combine(NewDir(), "export.gfbak");
+
+        var act = () => gym.Service.ExportAsync(package);
+
+        (await act.Should().ThrowAsync<DataPackageException>()).WithMessage("*frase de acceso*");
+        File.Exists(package).Should().BeFalse("un paquete en claro no debe salir de la PC");
+    }
+
+    [Fact]
+    public async Task Inspect_Cifrado_ConLaFrase_DevuelveElContenido()
+    {
+        var gym = NewInstall("Iron Temple", members: 3, payments: 1, withLogo: false);
+        var package = Path.Combine(NewDir(), "export.gfbak");
+        await gym.Service.ExportAsync(package);
+
+        var info = await gym.Service.InspectAsync(package, Pass);
+
+        info.GymName.Should().Be("Iron Temple");
+        info.Members.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task Inspect_Cifrado_SinFrase_PideLaFrase()
+    {
+        var gym = NewInstall("Iron Temple", members: 1, payments: 0, withLogo: false);
+        var package = Path.Combine(NewDir(), "export.gfbak");
+        await gym.Service.ExportAsync(package);
+
+        var act = () => gym.Service.InspectAsync(package);
+
+        (await act.Should().ThrowAsync<DataPackageException>()).WithMessage("*cifrado*frase*");
+    }
+
+    [Fact]
+    public async Task Import_ConFraseIncorrecta_FallaConMensajeClaroYNoTocaLosDatos()
+    {
+        var origen = NewInstall("Iron Temple", members: 1, payments: 0, withLogo: false);
+        var package = Path.Combine(NewDir(), "export.gfbak");
+        await origen.Service.ExportAsync(package);
+        var destino = NewInstall("Gimnasio Actual", members: 7, payments: 0, withLogo: false);
+
+        var act = () => destino.Service.ImportAsync(package, "otra frase distinta y larga");
+
+        (await act.Should().ThrowAsync<DataPackageException>())
+            .WithMessage("La frase de acceso es incorrecta, o el archivo está dañado.");
+        Query(destino.ConnectionString, "SELECT COUNT(*) FROM Members").Should().Be("7");
+        Query(destino.ConnectionString, "SELECT LegalName FROM Companies LIMIT 1").Should().Be("Gimnasio Actual");
+        destino.Backup.DidNotReceive().BackupNow(Arg.Any<string>());
+
+        await destino.Service.ImportAsync(package, Pass);   // y permite reintentar con la correcta
+        Query(destino.ConnectionString, "SELECT LegalName FROM Companies LIMIT 1").Should().Be("Iron Temple");
+    }
+
+    [Fact]
+    public async Task Import_ZipLegacySinCifrar_SigueImportandose()
+    {
+        var origen = NewInstall("Iron Temple", members: 3, payments: 0, withLogo: true);
+        var zip = ExportLegacyZip(origen, "viejo.zip");
+        var destino = NewInstall("Otro Gym", members: 0, payments: 0, withLogo: false, passphrase: null);
+
+        destino.Service.IsEncrypted(zip).Should().BeFalse();
+        await destino.Service.ImportAsync(zip);
+
+        Query(destino.ConnectionString, "SELECT LegalName FROM Companies LIMIT 1").Should().Be("Iron Temple");
+        Query(destino.ConnectionString, "SELECT COUNT(*) FROM Members").Should().Be("3");
+    }
+
+    [Fact]
+    public async Task Import_ConUnByteAlterado_FallaYNoTocaLosDatos()
+    {
+        var origen = NewInstall("Iron Temple", members: 1, payments: 0, withLogo: false);
+        var package = Path.Combine(NewDir(), "export.gfbak");
+        await origen.Service.ExportAsync(package);
+        var bytes = File.ReadAllBytes(package);
+        bytes[bytes.Length / 2] ^= 0x01;
+        File.WriteAllBytes(package, bytes);
+        var destino = NewInstall("Gimnasio Actual", members: 7, payments: 0, withLogo: false);
+
+        var act = () => destino.Service.ImportAsync(package, Pass);
+
+        await act.Should().ThrowAsync<DataPackageException>();
+        Query(destino.ConnectionString, "SELECT COUNT(*) FROM Members").Should().Be("7");
+    }
+
+    [Fact]
+    public async Task Import_ConElArchivoTruncado_FallaYNoTocaLosDatos()
+    {
+        var origen = NewInstall("Iron Temple", members: 1, payments: 0, withLogo: false);
+        var package = Path.Combine(NewDir(), "export.gfbak");
+        await origen.Service.ExportAsync(package);
+        var bytes = File.ReadAllBytes(package);
+        File.WriteAllBytes(package, bytes[..^20]);
+        var destino = NewInstall("Gimnasio Actual", members: 7, payments: 0, withLogo: false);
+
+        var act = () => destino.Service.ImportAsync(package, Pass);
+
+        await act.Should().ThrowAsync<DataPackageException>();
+        Query(destino.ConnectionString, "SELECT COUNT(*) FROM Members").Should().Be("7");
+    }
+
     // ── helpers ─────────────────────────────────────────────────────────────
 
     private sealed record Install(
         DataTransferService Service, string ConnectionString, string DataDir, IDatabaseBackup Backup);
 
-    /// <summary>Simula una instalación de GymForge: su carpeta de datos y su base.</summary>
-    private Install NewInstall(string gym, int members, int payments, bool withLogo)
+    /// <summary>Exporta (cifrado) y descifra a un .zip: el formato de los paquetes viejos, para probar la compatibilidad de lectura.</summary>
+    private string ExportLegacyZip(Install gym, string fileName)
+    {
+        var package = Path.Combine(NewDir(), "export.gfbak");
+        gym.Service.ExportAsync(package).GetAwaiter().GetResult();
+        var zip = Path.Combine(NewDir(), fileName);
+        File.Copy(DecryptToZip(package), zip);
+        return zip;
+    }
+
+    private string DecryptToZip(string package)
+    {
+        var zip = Path.Combine(NewDir(), "descifrado.zip");
+        using var cipher = File.OpenRead(package);
+        using var plain = File.Create(zip);
+        BackupCrypto.Decrypt(cipher, plain, Pass);
+        return zip;
+    }
+
+    /// <summary>Simula una instalación de GymForge: su carpeta de datos y su base. <paramref name="passphrase"/> null = sin frase fijada.</summary>
+    private Install NewInstall(string gym, int members, int payments, bool withLogo, string? passphrase = Pass)
     {
         var dataDir = NewDir();
         var dbPath = Path.Combine(dataDir, "gymforge.db");
@@ -222,7 +363,8 @@ public class DataTransferServiceTests : IDisposable
         }
 
         var backup = Substitute.For<IDatabaseBackup>();
-        var svc = new DataTransferService(connStr, backup, Substitute.For<ILogger<DataTransferService>>());
+        var svc = new DataTransferService(
+            connStr, backup, new InMemoryBackupKeyStore(passphrase), Substitute.For<ILogger<DataTransferService>>());
         return new Install(svc, connStr, dataDir, backup);
     }
 

@@ -17,6 +17,7 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
 
     private readonly string _root = Path.Combine(Path.GetTempPath(), "gymforge_offsite_" + Guid.NewGuid().ToString("N"));
     private readonly InMemoryLocalSettings _settings = new();
+    private readonly InMemoryBackupKeyStore _keys = new(InMemoryBackupKeyStore.TestPassphrase);
     private readonly ILogger<DatabaseBackupService> _logger = Substitute.For<ILogger<DatabaseBackupService>>();
 
     public DatabaseBackupOffsiteTests()
@@ -41,7 +42,8 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
     private string Pendrive => Path.Combine(_root, "pendrive");
     private string OffsiteDir => Path.Combine(Pendrive, OffsiteFolderName);
 
-    private DatabaseBackupService NewService() => new(ConnectionString, _logger, _settings);
+    private DatabaseBackupService NewService(IBackupKeyStore? keys = null) =>
+        new(ConnectionString, _logger, _settings, keys ?? _keys);
 
     /// <summary>Configura como destino externo un pendrive que sí está enchufado (la carpeta existe).</summary>
     private void PlugInPendrive()
@@ -71,12 +73,22 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
         Directory.CreateDirectory(OffsiteDir);
         return [.. Enumerable.Range(1, count).Select(i =>
         {
-            var name = $"gymforge-20200101-0000{i:00}.db";
+            var name = $"gymforge-20200101-0000{i:00}.db.gfbak";
             var path = Path.Combine(OffsiteDir, name);
             File.WriteAllText(path, "viejo");
             File.SetLastWriteTime(path, new DateTime(2020, 1, 1).AddDays(i));
             return name;
         })];
+    }
+
+    /// <summary>Descifra una copia externa con la frase de prueba y la deja como base legible junto a ella.</summary>
+    private static string ReadOffsiteGreeting(string gfbakPath)
+    {
+        var dbPath = gfbakPath + ".descifrada.db";
+        using (var cipher = File.OpenRead(gfbakPath))
+        using (var plain = File.Create(dbPath))
+            BackupCrypto.Decrypt(cipher, plain, InMemoryBackupKeyStore.TestPassphrase);
+        return ReadGreeting(dbPath);
     }
 
     private static string ReadGreeting(string dbPath)
@@ -104,8 +116,8 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
 
         var localBackup = LocalBackups().Should().ContainSingle().Which;
         var copy = OffsiteFiles().Should().ContainSingle("solo el backup, sin temporales").Which;
-        Path.GetFileName(copy).Should().Be(Path.GetFileName(localBackup));
-        ReadGreeting(copy).Should().Be("hola", "la copia es una base sana y completa");
+        Path.GetFileName(copy).Should().Be(Path.GetFileName(localBackup) + ".gfbak");
+        ReadOffsiteGreeting(copy).Should().Be("hola", "la copia es una base sana y completa");
     }
 
     [Fact]
@@ -130,7 +142,7 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
 
         var kept = OffsiteFiles().Select(Path.GetFileName).ToList();
         kept.Should().HaveCount(10);
-        kept.Should().Contain(Path.GetFileName(LocalBackups().Single()), "la copia nueva es la más reciente");
+        kept.Should().Contain(Path.GetFileName(LocalBackups().Single()) + ".gfbak", "la copia nueva es la más reciente");
         kept.Should().NotContain(oldNames.Take(3), "se borran las más viejas");
         kept.Should().Contain(oldNames.Skip(3));
     }
@@ -264,7 +276,7 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
         var settings = Substitute.For<ILocalSettings>();
         settings.OffsiteBackupDir.Returns(Pendrive);
         settings.When(x => x.Save()).Do(_ => throw new InvalidOperationException("boom"));
-        var service = new DatabaseBackupService(ConnectionString, _logger, settings);
+        var service = new DatabaseBackupService(ConnectionString, _logger, settings, _keys);
 
         service.BackupNow("test").Should().BeTrue();
 
@@ -284,6 +296,76 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
         OffsiteFiles().Should().BeEmpty();
     }
 
+    // ── Cifrado de la copia externa (ADR-012) ─────────────────────────────────
+
+    [Fact]
+    public void BackupNow_ConFrase_LaCopiaExternaEsGfbkYNoUnSqliteLegible()
+    {
+        PlugInPendrive();
+
+        BackupNowAndWait();
+
+        var copy = OffsiteFiles().Should().ContainSingle().Which;
+        copy.Should().EndWith(".db.gfbak");
+        var bytes = File.ReadAllBytes(copy);
+        bytes.Take(4).Should().Equal("GFBK"u8.ToArray());
+        System.Text.Encoding.Latin1.GetString(bytes).Should()
+            .NotContain("SQLite format 3").And.NotContain("hola", "el contenido de la base no queda a la vista");
+    }
+
+    [Fact]
+    public void BackupOffsiteNow_SinFrase_NoEscribeNadaEnClaroEInformaMissingPassphrase()
+    {
+        PlugInPendrive();
+
+        var outcome = NewService(new InMemoryBackupKeyStore()).BackupOffsiteNow();
+
+        outcome.Should().Be(OffsiteBackupOutcome.MissingPassphrase);
+        OffsiteFiles().Should().BeEmpty("sin frase nunca sale una base en claro");
+        Directory.Exists(OffsiteDir).Should().BeFalse();
+        LocalBackups().Should().ContainSingle("el backup local sí queda hecho, en claro");
+        _settings.LastOffsiteBackupUtc.Should().BeNull();
+    }
+
+    [Fact]
+    public void BackupNow_SinFrase_NoLanzaNiCopiaNada()
+    {
+        PlugInPendrive();
+        var service = NewService(new InMemoryBackupKeyStore());
+
+        service.BackupNow("test").Should().BeTrue();
+
+        service.PendingOffsiteCopy.Wait();
+        service.PendingOffsiteCopy.IsFaulted.Should().BeFalse();
+        OffsiteFiles().Should().BeEmpty();
+    }
+
+    [Fact]
+    public void BackupNow_ServicioSinKeyStore_NoCopiaNadaAfuera()
+    {
+        PlugInPendrive();
+        var service = new DatabaseBackupService(ConnectionString, _logger, _settings);
+
+        service.BackupOffsiteNow().Should().Be(OffsiteBackupOutcome.MissingPassphrase);
+
+        OffsiteFiles().Should().BeEmpty();
+    }
+
+    [Fact]
+    public void BackupNow_RotaSoloLasCopiasCifradas_NoTocaLasBasesEnClaroViejas()
+    {
+        PlugInPendrive();
+        Directory.CreateDirectory(OffsiteDir);
+        var enClaro = Path.Combine(OffsiteDir, "gymforge-20190101-000000.db");
+        File.WriteAllText(enClaro, "copia vieja de antes del cifrado");
+        SeedOldOffsiteBackups(12);
+
+        BackupNowAndWait();
+
+        File.Exists(enClaro).Should().BeTrue("la rotación solo maneja *.gfbak; borrar archivos ajenos no es su trabajo");
+        OffsiteFiles().Count(f => f.EndsWith(".gfbak")).Should().Be(10);
+    }
+
     // ── "Copiar ahora" ────────────────────────────────────────────────────────
 
     [Fact]
@@ -298,8 +380,8 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
         outcome.Should().Be(OffsiteBackupOutcome.Copied);
         LocalBackups().Should().HaveCount(2, "se creó un backup nuevo, no se reusó el viejo");
         var copy = OffsiteFiles().Should().ContainSingle().Which;
-        Path.GetFileName(copy).Should().NotBe("gymforge-20200101-000000.db");
-        ReadGreeting(copy).Should().Be("hola");
+        Path.GetFileName(copy).Should().NotBe("gymforge-20200101-000000.db.gfbak");
+        ReadOffsiteGreeting(copy).Should().Be("hola");
         _settings.LastOffsiteBackupUtc.Should().NotBeNull();
     }
 
@@ -332,7 +414,7 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
     {
         PlugInPendrive();
         Directory.CreateDirectory(OffsiteDir);
-        var orphan = Path.Combine(OffsiteDir, "gymforge-20200101-000000.db.tmp");
+        var orphan = Path.Combine(OffsiteDir, "gymforge-20200101-000000.db.gfbak.tmp");
         var foreign = Path.Combine(OffsiteDir, "otro-programa.tmp");
         File.WriteAllText(orphan, "copia a medias");
         File.WriteAllText(foreign, "no es nuestro");

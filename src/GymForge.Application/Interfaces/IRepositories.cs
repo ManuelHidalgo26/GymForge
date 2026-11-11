@@ -322,4 +322,6 @@ public enum OffsiteBackupOutcome
     Failed,
     /// <summary>No se pudo crear el backup en esta PC (disco lleno, base inaccesible): no hay nada que copiar.</summary>
     LocalBackupFailed,
+    /// <summary>Falta la frase de acceso del respaldo: la copia externa se omite (nunca sale en claro). El backup local sí quedó hecho.</summary>
+    MissingPassphrase,
 }

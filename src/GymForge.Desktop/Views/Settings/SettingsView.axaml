@@ -490,7 +490,7 @@
                     <StackPanel Spacing="12">
                         <TextBlock Text="Copia de seguridad y migración" FontSize="15" FontWeight="SemiBold" />
                         <TextBlock Classes="FormLabel" FontSize="12" TextWrapping="Wrap"
-                                   Text="Exportar guarda en un solo archivo todo lo del gimnasio: socios, cobros, caja, rutinas, el logo y las fotos. Sirve de respaldo y para mudar los datos a otra PC." />
+                                   Text="Exportar guarda en un solo archivo cifrado todo lo del gimnasio: socios, cobros, caja, rutinas, el logo y las fotos. Sirve de respaldo y para mudar los datos a otra PC; para abrirlo hace falta la frase de acceso del respaldo (más abajo)." />
 
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <Button Content="Exportar datos" Command="{Binding ExportDataCommand}"
@@ -498,6 +498,26 @@
                             <Button Content="Importar datos…" Command="{Binding ChooseImportFileCommand}"
                                     IsEnabled="{Binding !IsTransferBusy}" />
                         </StackPanel>
+
+                        <!-- Import de un paquete cifrado: primero la frase, para poder abrirlo -->
+                        <Border IsVisible="{Binding IsImportPassphraseNeeded}"
+                                Background="{DynamicResource WarningTintBrush}"
+                                BorderBrush="{DynamicResource WarningBrush}" BorderThickness="1"
+                                CornerRadius="8" Padding="16">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Este paquete está cifrado" FontSize="13" FontWeight="SemiBold" />
+                                <TextBlock Classes="FormLabel" FontSize="12" TextWrapping="Wrap"
+                                           Text="Ingresá la frase de acceso del respaldo con la que se exportó." />
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBox Text="{Binding ImportPassphrase}" PasswordChar="•"
+                                             Watermark="Frase de acceso del respaldo" Width="280"
+                                             AutomationProperties.Name="Frase de acceso para abrir el paquete" />
+                                    <Button Content="Abrir paquete" Command="{Binding UnlockImportCommand}"
+                                            Classes="Primary" IsEnabled="{Binding !IsTransferBusy}" />
+                                    <Button Content="Cancelar" Command="{Binding CancelImportCommand}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
 
                         <!-- Confirmación del import: resumen del paquete + PIN -->
                         <Border IsVisible="{Binding IsImportPending}"
@@ -528,13 +548,56 @@
 
                         <Border Classes="Divider" />
 
+                        <!-- Frase de acceso del respaldo: cifra lo que sale de la PC. Nunca se muestra, solo se fija. -->
+                        <StackPanel Spacing="10">
+                            <StackPanel Spacing="3">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <TextBlock Text="Frase de acceso del respaldo" FontSize="13" FontWeight="SemiBold"
+                                               VerticalAlignment="Center" />
+                                    <Border Classes="Pill success" IsVisible="{Binding HasBackupPassphrase}">
+                                        <TextBlock Text="Configurada ✓" />
+                                    </Border>
+                                    <Border Classes="Pill warning" IsVisible="{Binding !HasBackupPassphrase}">
+                                        <TextBlock Text="Sin configurar" />
+                                    </Border>
+                                </StackPanel>
+                                <TextBlock Classes="FormLabel" TextWrapping="Wrap"
+                                           Text="Todo lo que sale de esta PC (la copia externa y el archivo exportado) viaja cifrado con esta frase. Si la perdés, esos respaldos no se pueden recuperar: no hay forma de resetearla. Guardala aparte, no en el mismo pendrive. Es distinta del PIN." />
+                                <TextBlock Classes="FormLabel" TextWrapping="Wrap"
+                                           Text="{Binding BackupPassphraseMinLength, StringFormat='Mínimo {0} caracteres. Cambiarla no afecta a los respaldos ya hechos: esos se abren con la frase que tenían.'}" />
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBox Text="{Binding PassphraseInput}" PasswordChar="•"
+                                         Watermark="Frase nueva" Width="220"
+                                         AutomationProperties.Name="Frase de acceso nueva" />
+                                <TextBox Text="{Binding PassphraseConfirm}" PasswordChar="•"
+                                         Watermark="Repetir la frase" Width="220"
+                                         AutomationProperties.Name="Repetir la frase de acceso" />
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBox Text="{Binding PassphrasePin}" PasswordChar="•"
+                                         Watermark="PIN de administrador" Width="220" />
+                                <Button Content="{Binding BackupPassphraseActionText}"
+                                        Command="{Binding SetBackupPassphraseCommand}" Classes="Primary" />
+                            </StackPanel>
+
+                            <TextBlock Text="{Binding PassphraseMessage}" Classes="Feedback" TextWrapping="Wrap"
+                                       Classes.success="{Binding PassphraseOk}"
+                                       Classes.danger="{Binding !PassphraseOk}"
+                                       IsVisible="{Binding PassphraseMessage, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                       AutomationProperties.LiveSetting="Polite" />
+                        </StackPanel>
+
+                        <Border Classes="Divider" />
+
                         <!-- Copia de seguridad externa: pendrive, carpeta de red o carpeta sincronizada.
                              Carpeta (campo de solo lectura, enfocable y copiable) → estado (pill + detalle) → acción. -->
                         <StackPanel Spacing="12">
                             <StackPanel Spacing="3">
                                 <TextBlock Text="Copia de seguridad externa" FontSize="13" FontWeight="SemiBold" />
                                 <TextBlock Classes="FormLabel" TextWrapping="Wrap"
-                                           Text="Cada resguardo que hace GymForge (al abrir el día y al cerrar caja) también se copia a esta carpeta, así los datos sobreviven a que se rompa el disco de esta PC. Puede ser un pendrive, una carpeta de red o la carpeta local de Dropbox/OneDrive." />
+                                           Text="Cada resguardo que hace GymForge (al abrir el día y al cerrar caja) también se copia a esta carpeta, así los datos sobreviven a que se rompa el disco de esta PC. Puede ser un pendrive, una carpeta de red o una carpeta sincronizada: la copia viaja cifrada con tu frase de acceso. Guardá la frase aparte del pendrive o la carpeta: si la perdés, el respaldo no se puede recuperar." />
                             </StackPanel>
 
                             <!-- Carpeta de destino. El TextBox muestra la ruta completa (scrollea) y el tooltip la repite. -->

@@ -73,4 +73,21 @@ public class OffsiteBackupStatusTests
         status.Display.Should().StartWith("Último resguardo externo: 28/10 14:03").And.Contain("no está disponible");
         status.NeedsAttention.Should().BeTrue();
     }
+
+    [Fact]
+    public void SinFraseDeAcceso_PideAtencionAunqueLaCopiaSeaReciente()
+    {
+        var status = OffsiteBackupStatus.Evaluate(@"F:\", Last, destinationAvailable: true, Now, passphraseSet: false);
+
+        status.Display.Should().Contain("frase de acceso");
+        status.NeedsAttention.Should().BeTrue();
+    }
+
+    [Fact]
+    public void SinDestino_LaFraseFaltanteNoImporta()
+    {
+        var status = OffsiteBackupStatus.Evaluate(null, null, destinationAvailable: false, Now, passphraseSet: false);
+
+        status.NeedsAttention.Should().BeFalse();
+    }
 }

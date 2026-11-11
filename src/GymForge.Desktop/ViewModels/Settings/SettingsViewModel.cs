@@ -34,6 +34,7 @@ public partial class SettingsViewModel : ObservableObject
     private readonly IDatabaseBackup _backup;
     private readonly ILocalSettings _localSettings;
     private readonly IMachineFingerprint _fingerprint;
+    private readonly IBackupKeyStore _keyStore;
     private Guid? _editingSiteId;   // null = agregando
 
     /// <summary>Card "Comisiones del personal": su propio VM, para no seguir engordando este.</summary>
@@ -117,7 +118,23 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _isImportPending;
     [ObservableProperty] private string _importSummary = string.Empty;
     [ObservableProperty] private string _importPin = string.Empty;
-    private string? _pendingImportPath;   // paquete validado, esperando confirmación
+    // Paquete cifrado: primero se pide la frase para poder abrirlo y mostrar qué contiene.
+    [ObservableProperty] private bool _isImportPassphraseNeeded;
+    [ObservableProperty] private string _importPassphrase = string.Empty;
+    private string? _pendingImportPath;         // paquete elegido, esperando frase y/o confirmación
+    private string? _confirmedImportPassphrase; // frase con la que se pudo abrir; se reusa al importar
+
+    // Datos — frase de acceso del respaldo (cifra lo que sale de la PC). Nunca se muestra, solo se fija.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(BackupPassphraseActionText))]
+    private bool _hasBackupPassphrase;
+    [ObservableProperty] private string _passphraseInput = string.Empty;
+    [ObservableProperty] private string _passphraseConfirm = string.Empty;
+    [ObservableProperty] private string _passphrasePin = string.Empty;
+    [ObservableProperty] private string? _passphraseMessage;
+    [ObservableProperty] private bool _passphraseOk;
+    public string BackupPassphraseActionText => HasBackupPassphrase ? "Cambiar frase" : "Fijar frase";
+    public int BackupPassphraseMinLength => BackupPassphrase.MinLength;
 
     // Datos — copia de seguridad externa (pendrive / red / carpeta sincronizada)
     [ObservableProperty]
@@ -135,7 +152,8 @@ public partial class SettingsViewModel : ObservableObject
         IMediator mediator, ISiteRepository siteRepo, IMemberRepository memberRepo,
         SessionContext session, GatekeeperConfig gatekeeper, CurrentLicense license,
         IDataTransfer dataTransfer, IDatabaseBackup backup, ILocalSettings localSettings,
-        IMachineFingerprint fingerprint, UpdateViewModel updates, DunningConfig dunning)
+        IMachineFingerprint fingerprint, UpdateViewModel updates, DunningConfig dunning,
+        IBackupKeyStore keyStore)
     {
         _mediator = mediator;
         _siteRepo = siteRepo;
@@ -147,6 +165,7 @@ public partial class SettingsViewModel : ObservableObject
         _backup = backup;
         _localSettings = localSettings;
         _fingerprint = fingerprint;
+        _keyStore = keyStore;
         Updates = updates;
         _dunning = dunning;
         Commissions = new StaffCommissionsViewModel(mediator, session);
@@ -187,6 +206,7 @@ public partial class SettingsViewModel : ObservableObject
             ? "sin configurar"
             : _localSettings.UpdateFeedUrl;
 
+        HasBackupPassphrase = _keyStore.HasPassphrase;
         await RefreshOffsiteStatusAsync();
         await RefreshLicenseAsync(ct);
     }
@@ -491,14 +511,21 @@ public partial class SettingsViewModel : ObservableObject
         DataMessage = null;
         DataOk = false;
 
+        // El paquete sale de la PC: sin frase de acceso no se genera (y se encamina a fijarla).
+        if (!_keyStore.HasPassphrase)
+        {
+            DataMessage = "Antes de exportar, fijá la frase de acceso del respaldo (en esta misma pantalla, más abajo): el archivo sale cifrado con ella.";
+            return;
+        }
+
         if (MainStorage() is not { } storage) return;
 
         var file = await storage.SaveFilePickerAsync(new FilePickerSaveOptions
         {
             Title = "Guardar los datos del gimnasio",
             SuggestedFileName = _dataTransfer.SuggestedFileName(LegalName),
-            DefaultExtension = "zip",
-            FileTypeChoices = [new FilePickerFileType("Paquete GymForge") { Patterns = ["*.zip"] }],
+            DefaultExtension = "gfbak",
+            FileTypeChoices = [new FilePickerFileType("Paquete GymForge (cifrado)") { Patterns = ["*.gfbak"] }],
         });
 
         if (file?.TryGetLocalPath() is not { } destino) return;
@@ -508,19 +535,23 @@ public partial class SettingsViewModel : ObservableObject
             IsTransferBusy = true;
             var info = await _dataTransfer.ExportAsync(destino);
             DataOk = true;
-            DataMessage = $"Listo: {info.Members} socios y {info.Payments} cobros en {Path.GetFileName(destino)}.";
+            DataMessage =
+                $"Listo: {info.Members} socios y {info.Payments} cobros en {Path.GetFileName(destino)}. " +
+                "Para abrirlo en otra PC vas a necesitar la frase de acceso del respaldo.";
         }
         catch (Exception ex) { DataMessage = ex.Message; }
         finally { IsTransferBusy = false; }
     }
 
-    /// <summary>Paso 1 del import: valida el paquete y muestra qué contiene, sin tocar nada.</summary>
+    /// <summary>
+    /// Paso 1 del import: elige el archivo. Si está cifrado pide la frase antes de abrirlo; si es un .zip viejo
+    /// lo valida ya. En ambos casos muestra qué contiene sin tocar nada.
+    /// </summary>
     [RelayCommand]
     private async Task ChooseImportFileAsync()
     {
         DataMessage = null;
         DataOk = false;
-        ImportPin = string.Empty;
 
         if (MainStorage() is not { } storage) return;
 
@@ -528,26 +559,50 @@ public partial class SettingsViewModel : ObservableObject
         {
             Title = "Elegí el paquete a importar",
             AllowMultiple = false,
-            FileTypeFilter = [new FilePickerFileType("Paquete GymForge") { Patterns = ["*.zip"] }],
+            FileTypeFilter = [new FilePickerFileType("Paquete GymForge") { Patterns = ["*.gfbak", "*.zip"] }],
         });
 
         if (files.FirstOrDefault()?.TryGetLocalPath() is not { } origen) return;
 
+        ResetImport();
+        _pendingImportPath = origen;
+        if (_dataTransfer.IsEncrypted(origen))
+        {
+            IsImportPassphraseNeeded = true;
+            return;
+        }
+
+        await InspectPendingImportAsync(passphrase: null);
+    }
+
+    /// <summary>Paso 1b (solo paquetes cifrados): con la frase tipeada abre el paquete y muestra qué contiene.</summary>
+    [RelayCommand]
+    private Task UnlockImportAsync() => InspectPendingImportAsync(ImportPassphrase);
+
+    private async Task InspectPendingImportAsync(string? passphrase)
+    {
+        if (_pendingImportPath is null) return;
+        DataMessage = null;
+        DataOk = false;
+
         try
         {
             IsTransferBusy = true;
-            var info = await _dataTransfer.InspectAsync(origen);
-            _pendingImportPath = origen;
+            var info = await _dataTransfer.InspectAsync(_pendingImportPath, passphrase);
+            _confirmedImportPassphrase = passphrase;
             ImportSummary =
                 $"{info.GymName} · {info.Members} socios · {info.Payments} cobros · " +
                 $"exportado el {info.ExportedAt:dd/MM/yyyy}";
+            IsImportPassphraseNeeded = false;
+            ImportPassphrase = string.Empty;
             IsImportPending = true;
         }
         catch (Exception ex)
         {
-            _pendingImportPath = null;
-            IsImportPending = false;
             DataMessage = ex.Message;
+            // Con frase incorrecta se deja el campo abierto para reintentar; cualquier otro error descarta el archivo.
+            if (IsImportPassphraseNeeded) ImportPassphrase = string.Empty;
+            else ResetImport();
         }
         finally { IsTransferBusy = false; }
     }
@@ -570,7 +625,7 @@ public partial class SettingsViewModel : ObservableObject
         try
         {
             IsTransferBusy = true;
-            await _dataTransfer.ImportAsync(_pendingImportPath);
+            await _dataTransfer.ImportAsync(_pendingImportPath, _confirmedImportPassphrase);
 
             // El DbContext y las pantallas quedaron con los datos del gimnasio anterior:
             // reiniciar es más seguro que intentar refrescar todo en caliente.
@@ -584,12 +639,69 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void CancelImport()
+    private void CancelImport() => ResetImport();
+
+    private void ResetImport()
     {
         _pendingImportPath = null;
+        _confirmedImportPassphrase = null;
         IsImportPending = false;
+        IsImportPassphraseNeeded = false;
         ImportSummary = string.Empty;
         ImportPin = string.Empty;
+        ImportPassphrase = string.Empty;
+    }
+
+    // ── Datos: frase de acceso del respaldo ─────────────────────────────────
+
+    /// <summary>
+    /// Fija o cambia la frase que cifra lo que sale de la PC. Pide el PIN de admin (misma barra que el import).
+    /// La frase no se loguea ni se vuelve a mostrar; los respaldos hechos con la anterior siguen necesitándola.
+    /// </summary>
+    [RelayCommand]
+    private async Task SetBackupPassphraseAsync()
+    {
+        PassphraseMessage = null;
+        PassphraseOk = false;
+
+        if (PassphraseInput.Trim().Length < BackupPassphrase.MinLength)
+        {
+            PassphraseMessage = $"La frase debe tener al menos {BackupPassphrase.MinLength} caracteres.";
+            return;
+        }
+
+        if (PassphraseInput != PassphraseConfirm)
+        {
+            PassphraseMessage = "Las dos frases no coinciden.";
+            return;
+        }
+
+        var staff = await _mediator.Send(new AuthenticateStaffCommand(_session.CompanyId, PassphrasePin.Trim()));
+        if (staff is null)
+        {
+            PassphraseMessage = "PIN incorrecto.";
+            return;
+        }
+
+        try
+        {
+            _keyStore.SetPassphrase(PassphraseInput);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.Cryptography.CryptographicException)
+        {
+            PassphraseMessage = "No se pudo guardar la frase en esta PC. Probá de nuevo.";
+            return;
+        }
+
+        PassphraseInput = string.Empty;
+        PassphraseConfirm = string.Empty;
+        PassphrasePin = string.Empty;
+        HasBackupPassphrase = true;
+        PassphraseOk = true;
+        PassphraseMessage =
+            "Frase guardada. Anotala y guardala APARTE (no en el mismo pendrive): si la perdés, los respaldos " +
+            "cifrados no se pueden recuperar.";
+        await RefreshOffsiteStatusAsync();
     }
 
     private static void RestartApp()
@@ -651,6 +763,8 @@ public partial class SettingsViewModel : ObservableObject
             OffsiteBackupOutcome.NotConfigured => "Elegí primero la carpeta de destino.",
             OffsiteBackupOutcome.LocalBackupFailed =>
                 "No se pudo crear el resguardo en esta PC (revisá el espacio en disco), así que no se copió nada al destino externo.",
+            OffsiteBackupOutcome.MissingPassphrase =>
+                "Fijá primero la frase de acceso del respaldo: sin ella no se copia nada fuera de esta PC. El resguardo en esta PC sí quedó hecho.",
             _ => "No se pudo copiar. Revisá que el pendrive o la carpeta estén disponibles; el resguardo en esta PC sí quedó hecho.",
         };
         await RefreshOffsiteStatusAsync();
@@ -664,7 +778,7 @@ public partial class SettingsViewModel : ObservableObject
         // Fuera del hilo de UI: preguntar por una carpeta de red caída puede tardar en responder.
         var available = !string.IsNullOrWhiteSpace(dir) && await Task.Run(() => Directory.Exists(dir));
         var status = OffsiteBackupStatus.Evaluate(
-            dir, _localSettings.LastOffsiteBackupUtc?.ToLocalTime(), available, DateTime.Now);
+            dir, _localSettings.LastOffsiteBackupUtc?.ToLocalTime(), available, DateTime.Now, _keyStore.HasPassphrase);
         OffsiteStatusDisplay = status.Display;
         OffsiteNeedsAttention = status.NeedsAttention;
     }

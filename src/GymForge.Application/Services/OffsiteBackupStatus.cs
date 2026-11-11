@@ -14,11 +14,15 @@ public sealed record OffsiteBackupStatus(string Display, bool NeedsAttention)
     /// <param name="lastCopyLocal">Hora local de la última copia exitosa; null = nunca.</param>
     /// <param name="destinationAvailable">Si la carpeta de destino existe ahora (pendrive enchufado, red arriba).</param>
     /// <param name="nowLocal">Hora local actual.</param>
+    /// <param name="passphraseSet">Si ya está fijada la frase de acceso del respaldo: sin ella la copia externa no se hace.</param>
     public static OffsiteBackupStatus Evaluate(
-        string? dir, DateTime? lastCopyLocal, bool destinationAvailable, DateTime nowLocal)
+        string? dir, DateTime? lastCopyLocal, bool destinationAvailable, DateTime nowLocal, bool passphraseSet = true)
     {
         if (string.IsNullOrWhiteSpace(dir))
             return new("Sin copia externa: los resguardos quedan solo en esta PC.", false);
+
+        if (!passphraseSet)
+            return new("Falta la frase de acceso del respaldo: la copia externa no se hace hasta que la fijes (más abajo).", true);
 
         if (lastCopyLocal is not { } last)
             return destinationAvailable

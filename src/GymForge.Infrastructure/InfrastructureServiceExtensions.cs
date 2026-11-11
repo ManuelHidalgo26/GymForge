@@ -35,17 +35,24 @@ public static class InfrastructureServiceExtensions
         services.AddSingleton<IMachineFingerprint>(sp => new WindowsMachineFingerprint(
             sp.GetRequiredService<ILogger<WindowsMachineFingerprint>>()));
 
+        // Frase de acceso del respaldo cifrado, protegida con DPAPI en esta PC (ADR-012). GymForge es solo Windows.
+        services.AddSingleton<IBackupKeyStore>(sp => OperatingSystem.IsWindows()
+            ? new DpapiBackupKeyStore(sp.GetRequiredService<ILogger<DpapiBackupKeyStore>>())
+            : throw new PlatformNotSupportedException("El cifrado de respaldos requiere Windows (DPAPI)."));
+
         // Resguardo y recuperación de la base local (singleton: tiene la ruta de la DB).
         services.AddSingleton(sp => new DatabaseBackupService(
             connectionString,
             sp.GetRequiredService<ILogger<DatabaseBackupService>>(),
-            sp.GetRequiredService<ILocalSettings>()));
+            sp.GetRequiredService<ILocalSettings>(),
+            sp.GetRequiredService<IBackupKeyStore>()));
         services.AddSingleton<IDatabaseBackup>(sp => sp.GetRequiredService<DatabaseBackupService>());
 
         // Migración de datos entre PCs (exportar/importar el gimnasio completo).
         services.AddSingleton<IDataTransfer>(sp => new DataTransferService(
             connectionString,
             sp.GetRequiredService<IDatabaseBackup>(),
+            sp.GetRequiredService<IBackupKeyStore>(),
             sp.GetRequiredService<ILogger<DataTransferService>>()));
 
         services.AddScoped<IMemberRepository, MemberRepository>();

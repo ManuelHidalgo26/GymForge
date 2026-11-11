@@ -18,6 +18,7 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 
 ## Estado general (al 2026-11-11)
 
+- **CANAL DE RELEASES (ADR-015, 2026-11-11): CERRADO en código** (commit `94a869b`). Auto-update **ACTIVO** en los builds nuevos: `BuildDefaultUrl` apunta al repo público de GitHub Releases, sin token en el cliente. Falta el primer release real (dry-run y push del tag `v*`, del usuario). Pilotos con builds viejos: no se auto-actualizan hasta recibir un build nuevo. Ver la entrada de arriba de todo.
 - **HITO (2026-11-11): las 3 decisiones de política del piloto están CERRADAS** (F1-D2 por ADR-012, D11/Q4/O10 por ADR-013, UX11/F1-D7/F1-D3 por ADR-014). Las 2 condiciones de uso de F1 quedan atendidas a nivel de mecanismo: (1) backup externo cifrado; (2) auto-update configurable tras PIN, con https obligatorio y backup pre-migración. Lo que falta para activarlo en campo es operativo: montar el canal de releases (distribución), no una decisión.
 - **UX11 + F1-D7 + F1-D3 + NEW-48 (ADR-014, 2026-11-11): CERRADOS.** Commits `17d789d` (origen de actualizaciones configurable tras PIN, rechazo de `http` en dos lados, NEW-48 bajo lock) y `c1fcf34` (backup `pre-migracion` ante migraciones pendientes, F1-D3). qa: APROBADO CON OBSERVACIONES, sin veto. Tests **1676 verdes**. **El auto-update sigue INACTIVO por defecto** (`BuildDefaultUrl` vacío; sin token ni URL embebidos). Deuda nueva: **NEW-62 a NEW-65** (BAJA; **NEW-62 cerrado el mismo día, commit `ac1ac9f`**, tras marcarlo qa y el review automático de seguridad). Ver la entrada de arriba de todo.
 - **D11 ampliada + Q4 + O10 (ADR-013, 2026-11-11): CERRADOS.** Commits `c3c87ce` (redacción de PII en el snapshot de DELETE de `Member` y de `FreezeReason` en freeze/unfreeze) y `d08b96c` (PIN de staff para exportar Reportes). qa: APROBADO CON OBSERVACIONES, sin vetos. Tests **1649 verdes**. Nota de release: la redacción no es retroactiva (AuditLog append-only). Deuda nueva: **NEW-59 a NEW-61** (BAJA). Ver la entrada de arriba de todo.
@@ -62,7 +63,13 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 
 ## Qué sigue
 
-**Próximo paso (2026-11-11, tras UX11 + F1-D7 + F1-D3 + NEW-48, ADR-014). HITO: las 3 decisiones de política están CERRADAS** (F1-D2 ADR-012, D11/Q4/O10 ADR-013, UX11/F1-D7/F1-D3 ADR-014). El próximo paso ya no es una decisión de política:
+**Próximo paso (2026-11-11, tras el canal de releases ADR-015; reemplaza el paso 2 de ADR-014).**
+1. Usuario: commit de docs de ADR-015 (a Accepted, `docs/adr/README.md`, `docs/PROGRESS.md`, `docs/TASKS.md`).
+2. Usuario: dry-run del release (`vpk upload github` sin `--publish`) y verificar `Setup.exe`, `*-full.nupkg` y `RELEASES` en el draft.
+3. Usuario: push del primer tag `v*` (versión mayor a la de los pilotos); revisar `.github/workflows/release.yml` en GitHub Actions.
+4. Dev (baja): NEW-66 y NEW-67 (ADR-015).
+
+**Próximo paso anterior (2026-11-11, tras UX11 + F1-D7 + F1-D3 + NEW-48, ADR-014; el paso 2 de distribución ya está hecho en `94a869b`). HITO: las 3 decisiones de política están CERRADAS** (F1-D2 ADR-012, D11/Q4/O10 ADR-013, UX11/F1-D7/F1-D3 ADR-014). El próximo paso ya no es una decisión de política:
 1. Orquestador: commit de docs de ADR-014 (a Accepted, `docs/adr/README.md`, `docs/PROGRESS.md`, `docs/TASKS.md`) y push; revisar CI.
 2. Distribución (tarea, no decisión): montar el canal de releases (GitHub Releases, `vpk upload github`; CLAUDE.md "Distribución web"). Recién después completar `BuildDefaultUrl` o configurar el origen en Config tras PIN. Hasta entonces el auto-update queda INACTIVO en campo.
 3. Usuario (decisiones que NO son parte de estas 3 y siguen abiertas): Q2/D9 (`AsNoTracking` antes de operar, o aceptar reinicios diarios de la PC de recepción); push de `master` a `origin` y merge de `feat/sesion-6` (ítems 8 y 1 de "Decisiones"; estado no verificado en esta sesión); NEW-8 (`.editorconfig`); NEW-61 (roles finos para exportar, opcional).
@@ -150,6 +157,48 @@ Decisiones del usuario abiertas (ninguna bloquea el piloto con las 2 condiciones
 Fuera del piloto: P-2 (saldo a favor en la ficha) sigue abierta. D1 (cobros multi-sede) quedó cerrada el 2026-11-05 (barrido pasada 1). Cerradas en el barrido de deuda vieja (2026-11-10): D5, D6, D8 (parte 1) y D19. Resto de deuda (D1–D19, F1-D4 a F1-D10, F2-D1 a F2-D8, Q3–Q9, UX1–UX17): ver `docs/TASKS.md`. Deuda: **NEW-41** cerrada el 2026-11-11 (VisitPack; nota de release sobre packs legados en la entrada de arriba). NEW-42 a NEW-45 cerradas el 2026-11-11. Nueva deuda: **NEW-46 a NEW-48** (sección "Deuda del barrido de deuda baja", TASKS) y **NEW-49 a NEW-51** (sección "Deuda de NEW-41", TASKS) y **NEW-52 a NEW-58** (sección "Deuda del cierre de F1-D2", TASKS; F1-D2 cerrado el 2026-11-11).
 
 Sesiones 5-8: ver tabla de fases arriba.
+
+---
+
+## [2026-11-11] Canal de releases GitHub Actions por tag `v*` (ADR-015) — CERRADO en código (docs y primer release pendientes)
+
+**Hecho:**
+- **Canal de auto-update sobre GitHub Releases** del repo público `ManuelHidalgo26/GymForge`. Velopack con `accessToken: null`: **cero token en el cliente**. El único secreto es el `GITHUB_TOKEN` server-side del Actions (`contents: write`).
+- **Commit `94a869b`** (`feat: [release] canal de releases GitHub Actions por tag v* (ADR-015)`):
+  - `.github/workflows/release.yml` (nuevo): dispara con push de tag `v*`, valida SemVer del tag, corre `dotnet test` como gate, instala `vpk` 1.2.0, empaqueta con `scripts/pack.ps1` y publica con `vpk upload github --publish`.
+  - `src/GymForge.Desktop/Services/UpdateFeed.cs`: `BuildDefaultUrl` pasa de vacía a `https://github.com/ManuelHidalgo26/GymForge`. **Auto-update ACTIVADO en los builds nuevos** (cierra la parte diferida de ADR-014). Sigue rechazando `http` y enmascarando el log (UX11 y NEW-62 intactos).
+  - `scripts/pack.ps1`: pasa la versión a `dotnet publish` (`-p:Version`; `FileVersion` sin sufijo prerelease). Por defecto la lee del `<Version>` del csproj.
+  - `tests/GymForge.Desktop.Tests/VelopackUpdateServiceTests.cs`: ajustados, porque con la URL por defecto activa el caso "sin override" cae al default de fábrica (`NotInstalled`). Se sumaron 2 variantes de NEW-65 (`HTTP://` y espacios).
+  - `docs/DISTRIBUCION.md` y `docs/CODE-SIGNING.md`: sección de actualizaciones y nota de firma en CI.
+- **qa: APROBADO** con 2 fixes propios: **Alto** = inyección de comandos en el workflow (el nombre del tag iba interpolado en un `run:` de PowerShell; ahora va por variable de entorno); **Medio** = `FileVersion` mal formado con tags prerelease.
+- **Tests:** `dotnet test GymForge.sln` **1687 verdes** (antes 1685), 0 rojos.
+- **Firma en CI: NO.** El release automatizado sale sin firmar. El pack firmado (autofirmado) sigue siendo el flujo LOCAL del pendrive del piloto.
+- **ADR-015** (`docs/adr/ADR-015-canal-de-releases.md`) pasa a Accepted al commitear las docs (lo hace el usuario junto con `docs/adr/README.md`).
+- **Cerrado con este commit:** NEW-65 (tests de `HTTP://` y espacios). Ver "Deuda de ADR-015" en TASKS.
+
+**Pendiente del usuario (fuera de alcance de esta sesión; no ejecutado):**
+- **Dry-run** antes del primer release real: `vpk upload github` **sin `--publish`** (crea un draft que el cliente ignora), para verificar que suben `Setup.exe`, `*-full.nupkg` y `RELEASES`.
+- **Push del primer tag `v*`** que dispara el primer release real. Debe ser una versión mayor a la instalada en los pilotos. Es publicar contenido público: lo hace el usuario.
+- Commit de docs (ADR-015 a Accepted, `docs/adr/README.md`, `docs/PROGRESS.md`, `docs/TASKS.md`).
+
+**En curso:**
+- Nada de código a medias.
+
+**Blockers:**
+- Técnicos: ninguno.
+- Piloto: las PCs con builds viejos (`BuildDefaultUrl` vacía) **no se auto-actualizan** hasta recibir un build nuevo o cargar el origen en Config tras PIN. El exe portable `dist/GymForge.exe` nunca se auto-actualiza.
+
+**Próximo paso:**
+1. Usuario: commit de docs (ADR-015 a Accepted, `docs/adr/README.md`, PROGRESS, TASKS).
+2. Usuario: dry-run del release (`vpk upload github` sin `--publish`); verificar `Setup.exe`, `*-full.nupkg` y `RELEASES` en el draft.
+3. Usuario: push del primer tag `v*` (versión mayor a la de los pilotos); revisar `release.yml` en GitHub Actions.
+4. Dev (baja): NEW-66 y NEW-67 (ADR-015).
+
+**Tocado:**
+- Código (commit `94a869b`; ver `git show --stat 94a869b`): `.github/workflows/release.yml` (nuevo); `src/GymForge.Desktop/Services/UpdateFeed.cs` (`BuildDefaultUrl`); `scripts/pack.ps1`; `tests/GymForge.Desktop.Tests/VelopackUpdateServiceTests.cs`.
+- Docs (en el mismo commit de código): `docs/DISTRIBUCION.md`; `docs/CODE-SIGNING.md`.
+- ADR: `docs/adr/ADR-015-canal-de-releases.md` (sin cambios en esta entrada).
+- Docs: `docs/PROGRESS.md`; `docs/TASKS.md`.
 
 ---
 

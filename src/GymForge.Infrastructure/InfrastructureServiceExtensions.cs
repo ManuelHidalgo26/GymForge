@@ -114,6 +114,7 @@ public static class InfrastructureServiceExtensions
         await BaselineLegacyDatabaseAsync(db);
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<GymForgeDbContext>>();
         await MemberDocumentMigrationGuard.EnsureNoDuplicatesAsync(db, logger);
+        await BackupBeforePendingMigrationsAsync(db, backup);
         await db.Database.MigrateAsync();
         await EnableWriteAheadLoggingAsync(db);
         await MemberStatusReconciliation.ReconcileAsync(db, backup, logger);
@@ -125,6 +126,16 @@ public static class InfrastructureServiceExtensions
 
         // Snapshot diario (no duplica si ya hay uno de hoy), con la base ya sana y migrada.
         backup.BackupIfDue();
+    }
+
+    /// <summary>
+    /// Antes de aplicar migraciones pendientes (actualización de la app), deja una copia de la base tal como está.
+    /// Best-effort: si el backup no se pudo hacer no bloquea el arranque. En una base nueva no hay nada que copiar.
+    /// </summary>
+    internal static async Task BackupBeforePendingMigrationsAsync(GymForgeDbContext db, DatabaseBackupService backup)
+    {
+        if ((await db.Database.GetPendingMigrationsAsync()).Any())
+            backup.BackupNow("pre-migracion");
     }
 
     /// <summary>

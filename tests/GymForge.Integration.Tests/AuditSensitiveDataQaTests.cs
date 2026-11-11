@@ -152,4 +152,64 @@ public class AuditSensitiveDataQaTests : IAsyncLifetime
         snapshot.Should().Contain("\"FingerprintTemplate\":\"<5 bytes>\"").And.NotContain("AQIDBAU=");
         snapshot.Should().Contain("\"MedicalConditions\":null", "un campo vacío no se disfraza de dato redactado");
     }
+
+    [Fact]
+    public async Task Delete_OfMember_SnapshotRedactsEveryPersonalField()
+    {
+        var member = await SavedMemberAsync();
+        member.UpdateContact("ana@secreto.com", "+5491100001111");
+        var entry = _db.Entry(member);
+        entry.Property(nameof(Member.Observations)).CurrentValue = "Le duele la espalda";
+        entry.Property(nameof(Member.CustomFieldsJson)).CurrentValue = """{"talle":"remera-XL-secreta"}""";
+        entry.Property(nameof(Member.SignatureUrl)).CurrentValue = "firmas/ana-secreta.png";
+        entry.Property(nameof(Member.TagSerial)).CurrentValue = "30111222";
+        entry.Property(nameof(Member.PhotoUrl)).CurrentValue = "fotos/ana-garcia-foto.jpg";
+        await _db.SaveChangesAsync();
+
+        _db.Members.Remove(member);
+        await _db.SaveChangesAsync();
+
+        var snapshot = (await AuditRowAsync(nameof(Member), "Delete")).DiffJson!;
+        foreach (var leaked in new[]
+                 {
+                     "Ana", "García", "30111222", "secreto", "5491100001111", "espalda", "remera-XL", "ana-secreta",
+                     "ana-garcia-foto"
+                 })
+            snapshot.Should().NotContain(leaked);
+
+        foreach (var field in new[]
+                 {
+                     "FirstName", "LastName", "DocumentNumber", "Email", "Mobile", "Observations",
+                     "CustomFieldsJson", "SignatureUrl", "TagSerial", "PhotoUrl"
+                 })
+            snapshot.Should().Contain($"\"{field}\":\"[redacted]\"");
+    }
+
+    [Fact]
+    public async Task FreezeReason_NeverReachesTheAuditLog_NeitherOnFreezeNorOnUnfreeze()
+    {
+        var member = await SavedMemberAsync();
+        var plan = MembershipType.Create(_company.Id, "Mensual", MembershipBasis.Renewal, 35_000m, 1, "Month");
+        await _db.MembershipTypes.AddAsync(plan);
+        var start = new DateOnly(2026, 5, 1);
+        var membership = Membership.Create(
+            _company.Id, _site.Id, member.Id, plan.Id, start, start.AddDays(30));
+        membership.Activate();
+        await _db.Memberships.AddAsync(membership);
+        await _db.SaveChangesAsync();
+
+        membership.Freeze(new DateOnly(2026, 5, 10), new DateOnly(2026, 5, 20), "lesión de rodilla");
+        await _db.SaveChangesAsync();
+        _clock.Now = _clock.Now.AddMinutes(1);
+        membership.Unfreeze(new DateOnly(2026, 5, 15));
+        await _db.SaveChangesAsync();
+
+        var updates = await _db.AuditLogs.IgnoreQueryFilters()
+            .Where(a => a.EntityType == nameof(Membership) && a.Action == "Update")
+            .OrderBy(a => a.Timestamp).ToListAsync();
+        updates.Should().HaveCount(2);
+        updates.Should().OnlyContain(a => !a.DiffJson!.Contains("rodilla"));
+        updates[0].DiffJson.Should().Contain("\"FreezeReason\":{\"old\":null,\"new\":\"[redacted]\"}");
+        updates[1].DiffJson.Should().Contain("\"FreezeReason\":{\"old\":\"[redacted]\",\"new\":null}");
+    }
 }

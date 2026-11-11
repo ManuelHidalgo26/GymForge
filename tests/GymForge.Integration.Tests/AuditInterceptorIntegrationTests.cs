@@ -131,7 +131,7 @@ public class AuditInterceptorIntegrationTests : IAsyncLifetime
     // ── Delete ────────────────────────────────────────────────────────────────
 
     [Fact]
-    public async Task Delete_SnapshotsTheOriginalValues()
+    public async Task Delete_RedactsPersonalData_ButKeepsNonPersonalValues()
     {
         var member = await SavedMemberAsync();
 
@@ -140,7 +140,11 @@ public class AuditInterceptorIntegrationTests : IAsyncLifetime
 
         var row = (await AuditRowsAsync(nameof(Member), "Delete")).Should().ContainSingle().Subject;
         row.EntityId.Should().Be(member.Id);
-        row.DiffJson.Should().Contain("\"FirstName\":\"Ana\"").And.Contain("\"DocumentNumber\":\"30111222\"");
+        row.DiffJson.Should()
+            .Contain("\"FirstName\":\"[redacted]\"")
+            .And.Contain("\"DocumentNumber\":\"[redacted]\"")
+            .And.Contain("\"Status\":\"Prospect\"")
+            .And.NotContain("Ana").And.NotContain("30111222");
     }
 
     // ── Lo que NO se audita ───────────────────────────────────────────────────

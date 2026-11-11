@@ -23,21 +23,22 @@ public sealed class AuditSaveChangesInterceptor(ICurrentUser user, IClock clock,
     private static readonly HashSet<string> TimestampProperties =
         [nameof(BaseEntity.CreatedAt), nameof(BaseEntity.UpdatedAt)];
 
-    // Credenciales y datos de salud: se registra que cambiaron, nunca su valor. El AuditLog es append-only
-    // (no se puede purgar), así que un dato sensible que entra acá queda para siempre, incluso si el socio
-    // se elimina o pide la supresión de sus datos.
+    // Credenciales, datos de salud y el motivo de freeze (texto libre que puede contener datos de salud): se
+    // registra que cambiaron, nunca su valor. El AuditLog es append-only (no se puede purgar), así que un
+    // dato sensible que entra acá queda para siempre, incluso si el socio se elimina o pide la supresión.
     private static readonly HashSet<string> RedactedProperties =
     [
         nameof(Staff.PinCodeHash),
         nameof(Member.MedicalConditions),
         nameof(Member.Medications),
-        nameof(Member.Allergies)
+        nameof(Member.Allergies),
+        nameof(Membership.FreezeReason)
     ];
 
-    // Datos personales del socio: en un UPDATE el log guarda quién, cuándo y qué campo cambió, pero no el
-    // valor viejo ni el nuevo (Ley 25.326: un dato personal en un log append-only no se puede purgar).
-    // El snapshot de un DELETE conserva el registro borrado, como siempre.
-    private static readonly HashSet<string> RedactedMemberUpdateProperties =
+    // Datos personales del socio: en un UPDATE o DELETE el log guarda quién, cuándo y qué campo, pero no el
+    // valor (Ley 25.326: un dato personal en un log append-only no se puede purgar). Los campos no
+    // personales del snapshot de un DELETE se conservan.
+    private static readonly HashSet<string> RedactedMemberPersonalProperties =
     [
         nameof(Member.FirstName),
         nameof(Member.LastName),
@@ -49,7 +50,11 @@ public sealed class AuditSaveChangesInterceptor(ICurrentUser user, IClock clock,
         nameof(Member.EmergencyName),
         nameof(Member.EmergencyPhone),
         nameof(Member.EmergencyRelation),
-        nameof(Member.BloodType)
+        nameof(Member.BloodType),
+        nameof(Member.CustomFieldsJson),
+        nameof(Member.SignatureUrl),
+        nameof(Member.TagSerial),
+        nameof(Member.PhotoUrl)
     ];
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -189,11 +194,16 @@ public sealed class AuditSaveChangesInterceptor(ICurrentUser user, IClock clock,
         return changes.Count == 0 ? null : JsonSerializer.Serialize(changes, JsonOptions);
     }
 
-    /// <summary>Los deletes son raros y peligrosos: se conserva el dato borrado.</summary>
-    private static string SnapshotJson(EntityEntry entry) =>
-        JsonSerializer.Serialize(
-            entry.Properties.ToDictionary(p => p.Metadata.Name, p => Present(p.Metadata.Name, p.OriginalValue, redactPersonalData: false)),
+    /// <summary>Los deletes son raros y peligrosos: se conserva el registro borrado, salvo sus datos personales.</summary>
+    private static string SnapshotJson(EntityEntry entry)
+    {
+        var redactPersonalData = entry.Entity is Member;
+        return JsonSerializer.Serialize(
+            entry.Properties.ToDictionary(
+                p => p.Metadata.Name,
+                p => Present(p.Metadata.Name, p.OriginalValue, redactPersonalData)),
             JsonOptions);
+    }
 
     private static bool SameValue(object? original, object? current) =>
         original is byte[] originalBytes && current is byte[] currentBytes
@@ -201,13 +211,13 @@ public sealed class AuditSaveChangesInterceptor(ICurrentUser user, IClock clock,
             : Equals(original, current);
 
     /// <summary>
-    /// Credenciales, datos de salud y (en updates de socio) datos personales ocultos (un campo vacío sigue siendo null: no se inventa un valor) y
-    /// binarios (huella) reducidos a su tamaño: nunca base64 en la base.
+    /// Credenciales, datos de salud y (en updates y deletes de socio) datos personales ocultos (un campo vacío
+    /// sigue siendo null: no se inventa un valor) y binarios (huella) reducidos a su tamaño: nunca base64.
     /// </summary>
     private static object? Present(string propertyName, object? value, bool redactPersonalData) => value switch
     {
         not null when RedactedProperties.Contains(propertyName) => RedactedValue,
-        not null when redactPersonalData && RedactedMemberUpdateProperties.Contains(propertyName) => RedactedValue,
+        not null when redactPersonalData && RedactedMemberPersonalProperties.Contains(propertyName) => RedactedValue,
         byte[] bytes => $"<{bytes.Length} bytes>",
         _ => value
     };

@@ -18,6 +18,7 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 
 ## Estado general (al 2026-11-11)
 
+- **NEW-41 / VisitPack (2026-11-11): CERRADO.** Packs de visitas con `MembershipType.VisitsIncluded` (commit `e7030c3`, ADR-002 addendum). El Gatekeeper decrementa visitas de verdad. qa: APROBADO CON OBSERVACIONES, sin vetos. Tests **1595 verdes**. Deuda nueva: **NEW-49 a NEW-51** (BAJA). **Nota de release del piloto:** planes `VisitPack` preexistentes quedan sin `VisitsIncluded` y bloquean la venta hasta recrearlos; verificar la base antes de operar. Ver la entrada de arriba de todo.
 - **Barrido de deuda baja (2026-11-11): CERRADO.** Cerrados **NEW-42** (quitado `Cache=Shared` del Desktop; WAL sin shared-cache verificado por qa), **NEW-43** (test de `MembershipId` en los 5 denegados), **NEW-44** (ocultar Editar/Eliminar en ejercicios globales) y **NEW-45** (setters off-site de `LocalSettingsService` bajo lock). Commits de código en `master` (`82d22e0`, `f766fc7`, `e6ada74`, `70f10f2`); push a `origin` en curso al cierre de esta entrada. qa: APROBADO CON OBSERVACIONES, sin vetos. Tests **1578 verdes** (Domain 108 · Application 637 · Desktop 435 · Integration 398). **NEW-41 queda PARADO** con diagnóstico: necesita decisión de arqui (cambio de esquema en `MembershipType`). Deuda nueva: **NEW-46 a NEW-48** (BAJA). Ver la entrada de arriba de todo.
 - **Tanda de deuda técnica (2026-11-10): CERRADO.** Cerrados **F1-D1** (copia off-site en segundo plano; el bloqueo de carpeta de red por cuelgue queda levantado, pero sigue pendiente **F1-D2**, cifrado), **F2-D7** (sin PII en el log de archivo) y **F3-D5** (guardado atómico de foto, sin residuo). Commits de código en `master` (`7864fcf`, `3ce85c3`, `76b4ea4`), sin push ni merge; docs en el commit del orquestador. qa: APROBADO. Tests **1573 verdes** (Domain 108 · Application 632 · Desktop 435 · Integration 398). Deuda nueva: **NEW-45** (BAJA). Ver la entrada de arriba de todo.
 - **Barrido de deuda vieja (2026-11-10): CERRADO.** Cerrados **D5** (guard de biblioteca global en borrado y edición de ejercicios), **D6** (tenant del socio en el pago a cuenta), **D8 parte 1** (`MembershipId` en los denegados) y **D19** (**WAL no estaba activo** pese a CLAUDE.md; ahora `PRAGMA journal_mode=WAL` en el arranque). Commits de código en `master` (`c1c1012`, `41a2f26`, `584728c`, `159f744`), sin push ni merge; docs en el commit del orquestador. Sin migración EF. qa: APROBADO CON OBSERVACIONES en la primera pasada y APROBADO para commitear tras cerrar el guard gemelo de edición. Tests **1567 verdes** (Domain 108 · Application 632 · Desktop 432 · Integration 395). Deuda nueva: **NEW-41 a NEW-44** (BAJA). D8 parte 2 (sembrar `VisitsRemaining` en planes `VisitPack`) queda como feature latente (NEW-41). Ver la entrada de arriba de todo.
@@ -36,7 +37,7 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 - **Fase 4 parte 2 (Sesión 7): CERRADA (2026-11-04)** en `feat/sesion-6` (código `1f44d2c`; commit de docs por el orquestador). ADR-008 `Accepted`. Sin push ni merge. Ver la entrada de cierre arriba de todo.
 - **Limpieza de bugs/errores/warnings (2026-11-04): CERRADA** en `feat/sesion-6` (código `7bc780f`; commit de docs por el orquestador). Sin push ni merge. Ver la entrada de arriba de todo.
 - **Git (verificado en refs, 2026-11-03):** `master` = `e541586`. `origin/master` = `6d39c0a` (anterior al merge de F1 `33ba4ec`): **master está adelante de origin, sin push** (29 commits según el orquestador; no re-contado). Existen `feat/sesion-3`, `feat/sesion-4` y `feat/sesion-5` (ya mergeadas).
-- Tests: **1578 verdes al cierre del barrido de deuda baja (2026-11-11)** (Domain 108 · Application 637 · Desktop 435 · Integration 398), `dotnet test GymForge.sln`, 0 rojos, 0 omitidos. Anterior: **1573 verdes al cierre de la tanda de deuda técnica (2026-11-10)** (Domain 108 · Application 632 · Desktop 435 · Integration 398), 0 rojos, 0 omitidos. Anterior: **1567 verdes al cierre del barrido de deuda vieja (2026-11-10)** (Domain 108 · Application 632 · Desktop 432 · Integration 395), `dotnet test GymForge.sln`, 0 fallos. Baseline previa: **1550 verdes** (limpieza de deuda baja). Anterior: **1541 verdes al cierre de la reconciliación NEW-31 (2026-11-10)** (Domain 107 · Application 624 · Desktop 431 · Integration 379). Anterior: **1523 verdes al cierre de la pasada 3 (2026-11-10)** (Domain 107 · Application 624 · Desktop 431 · Integration 361). Anterior: **1504 verdes al cierre del barrido de deuda, pasada 2 (2026-11-05)** (Domain 107 · Application 617 · Desktop 421 · Integration 359). Anterior: **1485 verdes al cierre del barrido de deuda, pasada 1 (2026-11-05)** (Domain 107 · Application 599 · Desktop 421 · Integration 358). Anterior: **1477 verdes al cierre del endurecimiento para piloto (2026-11-05)** (Domain 107 · Application 591 · Desktop 421 · Integration 358). Anterior: **1472 verdes al cierre del Endurecimiento final** (Domain 107 · Application 591 · Desktop 419 · Integration 355), `dotnet test GymForge.sln` exit 0, 0 omitidos, Debug y Release (2026-11-04). Piso previo: 1461 (Fase 5 parte 2, pieza F); 1456 (Fase 5 parte 1, `d33e101`); 1392 antes de la limpieza (`7bc780f`).
+- Tests: **1595 verdes al cierre de NEW-41 (2026-11-11)** (Domain 115 · Application 646 · Desktop 435 · Integration 399), 0 rojos, 0 omitidos. Anterior: **1578 verdes al cierre del barrido de deuda baja (2026-11-11)** (Domain 108 · Application 637 · Desktop 435 · Integration 398), `dotnet test GymForge.sln`, 0 rojos, 0 omitidos. Anterior: **1573 verdes al cierre de la tanda de deuda técnica (2026-11-10)** (Domain 108 · Application 632 · Desktop 435 · Integration 398), 0 rojos, 0 omitidos. Anterior: **1567 verdes al cierre del barrido de deuda vieja (2026-11-10)** (Domain 108 · Application 632 · Desktop 432 · Integration 395), `dotnet test GymForge.sln`, 0 fallos. Baseline previa: **1550 verdes** (limpieza de deuda baja). Anterior: **1541 verdes al cierre de la reconciliación NEW-31 (2026-11-10)** (Domain 107 · Application 624 · Desktop 431 · Integration 379). Anterior: **1523 verdes al cierre de la pasada 3 (2026-11-10)** (Domain 107 · Application 624 · Desktop 431 · Integration 361). Anterior: **1504 verdes al cierre del barrido de deuda, pasada 2 (2026-11-05)** (Domain 107 · Application 617 · Desktop 421 · Integration 359). Anterior: **1485 verdes al cierre del barrido de deuda, pasada 1 (2026-11-05)** (Domain 107 · Application 599 · Desktop 421 · Integration 358). Anterior: **1477 verdes al cierre del endurecimiento para piloto (2026-11-05)** (Domain 107 · Application 591 · Desktop 421 · Integration 358). Anterior: **1472 verdes al cierre del Endurecimiento final** (Domain 107 · Application 591 · Desktop 419 · Integration 355), `dotnet test GymForge.sln` exit 0, 0 omitidos, Debug y Release (2026-11-04). Piso previo: 1461 (Fase 5 parte 2, pieza F); 1456 (Fase 5 parte 1, `d33e101`); 1392 antes de la limpieza (`7bc780f`).
 - **Endurecimiento final (post-Fase 5): CERRADO (2026-11-04)** en `feat/sesion-6`: 7 commits de código (`6dd304f`, `5274395`, `ffcbbbc`, `6ec5ae4`, `e9ef7aa`, `dd294d5`, `3b4d7e9`) + commit de docs pendiente del orquestador. ADR-011 `Accepted` con plan por tiers: MUST + SHOULD entregados; D9b, D2 y UX19 diferidos. **2 migraciones nuevas:** `20261105000953` (D3, SiteId) y `20261105001255` (D7, DNI único por empresa+sede). Sin push ni merge.
 - **Fase 5 parte 1 (Sesión 8): CERRADA (2026-11-04)** en `feat/sesion-6` (código `d33e101`; commit de docs por el orquestador). ADR-009 `Accepted`. Piezas A–E y G; F (calendario) diferida a parte 2. Sin push ni merge. Ver la entrada de cierre arriba de todo.
 - **Fase 5 parte 2 (Sesión 9): CERRADA (2026-11-04)** en `feat/sesion-6`: pieza F (calendario semanal de Clases en grilla de 7 días). **Fase 5 completa cerrada (piezas A–G).** ADR-010 pasa a `Accepted` al commitear (orquestador). Código y docs pendientes de commit del orquestador. Sin push ni merge. Ver la entrada de cierre arriba de todo.
@@ -59,7 +60,13 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 
 **NEW-31 (O-3, MEDIA) cerrado el 2026-11-10** (commit `d7852bf`): la reconciliación del arranque repara solos los socios `Prospect` con membresía `Active`. Ya no hay pendiente de código por este tema. La base de piloto real no se consultó; si hubo afectados, queda la línea de log `Reconciliación de estado de socio` en `%LOCALAPPDATA%\GymForge\logs`.
 
-**Próximo paso (2026-11-11, tras el barrido de deuda baja NEW-42 a NEW-45):**
+**Próximo paso (2026-11-11, tras NEW-41 / VisitPack):**
+1. Orquestador: commit de docs de NEW-41 (`docs/adr/ADR-002-addendum-visitas-incluidas-visitpack.md`, `docs/adr/README.md`, `docs/PROGRESS.md`, `docs/TASKS.md`) y push; revisar CI.
+2. Antes de operar en el piloto: verificar en la base que no haya planes `VisitPack` con `VisitsIncluded` nulo (nota de release; ver la entrada de arriba de todo).
+3. Usuario: decidir **F1-D2** (cifrado del backup externo), **D11 ampliada + O10** (PII y roles en exports) y **UX11** (origen de las actualizaciones).
+4. Dev (baja): NEW-49 a NEW-51 (NEW-41) y NEW-46 a NEW-48.
+
+**Próximo paso (2026-11-11, tras el barrido de deuda baja NEW-42 a NEW-45; superado por NEW-41):**
 1. Orquestador: confirmar que el push de `master` a `origin` terminó (`git status -sb`; `git log origin/master -1` debe mostrar `70f10f2` o posterior) y revisar la corrida de CI en GitHub Actions. Después, commit de docs de este barrido (`docs/PROGRESS.md`, `docs/TASKS.md`).
 2. Arqui: decidir **NEW-41** (D8 parte 2, VisitPack). Propuesta del diagnóstico: `MembershipType.VisitsIncluded int?` + migración EF. Después dev: `Create` + CRUD de Planes + seed (10) + sembrado en `CreateMembershipCommand.cs:56`. Hasta entonces los packs de visitas no decrementan.
 3. Usuario: decidir las políticas que ya estaban abiertas: **F1-D2** (cifrado del backup externo, antes de recomendar carpeta de red o sincronizada), **D11 ampliada + O10** (PII y roles en exports) y **UX11** (origen de las actualizaciones). Además siguen NEW-40 y NEW-36.
@@ -116,9 +123,48 @@ Decisiones del usuario abiertas (ninguna bloquea el piloto con las 2 condiciones
 8. Pendiente operativo: **push de `master` a `origin` y CI** (sin hacer). `origin/master` = `6d39c0a`; `master` = `e541586` (29 commits de diferencia según el orquestador, no re-contado). Lo decide el usuario. Las ramas `feat/sesion-3`, `feat/sesion-4` y `feat/sesion-5` ya están mergeadas y se pueden borrar tras el push (`feat/sesion-6` tras su commit y merge).
 9. **O10 (roles para exportar):** hoy cualquier sesión de recepción puede exportar "toda la empresa" con PII y finanzas (no hay roles finos en la UI). Liga con D11 y con la decisión 5 de ADR-007.
 
-Fuera del piloto: P-2 (saldo a favor en la ficha) sigue abierta. D1 (cobros multi-sede) quedó cerrada el 2026-11-05 (barrido pasada 1). Cerradas en el barrido de deuda vieja (2026-11-10): D5, D6, D8 (parte 1) y D19. Resto de deuda (D1–D19, F1-D4 a F1-D10, F2-D1 a F2-D8, Q3–Q9, UX1–UX17): ver `docs/TASKS.md`. Deuda: **NEW-41** sigue abierta (parada, decisión de arqui). NEW-42 a NEW-45 cerradas el 2026-11-11. Nueva deuda: **NEW-46 a NEW-48** (sección "Deuda del barrido de deuda baja", TASKS).
+Fuera del piloto: P-2 (saldo a favor en la ficha) sigue abierta. D1 (cobros multi-sede) quedó cerrada el 2026-11-05 (barrido pasada 1). Cerradas en el barrido de deuda vieja (2026-11-10): D5, D6, D8 (parte 1) y D19. Resto de deuda (D1–D19, F1-D4 a F1-D10, F2-D1 a F2-D8, Q3–Q9, UX1–UX17): ver `docs/TASKS.md`. Deuda: **NEW-41** cerrada el 2026-11-11 (VisitPack; nota de release sobre packs legados en la entrada de arriba). NEW-42 a NEW-45 cerradas el 2026-11-11. Nueva deuda: **NEW-46 a NEW-48** (sección "Deuda del barrido de deuda baja", TASKS) y **NEW-49 a NEW-51** (sección "Deuda de NEW-41", TASKS).
 
 Sesiones 5-8: ver tabla de fases arriba.
+
+---
+
+## [2026-11-11] VisitPack: visitas incluidas en packs de visitas (NEW-41, D8 parte 2) — CERRADO
+
+**Hecho:**
+- **NEW-41 (D8 parte 2) cerrado.** Circuito arqui → dev → qa. Commit de código `e7030c3` en `master` (`feat: [planes] visitas incluidas en packs de visitas (NEW-41)`). ADR: addendum a ADR-002, `docs/adr/ADR-002-addendum-visitas-incluidas-visitpack.md` (Accepted; lo commitea el orquestador).
+- **Decisión:** el tamaño del pack vive en `MembershipType.VisitsIncluded` (`int?`). El helper de dominio `InitialVisits()` lo usa en los dos caminos de alta.
+- **Código:** `MembershipType` gana `VisitsIncluded` + `InitialVisits()`. `CreateMembershipCommand` y `SellMembershipCommand` siembran `Membership.VisitsRemaining` en planes `VisitPack`, así que el Gatekeeper ahora decrementa visitas de verdad. Validación fail-closed en el factory y en `CreatePlanCommandValidator`. `MembershipTypeDto` gana `VisitsIncluded`. Seed "Pack 10 Visitas" con `visitsIncluded: 10`. UI de Planes: campo "Visitas incluidas" condicional (solo VisitPack, mínimo 1). El `TODO(ADR-002)` de `CreateMembershipCommand.cs` quedó resuelto.
+- **Migración** aditiva `20261111164033_AddVisitsIncludedToMembershipType` (ADD COLUMN nullable, sin backfill, portable SQLite/PostgreSQL).
+- **qa:** APROBADO CON OBSERVACIONES, sin vetos. Verificó la migración (Up/Down y snapshot consistentes), que los dos caminos siembran, el fail-closed (nada persiste si el pack legado no tiene visitas) y el decremento end-to-end (test de Integration no tautológico: pack de 5 → swipe → `VisitsRemaining == 4` persistido).
+- **Tests:** `dotnet test GymForge.sln` **1595 verdes** (Domain 115 · Application 646 · Desktop 435 · Integration 399), 0 rojos, 0 omitidos. Baseline previa 1578 (+17).
+- **Deuda nueva** (BAJA, observaciones de qa): NEW-49 a NEW-51 (sección "Deuda de NEW-41", TASKS).
+
+**Decisión sin backfill (nota de release del piloto):** un plan `VisitPack` preexistente queda con `VisitsIncluded = null`. `InitialVisits()` lanza al vender o crear la membresía (fail-closed), así que la venta queda bloqueada hasta recrear el plan. La feature estuvo latente, por lo que no debería haber packs reales en uso. **Antes de operar en el piloto, verificar en la base que no haya planes `VisitPack` con `VisitsIncluded` nulo.**
+
+**En curso:**
+- Nada de código a medias.
+- Commit de docs (ADR-002 addendum, `docs/adr/README.md`, PROGRESS, TASKS) y push: orquestador.
+
+**Blockers:**
+- Técnicos: ninguno.
+- Piloto: sin cambios en los bloqueos de política (F1-D2, D11 ampliada, O10, UX11). La nota de release de packs legados queda como condición de verificación previa.
+
+**Próximo paso:**
+1. Orquestador: commit de docs (`docs/adr/ADR-002-addendum-visitas-incluidas-visitpack.md`, `docs/adr/README.md`, `docs/PROGRESS.md`, `docs/TASKS.md`) y push; revisar CI.
+2. Usuario: decidir **F1-D2** (cifrado del backup externo), **D11 ampliada + O10** (PII y roles en exports) y **UX11** (origen de las actualizaciones).
+3. Dev (baja): NEW-49 (test a nivel handler de packs legados), NEW-50 (texto del error vs CRUD de Planes) y NEW-51 (columna "Visitas incluidas" en la grilla de Planes), más NEW-46 a NEW-48.
+
+**Tocado:**
+- `src/GymForge.Domain/Entities/MembershipType.cs`
+- `src/GymForge.Application/UseCases/Memberships/CreateMembershipCommand.cs`
+- `src/GymForge.Application/UseCases/Sales/SellMembershipCommand.cs`
+- `src/GymForge.Application/UseCases/Plans/PlanCommands.cs`
+- `src/GymForge.Application/DTOs/CatalogDtos.cs`
+- `src/GymForge.Infrastructure/Migrations/20261111164033_AddVisitsIncludedToMembershipType.cs` (+ `.Designer.cs`), `GymForgeDbContextModelSnapshot.cs`
+- `src/GymForge.Desktop/ViewModels/Plans/PlansViewModel.cs`, `src/GymForge.Desktop/Views/Plans/PlansView.axaml`
+- `docs/adr/ADR-002-addendum-visitas-incluidas-visitpack.md`, `docs/adr/README.md`
+- `docs/PROGRESS.md`, `docs/TASKS.md`
 
 ---
 

@@ -733,6 +733,56 @@ public class GatekeeperTests
         return await CreateSut().ValidateSwipeAsync(TagSwipe());
     }
 
+    // ── Los denegados con membresía involucrada la registran en el AccessLog ──
+
+    [Theory]
+    [InlineData(AccessDenialReason.Owing)]
+    [InlineData(AccessDenialReason.OutOfHours)]
+    [InlineData(AccessDenialReason.DoorNotAllowed)]
+    [InlineData(AccessDenialReason.AlreadyInside)]
+    [InlineData(AccessDenialReason.NoVisitsLeft)]
+    public async Task DeniedWithAMembership_RecordsTheMembershipId(AccessDenialReason reason)
+    {
+        var member = MakeActiveMember();
+        var membership = MakeActiveMembership(
+            member.Id, visitsRemaining: reason == AccessDenialReason.NoVisitsLeft ? 0 : null);
+        ArrangeGrantableSwipe(member, membership);
+        ArrangeDenial(reason, member, membership);
+
+        (await CreateSut().ValidateSwipeAsync(TagSwipe())).DenialReason.Should().Be(reason);
+
+        await _accessLogRepo.Received(1).AppendAsync(
+            Arg.Is<AccessLog>(a => !a.AccessGranted && a.DenialReason == reason && a.MembershipId == membership.Id),
+            Arg.Any<CancellationToken>());
+    }
+
+    /// <summary>Deja pendiente solo el motivo pedido (NoVisitsLeft ya viene del pack sin visitas).</summary>
+    private void ArrangeDenial(AccessDenialReason reason, Member member, Membership membership)
+    {
+        var plan = membership.MembershipType;
+        switch (reason)
+        {
+            case AccessDenialReason.Owing:
+                _chargeRepo.SumOutstandingAsync(member.Id, Arg.Any<CancellationToken>()).Returns(15_000m);
+                break;
+            case AccessDenialReason.OutOfHours:
+                SetPlanProperty(plan, nameof(MembershipType.ScheduleRestrictionJson),
+                    """[{"Days":[],"From":"00:00:00","To":"00:00:01"}]""");
+                break;
+            case AccessDenialReason.DoorNotAllowed:
+                SetPlanProperty(plan, nameof(MembershipType.AllowedDoorIdsJson), "[99]");
+                break;
+            case AccessDenialReason.AlreadyInside:
+                _accessLogRepo.GetLastGrantedAsync(member.Id, 1, Arg.Any<CancellationToken>()).Returns(
+                    AccessLog.Granted(Guid.NewGuid(), Guid.NewGuid(), member.Id, membership.Id,
+                        1, AccessMethod.RfidCard, AccessDirection.In));
+                break;
+        }
+    }
+
+    private static void SetPlanProperty(MembershipType plan, string property, string value) =>
+        typeof(MembershipType).GetProperty(property)!.SetValue(plan, value);
+
     [Fact]
     public async Task Horario_UsesTheCompanyZone_AllowedInsideTheWindow()
     {

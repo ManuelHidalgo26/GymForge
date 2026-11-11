@@ -18,6 +18,7 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 
 ## Estado general (al 2026-11-11)
 
+- **F1-D2 (cifrado de backups externos, 2026-11-11): CERRADO.** Commit `7e4f735` (ADR-012). Lo que sale de la PC (copia off-site y export `.zip`) va cifrado con AES-256-GCM y frase de acceso propia; el backup local queda en claro. qa: APROBADO CON OBSERVACIONES, sin vetos. Tests **1640 verdes** (Domain 115 · Application 648 · Desktop 439 · Integration 438). Deuda nueva: **NEW-52 a NEW-58** (BAJA; NEW-52 es la más importante: copias off-site viejas en claro sin rotar). **Condición de uso 1 de F1 LEVANTADA:** ya se puede usar carpeta de red o Dropbox/OneDrive, con dos salvedades: guardar la frase aparte (sin ella no hay restore) y revisar las copias en claro previas. Ver la entrada de arriba de todo.
 - **NEW-41 / VisitPack (2026-11-11): CERRADO.** Packs de visitas con `MembershipType.VisitsIncluded` (commit `e7030c3`, ADR-002 addendum). El Gatekeeper decrementa visitas de verdad. qa: APROBADO CON OBSERVACIONES, sin vetos. Tests **1595 verdes**. Deuda nueva: **NEW-49 a NEW-51** (BAJA). **Nota de release del piloto:** planes `VisitPack` preexistentes quedan sin `VisitsIncluded` y bloquean la venta hasta recrearlos; verificar la base antes de operar. Ver la entrada de arriba de todo.
 - **Barrido de deuda baja (2026-11-11): CERRADO.** Cerrados **NEW-42** (quitado `Cache=Shared` del Desktop; WAL sin shared-cache verificado por qa), **NEW-43** (test de `MembershipId` en los 5 denegados), **NEW-44** (ocultar Editar/Eliminar en ejercicios globales) y **NEW-45** (setters off-site de `LocalSettingsService` bajo lock). Commits de código en `master` (`82d22e0`, `f766fc7`, `e6ada74`, `70f10f2`); push a `origin` en curso al cierre de esta entrada. qa: APROBADO CON OBSERVACIONES, sin vetos. Tests **1578 verdes** (Domain 108 · Application 637 · Desktop 435 · Integration 398). **NEW-41 queda PARADO** con diagnóstico: necesita decisión de arqui (cambio de esquema en `MembershipType`). Deuda nueva: **NEW-46 a NEW-48** (BAJA). Ver la entrada de arriba de todo.
 - **Tanda de deuda técnica (2026-11-10): CERRADO.** Cerrados **F1-D1** (copia off-site en segundo plano; el bloqueo de carpeta de red por cuelgue queda levantado, pero sigue pendiente **F1-D2**, cifrado), **F2-D7** (sin PII en el log de archivo) y **F3-D5** (guardado atómico de foto, sin residuo). Commits de código en `master` (`7864fcf`, `3ce85c3`, `76b4ea4`), sin push ni merge; docs en el commit del orquestador. qa: APROBADO. Tests **1573 verdes** (Domain 108 · Application 632 · Desktop 435 · Integration 398). Deuda nueva: **NEW-45** (BAJA). Ver la entrada de arriba de todo.
@@ -59,6 +60,12 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 ## Qué sigue
 
 **NEW-31 (O-3, MEDIA) cerrado el 2026-11-10** (commit `d7852bf`): la reconciliación del arranque repara solos los socios `Prospect` con membresía `Active`. Ya no hay pendiente de código por este tema. La base de piloto real no se consultó; si hubo afectados, queda la línea de log `Reconciliación de estado de socio` en `%LOCALAPPDATA%\GymForge\logs`.
+
+**Próximo paso (2026-11-11, tras F1-D2 cifrado de backups):**
+1. Orquestador: commit de docs de F1-D2 (ADR-012 a Accepted, `docs/adr/README.md`, `docs/PROGRESS.md`, `docs/TASKS.md`) y push; revisar CI.
+2. Dev: implementar las decisiones ya elegidas por el usuario, **D11/O10** (PII y roles en exports) y **UX11** (origen de las actualizaciones). Próximas en la secuencia: decisión #2 y #3 del usuario. Nota: la numeración del usuario ("#2 D11/O10", "#3 UX11") no coincide con la lista de decisiones de abajo (ahí D11 es la 2, UX11 es la 0 y O10 es la 9); confirmar cuál se toma primero.
+3. Dev (baja): NEW-52 a NEW-58. NEW-52 (copias off-site viejas en claro) es la más importante: aviso en Config y/o barrido único con confirmación.
+4. Antes de operar en el piloto: verificar que no haya planes `VisitPack` con `VisitsIncluded` nulo (nota de release de NEW-41) y guardar la frase de los respaldos cifrados aparte (nota de release de F1-D2).
 
 **Próximo paso (2026-11-11, tras NEW-41 / VisitPack):**
 1. Orquestador: commit de docs de NEW-41 (`docs/adr/ADR-002-addendum-visitas-incluidas-visitpack.md`, `docs/adr/README.md`, `docs/PROGRESS.md`, `docs/TASKS.md`) y push; revisar CI.
@@ -107,7 +114,7 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 - D12 (residuo de zona horaria), F5-D1 a F5-D4 y NEW-6 (verificación manual de exports y de F4 parte 2): siguen abiertos como estaban.
 - Decisiones del usuario abiertas (no se tocan en este cierre): D11 ampliada, O10, NEW-8 (`.editorconfig`), push y merge de `feat/sesion-6`.
 
-Piloto: F4 partes 1 y 2 sin bloqueadores técnicos (qa). D11 ampliada y O10 son decisiones de política que conviene tomar antes de que la recepción use los exports. Siguen las 2 condiciones de uso de F1.
+Piloto: F4 partes 1 y 2 sin bloqueadores técnicos (qa). D11 ampliada y O10 son decisiones de política que conviene tomar antes de que la recepción use los exports. De las 2 condiciones de uso de F1, la 1 (backup externo) se levantó con F1-D2 (2026-11-11); queda la 2 (auto-update inactivo hasta resolver UX11).
 
 Decisiones de F3 **ya tomadas por el usuario** (no re-preguntar): credencial = `TagSerial` con fallback a DNI (no PDF417); foto = **solo archivo/pegar, SIN FlashCap** ni dependencias nuevas; índice único de credencial = **SÍ**; barcode de producto en POS = **SÍ**; umbrales del detector = default. Alternativa si el usuario prioriza otra cosa: cerrar decisiones abiertas de abajo (UX11 + F1-D3/F1-D7 para el auto-update). F1 y F2 están cerradas; sus deudas no bloquean el piloto con las 2 condiciones de uso.
 
@@ -123,9 +130,42 @@ Decisiones del usuario abiertas (ninguna bloquea el piloto con las 2 condiciones
 8. Pendiente operativo: **push de `master` a `origin` y CI** (sin hacer). `origin/master` = `6d39c0a`; `master` = `e541586` (29 commits de diferencia según el orquestador, no re-contado). Lo decide el usuario. Las ramas `feat/sesion-3`, `feat/sesion-4` y `feat/sesion-5` ya están mergeadas y se pueden borrar tras el push (`feat/sesion-6` tras su commit y merge).
 9. **O10 (roles para exportar):** hoy cualquier sesión de recepción puede exportar "toda la empresa" con PII y finanzas (no hay roles finos en la UI). Liga con D11 y con la decisión 5 de ADR-007.
 
-Fuera del piloto: P-2 (saldo a favor en la ficha) sigue abierta. D1 (cobros multi-sede) quedó cerrada el 2026-11-05 (barrido pasada 1). Cerradas en el barrido de deuda vieja (2026-11-10): D5, D6, D8 (parte 1) y D19. Resto de deuda (D1–D19, F1-D4 a F1-D10, F2-D1 a F2-D8, Q3–Q9, UX1–UX17): ver `docs/TASKS.md`. Deuda: **NEW-41** cerrada el 2026-11-11 (VisitPack; nota de release sobre packs legados en la entrada de arriba). NEW-42 a NEW-45 cerradas el 2026-11-11. Nueva deuda: **NEW-46 a NEW-48** (sección "Deuda del barrido de deuda baja", TASKS) y **NEW-49 a NEW-51** (sección "Deuda de NEW-41", TASKS).
+Fuera del piloto: P-2 (saldo a favor en la ficha) sigue abierta. D1 (cobros multi-sede) quedó cerrada el 2026-11-05 (barrido pasada 1). Cerradas en el barrido de deuda vieja (2026-11-10): D5, D6, D8 (parte 1) y D19. Resto de deuda (D1–D19, F1-D4 a F1-D10, F2-D1 a F2-D8, Q3–Q9, UX1–UX17): ver `docs/TASKS.md`. Deuda: **NEW-41** cerrada el 2026-11-11 (VisitPack; nota de release sobre packs legados en la entrada de arriba). NEW-42 a NEW-45 cerradas el 2026-11-11. Nueva deuda: **NEW-46 a NEW-48** (sección "Deuda del barrido de deuda baja", TASKS) y **NEW-49 a NEW-51** (sección "Deuda de NEW-41", TASKS) y **NEW-52 a NEW-58** (sección "Deuda del cierre de F1-D2", TASKS; F1-D2 cerrado el 2026-11-11).
 
 Sesiones 5-8: ver tabla de fases arriba.
+
+---
+
+## [2026-11-11] Cifrado de backups externos (F1-D2) — CERRADO
+
+**Hecho:**
+- **F1-D2 cerrado.** Circuito arqui → dev → qa. Commit de código `7e4f735` en `master` (`feat: [backup] cifrado AES-256-GCM de los respaldos externos (F1-D2)`). ADR: `docs/adr/ADR-012-cifrado-de-backups-externos.md` (pasa a Accepted al commitear; lo hace el orquestador junto con `docs/adr/README.md`).
+- **Decisión del usuario:** cifrar el backup (sobre "solo advertir").
+- **Alcance:** se cifra lo que sale de la PC (copia off-site de `DatabaseBackupService` y export `.zip` de `DataTransferService`). El backup LOCAL queda en claro (lo necesita el self-heal).
+- **Cripto:** frase de acceso propia (distinta del PIN, mínimo 12) → PBKDF2-SHA256 600k, salt 16 bytes por archivo → AES-256-GCM. Contenedor troceado `GFBK` (no revienta memoria con fotos). Caché de la frase con DPAPI (CurrentUser) en `vendor\backup-pass.dpapi` para la copia off-site desatendida; nunca sale de la PC y no hace falta para restaurar. Lectura compatible con backups viejos sin cifrar (detección por magic bytes). Dependencia nueva: `System.Security.Cryptography.ProtectedData` 9.0.4.
+- **qa:** APROBADO CON OBSERVACIONES, sin veto. Verificó la cripto a fondo (unicidad de (clave, nonce), autenticación GCM con AAD = header + índice + isFinal, topes del KDF, higiene de la frase, fail-closed sin escribir claro, export que no filtra la frase). CI es windows-latest, así que la restricción a Windows no rompe la build.
+- **Tests:** `dotnet test GymForge.sln` **1640 verdes** (Domain 115 · Application 648 · Desktop 439 · Integration 438), 0 rojos, 0 omitidos. Baseline previa 1595 (+45).
+- **Condición de uso del piloto LEVANTADA:** la condición 1 de F1 ("backup externo solo en pendrive local") ya no aplica. Ahora se puede usar carpeta de red o Dropbox/OneDrive, con dos salvedades: (a) guardar la frase de acceso aparte, porque si se pierde los respaldos cifrados son irrecuperables; (b) las copias off-site en claro de antes de F1-D2 no se borran solas (NEW-52).
+- **Deuda nueva** (BAJA, observaciones de qa): NEW-52 a NEW-58 (sección "Deuda del cierre de F1-D2", TASKS). NEW-52 (copias viejas en claro sin rotar) es la más importante del lote.
+
+**En curso:**
+- Nada de código a medias.
+- Commit de docs (ADR-012 a Accepted, `docs/adr/README.md`, PROGRESS, TASKS) y push: orquestador.
+- Próxima implementación: decisiones ya elegidas por el usuario, D11/O10 y UX11 (ver "Qué sigue").
+
+**Blockers:**
+- Técnicos: ninguno.
+- Piloto: sin cambios en D11 ampliada ni O10 (política de PII y roles en exports). UX11 sigue bloqueando el auto-update en campo.
+
+**Próximo paso:**
+1. Orquestador: commit de docs (ADR-012 Accepted, `docs/adr/README.md`, `docs/PROGRESS.md`, `docs/TASKS.md`) y push; revisar CI.
+2. Dev: implementar las decisiones D11/O10 y UX11, ya elegidas por el usuario.
+3. Dev (baja): NEW-52 a NEW-58, con NEW-52 primero (aviso o barrido de copias viejas en claro, con confirmación).
+
+**Tocado:**
+- Código (commit `7e4f735`): backup off-site y export cifrados (`src/GymForge.Infrastructure/Persistence/DatabaseBackupService.cs`, `src/GymForge.Infrastructure/Persistence/DataTransferService.cs`, `src/GymForge.Infrastructure/Persistence/BackupCrypto.cs`), key store (`src/GymForge.Infrastructure/Services/DpapiBackupKeyStore.cs`, `src/GymForge.Application/Interfaces/IBackupKeyStore.cs`).
+- ADR: `docs/adr/ADR-012-cifrado-de-backups-externos.md`.
+- Docs: `docs/PROGRESS.md`; `docs/TASKS.md`.
 
 ---
 

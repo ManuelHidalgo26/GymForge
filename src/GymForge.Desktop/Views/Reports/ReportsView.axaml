@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:fa="using:FluentAvalonia.UI.Controls"
+             xmlns:ctl="using:GymForge.Desktop.Controls"
              xmlns:vm="using:GymForge.Desktop.ViewModels.Reports"
              xmlns:col="using:GymForge.Desktop.ViewModels.Collections"
              xmlns:app="using:GymForge.Application.Interfaces"
@@ -615,6 +616,28 @@
                 </StackPanel>
             </Panel>
         </Grid>
+
+        <!-- ── Modal: PIN para exportar (el reporte se lleva datos personales fuera del sistema) ── -->
+        <ctl:ModalHost Grid.Row="0" Grid.RowSpan="3"
+                       IsVisible="{Binding IsExportPinNeeded}"
+                       AutomationProperties.Name="Confirmar exportación">
+            <StackPanel Spacing="12">
+                <TextBlock Text="Confirmá con tu PIN" FontSize="16" FontWeight="SemiBold" />
+                <TextBlock Classes="FormLabel" TextWrapping="Wrap"
+                           Text="El reporte puede incluir datos personales de los socios. Ingresá tu PIN para exportarlo." />
+                <TextBox Text="{Binding ExportPin}" PasswordChar="•" Watermark="PIN"
+                         AutomationProperties.Name="PIN" />
+                <TextBlock Text="{Binding ExportPinError}" Classes="Feedback danger"
+                           IsVisible="{Binding ExportPinError, Converter={x:Static ObjectConverters.IsNotNull}}"
+                           AutomationProperties.LiveSetting="Polite" />
+                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                    <Button Content="Cancelar" Command="{Binding CancelExportCommand}"
+                            Classes="Ghost" IsCancel="True" />
+                    <Button Content="Exportar" Command="{Binding ConfirmExportCommand}"
+                            Classes="Primary" IsDefault="True" />
+                </StackPanel>
+            </StackPanel>
+        </ctl:ModalHost>
 
     </Grid>
 

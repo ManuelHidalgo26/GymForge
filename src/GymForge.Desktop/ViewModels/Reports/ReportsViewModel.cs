@@ -5,6 +5,7 @@ using GymForge.Application.Interfaces;
 using GymForge.Application.Services;
 using GymForge.Application.UseCases.Dunning;
 using GymForge.Application.UseCases.Reports;
+using GymForge.Application.UseCases.Staff;
 using GymForge.Desktop.Services;
 using GymForge.Desktop.ViewModels.Collections;
 using GymForge.Domain.Enums;
@@ -35,6 +36,7 @@ public partial class ReportsViewModel : ObservableObject
     // Cada carga lleva un número: una respuesta tardía de un reporte o rango anterior no pisa lo vigente.
     private int _loadVersion;
     private ExportPlan? _exportPlan;
+    private ReportFormat _pendingExportFormat;
     private bool _rangeInitialized;
     private bool _settingInitialRange;
 
@@ -54,6 +56,11 @@ public partial class ReportsViewModel : ObservableObject
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private string? _message;
     [ObservableProperty] private string? _exportedPath;
+
+    // ── PIN para exportar ────────────────────────────────────────────────────
+    [ObservableProperty] private bool _isExportPinNeeded;
+    [ObservableProperty] private string _exportPin = string.Empty;
+    [ObservableProperty] private string? _exportPinError;
 
     // ── Recaudación del período ──────────────────────────────────────────────
     [ObservableProperty] private decimal _total;
@@ -142,10 +149,19 @@ public partial class ReportsViewModel : ObservableObject
         _ => "Ajustá el rango de fechas o registrá cobros desde Caja.",
     };
 
-    partial void OnIsLoadingChanged(bool value) => RefreshState();
+    partial void OnIsLoadingChanged(bool value)
+    {
+        if (value) CloseExportGate();
+        RefreshState();
+    }
+
     partial void OnFromChanged(DateOnly? value) => ReloadOnRangeChange();
     partial void OnToChanged(DateOnly? value) => ReloadOnRangeChange();
-    partial void OnCompanyWideChanged(bool value) => _ = LoadAsync();
+    partial void OnCompanyWideChanged(bool value)
+    {
+        CloseExportGate();
+        _ = LoadAsync();
+    }
 
     partial void OnSelectedReportChanged(ReportKind value)
     {
@@ -166,10 +182,14 @@ public partial class ReportsViewModel : ObservableObject
         ExportCommand.NotifyCanExecuteChanged();
     }
 
-    /// <summary>Deja lista la exportación del reporte recién cargado (o nada que exportar) y refresca la vista.</summary>
+    /// <summary>
+    /// Deja lista la exportación del reporte recién cargado (o nada que exportar) y refresca la vista.
+    /// Si el PIN estaba pendiente, se cierra: lo que se iba a exportar ya no es lo que se ve.
+    /// </summary>
     private void CompleteLoad(ExportPlan? plan)
     {
         _exportPlan = plan;
+        CloseExportGate();
         RefreshState();
     }
 
@@ -332,24 +352,56 @@ public partial class ReportsViewModel : ObservableObject
 
     private bool CanExport => !IsLoading && _exportPlan is not null;
 
-    /// <summary>Arma el documento del reporte que se ve y lo guarda como PDF o Excel donde elija el usuario.</summary>
+    /// <summary>Pide el PIN antes de exportar: el reporte saca datos personales de los socios fuera del sistema.</summary>
     [RelayCommand(CanExecute = nameof(CanExport))]
-    private async Task ExportAsync(ReportFormat format, CancellationToken ct = default)
+    private void Export(ReportFormat format)
     {
-        if (_exportPlan is not { } plan) return;
+        if (_exportPlan is null) return;
 
+        _pendingExportFormat = format;
+        ExportPin = string.Empty;
+        ExportPinError = null;
         Message = null;
         ExportedPath = null;
+        IsExportPinNeeded = true;
+    }
+
+    /// <summary>Valida el PIN; si es correcto arma el documento del reporte que se ve y lo guarda como PDF o Excel.</summary>
+    [RelayCommand]
+    private async Task ConfirmExportAsync(CancellationToken ct = default)
+    {
+        if (!IsExportPinNeeded) return;
+
+        var staff = await _mediator.Send(new AuthenticateStaffCommand(_session.CompanyId, ExportPin.Trim()), ct);
+        if (staff is null)
+        {
+            ExportPinError = "PIN incorrecto.";
+            return;
+        }
+
+        CloseExportGate();
+        if (_exportPlan is not { } plan) return;
+
         try
         {
             var context = await _mediator.Send(new GetReportContextQuery(_session.CompanyId, plan.SiteId), ct);
             var document = plan.Build(context, _clock.Now);
-            ExportedPath = await _exporter.ExportAsync(document, format, ct);
+            ExportedPath = await _exporter.ExportAsync(document, _pendingExportFormat, ct);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             Message = $"No se pudo exportar el reporte: {ex.Message}";
         }
+    }
+
+    [RelayCommand]
+    private void CancelExport() => CloseExportGate();
+
+    private void CloseExportGate()
+    {
+        IsExportPinNeeded = false;
+        ExportPin = string.Empty;
+        ExportPinError = null;
     }
 
     // ── Recibos y atajos de fecha ────────────────────────────────────────────

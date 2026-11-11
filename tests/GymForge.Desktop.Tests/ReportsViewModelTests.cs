@@ -1,8 +1,10 @@
 using FluentAssertions;
+using GymForge.Application.DTOs;
 using GymForge.Application.Interfaces;
 using GymForge.Application.Services;
 using GymForge.Application.UseCases.Dunning;
 using GymForge.Application.UseCases.Reports;
+using GymForge.Application.UseCases.Staff;
 using GymForge.Desktop.Services;
 using GymForge.Desktop.ViewModels.Reports;
 using GymForge.Domain.Entities;
@@ -46,6 +48,7 @@ public class ReportsViewModelTests
         _exporter.ExportAsync(Arg.Any<ReportDocument>(), Arg.Any<ReportFormat>(), Arg.Any<CancellationToken>())
             .Returns(@"C:\Users\dueno\Documents\reporte.pdf");
 
+        PinIs(valid: true);
         PrimeEmptyReports();
         var sut = new ReportsViewModel(
             _mediator, _session, new ReceiptService(Substitute.For<IServiceScopeFactory>()),
@@ -112,6 +115,18 @@ public class ReportsViewModelTests
 
     private static ReportDocument SentDocument(IReportExportService exporter) =>
         (ReportDocument)exporter.ReceivedCalls().Single().GetArguments()[0]!;
+
+    private void PinIs(bool valid) =>
+        _mediator.Send(Arg.Any<AuthenticateStaffCommand>(), Arg.Any<CancellationToken>())
+            .Returns(valid ? new StaffDto(Guid.NewGuid(), "Admin", StaffRole.Admin, "#112233") : null);
+
+    /// <summary>Exporta pasando por el PIN (por defecto el PIN es correcto).</summary>
+    private static async Task ExportAsync(ReportsViewModel sut, ReportFormat format)
+    {
+        sut.ExportCommand.Execute(format);
+        sut.ExportPin = "1234";
+        await sut.ConfirmExportCommand.ExecuteAsync(null);
+    }
 
     // ── Selector y carga ─────────────────────────────────────────────────────
 
@@ -322,7 +337,7 @@ public class ReportsViewModelTests
 
         sut.Rows.Should().BeEmpty("la carga de pagos llegó tarde: el reporte activo ya es otro");
         sut.IsLoading.Should().BeFalse();
-        await sut.ExportCommand.ExecuteAsync(ReportFormat.Pdf);
+        await ExportAsync(sut, ReportFormat.Pdf);
         SentDocument(_exporter).Title.Should().Be("Altas y bajas");
     }
 
@@ -337,7 +352,7 @@ public class ReportsViewModelTests
         HavePayments(SamplePayments());
         await sut.LoadCommand.ExecuteAsync(null);
 
-        await sut.ExportCommand.ExecuteAsync(format);
+        await ExportAsync(sut, format);
 
         await _exporter.Received(1).ExportAsync(Arg.Any<ReportDocument>(), format, Arg.Any<CancellationToken>());
         var document = SentDocument(_exporter);
@@ -357,7 +372,7 @@ public class ReportsViewModelTests
         sut.SelectedReport = ReportKind.RevenueBreakdown;
         sut.CompanyWide = true;
 
-        await sut.ExportCommand.ExecuteAsync(ReportFormat.Xlsx);
+        await ExportAsync(sut, ReportFormat.Xlsx);
 
         var document = SentDocument(_exporter);
         document.Title.Should().Be("Recaudación desagregada");
@@ -375,7 +390,7 @@ public class ReportsViewModelTests
         HaveDebtors(Debtor("Ana García", 40_000m));
         sut.SelectedReport = ReportKind.Overdue;
 
-        await sut.ExportCommand.ExecuteAsync(ReportFormat.Pdf);
+        await ExportAsync(sut, ReportFormat.Pdf);
 
         var document = SentDocument(_exporter);
         document.Title.Should().Be("Morosos");
@@ -390,7 +405,7 @@ public class ReportsViewModelTests
         HaveFlow(SampleFlow());
         sut.SelectedReport = ReportKind.MemberFlow;
 
-        await sut.ExportCommand.ExecuteAsync(ReportFormat.Pdf);
+        await ExportAsync(sut, ReportFormat.Pdf);
 
         var document = SentDocument(_exporter);
         document.Title.Should().Be("Altas y bajas");
@@ -405,7 +420,7 @@ public class ReportsViewModelTests
         HaveCommissions(SampleCommissions());
         sut.SelectedReport = ReportKind.StaffCommissions;
 
-        await sut.ExportCommand.ExecuteAsync(ReportFormat.Xlsx);
+        await ExportAsync(sut, ReportFormat.Xlsx);
 
         var document = SentDocument(_exporter);
         document.Title.Should().Be("Comisiones del staff");
@@ -472,10 +487,114 @@ public class ReportsViewModelTests
         HavePayments(SamplePayments());
         await sut.LoadCommand.ExecuteAsync(null);
 
-        await sut.ExportCommand.ExecuteAsync(ReportFormat.Pdf);
+        await ExportAsync(sut, ReportFormat.Pdf);
 
         sut.ExportedPath.Should().Be(@"C:\Users\dueno\Documents\reporte.pdf");
         sut.Message.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Exportar_PideElPin_YNoExportaHastaConfirmarlo()
+    {
+        var sut = await SutAsync();
+        HavePayments(SamplePayments());
+        await sut.LoadCommand.ExecuteAsync(null);
+
+        sut.ExportCommand.Execute(ReportFormat.Pdf);
+
+        sut.IsExportPinNeeded.Should().BeTrue();
+        await _exporter.DidNotReceiveWithAnyArgs().ExportAsync(default!, default, default);
+    }
+
+    [Fact]
+    public async Task Exportar_ConPinIncorrecto_NoExporta_YDejaReintentar()
+    {
+        var sut = await SutAsync();
+        HavePayments(SamplePayments());
+        await sut.LoadCommand.ExecuteAsync(null);
+        PinIs(valid: false);
+
+        await ExportAsync(sut, ReportFormat.Pdf);
+
+        await _exporter.DidNotReceiveWithAnyArgs().ExportAsync(default!, default, default);
+        sut.ExportPinError.Should().Be("PIN incorrecto.");
+        sut.IsExportPinNeeded.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Exportar_ConPinCorrecto_ExportaConElFormatoPedido_YCierraElModal()
+    {
+        var sut = await SutAsync();
+        HavePayments(SamplePayments());
+        await sut.LoadCommand.ExecuteAsync(null);
+
+        await ExportAsync(sut, ReportFormat.Xlsx);
+
+        await _exporter.Received(1).ExportAsync(Arg.Any<ReportDocument>(), ReportFormat.Xlsx, Arg.Any<CancellationToken>());
+        sut.ExportedPath.Should().Be(@"C:\Users\dueno\Documents\reporte.pdf");
+        sut.IsExportPinNeeded.Should().BeFalse();
+        sut.ExportPin.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Exportar_CancelarElModal_LoCierraSinExportar()
+    {
+        var sut = await SutAsync();
+        HavePayments(SamplePayments());
+        await sut.LoadCommand.ExecuteAsync(null);
+        sut.ExportCommand.Execute(ReportFormat.Pdf);
+        sut.ExportPin = "12";
+
+        sut.CancelExportCommand.Execute(null);
+
+        sut.IsExportPinNeeded.Should().BeFalse();
+        sut.ExportPin.Should().BeEmpty();
+        await _exporter.DidNotReceiveWithAnyArgs().ExportAsync(default!, default, default);
+    }
+
+    [Fact]
+    public async Task Exportar_CambiarElAlcance_CierraElModalDelPin_YConfirmarSinReabrirNoExporta()
+    {
+        var sut = await SutAsync();
+        HavePayments(SamplePayments());
+        await sut.LoadCommand.ExecuteAsync(null);
+        sut.ExportCommand.Execute(ReportFormat.Pdf);
+        sut.ExportPin = "1234";
+
+        sut.CompanyWide = true;
+        await sut.ConfirmExportCommand.ExecuteAsync(null);
+
+        sut.IsExportPinNeeded.Should().BeFalse();
+        await _exporter.DidNotReceiveWithAnyArgs().ExportAsync(default!, default, default);
+    }
+
+    [Fact]
+    public async Task Exportar_AlArrancarUnaRecarga_CierraElModalDelPin_YConfirmarSinReabrirNoExporta()
+    {
+        var sut = await SutAsync();
+        HavePayments(SamplePayments());
+        await sut.LoadCommand.ExecuteAsync(null);
+        sut.ExportCommand.Execute(ReportFormat.Pdf);
+        sut.ExportPin = "1234";
+
+        sut.IsLoading = true;
+        await sut.ConfirmExportCommand.ExecuteAsync(null);
+
+        sut.IsExportPinNeeded.Should().BeFalse();
+        await _exporter.DidNotReceiveWithAnyArgs().ExportAsync(default!, default, default);
+    }
+
+    [Fact]
+    public async Task Exportar_CambiarDeReporte_CierraElModalDelPin()
+    {
+        var sut = await SutAsync();
+        HavePayments(SamplePayments());
+        await sut.LoadCommand.ExecuteAsync(null);
+        sut.ExportCommand.Execute(ReportFormat.Pdf);
+
+        sut.SelectedReport = ReportKind.MemberFlow;
+
+        sut.IsExportPinNeeded.Should().BeFalse();
     }
 
     [Fact]
@@ -487,7 +606,7 @@ public class ReportsViewModelTests
         _exporter.ExportAsync(Arg.Any<ReportDocument>(), Arg.Any<ReportFormat>(), Arg.Any<CancellationToken>())
             .Returns((string?)null);
 
-        await sut.ExportCommand.ExecuteAsync(ReportFormat.Pdf);
+        await ExportAsync(sut, ReportFormat.Pdf);
 
         sut.ExportedPath.Should().BeNull();
         sut.Message.Should().BeNull();
@@ -502,7 +621,7 @@ public class ReportsViewModelTests
         _exporter.ExportAsync(Arg.Any<ReportDocument>(), Arg.Any<ReportFormat>(), Arg.Any<CancellationToken>())
             .ThrowsAsync(new IOException("El archivo está abierto en otro programa."));
 
-        await sut.ExportCommand.ExecuteAsync(ReportFormat.Xlsx);
+        await ExportAsync(sut, ReportFormat.Xlsx);
 
         sut.Message.Should().Contain("No se pudo exportar").And.Contain("abierto en otro programa");
         sut.ExportedPath.Should().BeNull();
@@ -514,7 +633,7 @@ public class ReportsViewModelTests
         var sut = await SutAsync();
         HavePayments(SamplePayments());
         await sut.LoadCommand.ExecuteAsync(null);
-        await sut.ExportCommand.ExecuteAsync(ReportFormat.Pdf);
+        await ExportAsync(sut, ReportFormat.Pdf);
         sut.ExportedPath.Should().NotBeNull();
 
         await sut.LoadCommand.ExecuteAsync(null);
@@ -528,7 +647,7 @@ public class ReportsViewModelTests
         var sut = await SutAsync();
         HavePayments(SamplePayments());
         await sut.LoadCommand.ExecuteAsync(null);
-        await sut.ExportCommand.ExecuteAsync(ReportFormat.Pdf);
+        await ExportAsync(sut, ReportFormat.Pdf);
 
         sut.From = MonthStart.AddDays(1);
 

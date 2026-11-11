@@ -28,7 +28,7 @@ public static class ServiceCollectionExtensions
                 "GymForge");
             Directory.CreateDirectory(dbDir);
             connectionString =
-                $"Data Source={Path.Combine(dbDir, "gymforge.db")};Mode=ReadWriteCreate;Cache=Shared";
+                $"Data Source={Path.Combine(dbDir, "gymforge.db")};Mode=ReadWriteCreate";
         }
 
         // Logging + Application + Infrastructure

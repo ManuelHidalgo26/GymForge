@@ -7,10 +7,11 @@ using MediatR;
 namespace GymForge.Application.UseCases.Exercises;
 
 public record ExerciseDto(
-    Guid Id, string Name, MuscleGroup Muscle, Equipment Equipment, MovementType Movement, int Difficulty)
+    Guid Id, string Name, MuscleGroup Muscle, Equipment Equipment, MovementType Movement, int Difficulty,
+    bool IsGlobal = false)
 {
     public static ExerciseDto FromEntity(Exercise e) =>
-        new(e.Id, e.Name, e.PrimaryMuscleGroup, e.Equipment, e.MovementType, e.Difficulty);
+        new(e.Id, e.Name, e.PrimaryMuscleGroup, e.Equipment, e.MovementType, e.Difficulty, e.IsGlobal);
 }
 
 public record SearchExercisesQuery(string? Query, MuscleGroup? Muscle) : IRequest<IReadOnlyList<ExerciseDto>>;

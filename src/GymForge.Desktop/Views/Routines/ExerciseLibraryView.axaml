@@ -131,7 +131,7 @@
                 <DataGridTemplateColumn Header="Acciones" Width="100" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:DataType="ex:ExerciseDto">
-                            <StackPanel Orientation="Horizontal" Spacing="4" Margin="4,0">
+                            <StackPanel Orientation="Horizontal" Spacing="4" Margin="4,0" IsVisible="{Binding !IsGlobal}">
                                 <Button Classes="IconButton" ToolTip.Tip="Modificar"
                                         CommandParameter="{Binding}"
                                         Command="{Binding $parent[UserControl].((vm:ExerciseLibraryViewModel)DataContext).EditExerciseCommand}">

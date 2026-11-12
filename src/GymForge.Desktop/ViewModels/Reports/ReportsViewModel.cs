@@ -370,9 +370,14 @@ public partial class ReportsViewModel : ObservableObject
     [RelayCommand]
     private async Task ConfirmExportAsync(CancellationToken ct = default)
     {
-        if (!IsExportPinNeeded) return;
+        if (!IsExportPinNeeded || _exportPlan is not { } plan) return;
 
         var staff = await _mediator.Send(new AuthenticateStaffCommand(_session.CompanyId, ExportPin.Trim()), ct);
+
+        // Durante la validación el gate pudo cerrarse (cambio de alcance, recarga o cancelación): el reporte
+        // que se iba a exportar ya no es el que se ve, así que el PIN no autoriza nada.
+        if (!IsExportPinNeeded || !ReferenceEquals(_exportPlan, plan)) return;
+
         if (staff is null)
         {
             ExportPinError = "PIN incorrecto.";
@@ -380,7 +385,6 @@ public partial class ReportsViewModel : ObservableObject
         }
 
         CloseExportGate();
-        if (_exportPlan is not { } plan) return;
 
         try
         {

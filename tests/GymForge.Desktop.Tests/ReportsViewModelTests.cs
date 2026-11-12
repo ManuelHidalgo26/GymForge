@@ -569,6 +569,26 @@ public class ReportsViewModelTests
     }
 
     [Fact]
+    public async Task Exportar_SiElGateSeCierraMientrasSeValidaElPin_NoExportaAunqueElPinSeaValido()
+    {
+        var sut = await SutAsync();
+        HavePayments(SamplePayments());
+        await sut.LoadCommand.ExecuteAsync(null);
+        var pendingAuth = new TaskCompletionSource<StaffDto?>();
+        _mediator.Send(Arg.Any<AuthenticateStaffCommand>(), Arg.Any<CancellationToken>()).Returns(pendingAuth.Task);
+        sut.ExportCommand.Execute(ReportFormat.Pdf);
+        sut.ExportPin = "1234";
+
+        var confirming = sut.ConfirmExportCommand.ExecuteAsync(null);
+        sut.CompanyWide = true;   // cierra el gate y reemplaza el plan de exportación
+        pendingAuth.SetResult(new StaffDto(Guid.NewGuid(), "Admin", StaffRole.Admin, "#112233"));
+        await confirming;
+
+        await _exporter.DidNotReceiveWithAnyArgs().ExportAsync(default!, default, default);
+        sut.ExportedPath.Should().BeNull();
+    }
+
+    [Fact]
     public async Task Exportar_AlArrancarUnaRecarga_CierraElModalDelPin_YConfirmarSinReabrirNoExporta()
     {
         var sut = await SutAsync();

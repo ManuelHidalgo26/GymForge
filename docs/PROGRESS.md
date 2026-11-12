@@ -18,6 +18,7 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 
 ## Estado general (al 2026-11-12)
 
+- **F1-D5 (Config: licencia antes que la carpeta off-site, 2026-11-12): CERRADO en working tree, commit pendiente.** Solo se invirtió el orden de dos awaits en `SettingsViewModel.LoadAsync`. qa: APROBADO, sin observaciones, sin veto. Tests **1716 verdes**. Sin deuda nueva. Ver la entrada de arriba de todo.
 - **NEW-72 (follow-up de NEW-69, 2026-11-12): CERRADO en working tree, commit pendiente** (`fix: [backup]`; sin hash todavía). qa: APROBADO CON OBSERVACIONES, sin veto. Tests **1716 verdes**. Residuo MUY BAJA anotado como nota en NEW-72 (tope `MaxLinkHops` sin test directo); sin NEW-73. Siguen abiertos a propósito: NEW-61, NEW-64 y NEW-68 (solo si aparece el caso). Ver la entrada de arriba de todo.
 - **Deuda baja NEW-69/70/71 (backup) + NEW-67 (CI) (2026-11-12): CERRADOS en working tree, commit pendiente** (dos commits: `fix: [backup]` y `chore: [ci]`; sin hash todavía). qa: APROBADO CON OBSERVACIONES, sin veto. Tests **1714 verdes**. Nueva deuda BAJA: NEW-72 (hoy cerrado, ver arriba). Siguen abiertos a propósito: NEW-61 y NEW-64. Ver la entrada de arriba de todo.
 - **NEW-40 (abortar import) + NEW-52 (barrido de copias off-site en claro) (2026-11-12): CERRADOS en working tree, commit pendiente.** Decisiones del usuario aplicadas. qa: APROBADO CON OBSERVACIONES, sin veto. Tests **1712 verdes**. Nueva deuda BAJA: **NEW-69 a NEW-71**. Siguen abiertos a propósito: NEW-61, NEW-64 y NEW-67. Ver la entrada de arriba de todo.
@@ -178,6 +179,40 @@ Decisiones del usuario abiertas (ninguna bloquea el piloto con las 2 condiciones
 Fuera del piloto: P-2 (saldo a favor en la ficha) sigue abierta. D1 (cobros multi-sede) quedó cerrada el 2026-11-05 (barrido pasada 1). Cerradas en el barrido de deuda vieja (2026-11-10): D5, D6, D8 (parte 1) y D19. Resto de deuda (D1–D19, F1-D4 a F1-D10, F2-D1 a F2-D8, Q3–Q9, UX1–UX17): ver `docs/TASKS.md`. Deuda: **NEW-41** cerrada el 2026-11-11 (VisitPack; nota de release sobre packs legados en la entrada de arriba). NEW-42 a NEW-45 cerradas el 2026-11-11. Nueva deuda: **NEW-46 a NEW-48** (sección "Deuda del barrido de deuda baja", TASKS) y **NEW-49 a NEW-51** (sección "Deuda de NEW-41", TASKS) y **NEW-52 a NEW-58** (sección "Deuda del cierre de F1-D2", TASKS; F1-D2 cerrado el 2026-11-11).
 
 Sesiones 5-8: ver tabla de fases arriba.
+
+---
+
+## [2026-11-12] F1-D5 (Config: cargar la licencia antes que el estado de la carpeta off-site) — CERRADO en working tree (commit pendiente)
+
+**Hecho:**
+- **F1-D5 (BAJA, UX/orden de carga):** en `SettingsViewModel.LoadAsync` se invirtió SOLO el orden de dos awaits: `await RefreshLicenseAsync(ct)` va ANTES de `await RefreshOffsiteStatusAsync()`. Ambos siguen awaited (no fire-and-forget). Los cuerpos de ambos métodos quedaron intactos.
+- **Motivo:** `RefreshOffsiteStatusAsync` espera un `Directory.Exists` sobre la carpeta off-site (corre en `Task.Run`, así que no congela la UI, pero `LoadAsync` lo await-ea). Con una UNC/carpeta de red caída tarda decenas de segundos y la tarjeta de licencia aparecía tarde. Ahora la licencia se muestra sin esperar la resolución de la carpeta de red.
+- **Mejora adicional (qa):** si `RefreshOffsiteStatusAsync` lanza, la licencia ya quedó poblada (antes era al revés). qa verificó que ambos métodos escriben estado disjunto, así que el orden no introduce acoplamiento.
+- **Sin test (decisión compartida dev + qa, aceptable):** lo único observable es el orden de dos awaits. Un test sin depender de timing ni de UNC sería frágil y no portable. Un test de "LoadAsync deja la licencia poblada con off-site inexistente" pasaría también con el orden viejo, así que no probaría el fix.
+- **qa:** APROBADO, sin observaciones, sin veto. `dotnet test GymForge.sln` corrido por qa de forma independiente: **1716 verdes** (Domain 115 · Application 650 · Desktop 487 · Integration 464), 0 rojos, 0 omitidos. Sin cambio de count respecto a NEW-72 (no se agregaron tests).
+
+**Commits (pendientes, sin commitear):**
+- Un commit de código (`src/GymForge.Desktop/ViewModels/Settings/SettingsViewModel.cs`) más el commit de docs. Sin hash todavía: se completa al commitear. Lo hace el orquestador/usuario, un solo commit de este cierre.
+
+**En curso:**
+- Nada de código a medias. Todo en el working tree, sin commit.
+
+**Blockers:**
+- Técnicos: ninguno.
+- Piloto: ninguno.
+
+**Pendientes del usuario (no cambian):**
+- Commit de este cierre y los 5 commits ya en `master` pendientes de **push a `origin`** (este sería el 6.º commit local).
+- Primer release real (`vpk upload github`, tag `v*`) y dry-run con `--pre` (NEW-66).
+
+**Próximo paso:**
+1. Usuario u orquestador: commit del cierre de F1-D5 (código + docs) y push pendiente de los commits de `master`.
+2. Sin dev pendiente de la deuda de Config. Siguen abiertos NEW-61 y NEW-64 (decisión/arqui).
+
+**Tocado:**
+- Código (dev): `src/GymForge.Desktop/ViewModels/Settings/SettingsViewModel.cs` (`LoadAsync`, orden de `RefreshLicenseAsync` y `RefreshOffsiteStatusAsync`).
+- Tests: ninguno nuevo.
+- Docs: `docs/PROGRESS.md`; `docs/TASKS.md`.
 
 ---
 

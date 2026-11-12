@@ -220,8 +220,8 @@ public partial class SettingsViewModel : ObservableObject
         RefreshUpdateFeedDisplay();
 
         HasBackupPassphrase = _keyStore.HasPassphrase;
-        await RefreshOffsiteStatusAsync();
         await RefreshLicenseAsync(ct);
+        await RefreshOffsiteStatusAsync();
     }
 
     private async Task RefreshLicenseAsync(CancellationToken ct = default)

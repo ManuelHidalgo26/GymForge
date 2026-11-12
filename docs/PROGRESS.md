@@ -18,6 +18,7 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 
 ## Estado general (al 2026-11-11)
 
+- **Barrido de deuda baja, 2.ª tanda (DEBAJA2, 2026-11-11): CERRADO.** Cerrados **NEW-46, NEW-47, NEW-49, NEW-50, NEW-53, NEW-57, NEW-58, NEW-59, NEW-60 y NEW-66**. Commits de código en `master`, sin push (`0681625`, `8620b2e`, `d47da2a`, `b449abd`, `8f1a146`, `3aee31f`, `95fbb49`, `83466bf`, `20f8e5d`, `6042e3b`). qa: APROBADO, sin vetos. Tests **1696 verdes**. Sin deuda nueva. Siguen abiertos a propósito: NEW-40, NEW-52, NEW-54, NEW-56, NEW-61, NEW-63, NEW-64 y NEW-67. Ver la entrada de arriba de todo.
 - **CANAL DE RELEASES (ADR-015, 2026-11-11): CERRADO en código** (commit `94a869b`). Auto-update **ACTIVO** en los builds nuevos: `BuildDefaultUrl` apunta al repo público de GitHub Releases, sin token en el cliente. Falta el primer release real (dry-run y push del tag `v*`, del usuario). Pilotos con builds viejos: no se auto-actualizan hasta recibir un build nuevo. Ver la entrada de arriba de todo.
 - **HITO (2026-11-11): las 3 decisiones de política del piloto están CERRADAS** (F1-D2 por ADR-012, D11/Q4/O10 por ADR-013, UX11/F1-D7/F1-D3 por ADR-014). Las 2 condiciones de uso de F1 quedan atendidas a nivel de mecanismo: (1) backup externo cifrado; (2) auto-update configurable tras PIN, con https obligatorio y backup pre-migración. Lo que falta para activarlo en campo es operativo: montar el canal de releases (distribución), no una decisión.
 - **UX11 + F1-D7 + F1-D3 + NEW-48 (ADR-014, 2026-11-11): CERRADOS.** Commits `17d789d` (origen de actualizaciones configurable tras PIN, rechazo de `http` en dos lados, NEW-48 bajo lock) y `c1fcf34` (backup `pre-migracion` ante migraciones pendientes, F1-D3). qa: APROBADO CON OBSERVACIONES, sin veto. Tests **1676 verdes**. **El auto-update sigue INACTIVO por defecto** (`BuildDefaultUrl` vacío; sin token ni URL embebidos). Deuda nueva: **NEW-62 a NEW-65** (BAJA; **NEW-62 cerrado el mismo día, commit `ac1ac9f`**, tras marcarlo qa y el review automático de seguridad). Ver la entrada de arriba de todo.
@@ -42,7 +43,7 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 - **Fase 4 parte 2 (Sesión 7): CERRADA (2026-11-04)** en `feat/sesion-6` (código `1f44d2c`; commit de docs por el orquestador). ADR-008 `Accepted`. Sin push ni merge. Ver la entrada de cierre arriba de todo.
 - **Limpieza de bugs/errores/warnings (2026-11-04): CERRADA** en `feat/sesion-6` (código `7bc780f`; commit de docs por el orquestador). Sin push ni merge. Ver la entrada de arriba de todo.
 - **Git (verificado en refs, 2026-11-03):** `master` = `e541586`. `origin/master` = `6d39c0a` (anterior al merge de F1 `33ba4ec`): **master está adelante de origin, sin push** (29 commits según el orquestador; no re-contado). Existen `feat/sesion-3`, `feat/sesion-4` y `feat/sesion-5` (ya mergeadas).
-- Tests: **1676 verdes al cierre de UX11 + F1-D7 + F1-D3 + NEW-48 (2026-11-11)** (Domain 115 · Application 648 · Desktop 470 · Integration 443), 0 rojos, 0 omitidos. Anterior: **1649 verdes al cierre de D11 ampliada + Q4 + O10 (2026-11-11)** (Domain 115 · Application 648 · Desktop 446 · Integration 440), 0 rojos, 0 omitidos. Anterior: **1595 verdes al cierre de NEW-41 (2026-11-11)** (Domain 115 · Application 646 · Desktop 435 · Integration 399), 0 rojos, 0 omitidos. Anterior: **1578 verdes al cierre del barrido de deuda baja (2026-11-11)** (Domain 108 · Application 637 · Desktop 435 · Integration 398), `dotnet test GymForge.sln`, 0 rojos, 0 omitidos. Anterior: **1573 verdes al cierre de la tanda de deuda técnica (2026-11-10)** (Domain 108 · Application 632 · Desktop 435 · Integration 398), 0 rojos, 0 omitidos. Anterior: **1567 verdes al cierre del barrido de deuda vieja (2026-11-10)** (Domain 108 · Application 632 · Desktop 432 · Integration 395), `dotnet test GymForge.sln`, 0 fallos. Baseline previa: **1550 verdes** (limpieza de deuda baja). Anterior: **1541 verdes al cierre de la reconciliación NEW-31 (2026-11-10)** (Domain 107 · Application 624 · Desktop 431 · Integration 379). Anterior: **1523 verdes al cierre de la pasada 3 (2026-11-10)** (Domain 107 · Application 624 · Desktop 431 · Integration 361). Anterior: **1504 verdes al cierre del barrido de deuda, pasada 2 (2026-11-05)** (Domain 107 · Application 617 · Desktop 421 · Integration 359). Anterior: **1485 verdes al cierre del barrido de deuda, pasada 1 (2026-11-05)** (Domain 107 · Application 599 · Desktop 421 · Integration 358). Anterior: **1477 verdes al cierre del endurecimiento para piloto (2026-11-05)** (Domain 107 · Application 591 · Desktop 421 · Integration 358). Anterior: **1472 verdes al cierre del Endurecimiento final** (Domain 107 · Application 591 · Desktop 419 · Integration 355), `dotnet test GymForge.sln` exit 0, 0 omitidos, Debug y Release (2026-11-04). Piso previo: 1461 (Fase 5 parte 2, pieza F); 1456 (Fase 5 parte 1, `d33e101`); 1392 antes de la limpieza (`7bc780f`).
+- Tests: **1696 verdes al cierre de DEBAJA2 (2026-11-11)**, 0 rojos. Anterior: **1687 (ADR-015)**. Anterior: **1676 verdes al cierre de UX11 + F1-D7 + F1-D3 + NEW-48 (2026-11-11)** (Domain 115 · Application 648 · Desktop 470 · Integration 443), 0 rojos, 0 omitidos. Anterior: **1649 verdes al cierre de D11 ampliada + Q4 + O10 (2026-11-11)** (Domain 115 · Application 648 · Desktop 446 · Integration 440), 0 rojos, 0 omitidos. Anterior: **1595 verdes al cierre de NEW-41 (2026-11-11)** (Domain 115 · Application 646 · Desktop 435 · Integration 399), 0 rojos, 0 omitidos. Anterior: **1578 verdes al cierre del barrido de deuda baja (2026-11-11)** (Domain 108 · Application 637 · Desktop 435 · Integration 398), `dotnet test GymForge.sln`, 0 rojos, 0 omitidos. Anterior: **1573 verdes al cierre de la tanda de deuda técnica (2026-11-10)** (Domain 108 · Application 632 · Desktop 435 · Integration 398), 0 rojos, 0 omitidos. Anterior: **1567 verdes al cierre del barrido de deuda vieja (2026-11-10)** (Domain 108 · Application 632 · Desktop 432 · Integration 395), `dotnet test GymForge.sln`, 0 fallos. Baseline previa: **1550 verdes** (limpieza de deuda baja). Anterior: **1541 verdes al cierre de la reconciliación NEW-31 (2026-11-10)** (Domain 107 · Application 624 · Desktop 431 · Integration 379). Anterior: **1523 verdes al cierre de la pasada 3 (2026-11-10)** (Domain 107 · Application 624 · Desktop 431 · Integration 361). Anterior: **1504 verdes al cierre del barrido de deuda, pasada 2 (2026-11-05)** (Domain 107 · Application 617 · Desktop 421 · Integration 359). Anterior: **1485 verdes al cierre del barrido de deuda, pasada 1 (2026-11-05)** (Domain 107 · Application 599 · Desktop 421 · Integration 358). Anterior: **1477 verdes al cierre del endurecimiento para piloto (2026-11-05)** (Domain 107 · Application 591 · Desktop 421 · Integration 358). Anterior: **1472 verdes al cierre del Endurecimiento final** (Domain 107 · Application 591 · Desktop 419 · Integration 355), `dotnet test GymForge.sln` exit 0, 0 omitidos, Debug y Release (2026-11-04). Piso previo: 1461 (Fase 5 parte 2, pieza F); 1456 (Fase 5 parte 1, `d33e101`); 1392 antes de la limpieza (`7bc780f`).
 - **Endurecimiento final (post-Fase 5): CERRADO (2026-11-04)** en `feat/sesion-6`: 7 commits de código (`6dd304f`, `5274395`, `ffcbbbc`, `6ec5ae4`, `e9ef7aa`, `dd294d5`, `3b4d7e9`) + commit de docs pendiente del orquestador. ADR-011 `Accepted` con plan por tiers: MUST + SHOULD entregados; D9b, D2 y UX19 diferidos. **2 migraciones nuevas:** `20261105000953` (D3, SiteId) y `20261105001255` (D7, DNI único por empresa+sede). Sin push ni merge.
 - **Fase 5 parte 1 (Sesión 8): CERRADA (2026-11-04)** en `feat/sesion-6` (código `d33e101`; commit de docs por el orquestador). ADR-009 `Accepted`. Piezas A–E y G; F (calendario) diferida a parte 2. Sin push ni merge. Ver la entrada de cierre arriba de todo.
 - **Fase 5 parte 2 (Sesión 9): CERRADA (2026-11-04)** en `feat/sesion-6`: pieza F (calendario semanal de Clases en grilla de 7 días). **Fase 5 completa cerrada (piezas A–G).** ADR-010 pasa a `Accepted` al commitear (orquestador). Código y docs pendientes de commit del orquestador. Sin push ni merge. Ver la entrada de cierre arriba de todo.
@@ -62,6 +63,12 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 | 6 — AFIP + hardware físico | +3-5 (opcional) | WSFE/WSAA/CAE, sidecars reales ZKTeco | OPCIONAL |
 
 ## Qué sigue
+
+**Próximo paso (2026-11-11, tras DEBAJA2; reemplaza el ítem 4 del de ADR-015, NEW-66 ya cerrado).**
+1. Orquestador o usuario: commit de docs de la 2.ª tanda de deuda baja (`docs/PROGRESS.md`, `docs/TASKS.md`).
+2. Usuario: decidir NEW-52 (copias off-site viejas en claro) y NEW-40 (backup pre-import fallido).
+3. Dev (baja): NEW-54, NEW-56, NEW-63 y NEW-67, según decisión.
+4. Usuario: dry-run del release, sumando un tag `v*-rc.*` para verificar NEW-66.
 
 **Próximo paso (2026-11-11, tras el canal de releases ADR-015; reemplaza el paso 2 de ADR-014).**
 1. Usuario: commit de docs de ADR-015 (a Accepted, `docs/adr/README.md`, `docs/PROGRESS.md`, `docs/TASKS.md`).
@@ -157,6 +164,49 @@ Decisiones del usuario abiertas (ninguna bloquea el piloto con las 2 condiciones
 Fuera del piloto: P-2 (saldo a favor en la ficha) sigue abierta. D1 (cobros multi-sede) quedó cerrada el 2026-11-05 (barrido pasada 1). Cerradas en el barrido de deuda vieja (2026-11-10): D5, D6, D8 (parte 1) y D19. Resto de deuda (D1–D19, F1-D4 a F1-D10, F2-D1 a F2-D8, Q3–Q9, UX1–UX17): ver `docs/TASKS.md`. Deuda: **NEW-41** cerrada el 2026-11-11 (VisitPack; nota de release sobre packs legados en la entrada de arriba). NEW-42 a NEW-45 cerradas el 2026-11-11. Nueva deuda: **NEW-46 a NEW-48** (sección "Deuda del barrido de deuda baja", TASKS) y **NEW-49 a NEW-51** (sección "Deuda de NEW-41", TASKS) y **NEW-52 a NEW-58** (sección "Deuda del cierre de F1-D2", TASKS; F1-D2 cerrado el 2026-11-11).
 
 Sesiones 5-8: ver tabla de fases arriba.
+
+---
+
+## [2026-11-11] Barrido de deuda baja, 2.ª tanda (NEW-46, 47, 49, 50, 53, 57, 58, 59, 60, 66; DEBAJA2) — CERRADO
+
+**Hecho:**
+- **NEW-46** (`0681625`): `SharedCacheConcurrencyQaTests` renombrado (`git mv`) a `SqliteConcurrencyQaTests`; ahora `[Theory]` con `sharedCache` false (producción: WAL sin shared-cache) / true (config vieja). `JournalModeTests` deja de usar shared-cache. Las menciones a la clase vieja en el historial de PROGRESS y TASKS no se tocaron.
+- **NEW-47** (`8620b2e`): `tools/GymForge.Screenshots` sin `Cache=Shared` (queda `Mode=ReadWriteCreate`; WAL vía `InitialiseDatabaseAsync`).
+- **NEW-49** (`d47da2a`): tests de handler: `SellMembershipCommand` y `CreateMembershipCommand` con VisitPack sin visitas lanzan y no persisten nada.
+- **NEW-50** (`b449abd`): mensaje de VisitPack sin visitas pasa a "Recreá el plan" (se quitó "Editá o").
+- **NEW-53** (`8f1a146`): `DeleteOrphanTemps` limpia también el patrón legado `gymforge-*.db.tmp`. qa: el temporal de un backup en curso termina en `.db.gfbak.tmp` y no matchea.
+- **NEW-57** (`3aee31f`): `DataTransferService.SweepOrphanTemps` barre `gymforge_transfer_*` de `%TEMP%` (>1 h) desde `InitialiseDatabaseAsync`; no lanza si `%TEMP%` es inaccesible.
+- **NEW-58** (`95fbb49`): `BackupCrypto.Encrypt` valida frase nula/vacía (`ArgumentException.ThrowIfNullOrEmpty`) + test. qa: los dos callers (`DatabaseBackupService`, `DataTransferService`) toleran la excepción (cae en el catch de `CopyOffsite` → `Failed`).
+- **NEW-59** (`83466bf`): test negativo: `AccessLog.TagSerial` no se audita ni se redacta.
+- **NEW-60** (`20f8e5d`): `ReportsViewModel.ConfirmExportAsync` revalida el gate tras el await del PIN (captura el plan antes; aborta si el gate se cerró o el plan cambió por referencia) + test.
+- **NEW-66** (`6042e3b`): `.github/workflows/release.yml` agrega `--pre` a `vpk upload github` solo si la versión tiene sufijo prerelease (`-`). REF_NAME/VERSION/TOKEN siguen por env (sin inyección).
+- qa: APROBADO los 10, sin vetos, sin cambios propios. Sin cambios de comportamiento de producción salvo los guards nuevos (NEW-58, NEW-60) y la limpieza de temporales (NEW-53, NEW-57).
+- Tests: `dotnet test GymForge.sln` **1696 verdes** (antes 1687, +9, casi todo tests nuevos).
+
+**Residuos y observaciones de qa (trazabilidad; sin número nuevo):**
+- **NEW-59:** el test es más débil que el esquema fuerte ("redacta otros campos pero no `TagSerial`"), porque `AccessLog` no implementa `IAuditable`. Si algún día se le agrega `IAuditable`, reescribir el test al esquema fuerte.
+- **NEW-57:** la antigüedad se mide con el `LastWriteTime` de la carpeta, que solo cambia al agregar o quitar entradas de primer nivel. Aceptado por qa, sin acción (irreal para operaciones de minutos).
+- **NEW-66:** no probado en CI; requiere un tag `v*-rc.*` real.
+- Este barrido no generó deuda nueva. La próxima numeración sería NEW-68.
+
+**Siguen ABIERTOS a propósito** (no se tocaron; ver sus filas en TASKS): NEW-40, NEW-52 (la más importante: copias off-site viejas en claro sin rotar), NEW-54, NEW-56, NEW-61, NEW-63, NEW-64, NEW-67.
+
+**En curso:**
+- Nada de código a medias.
+
+**Blockers:**
+- Técnicos: ninguno.
+- Piloto: sin cambios. Decisiones pendientes del usuario: NEW-52 (aviso en UI y/o barrido de copias en claro con confirmación) y NEW-40 (abortar o avisar si falla el backup pre-import).
+
+**Próximo paso:**
+1. Orquestador o usuario: commit de docs de esta tanda (`docs/PROGRESS.md`, `docs/TASKS.md`). Los 10 commits de código están en `master` y sin push.
+2. Usuario: decidir NEW-52 (borrado o aviso de copias off-site viejas en claro) y NEW-40.
+3. Dev (baja, si se decide): NEW-54 y NEW-56 (frase de backup), NEW-63 (retención del backup pre-migración), NEW-67 (anclar Actions por SHA).
+4. Usuario, en el dry-run de release: verificar NEW-66 con un tag `v*-rc.*` (la rama `--pre` no corrió en CI).
+
+**Tocado:**
+- Código (commits arriba): `tests/GymForge.Integration.Tests/SqliteConcurrencyQaTests.cs` (antes `SharedCacheConcurrencyQaTests.cs`) y `JournalModeTests.cs` (NEW-46); `tools/GymForge.Screenshots/Program.cs` (NEW-47); tests de handlers Sell y Create (NEW-49); `src/GymForge.Domain/Entities/MembershipType.cs` (NEW-50); `src/GymForge.Infrastructure/Persistence/DatabaseBackupService.cs` (NEW-53); `src/GymForge.Infrastructure/Persistence/DataTransferService.cs` (NEW-57); `src/GymForge.Infrastructure/Persistence/BackupCrypto.cs` (NEW-58); tests del AuditLog (NEW-59); `src/GymForge.Desktop/ViewModels/Reports/ReportsViewModel.cs` (NEW-60); `.github/workflows/release.yml` (NEW-66).
+- Docs: `docs/PROGRESS.md`; `docs/TASKS.md`.
 
 ---
 

@@ -415,13 +415,16 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
         PlugInPendrive();
         Directory.CreateDirectory(OffsiteDir);
         var orphan = Path.Combine(OffsiteDir, "gymforge-20200101-000000.db.gfbak.tmp");
+        var legacyOrphan = Path.Combine(OffsiteDir, "gymforge-20190101-000000.db.tmp");
         var foreign = Path.Combine(OffsiteDir, "otro-programa.tmp");
         File.WriteAllText(orphan, "copia a medias");
+        File.WriteAllText(legacyOrphan, "copia a medias de una versión anterior");
         File.WriteAllText(foreign, "no es nuestro");
 
         NewService().BackupOffsiteNow().Should().Be(OffsiteBackupOutcome.Copied);
 
         File.Exists(orphan).Should().BeFalse();
+        File.Exists(legacyOrphan).Should().BeFalse();
         File.Exists(foreign).Should().BeTrue();
     }
 

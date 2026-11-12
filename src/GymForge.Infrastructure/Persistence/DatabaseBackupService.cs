@@ -220,10 +220,16 @@ public class DatabaseBackupService : IDatabaseBackup
         }
     }
 
-    /// <summary>Borra los temporales propios que dejó una copia interrumpida (pendrive retirado a mitad de camino).</summary>
+    /// <summary>
+    /// Borra los temporales propios que dejó una copia interrumpida (pendrive retirado a mitad de camino),
+    /// incluidos los de versiones anteriores (<c>gymforge-*.db.tmp</c>). El temporal de una copia en curso
+    /// (<c>*.gfbak.tmp</c>) no matchea el patrón legado, y las copias corren de a una.
+    /// </summary>
     private static void DeleteOrphanTemps(string dir)
     {
-        foreach (var orphan in Directory.GetFiles(dir, OffsiteFilePattern + ".tmp"))
+        var orphans = Directory.GetFiles(dir, OffsiteFilePattern + ".tmp")
+            .Concat(Directory.GetFiles(dir, BackupFilePattern + ".tmp"));
+        foreach (var orphan in orphans)
         {
             try { File.Delete(orphan); } catch { /* best-effort: se reintenta en la próxima copia */ }
         }

@@ -828,16 +828,23 @@ public partial class SettingsViewModel : ObservableObject
     private async Task ConfirmLegacySweepAsync()
     {
         IsLegacySweepConfirming = false;
+        var detected = LegacyPlainCopyCount;
         var deleted = await Task.Run(_backup.DeleteLegacyPlainOffsiteCopies);
 
         OffsiteOk = deleted.Count > 0;
-        OffsiteMessage = deleted.Count > 0
-            ? (deleted.Count == 1
-                ? "Listo: se borró 1 copia vieja sin cifrar."
-                : $"Listo: se borraron {deleted.Count} copias viejas sin cifrar.")
-            : "No se pudo borrar ninguna copia vieja. Revisá que la carpeta o el pendrive estén disponibles.";
+        OffsiteMessage = LegacySweepMessage(deleted.Count, Math.Max(0, detected - deleted.Count));
         await RefreshOffsiteStatusAsync();
     }
+
+    private static string LegacySweepMessage(int deleted, int remaining) => (deleted, remaining) switch
+    {
+        (0, _) => "No se pudo borrar ninguna copia vieja. Revisá que la carpeta o el pendrive estén disponibles.",
+        (1, 0) => "Listo: se borró 1 copia vieja sin cifrar.",
+        (_, 0) => $"Listo: se borraron {deleted} copias viejas sin cifrar.",
+        _ => $"Se {(deleted == 1 ? "borró 1 copia" : $"borraron {deleted} copias")}; "
+             + $"{(remaining == 1 ? "1 no se pudo borrar" : $"{remaining} no se pudieron borrar")} "
+             + "(revisá que la carpeta esté disponible).",
+    };
 
     private async Task RefreshOffsiteStatusAsync()
     {

@@ -63,6 +63,22 @@ public class SettingsViewModelLegacySweepTests
     }
 
     [Fact]
+    public async Task Confirmar_ConBorradoParcial_InformaCuantasQuedaron()
+    {
+        var backup = Substitute.For<IDatabaseBackup>();
+        backup.FindLegacyPlainOffsiteCopies().Returns(["a.db", "b.db", "c.db"]);
+        backup.DeleteLegacyPlainOffsiteCopies().Returns(["a.db"]);
+        var vm = await SutAsync(backup);
+
+        vm.AskLegacySweepCommand.Execute(null);
+        await vm.ConfirmLegacySweepCommand.ExecuteAsync(null);
+
+        vm.OffsiteMessage.Should().Be(
+            "Se borró 1 copia; 2 no se pudieron borrar (revisá que la carpeta esté disponible).");
+        vm.OffsiteOk.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task Cancelar_NoBorraNada()
     {
         var backup = Substitute.For<IDatabaseBackup>();

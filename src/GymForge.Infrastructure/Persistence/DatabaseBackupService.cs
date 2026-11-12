@@ -151,8 +151,7 @@ public class DatabaseBackupService : IDatabaseBackup
         try
         {
             var offsiteDir = Path.GetFullPath(Path.Combine(dir, OffsiteFolderName));
-            var localDir = Path.GetFullPath(_backupDir);
-            if (!Directory.Exists(offsiteDir) || string.Equals(offsiteDir, localDir, StringComparison.OrdinalIgnoreCase))
+            if (!Directory.Exists(offsiteDir) || SameRealDirectory(offsiteDir, _backupDir))
                 return [];
 
             return [.. Directory.GetFiles(offsiteDir, BackupFilePattern)
@@ -164,6 +163,25 @@ public class DatabaseBackupService : IDatabaseBackup
             _logger.LogWarning(ex, "No se pudo inspeccionar el destino externo {Dir}: no se ofrece borrar nada.", dir);
             return [];
         }
+    }
+
+    /// <summary>
+    /// ¿Ambas rutas son la misma carpeta real? Resuelve junctions y symlinks (en la carpeta o en cualquier ancestro)
+    /// antes de comparar. Si la resolución falla lanza IOException/UnauthorizedAccessException, que el llamador trata
+    /// como "no barrer": ante la duda no se borra nada.
+    /// </summary>
+    private static bool SameRealDirectory(string a, string b) =>
+        string.Equals(ResolveRealPath(a), ResolveRealPath(b), StringComparison.OrdinalIgnoreCase);
+
+    private static string ResolveRealPath(string path)
+    {
+        var info = new DirectoryInfo(Path.GetFullPath(path));
+        if (info.Parent is not { } parent) return info.FullName;   // la raíz de la unidad no puede ser un link
+
+        if (info.Exists && info.ResolveLinkTarget(returnFinalTarget: true) is { } target)
+            return Path.GetFullPath(target.FullName);
+
+        return Path.Combine(ResolveRealPath(parent.FullName), info.Name);
     }
 
     /// <summary>Fire-and-forget: nada se propaga (ni como UnobservedTaskException); el resultado no se informa.</summary>

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using FluentAssertions;
 using GymForge.Application.Interfaces;
 using GymForge.Infrastructure.Persistence;
@@ -33,6 +34,7 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
     public void Dispose()
     {
         SqliteConnection.ClearAllPools();
+        if (new DirectoryInfo(OffsiteDir).LinkTarget is not null) Directory.Delete(OffsiteDir);   // solo el junction, no su destino
         if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
     }
 
@@ -496,4 +498,40 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
         Directory.GetFiles(LocalBackupsDir).Should().BeEquivalentTo(localBefore);
         OffsiteFiles().Should().NotBeEmpty();
     }
+
+    // ── guard contra alias de la carpeta local (NEW-69) ─────────────────────
+
+    /// <summary>Crea un junction (no requiere privilegios en Windows) de <paramref name="link"/> hacia <paramref name="target"/>.</summary>
+    private static void CreateJunction(string link, string target)
+    {
+        using var mklink = Process.Start(new ProcessStartInfo("cmd.exe", $"/c mklink /J \"{link}\" \"{target}\"")
+        {
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+        })!;
+        mklink.WaitForExit();
+        mklink.ExitCode.Should().Be(0, "el test necesita un junction real hacia la carpeta de backups locales");
+    }
+
+    [Fact]
+    public void LegacySweep_OffsiteQueEsJunctionDeLaCarpetaLocal_NoDetectaNiBorraNada()
+    {
+        // Los backups locales matchean la regex de las copias legadas: si el guard no resolviera el alias, se borrarían.
+        Directory.CreateDirectory(LocalBackupsDir);
+        var localBackup = Path.Combine(LocalBackupsDir, "gymforge-20240101-101010.db");
+        File.WriteAllText(localBackup, "backup local");
+        PlugInPendrive();
+        CreateJunction(OffsiteDir, LocalBackupsDir);
+        var service = NewService();
+
+        service.FindLegacyPlainOffsiteCopies().Should().BeEmpty();
+        service.DeleteLegacyPlainOffsiteCopies().Should().BeEmpty();
+
+        File.Exists(localBackup).Should().BeTrue();
+    }
+
+    // Cobertura: el caso de igualdad directa de rutas no es alcanzable (la subcarpeta externa se llama
+    // "GymForge-backups" y la local "backups"); el alias por junction es la forma real de que coincidan y la cubre
+    // el test de arriba. Los symlinks usan la misma resolución (ResolveLinkTarget) pero crearlos exige privilegios;
+    // y si la resolución falla (IOException/UnauthorizedAccessException) el catch existente devuelve vacío: no se barre.
 }

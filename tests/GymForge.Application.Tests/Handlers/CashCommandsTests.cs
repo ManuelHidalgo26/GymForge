@@ -106,14 +106,14 @@ public class CashCommandsTests
         _repo.GetByIdAsync(shift.Id, Arg.Any<CancellationToken>()).Returns(shift);
         var backup = Substitute.For<IDatabaseBackup>();
         backup.BackupNow(Arg.Any<string>()).Returns(false);
-        var log = Substitute.For<ILogger<CloseShiftCommandHandler>>();
+        var log = new CapturingLogger<CloseShiftCommandHandler>();
 
         var dto = await new CloseShiftCommandHandler(_repo, backup, log).Handle(
             new CloseShiftCommand(shift.Id, 10_000m), CancellationToken.None);
 
         dto.Status.Should().Be(ShiftStatus.Closed);
         await _repo.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
-        log.ReceivedCalls().Should().Contain(c => c.GetMethodInfo().Name == nameof(ILogger.Log));
+        log.Levels.Should().ContainSingle().Which.Should().Be(LogLevel.Warning);
     }
 
     // ── Validators ──────────────────────────────────────────────────────────

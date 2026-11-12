@@ -69,7 +69,7 @@ public class MembershipType : BaseEntity, ITenantScoped, IAuditable
     public int? InitialVisits() => Basis == MembershipBasis.VisitPack
         ? (VisitsIncluded is > 0
             ? VisitsIncluded
-            : throw new InvalidOperationException("El pack de visitas no tiene configurada la cantidad de visitas. Editá o recreá el plan."))
+            : throw new InvalidOperationException("El pack de visitas no tiene configurada la cantidad de visitas. Recreá el plan."))
         : null;
 
     /// <summary>Vencimiento = inicio + duración del plan. Una unidad desconocida cuenta como meses.</summary>

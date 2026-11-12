@@ -28,6 +28,7 @@ public class DataTransferService : IDataTransfer
     private const string ManifestEntry = "manifest.json";
     private const string DbEntry = "gymforge.db";
     private const string FilesRoot = "archivos";
+    private const string TempPrefix = "gymforge_transfer_";
 
     /// <summary>Carpetas de datos del usuario que viajan con la base.</summary>
     private static readonly string[] UserFolders = ["brand", "fotos"];
@@ -445,9 +446,36 @@ public class DataTransferService : IDataTransfer
         return copiados;
     }
 
+    /// <summary>
+    /// Barrido al arrancar: borra los <c>gymforge_transfer_*</c> que dejó un export o import cuyo proceso murió
+    /// (la base descifrada queda en claro en %TEMP%). Solo toca los más viejos que <paramref name="minAge"/>, para no
+    /// pisar la operación en curso de otra instancia de la app. Best-effort: nunca impide el arranque.
+    /// </summary>
+    internal static void SweepOrphanTemps(TimeSpan minAge, string? tempRoot = null)
+    {
+        var root = tempRoot ?? Path.GetTempPath();
+        var cutoff = DateTime.UtcNow - minAge;
+        try
+        {
+            foreach (var path in Directory.EnumerateFileSystemEntries(root, TempPrefix + "*"))
+            {
+                if (Directory.Exists(path))
+                {
+                    if (Directory.GetLastWriteTimeUtc(path) < cutoff) TryDeleteDir(path);
+                }
+                else if (File.GetLastWriteTimeUtc(path) < cutoff)
+                {
+                    TryDeleteFile(path);
+                }
+            }
+        }
+        catch (IOException) { /* %TEMP% inaccesible: se reintenta en el próximo arranque */ }
+        catch (UnauthorizedAccessException) { /* idem */ }
+    }
+
     private static string NewTempDir()
     {
-        var dir = Path.Combine(Path.GetTempPath(), "gymforge_transfer_" + Guid.NewGuid().ToString("N"));
+        var dir = Path.Combine(Path.GetTempPath(), TempPrefix + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
         return dir;
     }

@@ -100,6 +100,9 @@ public static class InfrastructureServiceExtensions
         return services;
     }
 
+    // Un export o import legítimo dura minutos: lo más joven que esto puede ser de otra instancia en curso.
+    private static readonly TimeSpan OrphanTempMinAge = TimeSpan.FromHours(1);
+
     /// <summary>Runs EF migrations and seeds initial data on first launch.</summary>
     public static async Task InitialiseDatabaseAsync(this IServiceProvider services)
     {
@@ -110,6 +113,7 @@ public static class InfrastructureServiceExtensions
 
         // Si la base está corrupta, archivarla y restaurar el último backup ANTES de abrirla.
         backup.EnsureHealthy();
+        DataTransferService.SweepOrphanTemps(OrphanTempMinAge);
 
         await BaselineLegacyDatabaseAsync(db);
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<GymForgeDbContext>>();

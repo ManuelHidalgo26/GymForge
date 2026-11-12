@@ -149,6 +149,16 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] private bool _offsiteNeedsAttention;
     [ObservableProperty] private string? _offsiteMessage;
     [ObservableProperty] private bool _offsiteOk;
+
+    // Copias externas EN CLARO de antes del cifrado: aviso + borrado solo tras confirmar (nunca automático).
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasLegacyPlainCopies), nameof(LegacyPlainCopiesText))]
+    private int _legacyPlainCopyCount;
+    [ObservableProperty] private bool _isLegacySweepConfirming;
+    public bool HasLegacyPlainCopies => LegacyPlainCopyCount > 0;
+    public string LegacyPlainCopiesText => LegacyPlainCopyCount == 1
+        ? "Hay 1 copia vieja sin cifrar en el destino externo."
+        : $"Hay {LegacyPlainCopyCount} copias viejas sin cifrar en el destino externo.";
     public bool HasOffsiteBackupDir => !string.IsNullOrWhiteSpace(OffsiteBackupDir);
     public string OffsiteBackupDirDisplay => OffsiteBackupDir ?? "Sin carpeta elegida";
 
@@ -807,6 +817,28 @@ public partial class SettingsViewModel : ObservableObject
         await RefreshOffsiteStatusAsync();
     }
 
+    [RelayCommand]
+    private void AskLegacySweep() => IsLegacySweepConfirming = true;
+
+    [RelayCommand]
+    private void CancelLegacySweep() => IsLegacySweepConfirming = false;
+
+    /// <summary>Segundo paso (ya confirmado): borra solo las copias en claro legadas del destino externo.</summary>
+    [RelayCommand]
+    private async Task ConfirmLegacySweepAsync()
+    {
+        IsLegacySweepConfirming = false;
+        var deleted = await Task.Run(_backup.DeleteLegacyPlainOffsiteCopies);
+
+        OffsiteOk = deleted.Count > 0;
+        OffsiteMessage = deleted.Count > 0
+            ? (deleted.Count == 1
+                ? "Listo: se borró 1 copia vieja sin cifrar."
+                : $"Listo: se borraron {deleted.Count} copias viejas sin cifrar.")
+            : "No se pudo borrar ninguna copia vieja. Revisá que la carpeta o el pendrive estén disponibles.";
+        await RefreshOffsiteStatusAsync();
+    }
+
     private async Task RefreshOffsiteStatusAsync()
     {
         var dir = _localSettings.OffsiteBackupDir;
@@ -818,6 +850,9 @@ public partial class SettingsViewModel : ObservableObject
             dir, _localSettings.LastOffsiteBackupUtc?.ToLocalTime(), available, DateTime.Now, _keyStore.HasPassphrase);
         OffsiteStatusDisplay = status.Display;
         OffsiteNeedsAttention = status.NeedsAttention;
+
+        LegacyPlainCopyCount = await Task.Run(() => _backup.FindLegacyPlainOffsiteCopies().Count);
+        if (!HasLegacyPlainCopies) IsLegacySweepConfirming = false;
     }
 
     private static IStorageProvider? MainStorage() =>

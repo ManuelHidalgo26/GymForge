@@ -125,6 +125,23 @@ public class DataTransferServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task Import_SiFallaElRespaldoPrevio_AbortaYNoReemplazaLaBase()
+    {
+        var origen = NewInstall("Iron Temple", members: 1, payments: 0, withLogo: true);
+        var package = Path.Combine(NewDir(), "export.gfbak");
+        await origen.Service.ExportAsync(package);
+        var destino = NewInstall("Gimnasio Actual", members: 7, payments: 0, withLogo: false);
+        destino.Backup.BackupNow(Arg.Any<string>()).Returns(false);
+
+        var act = () => destino.Service.ImportAsync(package, Pass);
+
+        (await act.Should().ThrowAsync<DataPackageException>()).WithMessage("*cancel*respaldo de seguridad*");
+        Query(destino.ConnectionString, "SELECT COUNT(*) FROM Members").Should().Be("7");
+        Query(destino.ConnectionString, "SELECT LegalName FROM Companies LIMIT 1").Should().Be("Gimnasio Actual");
+        Directory.Exists(Path.Combine(destino.DataDir, "brand")).Should().BeFalse();
+    }
+
+    [Fact]
     public async Task Inspect_Rejects_FileThatIsNotAGymForgePackage()
     {
         var gym = NewInstall("Iron Temple", members: 0, payments: 0, withLogo: false);
@@ -363,6 +380,7 @@ public class DataTransferServiceTests : IDisposable
         }
 
         var backup = Substitute.For<IDatabaseBackup>();
+        backup.BackupNow(Arg.Any<string>()).Returns(true);
         var svc = new DataTransferService(
             connStr, backup, new InMemoryBackupKeyStore(passphrase), Substitute.For<ILogger<DataTransferService>>());
         return new Install(svc, connStr, dataDir, backup);

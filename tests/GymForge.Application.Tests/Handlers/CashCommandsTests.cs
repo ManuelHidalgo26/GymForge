@@ -3,6 +3,8 @@ using GymForge.Application.Interfaces;
 using GymForge.Application.UseCases.Cash;
 using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
 namespace GymForge.Application.Tests.Handlers;
@@ -87,13 +89,31 @@ public class CashCommandsTests
         _repo.GetByIdAsync(shift.Id, Arg.Any<CancellationToken>()).Returns(shift);
 
         // Sistema espera 15.000; el cajero declara 14.500 → faltante de 500.
-        var dto = await new CloseShiftCommandHandler(_repo, Substitute.For<IDatabaseBackup>()).Handle(
+        var dto = await new CloseShiftCommandHandler(
+            _repo, Substitute.For<IDatabaseBackup>(), NullLogger<CloseShiftCommandHandler>.Instance).Handle(
             new CloseShiftCommand(shift.Id, 14_500m, "Arqueo nocturno"), CancellationToken.None);
 
         dto.Status.Should().Be(ShiftStatus.Closed);
         dto.ExpectedCash.Should().Be(15_000m);
         dto.DeclaredCash.Should().Be(14_500m);
         dto.Difference.Should().Be(-500m);
+    }
+
+    [Fact]
+    public async Task CloseShift_ConBackupFallido_CierraIgualYAvisaEnElLog()
+    {
+        var shift = Shift.Open(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), 10_000m);
+        _repo.GetByIdAsync(shift.Id, Arg.Any<CancellationToken>()).Returns(shift);
+        var backup = Substitute.For<IDatabaseBackup>();
+        backup.BackupNow(Arg.Any<string>()).Returns(false);
+        var log = Substitute.For<ILogger<CloseShiftCommandHandler>>();
+
+        var dto = await new CloseShiftCommandHandler(_repo, backup, log).Handle(
+            new CloseShiftCommand(shift.Id, 10_000m), CancellationToken.None);
+
+        dto.Status.Should().Be(ShiftStatus.Closed);
+        await _repo.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        log.ReceivedCalls().Should().Contain(c => c.GetMethodInfo().Name == nameof(ILogger.Log));
     }
 
     // ── Validators ──────────────────────────────────────────────────────────

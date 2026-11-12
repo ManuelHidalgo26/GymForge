@@ -310,6 +310,19 @@ public interface IDatabaseBackup
 
     /// <summary>"Copiar ahora": crea un backup nuevo y lo copia ya al destino externo, informando cómo salió.</summary>
     OffsiteBackupOutcome BackupOffsiteNow();
+
+    /// <summary>
+    /// Nombres de las copias externas anteriores al cifrado (bases SQLite EN CLARO) que quedaron en el destino externo.
+    /// Vacío si no hay destino, no está disponible o no se pudo leer: ante la duda no se ofrece borrar nada.
+    /// </summary>
+    IReadOnlyList<string> FindLegacyPlainOffsiteCopies();
+
+    /// <summary>
+    /// Borra exactamente las copias que devuelve <see cref="FindLegacyPlainOffsiteCopies"/> (nunca los .gfbak cifrados
+    /// ni los backups locales). Es destructivo: solo debe invocarse tras la confirmación explícita del usuario.
+    /// Devuelve los nombres de las que se borraron.
+    /// </summary>
+    IReadOnlyList<string> DeleteLegacyPlainOffsiteCopies();
 }
 
 /// <summary>Resultado de la copia al destino externo (pendrive, red, carpeta sincronizada).</summary>

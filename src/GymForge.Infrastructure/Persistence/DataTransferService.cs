@@ -301,7 +301,15 @@ public class DataTransferService : IDataTransfer
         using var package = await OpenPackageAsync(path, passphrase, ct);
         var info = await InspectZipAsync(package.ZipPath, ct);
 
-        _backup.BackupNow("pre-import");
+        // Sin respaldo previo no hay vuelta atrás: ante la duda, no se pisa la base.
+        if (!_backup.BackupNow("pre-import"))
+        {
+            _logger.LogError("Import cancelado: no se pudo crear el respaldo de seguridad previo.");
+            throw new DataPackageException(
+                "Se canceló la importación porque no se pudo crear el respaldo de seguridad de tus datos actuales " +
+                "(revisá el espacio en disco). No se modificó nada.");
+        }
+
         SqliteConnection.ClearAllPools();
 
         var temp = NewTempDir();

@@ -233,6 +233,32 @@ liveLicense.State = new LicenseState(
 Capture("10b-configuracion-licencia-otra-pc", new GymForge.Desktop.Views.Settings.SettingsView { DataContext = NewSettingsViewModel() }, 1180, 3300, outDir);
 liveLicense.State = licenseBeforeMismatch;
 
+// Copias externas en claro (NEW-52): aviso con 1 y con varias copias, y el paso de confirmación, en light y dark.
+GymForge.Desktop.ViewModels.Settings.SettingsViewModel NewLegacySettingsViewModel(int copies)
+{
+    var vm = new GymForge.Desktop.ViewModels.Settings.SettingsViewModel(
+        mediator2, sp.GetRequiredService<ISiteRepository>(),
+        sp.GetRequiredService<IMemberRepository>(), session,
+        sp.GetRequiredService<GymForge.Application.UseCases.Access.GatekeeperConfig>(),
+        sp.GetRequiredService<CurrentLicense>(),
+        sp.GetRequiredService<IDataTransfer>(), new LegacyCopiesBackup(copies),
+        sp.GetRequiredService<ILocalSettings>(), sp.GetRequiredService<IMachineFingerprint>(),
+        sp.GetRequiredService<GymForge.Desktop.ViewModels.Shared.UpdateViewModel>(),
+        sp.GetRequiredService<DunningConfig>(), sp.GetRequiredService<IBackupKeyStore>());
+    return vm;
+}
+
+foreach (var (theme, suffix) in new[] { (Avalonia.Styling.ThemeVariant.Light, "light"), (Avalonia.Styling.ThemeVariant.Dark, "dark") })
+{
+    Avalonia.Application.Current!.RequestedThemeVariant = theme;
+    Capture($"10c-copias-sin-cifrar-1-{suffix}", new GymForge.Desktop.Views.Settings.SettingsView { DataContext = NewLegacySettingsViewModel(1) }, 1180, 5600, outDir);
+    Capture($"10c-copias-sin-cifrar-3-{suffix}", new GymForge.Desktop.Views.Settings.SettingsView { DataContext = NewLegacySettingsViewModel(3) }, 1180, 5600, outDir);
+    var confirming = NewLegacySettingsViewModel(3);
+    confirming.AskLegacySweepCommand.Execute(null);
+    Capture($"10c-copias-sin-cifrar-confirmar-{suffix}", new GymForge.Desktop.Views.Settings.SettingsView { DataContext = confirming }, 1180, 5600, outDir);
+}
+Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+
 // Clases v2: agenda semanal con un horario seleccionado y sus reservas
 var classesVm = new GymForge.Desktop.ViewModels.Classes.ClassesViewModel(
     mediator2, sp.GetRequiredService<IMemberRepository>(), session, sp.GetRequiredService<GymForge.Application.Services.ICompanyCalendar>());
@@ -888,4 +914,14 @@ sealed class SampleUpdateService : IUpdateService
     public void ApplyAndRestart(AvailableUpdate update) { }
 
     public void ApplyOnExit(AvailableUpdate update) { }
+}
+
+/// <summary>Respaldo falso para las capturas: solo informa N copias externas en claro; no toca disco.</summary>
+sealed class LegacyCopiesBackup(int copies) : IDatabaseBackup
+{
+    public bool BackupNow(string reason = "manual") => true;
+    public OffsiteBackupOutcome BackupOffsiteNow() => OffsiteBackupOutcome.NotConfigured;
+    public IReadOnlyList<string> FindLegacyPlainOffsiteCopies() =>
+        [.. Enumerable.Range(1, copies).Select(i => $"gymforge-2024010{i}-101010.db")];
+    public IReadOnlyList<string> DeleteLegacyPlainOffsiteCopies() => [];
 }

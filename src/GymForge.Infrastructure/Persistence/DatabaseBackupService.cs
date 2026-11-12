@@ -1,4 +1,5 @@
 using GymForge.Application.Interfaces;
+using System.Text.RegularExpressions;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging;
 
@@ -30,6 +31,12 @@ public class DatabaseBackupService : IDatabaseBackup
 
     // Subcarpeta del destino externo: no ensucia la raíz del pendrive y permite compartir la unidad.
     private const string OffsiteFolderName = "GymForge-backups";
+
+    // Copia externa en claro de antes de F1-D2: el backup local copiado tal cual (gymforge-AAAAMMDD-HHMMSS[-motivo].db)
+    // en la subcarpeta del destino. Regex estricta a propósito: borrar backups es destructivo, así que solo
+    // cuenta lo que tiene exactamente el nombre que generaba esta clase (Slug: minúsculas ASCII y guiones).
+    private static readonly Regex LegacyPlainOffsiteName =
+        new(@"^gymforge-\d{8}-\d{6}(-[a-z0-9]+)*\.db$", RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
     private readonly string _connectionString;
     private readonly string _dbPath;
@@ -83,7 +90,8 @@ public class DatabaseBackupService : IDatabaseBackup
     {
         var latest = LatestBackup();
         if (latest is not null && File.GetLastWriteTime(latest).Date == DateTime.Today) return;
-        BackupNow("diario");
+        if (!BackupNow("diario"))
+            _logger.LogWarning("No se pudo crear el backup diario: el arranque sigue sin él.");
     }
 
     /// <summary>Última copia externa disparada por <see cref="BackupNow"/>. Solo la esperan los tests.</summary>
@@ -106,6 +114,56 @@ public class DatabaseBackupService : IDatabaseBackup
     {
         var backup = CreateLocalBackup("externo manual");
         return backup is null ? OffsiteBackupOutcome.LocalBackupFailed : CopyOffsite(backup);
+    }
+
+    public IReadOnlyList<string> FindLegacyPlainOffsiteCopies() =>
+        [.. LegacyPlainOffsiteFiles().Select(Path.GetFileName).OfType<string>()];
+
+    public IReadOnlyList<string> DeleteLegacyPlainOffsiteCopies()
+    {
+        var deleted = new List<string>();
+        foreach (var file in LegacyPlainOffsiteFiles())
+        {
+            try
+            {
+                File.Delete(file);
+                deleted.Add(Path.GetFileName(file));
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                _logger.LogWarning(ex, "No se pudo borrar la copia externa en claro {File}.", file);
+            }
+        }
+
+        _logger.LogInformation("Barrido de copias externas en claro: {Count} borradas.", deleted.Count);
+        return deleted;
+    }
+
+    /// <summary>
+    /// Archivos del destino externo con el nombre exacto de las copias en claro previas al cifrado. Solo mira la
+    /// subcarpeta de GymForge, nunca la carpeta de backups locales ni los .gfbak. Ante cualquier duda devuelve vacío.
+    /// </summary>
+    private IReadOnlyList<string> LegacyPlainOffsiteFiles()
+    {
+        var dir = _settings?.OffsiteBackupDir;
+        if (string.IsNullOrWhiteSpace(dir)) return [];
+
+        try
+        {
+            var offsiteDir = Path.GetFullPath(Path.Combine(dir, OffsiteFolderName));
+            var localDir = Path.GetFullPath(_backupDir);
+            if (!Directory.Exists(offsiteDir) || string.Equals(offsiteDir, localDir, StringComparison.OrdinalIgnoreCase))
+                return [];
+
+            return [.. Directory.GetFiles(offsiteDir, BackupFilePattern)
+                .Where(f => LegacyPlainOffsiteName.IsMatch(Path.GetFileName(f)))
+                .Order(StringComparer.OrdinalIgnoreCase)];
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            _logger.LogWarning(ex, "No se pudo inspeccionar el destino externo {Dir}: no se ofrece borrar nada.", dir);
+            return [];
+        }
     }
 
     /// <summary>Fire-and-forget: nada se propaga (ni como UnobservedTaskException); el resultado no se informa.</summary>

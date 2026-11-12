@@ -433,4 +433,67 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
     {
         NewService().BackupOffsiteNow().Should().Be(OffsiteBackupOutcome.NotConfigured);
     }
+
+    // ── copias en claro previas al cifrado (NEW-52) ─────────────────────────
+
+    private string[] SeedLegacyAndBystanders()
+    {
+        PlugInPendrive();
+        Directory.CreateDirectory(OffsiteDir);
+        string[] legacy = ["gymforge-20240101-101010.db", "gymforge-20240102-101010-cierre-de-caja.db"];
+        string[] bystanders =
+        [
+            "gymforge-20240101-101010.db.gfbak", "gymforge-20240101-101010.db.tmp",
+            "gymforge-20240101-101010.db.bak", "gymforge-notas.db", "otro.db", "Gymforge-20240101-101010.dbx",
+        ];
+        foreach (var name in legacy.Concat(bystanders)) File.WriteAllText(Path.Combine(OffsiteDir, name), "x");
+        File.WriteAllText(Path.Combine(Pendrive, "gymforge-20240103-101010.db"), "fuera de la subcarpeta");
+        return legacy;
+    }
+
+    [Fact]
+    public void FindLegacyPlainOffsiteCopies_CuentaSoloLasCopiasEnClaroLegadas()
+    {
+        var legacy = SeedLegacyAndBystanders();
+
+        NewService().FindLegacyPlainOffsiteCopies().Should().BeEquivalentTo(legacy);
+    }
+
+    [Fact]
+    public void FindLegacyPlainOffsiteCopies_SinDestinoODestinoAusente_DevuelveVacio()
+    {
+        NewService().FindLegacyPlainOffsiteCopies().Should().BeEmpty();
+
+        _settings.OffsiteBackupDir = Path.Combine(_root, "no-esta");
+        NewService().FindLegacyPlainOffsiteCopies().Should().BeEmpty();
+    }
+
+    [Fact]
+    public void DeleteLegacyPlainOffsiteCopies_BorraExactamenteLasLegadas_YNadaMas()
+    {
+        var legacy = SeedLegacyAndBystanders();
+        var before = Directory.GetFiles(OffsiteDir).Select(Path.GetFileName).ToList();
+
+        var deleted = NewService().DeleteLegacyPlainOffsiteCopies();
+
+        deleted.Should().BeEquivalentTo(legacy);
+        Directory.GetFiles(OffsiteDir).Select(Path.GetFileName)
+            .Should().BeEquivalentTo(before.Except(legacy));
+        File.Exists(Path.Combine(Pendrive, "gymforge-20240103-101010.db")).Should().BeTrue();
+    }
+
+    [Fact]
+    public void LegacySweep_NoTocaLosBackupsLocales()
+    {
+        SeedLegacyAndBystanders();
+        var service = NewService();
+        service.BackupNow("test");
+        service.PendingOffsiteCopy.Wait();
+        var localBefore = Directory.GetFiles(LocalBackupsDir);
+
+        service.DeleteLegacyPlainOffsiteCopies();
+
+        Directory.GetFiles(LocalBackupsDir).Should().BeEquivalentTo(localBefore);
+        OffsiteFiles().Should().NotBeEmpty();
+    }
 }

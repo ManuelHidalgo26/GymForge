@@ -4,6 +4,7 @@ using GymForge.Application.Interfaces;
 using GymForge.Domain.Entities;
 using GymForge.Domain.Enums;
 using MediatR;
+using Microsoft.Extensions.Logging;
 
 namespace GymForge.Application.UseCases.Cash;
 
@@ -98,11 +99,13 @@ public class CloseShiftCommandHandler : IRequestHandler<CloseShiftCommand, Shift
 {
     private readonly IShiftRepository _repo;
     private readonly IDatabaseBackup _backup;
+    private readonly ILogger<CloseShiftCommandHandler> _log;
 
-    public CloseShiftCommandHandler(IShiftRepository repo, IDatabaseBackup backup)
+    public CloseShiftCommandHandler(IShiftRepository repo, IDatabaseBackup backup, ILogger<CloseShiftCommandHandler> log)
     {
         _repo = repo;
         _backup = backup;
+        _log = log;
     }
 
     public async Task<ShiftDto> Handle(CloseShiftCommand cmd, CancellationToken ct)
@@ -116,8 +119,9 @@ public class CloseShiftCommandHandler : IRequestHandler<CloseShiftCommand, Shift
         shift.ConfirmClose(cmd.Notes);
         await _repo.SaveChangesAsync(ct);
 
-        // Resguardo de fin de jornada (best-effort: no rompe el cierre si falla).
-        _backup.BackupNow("cierre de caja");
+        // Resguardo de fin de jornada: si falla solo se avisa en el log, nunca se traba el cierre ya confirmado.
+        if (!_backup.BackupNow("cierre de caja"))
+            _log.LogWarning("El cierre de caja {ShiftId} quedó registrado, pero no se pudo crear el respaldo de fin de jornada.", shift.Id);
         return ShiftDto.FromEntity(shift);
     }
 }

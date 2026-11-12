@@ -50,6 +50,20 @@ public class BackupCryptoTests
         result.Should().Equal(payload);
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void Encrypt_ConFraseNulaOVacia_LanzaYNoEscribeNada(string? passphrase)
+    {
+        using var plain = new MemoryStream(RandomBytes(16));
+        using var cipher = new MemoryStream();
+
+        var act = () => BackupCrypto.Encrypt(plain, cipher, passphrase!);
+
+        act.Should().Throw<ArgumentException>();
+        cipher.Length.Should().Be(0);
+    }
+
     [Fact]
     public void RoundTrip_ConElTamanoDeBloqueDeProduccion_SuperandoUnBloque()
     {

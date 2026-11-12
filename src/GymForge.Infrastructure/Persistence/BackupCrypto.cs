@@ -51,6 +51,8 @@ public static class BackupCrypto
 
     internal static void Encrypt(Stream plain, Stream cipher, string passphrase, int iterations, int chunkSize)
     {
+        ArgumentException.ThrowIfNullOrEmpty(passphrase);
+
         var header = BuildHeader(iterations, chunkSize);
         cipher.Write(header);
 

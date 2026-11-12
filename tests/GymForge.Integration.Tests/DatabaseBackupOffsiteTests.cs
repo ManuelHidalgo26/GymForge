@@ -34,13 +34,15 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
     public void Dispose()
     {
         SqliteConnection.ClearAllPools();
-        if (new DirectoryInfo(OffsiteDir).LinkTarget is not null) Directory.Delete(OffsiteDir);   // solo el junction, no su destino
+        foreach (var junction in new[] { OffsiteDir, AliasDir })
+            if (new DirectoryInfo(junction).LinkTarget is not null) Directory.Delete(junction);   // solo el junction, no su destino
         if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
     }
 
     private string DataDir => Path.Combine(_root, "data");
     private string ConnectionString => $"Data Source={Path.Combine(DataDir, "gymforge.db")}";
     private string LocalBackupsDir => Path.Combine(DataDir, "backups");
+    private string AliasDir => Path.Combine(_root, "alias");
     private string Pendrive => Path.Combine(_root, "pendrive");
     private string OffsiteDir => Path.Combine(Pendrive, OffsiteFolderName);
 
@@ -522,6 +524,25 @@ public sealed class DatabaseBackupOffsiteTests : IDisposable
         File.WriteAllText(localBackup, "backup local");
         PlugInPendrive();
         CreateJunction(OffsiteDir, LocalBackupsDir);
+        var service = NewService();
+
+        service.FindLegacyPlainOffsiteCopies().Should().BeEmpty();
+        service.DeleteLegacyPlainOffsiteCopies().Should().BeEmpty();
+
+        File.Exists(localBackup).Should().BeTrue();
+    }
+
+    [Fact]
+    public void LegacySweep_JunctionCuyoDestinoPasaPorOtroJunctionEnUnAncestro_NoDetectaNiBorraNada()
+    {
+        // offsite → alias\backups, y "alias" es a su vez un junction de la carpeta de datos: el destino del link
+        // solo coincide con la carpeta local si también se normalizan los ancestros del destino (NEW-72).
+        Directory.CreateDirectory(LocalBackupsDir);
+        var localBackup = Path.Combine(LocalBackupsDir, "gymforge-20240101-101010.db");
+        File.WriteAllText(localBackup, "backup local");
+        CreateJunction(AliasDir, DataDir);
+        PlugInPendrive();
+        CreateJunction(OffsiteDir, Path.Combine(AliasDir, "backups"));
         var service = NewService();
 
         service.FindLegacyPlainOffsiteCopies().Should().BeEmpty();

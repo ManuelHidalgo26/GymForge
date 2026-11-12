@@ -22,6 +22,7 @@ public class DatabaseBackupService : IDatabaseBackup
 
     private const int MaxBackups = 10;
     private const int MaxPreMigrationBackups = 3;
+    private const int MaxLinkHops = 64;
     private const string PreMigrationMarker = $"-{PreMigrationReason}.db";
     private const string BackupFilePattern = "gymforge-*.db";
 
@@ -173,15 +174,26 @@ public class DatabaseBackupService : IDatabaseBackup
     private static bool SameRealDirectory(string a, string b) =>
         string.Equals(ResolveRealPath(a), ResolveRealPath(b), StringComparison.OrdinalIgnoreCase);
 
-    private static string ResolveRealPath(string path)
+    private static string ResolveRealPath(string path) => ResolveRealPath(path, linkHops: 0);
+
+    /// <summary>
+    /// El destino de un link se vuelve a resolver (sus ancestros pueden ser otro link). Un ciclo de links
+    /// (A→B→A, o un link hacia un ancestro de sí mismo) agota <see cref="MaxLinkHops"/> y lanza IOException:
+    /// nunca se devuelve una ruta parcial.
+    /// </summary>
+    private static string ResolveRealPath(string path, int linkHops)
     {
         var info = new DirectoryInfo(Path.GetFullPath(path));
         if (info.Parent is not { } parent) return info.FullName;   // la raíz de la unidad no puede ser un link
 
         if (info.Exists && info.ResolveLinkTarget(returnFinalTarget: true) is { } target)
-            return Path.GetFullPath(target.FullName);
+        {
+            if (linkHops >= MaxLinkHops)
+                throw new IOException($"Demasiados niveles de links (posible ciclo) al resolver '{path}'.");
+            return ResolveRealPath(target.FullName, linkHops + 1);
+        }
 
-        return Path.Combine(ResolveRealPath(parent.FullName), info.Name);
+        return Path.Combine(ResolveRealPath(parent.FullName, linkHops), info.Name);
     }
 
     /// <summary>Fire-and-forget: nada se propaga (ni como UnobservedTaskException); el resultado no se informa.</summary>

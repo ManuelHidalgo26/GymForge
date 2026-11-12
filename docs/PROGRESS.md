@@ -18,7 +18,8 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 
 ## Estado general (al 2026-11-12)
 
-- **Deuda baja NEW-69/70/71 (backup) + NEW-67 (CI) (2026-11-12): CERRADOS en working tree, commit pendiente** (dos commits: `fix: [backup]` y `chore: [ci]`; sin hash todavía). qa: APROBADO CON OBSERVACIONES, sin veto. Tests **1714 verdes**. Nueva deuda BAJA: **NEW-72**. Siguen abiertos a propósito: NEW-61 y NEW-64. Ver la entrada de arriba de todo.
+- **NEW-72 (follow-up de NEW-69, 2026-11-12): CERRADO en working tree, commit pendiente** (`fix: [backup]`; sin hash todavía). qa: APROBADO CON OBSERVACIONES, sin veto. Tests **1716 verdes**. Residuo MUY BAJA anotado como nota en NEW-72 (tope `MaxLinkHops` sin test directo); sin NEW-73. Siguen abiertos a propósito: NEW-61, NEW-64 y NEW-68 (solo si aparece el caso). Ver la entrada de arriba de todo.
+- **Deuda baja NEW-69/70/71 (backup) + NEW-67 (CI) (2026-11-12): CERRADOS en working tree, commit pendiente** (dos commits: `fix: [backup]` y `chore: [ci]`; sin hash todavía). qa: APROBADO CON OBSERVACIONES, sin veto. Tests **1714 verdes**. Nueva deuda BAJA: NEW-72 (hoy cerrado, ver arriba). Siguen abiertos a propósito: NEW-61 y NEW-64. Ver la entrada de arriba de todo.
 - **NEW-40 (abortar import) + NEW-52 (barrido de copias off-site en claro) (2026-11-12): CERRADOS en working tree, commit pendiente.** Decisiones del usuario aplicadas. qa: APROBADO CON OBSERVACIONES, sin veto. Tests **1712 verdes**. Nueva deuda BAJA: **NEW-69 a NEW-71**. Siguen abiertos a propósito: NEW-61, NEW-64 y NEW-67. Ver la entrada de arriba de todo.
 - **Cluster de deuda baja de backup (DEBAJA3, 2026-11-12): CERRADO, commit `bfd3e1a`.** Cerrados **NEW-54, NEW-56 y NEW-63**. qa: APROBADO CON OBSERVACIONES, sin vetos. Tests **1703 verdes** (Domain 115 · Application 649 · Desktop 482 · Integration 457), 0 rojos. Se robusteció el test tz de Cuba (`CompanyTimeTests.cs`, no era bug de producción). Nueva deuda: NEW-68 (ya anotada en TASKS, sin impacto en campo). Siguen abiertos a propósito: NEW-40, NEW-52, NEW-61, NEW-64 y NEW-67. Ver la entrada de arriba de todo.
 
@@ -47,7 +48,7 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 - **Fase 4 parte 2 (Sesión 7): CERRADA (2026-11-04)** en `feat/sesion-6` (código `1f44d2c`; commit de docs por el orquestador). ADR-008 `Accepted`. Sin push ni merge. Ver la entrada de cierre arriba de todo.
 - **Limpieza de bugs/errores/warnings (2026-11-04): CERRADA** en `feat/sesion-6` (código `7bc780f`; commit de docs por el orquestador). Sin push ni merge. Ver la entrada de arriba de todo.
 - **Git (verificado en refs, 2026-11-03):** `master` = `e541586`. `origin/master` = `6d39c0a` (anterior al merge de F1 `33ba4ec`): **master está adelante de origin, sin push** (29 commits según el orquestador; no re-contado). Existen `feat/sesion-3`, `feat/sesion-4` y `feat/sesion-5` (ya mergeadas).
-- Tests: **1714 verdes al cierre de DEBAJA4 (NEW-69/70/71 + NEW-67, 2026-11-12)** (Domain 115 · Application 650 · Desktop 486 · Integration 463), 0 rojos, 0 omitidos. Anterior: **1712 verdes al cierre de NEW-40 + NEW-52 (2026-11-12)** (Domain 115 · Application 650 · Desktop 485 · Integration 462), 0 rojos, 0 omitidos. Anterior: **1703 verdes al cierre de DEBAJA3 (2026-11-12)** (Domain 115 · Application 649 · Desktop 482 · Integration 457), 0 rojos, 0 omitidos. Anterior: **1696 verdes al cierre de DEBAJA2 (2026-11-11)**, 0 rojos. Anterior: **1687 (ADR-015)**. Anterior: **1676 verdes al cierre de UX11 + F1-D7 + F1-D3 + NEW-48 (2026-11-11)** (Domain 115 · Application 648 · Desktop 470 · Integration 443), 0 rojos, 0 omitidos. Anterior: **1649 verdes al cierre de D11 ampliada + Q4 + O10 (2026-11-11)** (Domain 115 · Application 648 · Desktop 446 · Integration 440), 0 rojos, 0 omitidos. Anterior: **1595 verdes al cierre de NEW-41 (2026-11-11)** (Domain 115 · Application 646 · Desktop 435 · Integration 399), 0 rojos, 0 omitidos. Anterior: **1578 verdes al cierre del barrido de deuda baja (2026-11-11)** (Domain 108 · Application 637 · Desktop 435 · Integration 398), `dotnet test GymForge.sln`, 0 rojos, 0 omitidos. Anterior: **1573 verdes al cierre de la tanda de deuda técnica (2026-11-10)** (Domain 108 · Application 632 · Desktop 435 · Integration 398), 0 rojos, 0 omitidos. Anterior: **1567 verdes al cierre del barrido de deuda vieja (2026-11-10)** (Domain 108 · Application 632 · Desktop 432 · Integration 395), `dotnet test GymForge.sln`, 0 fallos. Baseline previa: **1550 verdes** (limpieza de deuda baja). Anterior: **1541 verdes al cierre de la reconciliación NEW-31 (2026-11-10)** (Domain 107 · Application 624 · Desktop 431 · Integration 379). Anterior: **1523 verdes al cierre de la pasada 3 (2026-11-10)** (Domain 107 · Application 624 · Desktop 431 · Integration 361). Anterior: **1504 verdes al cierre del barrido de deuda, pasada 2 (2026-11-05)** (Domain 107 · Application 617 · Desktop 421 · Integration 359). Anterior: **1485 verdes al cierre del barrido de deuda, pasada 1 (2026-11-05)** (Domain 107 · Application 599 · Desktop 421 · Integration 358). Anterior: **1477 verdes al cierre del endurecimiento para piloto (2026-11-05)** (Domain 107 · Application 591 · Desktop 421 · Integration 358). Anterior: **1472 verdes al cierre del Endurecimiento final** (Domain 107 · Application 591 · Desktop 419 · Integration 355), `dotnet test GymForge.sln` exit 0, 0 omitidos, Debug y Release (2026-11-04). Piso previo: 1461 (Fase 5 parte 2, pieza F); 1456 (Fase 5 parte 1, `d33e101`); 1392 antes de la limpieza (`7bc780f`).
+- Tests: **1716 verdes al cierre de NEW-72 (2026-11-12)** (Domain 115 · Application 650 · Desktop 487 · Integration 464), 0 rojos, 0 omitidos. Anterior: **1714 verdes al cierre de DEBAJA4 (NEW-69/70/71 + NEW-67, 2026-11-12)** (Domain 115 · Application 650 · Desktop 486 · Integration 463), 0 rojos, 0 omitidos. Anterior: **1712 verdes al cierre de NEW-40 + NEW-52 (2026-11-12)** (Domain 115 · Application 650 · Desktop 485 · Integration 462), 0 rojos, 0 omitidos. Anterior: **1703 verdes al cierre de DEBAJA3 (2026-11-12)** (Domain 115 · Application 649 · Desktop 482 · Integration 457), 0 rojos, 0 omitidos. Anterior: **1696 verdes al cierre de DEBAJA2 (2026-11-11)**, 0 rojos. Anterior: **1687 (ADR-015)**. Anterior: **1676 verdes al cierre de UX11 + F1-D7 + F1-D3 + NEW-48 (2026-11-11)** (Domain 115 · Application 648 · Desktop 470 · Integration 443), 0 rojos, 0 omitidos. Anterior: **1649 verdes al cierre de D11 ampliada + Q4 + O10 (2026-11-11)** (Domain 115 · Application 648 · Desktop 446 · Integration 440), 0 rojos, 0 omitidos. Anterior: **1595 verdes al cierre de NEW-41 (2026-11-11)** (Domain 115 · Application 646 · Desktop 435 · Integration 399), 0 rojos, 0 omitidos. Anterior: **1578 verdes al cierre del barrido de deuda baja (2026-11-11)** (Domain 108 · Application 637 · Desktop 435 · Integration 398), `dotnet test GymForge.sln`, 0 rojos, 0 omitidos. Anterior: **1573 verdes al cierre de la tanda de deuda técnica (2026-11-10)** (Domain 108 · Application 632 · Desktop 435 · Integration 398), 0 rojos, 0 omitidos. Anterior: **1567 verdes al cierre del barrido de deuda vieja (2026-11-10)** (Domain 108 · Application 632 · Desktop 432 · Integration 395), `dotnet test GymForge.sln`, 0 fallos. Baseline previa: **1550 verdes** (limpieza de deuda baja). Anterior: **1541 verdes al cierre de la reconciliación NEW-31 (2026-11-10)** (Domain 107 · Application 624 · Desktop 431 · Integration 379). Anterior: **1523 verdes al cierre de la pasada 3 (2026-11-10)** (Domain 107 · Application 624 · Desktop 431 · Integration 361). Anterior: **1504 verdes al cierre del barrido de deuda, pasada 2 (2026-11-05)** (Domain 107 · Application 617 · Desktop 421 · Integration 359). Anterior: **1485 verdes al cierre del barrido de deuda, pasada 1 (2026-11-05)** (Domain 107 · Application 599 · Desktop 421 · Integration 358). Anterior: **1477 verdes al cierre del endurecimiento para piloto (2026-11-05)** (Domain 107 · Application 591 · Desktop 421 · Integration 358). Anterior: **1472 verdes al cierre del Endurecimiento final** (Domain 107 · Application 591 · Desktop 419 · Integration 355), `dotnet test GymForge.sln` exit 0, 0 omitidos, Debug y Release (2026-11-04). Piso previo: 1461 (Fase 5 parte 2, pieza F); 1456 (Fase 5 parte 1, `d33e101`); 1392 antes de la limpieza (`7bc780f`).
 - **Endurecimiento final (post-Fase 5): CERRADO (2026-11-04)** en `feat/sesion-6`: 7 commits de código (`6dd304f`, `5274395`, `ffcbbbc`, `6ec5ae4`, `e9ef7aa`, `dd294d5`, `3b4d7e9`) + commit de docs pendiente del orquestador. ADR-011 `Accepted` con plan por tiers: MUST + SHOULD entregados; D9b, D2 y UX19 diferidos. **2 migraciones nuevas:** `20261105000953` (D3, SiteId) y `20261105001255` (D7, DNI único por empresa+sede). Sin push ni merge.
 - **Fase 5 parte 1 (Sesión 8): CERRADA (2026-11-04)** en `feat/sesion-6` (código `d33e101`; commit de docs por el orquestador). ADR-009 `Accepted`. Piezas A–E y G; F (calendario) diferida a parte 2. Sin push ni merge. Ver la entrada de cierre arriba de todo.
 - **Fase 5 parte 2 (Sesión 9): CERRADA (2026-11-04)** en `feat/sesion-6`: pieza F (calendario semanal de Clases en grilla de 7 días). **Fase 5 completa cerrada (piezas A–G).** ADR-010 pasa a `Accepted` al commitear (orquestador). Código y docs pendientes de commit del orquestador. Sin push ni merge. Ver la entrada de cierre arriba de todo.
@@ -68,9 +69,13 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 
 ## Qué sigue
 
-**Próximo paso (2026-11-12, tras DEBAJA4; NEW-69/70/71 y NEW-67 en working tree).**
+**Próximo paso (2026-11-12, tras NEW-72; NEW-72 en working tree).**
+1. Usuario u orquestador: commit `fix: [backup]` de NEW-72 + commit de docs; push a `origin` de los commits pendientes de `master`.
+2. Sin dev pendiente de la deuda de backup. NEW-61 y NEW-64 quedan abiertos a propósito; dry-run del release y NEW-66 (usuario, ver "Pendientes de distribución" en TASKS).
+
+**Próximo paso anterior (2026-11-12, tras DEBAJA4; NEW-69/70/71 y NEW-67 en working tree; superado por NEW-72).**
 1. Usuario u orquestador: commit en dos pasos (`fix: [backup] ...` con NEW-69/70/71 y `chore: [ci] ...` con NEW-67) más commit de docs; revisar CI (valida los SHA de las Actions).
-2. Dev (BAJA): NEW-72 (normalizar ancestros del destino en `ResolveRealPath`, test de junction en ancestro y caso "N borradas con M restantes").
+2. Dev (BAJA): NEW-72 (hecho, ver entrada de arriba).
 3. Sin cambio: NEW-61 y NEW-64 abiertos a propósito; dry-run del release y NEW-66 (usuario, ver "Pendientes de distribución" en TASKS).
 
 **Próximo paso (2026-11-11, tras DEBAJA2; reemplaza el ítem 4 del de ADR-015, NEW-66 ya cerrado).**
@@ -173,6 +178,42 @@ Decisiones del usuario abiertas (ninguna bloquea el piloto con las 2 condiciones
 Fuera del piloto: P-2 (saldo a favor en la ficha) sigue abierta. D1 (cobros multi-sede) quedó cerrada el 2026-11-05 (barrido pasada 1). Cerradas en el barrido de deuda vieja (2026-11-10): D5, D6, D8 (parte 1) y D19. Resto de deuda (D1–D19, F1-D4 a F1-D10, F2-D1 a F2-D8, Q3–Q9, UX1–UX17): ver `docs/TASKS.md`. Deuda: **NEW-41** cerrada el 2026-11-11 (VisitPack; nota de release sobre packs legados en la entrada de arriba). NEW-42 a NEW-45 cerradas el 2026-11-11. Nueva deuda: **NEW-46 a NEW-48** (sección "Deuda del barrido de deuda baja", TASKS) y **NEW-49 a NEW-51** (sección "Deuda de NEW-41", TASKS) y **NEW-52 a NEW-58** (sección "Deuda del cierre de F1-D2", TASKS; F1-D2 cerrado el 2026-11-11).
 
 Sesiones 5-8: ver tabla de fases arriba.
+
+---
+
+## [2026-11-12] NEW-72 (follow-up de NEW-69: normalizar ancestros del destino de links; DEBAJA5) — CERRADO en working tree (commit pendiente)
+
+**Hecho:**
+- **NEW-72 (BAJA, seguridad, defensa en profundidad):** `DatabaseBackupService.ResolveRealPath` re-resuelve recursivamente el destino de un link y normaliza también sus ancestros, en vez de `Path.GetFullPath(target.FullName)`. Nueva constante `MaxLinkHops = 64`: guard de ciclos que cuenta SALTOS DE LINK (no profundidad de ruta); al llegar al tope lanza `IOException`, que el catch existente de la búsqueda trata como "no barrer" (`[]`), coherente con "ante la duda no se borra". `SameRealDirectory`, la regex y el patrón de archivos quedaron intactos.
+- **Tests (2):** `DatabaseBackupOffsiteTests.cs` → `LegacySweep_JunctionCuyoDestinoPasaPorOtroJunctionEnUnAncestro_NoDetectaNiBorraNada` (junction real con alias en un ancestro). `SettingsViewModelLegacySweepTests.cs` → `Confirmar_ConBorradoParcialEnPlural_ConcuerdaBorradasYRestante` (plural: 2 borradas, 1 restante, texto es-AR exacto).
+- **Salvedad honesta:** el test del junction-en-ancestro **pasa también sin el fix** en Windows/.NET 9, porque `ResolveLinkTarget(returnFinalTarget: true)` ya devuelve el destino normalizado en este entorno. Es un **guard de regresión**, no un reproductor del bug. El fix queda como defensa en profundidad (otros casos/plataformas).
+- **qa:** APROBADO CON OBSERVACIONES, sin veto. `dotnet test GymForge.sln` corrido por qa de forma independiente: **1716 verdes** (Domain 115 · Application 650 · Desktop 487 · Integration 464), 0 rojos, 0 omitidos. Base previa 1714 (+2).
+- **Residuo de qa (nota en NEW-72, no numerada):** el tope `MaxLinkHops`/`IOException` queda **sin cobertura directa de test** (no reproducible de forma portable: el SO/.NET fallan ante un ciclo real antes de llegar a 64). Deuda MUY BAJA, sin impacto en campo.
+
+**Commits (pendientes, sin commitear):**
+- Un commit `fix: [backup] ...` con `DatabaseBackupService.cs` y los 2 tests. No hay hash: se completa al commitear. Lo hace el orquestador/usuario.
+
+**Quedan abiertos a propósito:** NEW-61 (roles finos de export, necesita decisión), NEW-64 (firma de paquetes / allowlist de hosts, endurecimiento futuro de arqui) y NEW-68 (solo si aparece el caso).
+
+**En curso:**
+- Nada de código a medias. Todo en el working tree, sin commit.
+
+**Blockers:**
+- Técnicos: ninguno.
+- Piloto: ninguno.
+
+**Pendientes del usuario (no cambian):**
+- Commit de este cierre y los 4 commits ya en `master` pendientes de **push a `origin`**.
+- Primer release real (`vpk upload github`, tag `v*`) y dry-run con `--pre` (NEW-66).
+
+**Próximo paso:**
+1. Usuario u orquestador: commit `fix: [backup]` de NEW-72 + commit de docs; push pendiente de los commits de `master`.
+2. Sin dev pendiente de backup de deuda baja. Siguen abiertos NEW-61 y NEW-64 (decisión/arqui).
+
+**Tocado:**
+- Código (dev): `src/GymForge.Infrastructure/Persistence/DatabaseBackupService.cs` (`ResolveRealPath`, `MaxLinkHops`).
+- Tests: `tests/GymForge.Integration.Tests/DatabaseBackupOffsiteTests.cs`; `tests/GymForge.Desktop.Tests/SettingsViewModelLegacySweepTests.cs`.
+- Docs: `docs/PROGRESS.md`; `docs/TASKS.md`.
 
 ---
 

@@ -8,16 +8,19 @@ using Microsoft.EntityFrameworkCore;
 namespace GymForge.Integration.Tests;
 
 /// <summary>
-/// El escritorio abre SQLite con <c>Cache=Shared</c> y, desde el mantenimiento diario, hay dos DbContext
-/// escribiendo a la vez (la UI y el job en segundo plano). Si el motor devolviera "database table is locked"
-/// sin reintentar, el mantenimiento o el cobro del cajero fallarían al azar.
+/// Desde el mantenimiento diario hay dos DbContext escribiendo a la vez (la UI y el job en segundo plano). Si el
+/// motor devolviera "database is locked" sin reintentar, el mantenimiento o el cobro del cajero fallarían al azar.
+/// La configuración de producción del escritorio es WAL sin shared-cache (<c>sharedCache: false</c>, ver NEW-42);
+/// la variante con <c>Cache=Shared</c> queda como caso aparte de la config anterior.
 /// </summary>
-public class SharedCacheConcurrencyQaTests : IDisposable
+public class SqliteConcurrencyQaTests : IDisposable
 {
     private const int Iterations = 150;
 
     private readonly string _path = Path.Combine(Path.GetTempPath(), $"gymforge-qa-{Guid.NewGuid():N}.db");
-    private string ConnectionString => $"Data Source={_path};Mode=ReadWriteCreate;Cache=Shared";
+
+    private string ConnectionString(bool sharedCache) =>
+        $"Data Source={_path};Mode=ReadWriteCreate" + (sharedCache ? ";Cache=Shared" : string.Empty);
 
     public void Dispose()
     {
@@ -26,17 +29,20 @@ public class SharedCacheConcurrencyQaTests : IDisposable
         catch (IOException) { /* best-effort: es un archivo temporal */ }
     }
 
-    private GymForgeDbContext Open(AmbientTenantProvider tenant) =>
-        new(new DbContextOptionsBuilder<GymForgeDbContext>().UseSqlite(ConnectionString).Options, tenant);
+    private GymForgeDbContext Open(AmbientTenantProvider tenant, bool sharedCache) =>
+        new(new DbContextOptionsBuilder<GymForgeDbContext>().UseSqlite(ConnectionString(sharedCache)).Options, tenant);
 
-    [Fact]
-    public async Task UiWriterAndMaintenanceWriter_OnTheSameFile_NeverLockEachOtherOut()
+    [Theory]
+    [InlineData(false)]   // producción: WAL, sin shared-cache
+    [InlineData(true)]    // config anterior: WAL + Cache=Shared
+    public async Task UiWriterAndMaintenanceWriter_OnTheSameFile_NeverLockEachOtherOut(bool sharedCache)
     {
         var company = Company.Create("Gym Test", "30-12345678-9");
         var site = Site.Create(company.Id, "Central", "Av. Test 123");
-        await using (var seed = Open(new AmbientTenantProvider()))
+        await using (var seed = Open(new AmbientTenantProvider(), sharedCache))
         {
             await seed.Database.EnsureCreatedAsync();
+            await seed.Database.ExecuteSqlRawAsync("PRAGMA journal_mode = WAL");
             await seed.Companies.AddAsync(company);
             await seed.Sites.AddAsync(site);
             await seed.SaveChangesAsync();
@@ -49,7 +55,7 @@ public class SharedCacheConcurrencyQaTests : IDisposable
         {
             var tenant = new AmbientTenantProvider();
             tenant.Set(company.Id, site.Id);
-            await using var db = Open(tenant);
+            await using var db = Open(tenant, sharedCache);
             for (var i = 0; i < Iterations; i++)
             {
                 try
@@ -66,7 +72,7 @@ public class SharedCacheConcurrencyQaTests : IDisposable
         // "Mantenimiento": otro DbContext (otro scope) que lee company-wide y escribe cambios.
         var maintenance = Task.Run(async () =>
         {
-            await using var db = Open(new AmbientTenantProvider());
+            await using var db = Open(new AmbientTenantProvider(), sharedCache);
             for (var i = 0; i < Iterations; i++)
             {
                 try

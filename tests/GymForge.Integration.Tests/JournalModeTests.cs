@@ -32,7 +32,7 @@ public class JournalModeTests : IDisposable
         services.AddApplication();
         services.AddSingleton<ICurrentTenant, AmbientTenantProvider>();
         services.AddSingleton<ICurrentUser, AmbientCurrentUser>();
-        services.AddInfrastructure($"Data Source={DbPath};Mode=ReadWriteCreate;Cache=Shared");
+        services.AddInfrastructure($"Data Source={DbPath};Mode=ReadWriteCreate");
         services.AddSingleton<ILocalSettings>(new InMemoryLocalSettings());
         return services.BuildServiceProvider();
     }

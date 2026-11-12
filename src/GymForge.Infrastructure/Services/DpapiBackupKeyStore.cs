@@ -52,10 +52,13 @@ public sealed class DpapiBackupKeyStore : IBackupKeyStore
 
     public void SetPassphrase(string passphrase)
     {
+        passphrase = BackupPassphrase.Normalize(passphrase);
         if (passphrase.Length < BackupPassphrase.MinLength)
             throw new ArgumentException(
                 $"La frase de acceso debe tener al menos {BackupPassphrase.MinLength} caracteres.", nameof(passphrase));
 
+        // NEW-56: la frase viene del UI como string administrado y no se puede poner en cero; solo los bytes
+        // derivados (secret) se limpian. Limitación aceptada: evitarla exigiría SecureString/char[] desde la UI.
         var secret = Encoding.UTF8.GetBytes(passphrase);
         try
         {

@@ -51,8 +51,30 @@ public class BackupCryptoTests
     }
 
     [Theory]
+    [InlineData("  " + Pass, Pass)]
+    [InlineData(Pass + "	 ", Pass)]
+    [InlineData(Pass, " " + Pass + "  ")]
+    public void FraseConEspaciosEnLosBordes_AbreElMismoRespaldo(string encryptWith, string decryptWith)
+    {
+        var payload = RandomBytes(100);
+
+        Decrypt(Encrypt(payload, pass: encryptWith), decryptWith).Should().Equal(payload);
+    }
+
+    [Fact]
+    public void FraseConEspaciosInternosDistintos_NoAbreElRespaldo()
+    {
+        var container = Encrypt(RandomBytes(16));
+
+        var act = () => Decrypt(container, Pass.Replace(" ", "  "));
+
+        act.Should().Throw<DataPackageException>();
+    }
+
+    [Theory]
     [InlineData(null)]
     [InlineData("")]
+    [InlineData("   ")]
     public void Encrypt_ConFraseNulaOVacia_LanzaYNoEscribeNada(string? passphrase)
     {
         using var plain = new MemoryStream(RandomBytes(16));

@@ -16,7 +16,12 @@ public class DatabaseBackupService : IDatabaseBackup
 {
     public enum StartupOutcome { Healthy, RestoredFromBackup, RecreatedEmpty }
 
+    /// <summary>Motivo del backup previo a migrar. Tiene su propia retención: no compite con los diarios.</summary>
+    public const string PreMigrationReason = "pre-migracion";
+
     private const int MaxBackups = 10;
+    private const int MaxPreMigrationBackups = 3;
+    private const string PreMigrationMarker = $"-{PreMigrationReason}.db";
     private const string BackupFilePattern = "gymforge-*.db";
 
     // La copia externa va cifrada y con otra extensión: nadie la confunde con una base SQLite usable.
@@ -268,12 +273,24 @@ public class DatabaseBackupService : IDatabaseBackup
         }
     }
 
-    /// <summary>Deja los <see cref="MaxBackups"/> backups más recientes de <paramref name="dir"/> que matchean <paramref name="pattern"/> (solo los propios).</summary>
+    /// <summary>
+    /// Rota por separado los backups diarios/manuales (<see cref="MaxBackups"/>) y los previos a migrar
+    /// (<see cref="MaxPreMigrationBackups"/>): varios arranques con migración pendiente no desplazan a los diarios,
+    /// y los pre-migración tampoco crecen sin tope. Solo toca archivos que matchean <paramref name="pattern"/>.
+    /// </summary>
     private static void Rotate(string dir, string pattern)
     {
-        foreach (var old in Directory.GetFiles(dir, pattern)
-                     .OrderByDescending(File.GetLastWriteTime)
-                     .Skip(MaxBackups))
+        var files = Directory.GetFiles(dir, pattern).ToLookup(IsPreMigration);
+        Delete(files[false], MaxBackups);
+        Delete(files[true], MaxPreMigrationBackups);
+    }
+
+    private static bool IsPreMigration(string path) =>
+        Path.GetFileName(path).Contains(PreMigrationMarker, StringComparison.Ordinal);
+
+    private static void Delete(IEnumerable<string> backups, int keep)
+    {
+        foreach (var old in backups.OrderByDescending(File.GetLastWriteTime).Skip(keep))
         {
             try { File.Delete(old); } catch { /* best-effort */ }
         }

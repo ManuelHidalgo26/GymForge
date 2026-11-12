@@ -72,4 +72,33 @@ public sealed class PreMigrationBackupTests : IDisposable
         PreMigrationBackups().Should().BeEmpty();
         Directory.Exists(BackupsDir).Should().BeFalse();
     }
+
+    [Fact]
+    public async Task VariosBackupsPreMigracion_NoDesplazanALosDiarios_YNoCrecenSinTope()
+    {
+        await using (var seed = NewDb())
+            await seed.Database.ExecuteSqlRawAsync("CREATE TABLE t(id INTEGER PRIMARY KEY)");
+        Directory.CreateDirectory(BackupsDir);
+        var daily = Enumerable.Range(1, 10).Select(i => SeedBackup($"2020010{i % 10}-0000{i:00}-diario", daysAgo: 100 - i)).ToArray();
+        var preMigration = Enumerable.Range(1, 5).Select(i => SeedBackup($"2020020{i}-000000-pre-migracion", daysAgo: 50 - i)).ToArray();
+        await using var db = NewDb();
+
+        await InfrastructureServiceExtensions.BackupBeforePendingMigrationsAsync(db, NewBackup());
+
+        daily.Should().OnlyContain(path => File.Exists(path));
+        PreMigrationBackups().Should().HaveCount(3)
+            .And.NotContain(preMigration[0])
+            .And.NotContain(preMigration[1])
+            .And.NotContain(preMigration[2])
+            .And.Contain(preMigration[3])      // quedan el nuevo + los 2 más recientes de los sembrados
+            .And.Contain(preMigration[4]);
+    }
+
+    private string SeedBackup(string name, int daysAgo)
+    {
+        var path = Path.Combine(BackupsDir, $"gymforge-{name}.db");
+        File.WriteAllText(path, "x");
+        File.SetLastWriteTime(path, DateTime.Now.AddDays(-daysAgo));
+        return path;
+    }
 }

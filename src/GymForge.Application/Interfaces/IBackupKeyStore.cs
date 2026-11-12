@@ -4,6 +4,13 @@ namespace GymForge.Application.Interfaces;
 public static class BackupPassphrase
 {
     public const int MinLength = 12;
+
+    /// <summary>
+    /// Forma canónica de la frase: sin espacios en los bordes (NEW-54). Es la única normalización de bordes y
+    /// la usan todos los caminos (guardar, cachear y derivar la clave), así una frase tipeada con un espacio
+    /// de más abre el mismo respaldo.
+    /// </summary>
+    public static string Normalize(string passphrase) => passphrase.Trim();
 }
 
 /// <summary>
@@ -18,6 +25,6 @@ public interface IBackupKeyStore
     /// <summary>La frase fijada, o null si no hay (o no se puede leer en esta PC). Uso interno del cifrado.</summary>
     string? GetPassphrase();
 
-    /// <exception cref="ArgumentException">La frase es más corta que <see cref="BackupPassphrase.MinLength"/>.</exception>
+    /// <exception cref="ArgumentException">La frase (sin espacios en los bordes) es más corta que <see cref="BackupPassphrase.MinLength"/>.</exception>
     void SetPassphrase(string passphrase);
 }

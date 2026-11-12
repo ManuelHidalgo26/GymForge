@@ -51,7 +51,7 @@ public static class BackupCrypto
 
     internal static void Encrypt(Stream plain, Stream cipher, string passphrase, int iterations, int chunkSize)
     {
-        ArgumentException.ThrowIfNullOrEmpty(passphrase);
+        ArgumentException.ThrowIfNullOrWhiteSpace(passphrase);   // vacía tras el Trim de bordes (NEW-54) también falla
 
         var header = BuildHeader(iterations, chunkSize);
         cipher.Write(header);
@@ -218,9 +218,13 @@ public static class BackupCrypto
 
     // ── primitivas ──────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Único punto de derivación (cifrar y descifrar): aplica el Trim de bordes (NEW-54). NEW-56: los bytes de la
+    /// frase se limpian acá y la clave la limpia el llamador; la frase string no se puede poner en cero (limitación aceptada).
+    /// </summary>
     private static byte[] DeriveKey(string passphrase, ReadOnlySpan<byte> salt, int iterations)
     {
-        var secret = Encoding.UTF8.GetBytes(passphrase.Normalize(NormalizationForm.FormC));
+        var secret = Encoding.UTF8.GetBytes(BackupPassphrase.Normalize(passphrase).Normalize(NormalizationForm.FormC));
         try
         {
             return Rfc2898DeriveBytes.Pbkdf2(secret, salt, iterations, HashAlgorithmName.SHA256, KeySize);

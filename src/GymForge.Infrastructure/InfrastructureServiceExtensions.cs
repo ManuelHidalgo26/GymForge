@@ -139,7 +139,7 @@ public static class InfrastructureServiceExtensions
     internal static async Task BackupBeforePendingMigrationsAsync(GymForgeDbContext db, DatabaseBackupService backup)
     {
         if ((await db.Database.GetPendingMigrationsAsync()).Any())
-            backup.BackupNow("pre-migracion");
+            backup.BackupNow(DatabaseBackupService.PreMigrationReason);
     }
 
     /// <summary>

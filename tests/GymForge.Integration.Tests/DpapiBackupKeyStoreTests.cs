@@ -76,6 +76,25 @@ public sealed class DpapiBackupKeyStoreTests : IDisposable
     }
 
     [Fact]
+    public void SetPassphrase_RecortaLosEspaciosDeLosBordes()
+    {
+        NewStore().SetPassphrase("  " + Pass + " ");
+
+        NewStore().GetPassphrase().Should().Be(Pass);
+    }
+
+    [Fact]
+    public void FraseQueSoloAlcanzaLaLongitudConEspacios_SeRechaza()
+    {
+        var store = NewStore();
+
+        var act = () => store.SetPassphrase("corta" + new string(' ', 20));
+
+        act.Should().Throw<ArgumentException>();
+        store.HasPassphrase.Should().BeFalse();
+    }
+
+    [Fact]
     public void ArchivoDanado_SeTrataComoSinFraseSinLanzar()
     {
         Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);

@@ -45,7 +45,7 @@ Directory.CreateDirectory(outDir);
 
 // ── 1. DI + DB temporal + seed + datos de ejemplo ────────────────────────────
 var tempDb = Path.Combine(Path.GetTempPath(), $"gymforge_shots_{Guid.NewGuid():N}.db");
-var conn = $"Data Source={tempDb};Mode=ReadWriteCreate;Cache=Shared";
+var conn = $"Data Source={tempDb};Mode=ReadWriteCreate";
 
 var services = new ServiceCollection();
 services.AddGymForgeDesktop(conn);

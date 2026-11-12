@@ -105,6 +105,36 @@ public class SellMembershipCommandTests
         membership.VisitsRemaining.Should().BeNull();
     }
 
+    /// <summary>Un plan VisitPack legado: creado antes de que el dominio exigiera las visitas (VisitsIncluded = null).</summary>
+    private static MembershipType LegacyVisitPackWithoutVisits(Guid companyId)
+    {
+        var plan = MembershipType.Create(companyId, "Pack", MembershipBasis.VisitPack, 10_000m, visitsIncluded: 1);
+        typeof(MembershipType).GetProperty(nameof(MembershipType.VisitsIncluded))!.SetValue(plan, null);
+        return plan;
+    }
+
+    [Fact]
+    public async Task Handle_VisitPackLegadoSinVisitas_AbortaLaVentaYNoPersisteNada()
+    {
+        var companyId = Guid.NewGuid();
+        var plan = LegacyVisitPackWithoutVisits(companyId);
+        var member = MakeProspect(companyId, Guid.NewGuid());
+        _planRepo.GetByIdAsync(plan.Id, Arg.Any<CancellationToken>()).Returns(plan);
+        _memberRepo.GetByIdAsync(member.Id, Arg.Any<CancellationToken>()).Returns(member);
+
+        var act = () => Sut().Handle(new SellMembershipCommand(
+            companyId, Guid.NewGuid(), Guid.NewGuid(), null, member.Id, plan.Id, PaymentMethod.Cash),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        await _chargeRepo.DidNotReceive().AddAsync(Arg.Any<Charge>(), Arg.Any<CancellationToken>());
+        await _membershipRepo.DidNotReceive().AddAsync(Arg.Any<Membership>(), Arg.Any<CancellationToken>());
+        await _paymentRepo.DidNotReceive().AddAsync(Arg.Any<Payment>(), Arg.Any<CancellationToken>());
+        await _cashRegister.DidNotReceiveWithAnyArgs().PostIfCashAsync(
+            default, default, default, default, default, CancellationToken.None);
+        _memberRepo.DidNotReceive().Update(Arg.Any<Member>());
+    }
+
     private async Task<Membership> SellCapturingMembershipAsync(MembershipBasis basis, int? visits)
     {
         var companyId = Guid.NewGuid();

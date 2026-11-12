@@ -74,6 +74,32 @@ public class CreateMembershipCommandTests
         return created!;
     }
 
+    /// <summary>Un plan VisitPack legado: creado antes de que el dominio exigiera las visitas (VisitsIncluded = null).</summary>
+    private static MembershipType LegacyVisitPackWithoutVisits(Guid companyId)
+    {
+        var plan = MembershipType.Create(companyId, "Pack", MembershipBasis.VisitPack, 10_000m, visitsIncluded: 1);
+        typeof(MembershipType).GetProperty(nameof(MembershipType.VisitsIncluded))!.SetValue(plan, null);
+        return plan;
+    }
+
+    [Fact]
+    public async Task Handle_VisitPackLegadoSinVisitas_AbortaYNoPersisteNada()
+    {
+        var companyId = Guid.NewGuid();
+        var siteId = Guid.NewGuid();
+        var plan = LegacyVisitPackWithoutVisits(companyId);
+        var member = MakeMember(companyId, siteId);
+        _memberRepo.GetByIdAsync(member.Id, Arg.Any<CancellationToken>()).Returns(member);
+        _planRepo.GetByIdAsync(plan.Id, Arg.Any<CancellationToken>()).Returns(plan);
+
+        var act = () => Sut().Handle(
+            new CreateMembershipCommand(companyId, siteId, member.Id, plan.Id, new DateOnly(2026, 3, 15)),
+            CancellationToken.None);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        await _membershipRepo.DidNotReceive().AddAsync(Arg.Any<Membership>(), Arg.Any<CancellationToken>());
+    }
+
     [Fact]
     public async Task Handle_UnknownPlan_ThrowsAndPersistsNothing()
     {

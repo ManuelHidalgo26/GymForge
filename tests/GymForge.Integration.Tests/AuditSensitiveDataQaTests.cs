@@ -185,6 +185,23 @@ public class AuditSensitiveDataQaTests : IAsyncLifetime
             snapshot.Should().Contain($"\"{field}\":\"[redacted]\"");
     }
 
+    // Blinda contra una generalización futura de la redacción por nombre de campo: el TagSerial del Member es
+    // dato personal (se redacta), pero el de AccessLog es el registro de acceso y tiene que quedar intacto.
+    [Fact]
+    public async Task AccessLog_TagSerial_IsNotRedacted_AndTheAccessLogIsNotAudited()
+    {
+        var member = await SavedMemberAsync();
+        var swipe = AccessLog.Granted(
+            _company.Id, _site.Id, member.Id, null, 1, AccessMethod.RfidCard, AccessDirection.In, "TAG-0001");
+        await _db.AccessLogs.AddAsync(swipe);
+        await _db.SaveChangesAsync();
+
+        var stored = await _db.AccessLogs.IgnoreQueryFilters().SingleAsync(a => a.Id == swipe.Id);
+        stored.TagSerial.Should().Be("TAG-0001");
+        (await _db.AuditLogs.IgnoreQueryFilters().AnyAsync(a => a.EntityType == nameof(AccessLog)))
+            .Should().BeFalse("el AccessLog es su propio registro y no pasa por el AuditLog");
+    }
+
     [Fact]
     public async Task FreezeReason_NeverReachesTheAuditLog_NeitherOnFreezeNorOnUnfreeze()
     {

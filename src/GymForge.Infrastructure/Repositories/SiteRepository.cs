@@ -47,6 +47,9 @@ public class SiteRepository : ISiteRepository
     public async Task AddSiteAsync(Site site, CancellationToken ct = default) =>
         await _db.Sites.AddAsync(site, ct);
 
+    public async Task AppendAuditLogAsync(AuditLog log, CancellationToken ct = default) =>
+        await _db.AuditLogs.AddAsync(log, ct);
+
     public async Task<int> SaveChangesAsync(CancellationToken ct = default) =>
         await _db.SaveChangesAsync(ct);
 }

@@ -18,6 +18,7 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 
 ## Estado general (al 2026-11-12)
 
+- **F1-D10 (auditoría de activación/renovación y rechazo de licencia, ADR-016, 2026-11-12): CERRADO en working tree, commit pendiente.** Flujo: arqui → dev → qa (APROBADO CON OBSERVACIONES, sin veto). AuditLog explícito en `ActivateLicenseCommand` (`LicenseActivated` / `LicenseActivationRejected`, sin clave ni CUIT); `Company` sigue fuera de AuditLog (ADR-003 reafirmado). ADR-016 pasa a `Accepted`. Tests **1722 verdes**. Deuda nueva BAJA: **NEW-73** (CUIT en claro en logs de archivo; decisión del usuario) y **NEW-74** (solo si aparece el caso). Ver la entrada de arriba de todo.
 - **F1-D5 (Config: licencia antes que la carpeta off-site, 2026-11-12): CERRADO en working tree, commit pendiente.** Solo se invirtió el orden de dos awaits en `SettingsViewModel.LoadAsync`. qa: APROBADO, sin observaciones, sin veto. Tests **1716 verdes**. Sin deuda nueva. Ver la entrada de arriba de todo.
 - **NEW-72 (follow-up de NEW-69, 2026-11-12): CERRADO en working tree, commit pendiente** (`fix: [backup]`; sin hash todavía). qa: APROBADO CON OBSERVACIONES, sin veto. Tests **1716 verdes**. Residuo MUY BAJA anotado como nota en NEW-72 (tope `MaxLinkHops` sin test directo); sin NEW-73. Siguen abiertos a propósito: NEW-61, NEW-64 y NEW-68 (solo si aparece el caso). Ver la entrada de arriba de todo.
 - **Deuda baja NEW-69/70/71 (backup) + NEW-67 (CI) (2026-11-12): CERRADOS en working tree, commit pendiente** (dos commits: `fix: [backup]` y `chore: [ci]`; sin hash todavía). qa: APROBADO CON OBSERVACIONES, sin veto. Tests **1714 verdes**. Nueva deuda BAJA: NEW-72 (hoy cerrado, ver arriba). Siguen abiertos a propósito: NEW-61 y NEW-64. Ver la entrada de arriba de todo.
@@ -49,12 +50,12 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 - **Fase 4 parte 2 (Sesión 7): CERRADA (2026-11-04)** en `feat/sesion-6` (código `1f44d2c`; commit de docs por el orquestador). ADR-008 `Accepted`. Sin push ni merge. Ver la entrada de cierre arriba de todo.
 - **Limpieza de bugs/errores/warnings (2026-11-04): CERRADA** en `feat/sesion-6` (código `7bc780f`; commit de docs por el orquestador). Sin push ni merge. Ver la entrada de arriba de todo.
 - **Git (verificado en refs, 2026-11-03):** `master` = `e541586`. `origin/master` = `6d39c0a` (anterior al merge de F1 `33ba4ec`): **master está adelante de origin, sin push** (29 commits según el orquestador; no re-contado). Existen `feat/sesion-3`, `feat/sesion-4` y `feat/sesion-5` (ya mergeadas).
-- Tests: **1716 verdes al cierre de NEW-72 (2026-11-12)** (Domain 115 · Application 650 · Desktop 487 · Integration 464), 0 rojos, 0 omitidos. Anterior: **1714 verdes al cierre de DEBAJA4 (NEW-69/70/71 + NEW-67, 2026-11-12)** (Domain 115 · Application 650 · Desktop 486 · Integration 463), 0 rojos, 0 omitidos. Anterior: **1712 verdes al cierre de NEW-40 + NEW-52 (2026-11-12)** (Domain 115 · Application 650 · Desktop 485 · Integration 462), 0 rojos, 0 omitidos. Anterior: **1703 verdes al cierre de DEBAJA3 (2026-11-12)** (Domain 115 · Application 649 · Desktop 482 · Integration 457), 0 rojos, 0 omitidos. Anterior: **1696 verdes al cierre de DEBAJA2 (2026-11-11)**, 0 rojos. Anterior: **1687 (ADR-015)**. Anterior: **1676 verdes al cierre de UX11 + F1-D7 + F1-D3 + NEW-48 (2026-11-11)** (Domain 115 · Application 648 · Desktop 470 · Integration 443), 0 rojos, 0 omitidos. Anterior: **1649 verdes al cierre de D11 ampliada + Q4 + O10 (2026-11-11)** (Domain 115 · Application 648 · Desktop 446 · Integration 440), 0 rojos, 0 omitidos. Anterior: **1595 verdes al cierre de NEW-41 (2026-11-11)** (Domain 115 · Application 646 · Desktop 435 · Integration 399), 0 rojos, 0 omitidos. Anterior: **1578 verdes al cierre del barrido de deuda baja (2026-11-11)** (Domain 108 · Application 637 · Desktop 435 · Integration 398), `dotnet test GymForge.sln`, 0 rojos, 0 omitidos. Anterior: **1573 verdes al cierre de la tanda de deuda técnica (2026-11-10)** (Domain 108 · Application 632 · Desktop 435 · Integration 398), 0 rojos, 0 omitidos. Anterior: **1567 verdes al cierre del barrido de deuda vieja (2026-11-10)** (Domain 108 · Application 632 · Desktop 432 · Integration 395), `dotnet test GymForge.sln`, 0 fallos. Baseline previa: **1550 verdes** (limpieza de deuda baja). Anterior: **1541 verdes al cierre de la reconciliación NEW-31 (2026-11-10)** (Domain 107 · Application 624 · Desktop 431 · Integration 379). Anterior: **1523 verdes al cierre de la pasada 3 (2026-11-10)** (Domain 107 · Application 624 · Desktop 431 · Integration 361). Anterior: **1504 verdes al cierre del barrido de deuda, pasada 2 (2026-11-05)** (Domain 107 · Application 617 · Desktop 421 · Integration 359). Anterior: **1485 verdes al cierre del barrido de deuda, pasada 1 (2026-11-05)** (Domain 107 · Application 599 · Desktop 421 · Integration 358). Anterior: **1477 verdes al cierre del endurecimiento para piloto (2026-11-05)** (Domain 107 · Application 591 · Desktop 421 · Integration 358). Anterior: **1472 verdes al cierre del Endurecimiento final** (Domain 107 · Application 591 · Desktop 419 · Integration 355), `dotnet test GymForge.sln` exit 0, 0 omitidos, Debug y Release (2026-11-04). Piso previo: 1461 (Fase 5 parte 2, pieza F); 1456 (Fase 5 parte 1, `d33e101`); 1392 antes de la limpieza (`7bc780f`).
+- Tests: **1722 verdes al cierre de F1-D10 (2026-11-12)** (Domain 115 · Application 654 · Desktop 487 · Integration 466), 0 rojos, 0 omitidos. Anterior: **1716 verdes al cierre de NEW-72 (2026-11-12)** (Domain 115 · Application 650 · Desktop 487 · Integration 464), 0 rojos, 0 omitidos. Anterior: **1714 verdes al cierre de DEBAJA4 (NEW-69/70/71 + NEW-67, 2026-11-12)** (Domain 115 · Application 650 · Desktop 486 · Integration 463), 0 rojos, 0 omitidos. Anterior: **1712 verdes al cierre de NEW-40 + NEW-52 (2026-11-12)** (Domain 115 · Application 650 · Desktop 485 · Integration 462), 0 rojos, 0 omitidos. Anterior: **1703 verdes al cierre de DEBAJA3 (2026-11-12)** (Domain 115 · Application 649 · Desktop 482 · Integration 457), 0 rojos, 0 omitidos. Anterior: **1696 verdes al cierre de DEBAJA2 (2026-11-11)**, 0 rojos. Anterior: **1687 (ADR-015)**. Anterior: **1676 verdes al cierre de UX11 + F1-D7 + F1-D3 + NEW-48 (2026-11-11)** (Domain 115 · Application 648 · Desktop 470 · Integration 443), 0 rojos, 0 omitidos. Anterior: **1649 verdes al cierre de D11 ampliada + Q4 + O10 (2026-11-11)** (Domain 115 · Application 648 · Desktop 446 · Integration 440), 0 rojos, 0 omitidos. Anterior: **1595 verdes al cierre de NEW-41 (2026-11-11)** (Domain 115 · Application 646 · Desktop 435 · Integration 399), 0 rojos, 0 omitidos. Anterior: **1578 verdes al cierre del barrido de deuda baja (2026-11-11)** (Domain 108 · Application 637 · Desktop 435 · Integration 398), `dotnet test GymForge.sln`, 0 rojos, 0 omitidos. Anterior: **1573 verdes al cierre de la tanda de deuda técnica (2026-11-10)** (Domain 108 · Application 632 · Desktop 435 · Integration 398), 0 rojos, 0 omitidos. Anterior: **1567 verdes al cierre del barrido de deuda vieja (2026-11-10)** (Domain 108 · Application 632 · Desktop 432 · Integration 395), `dotnet test GymForge.sln`, 0 fallos. Baseline previa: **1550 verdes** (limpieza de deuda baja). Anterior: **1541 verdes al cierre de la reconciliación NEW-31 (2026-11-10)** (Domain 107 · Application 624 · Desktop 431 · Integration 379). Anterior: **1523 verdes al cierre de la pasada 3 (2026-11-10)** (Domain 107 · Application 624 · Desktop 431 · Integration 361). Anterior: **1504 verdes al cierre del barrido de deuda, pasada 2 (2026-11-05)** (Domain 107 · Application 617 · Desktop 421 · Integration 359). Anterior: **1485 verdes al cierre del barrido de deuda, pasada 1 (2026-11-05)** (Domain 107 · Application 599 · Desktop 421 · Integration 358). Anterior: **1477 verdes al cierre del endurecimiento para piloto (2026-11-05)** (Domain 107 · Application 591 · Desktop 421 · Integration 358). Anterior: **1472 verdes al cierre del Endurecimiento final** (Domain 107 · Application 591 · Desktop 419 · Integration 355), `dotnet test GymForge.sln` exit 0, 0 omitidos, Debug y Release (2026-11-04). Piso previo: 1461 (Fase 5 parte 2, pieza F); 1456 (Fase 5 parte 1, `d33e101`); 1392 antes de la limpieza (`7bc780f`).
 - **Endurecimiento final (post-Fase 5): CERRADO (2026-11-04)** en `feat/sesion-6`: 7 commits de código (`6dd304f`, `5274395`, `ffcbbbc`, `6ec5ae4`, `e9ef7aa`, `dd294d5`, `3b4d7e9`) + commit de docs pendiente del orquestador. ADR-011 `Accepted` con plan por tiers: MUST + SHOULD entregados; D9b, D2 y UX19 diferidos. **2 migraciones nuevas:** `20261105000953` (D3, SiteId) y `20261105001255` (D7, DNI único por empresa+sede). Sin push ni merge.
 - **Fase 5 parte 1 (Sesión 8): CERRADA (2026-11-04)** en `feat/sesion-6` (código `d33e101`; commit de docs por el orquestador). ADR-009 `Accepted`. Piezas A–E y G; F (calendario) diferida a parte 2. Sin push ni merge. Ver la entrada de cierre arriba de todo.
 - **Fase 5 parte 2 (Sesión 9): CERRADA (2026-11-04)** en `feat/sesion-6`: pieza F (calendario semanal de Clases en grilla de 7 días). **Fase 5 completa cerrada (piezas A–G).** ADR-010 pasa a `Accepted` al commitear (orquestador). Código y docs pendientes de commit del orquestador. Sin push ni merge. Ver la entrada de cierre arriba de todo.
 - Rama de trabajo: `feat/sesion-6` desde `master` (`e541586`): `aa9c8d7` y `6f3124e` (F4 parte 1), `1f44d2c` y `a55e935` (F4 parte 2, con docs), `7bc780f` (limpieza), `d33e101` (Fase 5 parte 1) y la pieza F de Fase 5 parte 2 (código y docs, **pendientes de commit del orquestador**). `.gitignore` ignora `*.lnk` y `*.pfx`.
-- Abierto en `docs/TASKS.md`: **0 bloqueadores técnicos de piloto**. Decisiones de política: **D11 ampliada, Q4 y O10 RESUELTAS por ADR-013 (2026-11-11)**; residuos en NEW-59 a NEW-61. Siguen abiertos, entre otros: Q2, D12 (residuo), F1-D8, F1-D11, P-2, D2 (diferida), **D9b** (su propia sesión), D13, D17, F1-D5, F1-D8, F1-D10, F1-D11, F2-D1 a F2-D8, F3-D1 a F3-D7, Q3, Q5–Q8, UX1–UX4, UX6–UX17, UX19 (diferido), UX21–UX24, UX34, NEW-2 a NEW-6, NEW-8, NEW-15 a NEW-18, O5, O8, O11(c), O12, UX26–UX33, F4-D1 a F4-D4, y la fase F6. **Cerrados en el endurecimiento (2026-11-04): D3, D7, D9a, NEW-9, NEW-10, NEW-12 (ver DONE `END-CIERRE`).** Lo cerrado en la limpieza está en DONE `LIMP-CIERRE`.
+- Abierto en `docs/TASKS.md`: **0 bloqueadores técnicos de piloto**. Decisiones de política: **D11 ampliada, Q4 y O10 RESUELTAS por ADR-013 (2026-11-11)**; residuos en NEW-59 a NEW-61. Siguen abiertos, entre otros: Q2, D12 (residuo), F1-D8, F1-D11, P-2, D2 (diferida), **D9b** (su propia sesión), D13, D17, F1-D5, F1-D8, F1-D11, F2-D1 a F2-D8, F3-D1 a F3-D7, Q3, Q5–Q8, UX1–UX4, UX6–UX17, UX19 (diferido), UX21–UX24, UX34, NEW-2 a NEW-6, NEW-8, NEW-15 a NEW-18, O5, O8, O11(c), O12, UX26–UX33, F4-D1 a F4-D4, y la fase F6. **Cerrados en el endurecimiento (2026-11-04): D3, D7, D9a, NEW-9, NEW-10, NEW-12 (ver DONE `END-CIERRE`).** Lo cerrado en la limpieza está en DONE `LIMP-CIERRE`.
 
 ## Roadmap por fases
 
@@ -70,7 +71,11 @@ Objetivo: evaluar GymForge, mejorarlo y dejarlo "listo para un gimnasio real" co
 
 ## Qué sigue
 
-**Próximo paso (2026-11-12, tras NEW-72; NEW-72 en working tree).**
+**Próximo paso (2026-11-12, tras F1-D10; F1-D10 en working tree).**
+1. Usuario u orquestador: commit único de F1-D10 (código + `docs/adr/ADR-016-auditoria-de-licencia.md` + `docs/adr/README.md` + docs) con `feat: [licencia] auditar activación y rechazo (F1-D10, ADR-016)`; push pendiente de los commits de `master`.
+2. Usuario (decisión): NEW-73 (CUIT en claro en logs de archivo; ¿ADR-013 cubre logs?). Dev: NEW-74 solo si aparece el caso. Siguen abiertos NEW-61 y NEW-64.
+
+**Próximo paso anterior (2026-11-12, tras NEW-72; NEW-72 en working tree; superado por F1-D10).**
 1. Usuario u orquestador: commit `fix: [backup]` de NEW-72 + commit de docs; push a `origin` de los commits pendientes de `master`.
 2. Sin dev pendiente de la deuda de backup. NEW-61 y NEW-64 quedan abiertos a propósito; dry-run del release y NEW-66 (usuario, ver "Pendientes de distribución" en TASKS).
 
@@ -179,6 +184,45 @@ Decisiones del usuario abiertas (ninguna bloquea el piloto con las 2 condiciones
 Fuera del piloto: P-2 (saldo a favor en la ficha) sigue abierta. D1 (cobros multi-sede) quedó cerrada el 2026-11-05 (barrido pasada 1). Cerradas en el barrido de deuda vieja (2026-11-10): D5, D6, D8 (parte 1) y D19. Resto de deuda (D1–D19, F1-D4 a F1-D10, F2-D1 a F2-D8, Q3–Q9, UX1–UX17): ver `docs/TASKS.md`. Deuda: **NEW-41** cerrada el 2026-11-11 (VisitPack; nota de release sobre packs legados en la entrada de arriba). NEW-42 a NEW-45 cerradas el 2026-11-11. Nueva deuda: **NEW-46 a NEW-48** (sección "Deuda del barrido de deuda baja", TASKS) y **NEW-49 a NEW-51** (sección "Deuda de NEW-41", TASKS) y **NEW-52 a NEW-58** (sección "Deuda del cierre de F1-D2", TASKS; F1-D2 cerrado el 2026-11-11).
 
 Sesiones 5-8: ver tabla de fases arriba.
+
+---
+
+## [2026-11-12] F1-D10 (auditoría de activación/renovación y rechazo de licencia, ADR-016) — CERRADO en working tree (commit pendiente)
+
+**Hecho:**
+- **F1-D10 (BAJA, auditoría de licencia):** la activación/renovación y el rechazo por CUIT dejan rastro en AuditLog. Enfoque Opción B de ADR-016: AuditLog explícito y acotado en `ActivateLicenseCommand`, SIN hacer `Company` `IAuditable` (ADR-003 reafirmado, extiende ADR-013).
+- **Acciones:** `LicenseActivated` (DiffJson `{tier, expiresOn, status, renewal, machineMismatch}`) y `LicenseActivationRejected` (`{reason: "CuitMismatch", keyTier, keyExpiresOn}`). Nunca clave cruda ni CUIT en el DiffJson. No se audita clave inválida/vencida ni CUIT no comparable (este último cae en `LicenseActivated`).
+- **Seam:** `AppendAuditLogAsync` en `ISiteRepository` (solo stagea; persiste el `SaveChangesAsync` único del handler, así que Company y audit van en un commit atómico). Rechazo por CUIT best-effort: si la auditoría falla, Warning y se lanza igual el error de CUIT.
+- **ADR-016** pasa a `Accepted` y se agrega a `docs/adr/README.md`. Sin migración (AuditLog ya existe). Append-only respetado.
+- **qa:** APROBADO CON OBSERVACIONES, sin veto. `dotnet test GymForge.sln` corrido de forma independiente dos veces: **1722 verdes** (Domain 115 · Application 654 · Desktop 487 · Integration 466), 0 rojos, 0 omitidos. Baseline 1716 (+6: 4 unit de dev + 2 integration de qa).
+- **Test que cambió de intención (esperado, no regresión):** `Handle_CuitDistinto_...YNoPersisteNada` pasó a `...YAuditaElRechazoSinPii` (nuevo contrato de ADR-016).
+
+**Commits (pendientes, sin commitear):**
+- Un commit único (`feat: [licencia] auditar activación y rechazo (F1-D10, ADR-016)`) con código, tests, ADR y docs. Sin hash todavía. Lo hace el orquestador/usuario.
+
+**En curso:**
+- Nada de código a medias. Todo en el working tree, sin commit.
+
+**Blockers:**
+- Técnicos: ninguno.
+- Piloto: ninguno.
+
+**Deuda nueva (BAJA):**
+- **NEW-73:** CUIT en claro en el log de archivo (`LogCuitNotComparable`) y en el mensaje de CUIT distinto. Preexistente. Decisión del usuario: ¿ADR-013 cubre también los logs de archivo?
+- **NEW-74 (solo si aparece el caso):** la fila AuditLog queda staged en el DbContext si falla el SaveChanges del rechazo. Riesgo práctico bajo: el handler ya termina con excepción.
+
+**Pendientes del usuario (no cambian):**
+- Commit de este cierre y los 6 commits ya en `master` pendientes de **push a `origin`** (este sería el 7.º commit local).
+- Primer release real (`vpk upload github`, tag `v*`) y dry-run con `--pre` (NEW-66).
+
+**Próximo paso:**
+1. Usuario u orquestador: commit de F1-D10 (código + ADR + docs) y push pendiente de `master`.
+2. Usuario: decidir NEW-73. Dev: NEW-74 solo si aparece el caso. Siguen NEW-61 y NEW-64.
+
+**Tocado:**
+- Código (dev): `src/GymForge.Application/Interfaces/IRepositories.cs` (ISiteRepository), `src/GymForge.Infrastructure/Repositories/SiteRepository.cs`, `src/GymForge.Application/UseCases/Licensing/ActivateLicenseCommand.cs`.
+- Tests: `tests/GymForge.Application.Tests/Handlers/ActivateLicenseCommandTests.cs`; `tests/GymForge.Integration.Tests/LicenseAuditIntegrationTests.cs` (nuevo, qa).
+- Docs: `docs/adr/ADR-016-auditoria-de-licencia.md` (Accepted), `docs/adr/README.md`, `docs/PROGRESS.md`, `docs/TASKS.md`.
 
 ---
 

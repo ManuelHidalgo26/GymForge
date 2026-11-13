@@ -174,6 +174,8 @@ public interface ISiteRepository
     /// <summary>True si la sede tiene datos (socios, turnos de caja o pagos).</summary>
     Task<bool> SiteHasDataAsync(Guid siteId, CancellationToken ct = default);
     Task<int> CountActiveSitesAsync(Guid companyId, CancellationToken ct = default);
+    /// <summary>Stagea una fila de auditoría explícita (solo INSERT); la persiste el próximo SaveChangesAsync.</summary>
+    Task AppendAuditLogAsync(AuditLog log, CancellationToken ct = default);
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }
 

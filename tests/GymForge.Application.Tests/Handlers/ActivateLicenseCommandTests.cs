@@ -22,10 +22,23 @@ public class ActivateLicenseCommandTests
     private readonly ICompanyCalendar _calendar = Substitute.For<ICompanyCalendar>();
     private readonly CapturingLogger<ActivateLicenseCommandHandler> _log = new();
 
-    private ActivateLicenseCommandHandler Sut() => new(_repo, _licenses, _current, _calendar, _log);
+    private readonly ICurrentUser _user = Substitute.For<ICurrentUser>();
+    private readonly IClock _clock = Substitute.For<IClock>();
+    private readonly Guid _staffId = Guid.NewGuid();
+    private readonly DateTime _now = new(2026, 6, 11, 15, 0, 0, DateTimeKind.Utc);
+    private readonly List<AuditLog> _audits = [];
 
-    public ActivateLicenseCommandTests() =>
+    private ActivateLicenseCommandHandler Sut() =>
+        new(_repo, _licenses, _current, _calendar, _user, _clock, _log);
+
+    public ActivateLicenseCommandTests()
+    {
         _calendar.TodayAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns(Today);
+        _user.StaffId.Returns(_staffId);
+        _clock.Now.Returns(_now);
+        _repo.AppendAuditLogAsync(Arg.Do<AuditLog>(_audits.Add), Arg.Any<CancellationToken>())
+            .Returns(Task.CompletedTask);
+    }
 
     private Company CompanyWithTaxId(string taxId)
     {
@@ -56,6 +69,42 @@ public class ActivateLicenseCommandTests
         company.LicenseKey.Should().Be("GYMF.x.y");
         _current.State.Should().Be(active);
         await _repo.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _repo.Received(1).AppendAuditLogAsync(Arg.Any<AuditLog>(), Arg.Any<CancellationToken>());
+    }
+
+    // ── Auditoría (ADR-016) ──────────────────────────────────────────────────
+
+    [Fact]
+    public async Task Handle_ActivacionOk_DejaUnaFilaDeAuditoriaSinPii()
+    {
+        var company = CompanyWithTaxId(GymCuit);
+
+        await Activate(company, ActiveFor(GymCuit));
+
+        var audit = _audits.Should().ContainSingle().Subject;
+        audit.EntityType.Should().Be("Company");
+        audit.EntityId.Should().Be(company.Id);
+        audit.CompanyId.Should().Be(company.Id);
+        audit.Action.Should().Be("LicenseActivated");
+        audit.UserId.Should().Be(_staffId);
+        audit.Timestamp.Should().Be(_now);
+        audit.DiffJson.Should().Contain("\"tier\":\"Pro\"")
+            .And.Contain("\"expiresOn\":\"2027-06-11\"")
+            .And.Contain("\"renewal\":false")
+            .And.NotContain("GYMF.x.y")
+            .And.NotContain(GymCuit)
+            .And.NotContain("30712345671");
+    }
+
+    [Fact]
+    public async Task Handle_Renovacion_MarcaRenewalTrue()
+    {
+        var company = CompanyWithTaxId(GymCuit);
+        company.ActivateLicense("GYMF.vieja.firma");
+
+        await Activate(company, ActiveFor(GymCuit));
+
+        _audits.Should().ContainSingle().Which.DiffJson.Should().Contain("\"renewal\":true");
     }
 
     [Fact]
@@ -69,6 +118,7 @@ public class ActivateLicenseCommandTests
         await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*no es válida*");
         _current.State.Status.Should().Be(LicenseStatus.Free);
         await _repo.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        await _repo.DidNotReceive().AppendAuditLogAsync(Arg.Any<AuditLog>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -81,6 +131,7 @@ public class ActivateLicenseCommandTests
             new ActivateLicenseCommand(Guid.NewGuid(), "GYMF.vieja"), CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*venció*");
+        await _repo.DidNotReceive().AppendAuditLogAsync(Arg.Any<AuditLog>(), Arg.Any<CancellationToken>());
     }
 
     // ── CUIT: bloquea al activar ─────────────────────────────────────────────
@@ -97,7 +148,7 @@ public class ActivateLicenseCommandTests
     }
 
     [Fact]
-    public async Task Handle_CuitDistinto_RechazaConMensajeClaro_YNoPersisteNada()
+    public async Task Handle_CuitDistinto_RechazaConMensajeClaro_YAuditaElRechazoSinPii()
     {
         var company = CompanyWithTaxId(GymCuit);
 
@@ -107,7 +158,39 @@ public class ActivateLicenseCommandTests
             .WithMessage($"*otro CUIT*{OtherCuit}*{GymCuit}*");
         company.LicenseKey.Should().BeNull();
         _current.State.Status.Should().Be(LicenseStatus.Free);
-        await _repo.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+        var audit = _audits.Should().ContainSingle().Subject;
+        audit.Action.Should().Be("LicenseActivationRejected");
+        audit.CompanyId.Should().Be(company.Id);
+        audit.UserId.Should().Be(_staffId);
+        audit.DiffJson.Should().Contain("\"reason\":\"CuitMismatch\"")
+            .And.Contain("\"keyTier\":\"Pro\"")
+            .And.NotContain(OtherCuit).And.NotContain(GymCuit)
+            .And.NotContain("30698765433").And.NotContain("GYMF.x.y");
+        await _repo.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Handle_CuitDistinto_SiFallaLaAuditoria_LogueaYRechazaIgual()
+    {
+        var company = CompanyWithTaxId(GymCuit);
+        _repo.SaveChangesAsync(Arg.Any<CancellationToken>())
+            .Returns<Task<int>>(_ => throw new InvalidOperationException("db caída"));
+
+        var act = () => Activate(company, ActiveFor(OtherCuit));
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*otro CUIT*");
+        _log.Levels.Should().Contain(LogLevel.Warning);
+        company.LicenseKey.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Handle_CuitNoComparable_AuditaComoActivacionNormal()
+    {
+        var company = CompanyWithTaxId(GymCuit);
+
+        await Activate(company, ActiveFor("30-71234567-8"));
+
+        _audits.Should().ContainSingle().Which.Action.Should().Be("LicenseActivated");
     }
 
     [Theory]
